@@ -15,9 +15,27 @@ export type AppEnv = {
   /** Clerk in production and preview; dev bearer tokens against a dev backend otherwise (architecture §3.2). */
   authMode: "clerk" | "dev";
   clerkPublishableKey: string | null;
+  /** Sentry DSN (public by design). Without one, errors aren't reported anywhere (docs/mobile.md "Errors"). */
+  sentryDsn: string | null;
+  /** Sentry environment: the variant's (development, staging, production) unless the build overrides it. */
+  sentryEnvironment: string;
 };
 
-type Extra = Partial<{ variant: string; apiUrl: string; webUrl: string; clerkPublishableKey: string }>;
+type Extra = Partial<{
+  variant: string;
+  apiUrl: string;
+  webUrl: string;
+  clerkPublishableKey: string;
+  sentryDsn: string;
+  sentryEnvironment: string;
+}>;
+
+/** Preview builds run against staging, so their errors file under staging next to the website's. */
+const SENTRY_ENVIRONMENTS: Record<AppVariant, string> = {
+  development: "development",
+  preview: "staging",
+  production: "production",
+};
 
 /** Default ports of the local backend (`npm run backend:dev`) and website (`npm run frontend:dev`). */
 const DEV_API_PORT = 8080;
@@ -47,6 +65,8 @@ export function resolveEnv(extra: Extra, hostUri: string | null | undefined, api
     webUrl: webUrl.replace(/\/+$/, ""),
     authMode: clerkPublishableKey ? "clerk" : "dev",
     clerkPublishableKey,
+    sentryDsn: extra.sentryDsn || null,
+    sentryEnvironment: extra.sentryEnvironment || SENTRY_ENVIRONMENTS[variant],
   };
 }
 

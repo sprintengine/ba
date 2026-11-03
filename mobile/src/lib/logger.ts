@@ -1,7 +1,7 @@
 /**
  * Logging and error reporting (docs/mobile.md "Errors"). Features call `logError` for anything unexpected; error
- * boundaries do too. In development it goes to the console; a crash reporter (Sentry, Bugsnag…) plugs in with
- * `setErrorReporter` at start-up without features changing. No reporter is configured yet (no DSN in the repo).
+ * boundaries do too. In development it goes to the console; the crash reporter (Sentry, `error-reporting.ts`) plugs
+ * in with `setErrorReporter` at start-up when the build has a DSN, without features changing.
  */
 import { isApiError } from "@shared/api/client";
 
