@@ -23,6 +23,19 @@ import java.time.ZoneId
 import java.util.UUID
 
 object BusinessRepository {
+    /**
+     * Serialises a business's new bookings that count towards its plan's monthly limit until the transaction ends
+     * (transaction-scoped advisory lock), so two can't both see the last place free: each counts after the other commits.
+     */
+    fun lockMonthlyBookings(conn: Connection, businessId: UUID) {
+        conn.queryOne("SELECT pg_advisory_xact_lock(hashtextextended('plan_bookings:' || ?::text, 0))", businessId) { true }
+    }
+
+    /** As [lockMonthlyBookings], for the team seats a plan limits (invitations and acceptances). */
+    fun lockSeats(conn: Connection, businessId: UUID) {
+        conn.queryOne("SELECT pg_advisory_xact_lock(hashtextextended('plan_seats:' || ?::text, 0))", businessId) { true }
+    }
+
     /** The columns [map] reads, from `businesses b`. */
     const val COLUMNS = """
         b.id, b.slug, b.name, b.description, b.industry, b.timezone, b.currency, b.locale, b.country, b.status::text AS status,

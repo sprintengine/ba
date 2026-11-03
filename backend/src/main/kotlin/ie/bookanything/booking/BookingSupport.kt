@@ -1,5 +1,6 @@
 package ie.bookanything.booking
 
+import ie.bookanything.business.BusinessRepository
 import ie.bookanything.business.BusinessRow
 import ie.bookanything.db.Db
 import ie.bookanything.http.Errors
@@ -49,6 +50,17 @@ object BookingSupport {
         return BookingRepository.countCreatedSince(conn, business.id, monthStart)
     }
 
+    /**
+     * Takes the business's monthly count for this transaction when its plan limits bookings (false when it doesn't), so
+     * bookings made at once count one after another: each counting first, they all saw the last place free.
+     */
+    fun lockBookingLimit(conn: Connection, business: BusinessRow): Boolean {
+        if (business.plan.monthlyBookingLimit == null) return false
+        BusinessRepository.lockMonthlyBookings(conn, business.id)
+        return true
+    }
+
+    /** Refuses a new booking past the plan's monthly limit. Call it holding [lockBookingLimit]'s lock. */
     fun checkBookingLimit(conn: Connection, business: BusinessRow, now: Instant) {
         val limit = business.plan.monthlyBookingLimit ?: return
         if (monthlyBookingCount(conn, business, now) >= limit) {
