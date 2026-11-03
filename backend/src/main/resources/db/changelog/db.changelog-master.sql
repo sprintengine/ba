@@ -1139,3 +1139,10 @@ CREATE TABLE push_devices (
     CONSTRAINT push_devices_revoked_ck CHECK ((revoked_at IS NULL) = (revoked_reason IS NULL))
 );
 CREATE INDEX push_devices_user_idx ON push_devices (user_id) WHERE revoked_at IS NULL;
+
+--changeset bookanything:0033-oauth-refresh-reuse
+-- A rotated refresh token may be presented again for a minute (TokenPolicy.REFRESH_REUSE_GRACE: parallel refreshes, a
+-- retry after a lost response). parent_hash links a refresh token to the one it was rotated from, so that grace ends as
+-- soon as one of its successors has been used; reuse_count caps how many pairs one token gives that way.
+ALTER TABLE oauth_tokens ADD COLUMN parent_hash TEXT, ADD COLUMN reuse_count INT NOT NULL DEFAULT 0;
+CREATE INDEX oauth_tokens_parent_idx ON oauth_tokens (parent_hash) WHERE parent_hash IS NOT NULL;

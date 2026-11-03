@@ -1544,8 +1544,8 @@ as them. Customer-facing guide: `/help/ai-assistant`. Business members do the sa
   `client_id_metadata_document_supported: true`) and **Dynamic Client Registration** (deprecated in 2026-07-28 but still used
   by current clients, kept for compatibility), RFC 8707 resource indicators with audience-bound tokens, RFC 9207 `iss` in
   authorization responses (`authorization_response_iss_parameter_supported: true`), scope challenges (401 `scope`, 403
-  `insufficient_scope`), refresh token rotation for public clients, exact redirect URI matching (loopback ports per RFC 8252),
-  RFC 7009 revocation. This is backwards compatible with clients built for 2025-06-18 and 2025-11-25 authorization.
+  `insufficient_scope`), refresh token rotation for public clients, exact redirect URI matching (any loopback port and name,
+  RFC 8252), RFC 7009 revocation. This is backwards compatible with clients built for 2025-06-18 and 2025-11-25 authorization.
 - **Transport and lifecycle: MCP 2025-11-25** Streamable HTTP (via the official Kotlin SDK 0.15.0, the latest release; it
   negotiates 2024-11-05 through 2025-11-25): stateless, JSON responses, no sessions, `initialize` + `tools/list` + `tools/call`.
   The 2026-07-28 stateless protocol (`server/discover`, no `initialize`) is not in the Kotlin SDK yet; 2026-07-28 clients fall back
@@ -1578,28 +1578,42 @@ oauth_tokens(token_hash PK, grant_id, kind ('access'|'refresh'), scopes[], resou
 
 Codes and tokens are opaque random secrets (`bac_`, `bat_`, `bar_` prefixes, 32 bytes) stored as SHA-256 hashes only
 (`TokenStore` seam, `PgTokenStore`). Codes live 5 minutes and are single use; access tokens 1 hour; refresh tokens 30 days and
-single use (rotation). Presenting a used code or a rotated refresh token revokes the whole grant (theft detection).
+single use (rotation). Presenting a used code revokes the whole grant (theft detection), and so does presenting a rotated
+refresh token, with one exception (`TokenPolicy.REFRESH_REUSE_GRACE`): clients refresh from several requests at once, or
+retry after losing the response, and would otherwise be disconnected. So within 60 seconds of its rotation, until one of its
+successors is used (`parent_hash`) and at most 5 times (`reuse_count`), a rotated refresh token presented with the same
+`client_id` gets a new pair of its own; the earlier successors keep working (only hashes are stored, so the same pair can't be
+returned). Clients are public, so the `client_id` proves nothing: a thief who presents a stolen token in that minute gets a
+chain of their own and is not caught then. That is the price of not disconnecting clients that race themselves. Every pair is
+cut down to what the grant covers when it is issued, in the same transaction that locks the grant row (`FOR SHARE`), so no
+pair outlives a narrowed consent, however a refresh or code exchange interleaves with it.
 
 ### 20.4 Flows and rules
 
 - **Clients**: public only (`token_endpoint_auth_method: none`, PKCE required). DCR (`POST /v1/oauth/register`, RFC 7591):
-  redirect URIs must be https, http on a loopback host, or a private-use scheme (no `javascript:`, `data:`, …), 1..10.
+  redirect URIs must be https, http on a loopback host, or a private-use scheme (no `javascript:`, `data:`, …), 1..10. A
+  loopback redirect matches on any port and any of `localhost`, `127.0.0.1` and `[::1]` (same scheme, path and query).
   Metadata documents: an https `client_id` with a path is fetched SSRF-safely (public addresses only, checked per connection, no
   redirects, 2 s, 5 KB, JSON), must name itself exactly, list valid `redirect_uris`, a `client_name`, and `none` authentication.
   Only the authorization endpoint fetches (at most 4 at a time; a document that failed is not fetched again for 5 minutes); the
   token endpoint only knows clients stored by then.
 - **Authorize**: unknown client or unregistered redirect → our error page, never redirected. Otherwise errors
-  (`unsupported_response_type`, `invalid_request` for missing/non-S256 PKCE, `invalid_scope`, `invalid_target` for another
-  `resource`) go back to the registered redirect with `state` and `iss`. The consent screen shows the app, where it will send the
-  user (hostname, required by the spec), a warning for loopback/app-only redirects, the scopes and the signed-in account.
+  (`unsupported_response_type`, `invalid_request` for missing/non-S256 PKCE, `invalid_target` for another `resource`) go back
+  to the registered redirect with `state` and `iss`. The consent screen shows the app, where it will send the user (hostname,
+  required by the spec), a warning for loopback/app-only redirects, the scopes and the signed-in account.
   It shows an app website only when verified (a metadata document's own host; a registered `client_uri` only on the redirect host).
   Approving upserts the grant (the consent record) and issues a code; denying returns `access_denied`. Approving fewer scopes
   than before revokes the grant's tokens (and deletes its unused codes) holding a scope the new consent does not cover.
 - **Token** (form-encoded, `Cache-Control: no-store`): `authorization_code` checks client, exact `redirect_uri`, PKCE and resource;
-  `refresh_token` rotates and may narrow `scope`. Errors per RFC 6749 (`invalid_grant`, `invalid_client` 401, …).
+  `refresh_token` rotates and may narrow `scope` (asking for more than the grant is `invalid_scope`; values that aren't the
+  resource's scopes are dropped as below). The response's `scope` is what was granted. Errors per RFC 6749 (`invalid_grant`,
+  `invalid_client` 401, …).
 - **Scopes**: each belongs to one resource. Customer: `bookings:read`, `bookings:write` (implies read), `marketplace:read`.
-  Business: `business:read`, `business:write` (implies read). An empty `scope` means all of the resource's; a scope of the other
-  resource is `invalid_scope`. A request without `resource` is for the business server only when every scope it asks for is a
+  Business: `business:read`, `business:write` (implies read). Scope requests are lenient, never `invalid_scope` at the
+  authorization endpoint: values that aren't scopes of the requested resource (`openid`, `profile`, `email`, or the other
+  server's scopes, which clients copy from the authorization server metadata) are dropped, and when none remain (or `scope` is
+  empty) the request is for all of the resource's. The authorization server metadata lists every served scope; each protected
+  resource metadata lists only its own. A request without `resource` is for the business server only when every scope it asks for is a
   business scope (and the server is on), else the customer one. `offline_access` is accepted (refresh tokens are always issued).
 - **Resource servers** (`/v1/mcp/customer`, `/v1/mcp/business`): only our access tokens, unexpired, unrevoked, grant active and
   issued for that server's resource (audience binding: a customer token is refused by the business server and the other way
@@ -1613,8 +1627,10 @@ single use (rotation). Presenting a used code or a rotated refresh token revokes
   60 per 10 minutes per IP. `RateLimiter.checkKey` keys a limit by subject instead of IP.
 - **Connected apps**: `GET /v1/me/connected-apps`, `DELETE /v1/me/connected-apps/{grantId}` (revokes every token); UI at
   `/my/connected-apps`.
-- **CORS**: the well-known documents, `/v1/oauth/register|token|revoke` and both MCP servers allow any origin (bearer tokens or
-  public data only, no cookies), exposing `WWW-Authenticate`, for browser-based MCP clients. The consent API
+- **CORS**: the well-known documents, `/v1/oauth/register|token|revoke` and the MCP servers allow any origin (bearer tokens or
+  public data only, no cookies), exposing `WWW-Authenticate`, for browser-based MCP clients. The MCP servers allow the
+  `Authorization`, `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` request headers (2026-07-28 clients send the last two
+  on every request; a preflight refusing them fails before the client can fall back to an older version). The consent API
   (`/v1/oauth/authorize`) and everything else keep the default same-origin policy.
 - **Consent page hardening**: `/oauth/*` is served with `X-Frame-Options: DENY`, `frame-ancestors 'none'` (no clickjacking of
   "Allow") and `Referrer-Policy: no-referrer`; it only ever navigates to a `redirectTo` returned by the API (a registered redirect).

@@ -65,6 +65,15 @@ class OAuthFlowTest {
             assertEquals("*", res.headers[HttpHeaders.AccessControlAllowOrigin], path)
         }
         assertEquals(HttpStatusCode.OK, preflight("/v1/mcp/customer", "authorization,content-type,mcp-protocol-version").status)
+        // 2026-07-28 clients send Mcp-Method and Mcp-Name on every request: a refused preflight would fail before they can
+        // fall back to an older protocol version.
+        listOf("/v1/mcp", "/v1/mcp/customer", "/v1/mcp/business").forEach { path ->
+            val res = preflight(path, "authorization,content-type,mcp-protocol-version,mcp-method,mcp-name")
+            assertEquals(HttpStatusCode.OK, res.status, path)
+            assertEquals("*", res.headers[HttpHeaders.AccessControlAllowOrigin], path)
+            val allowed = res.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertTrue("mcp-method" in allowed && "mcp-name" in allowed, "$path: $allowed")
+        }
         val cross = api.client.post("/v1/mcp/customer") { header(HttpHeaders.Origin, "https://inspector.example") }
         assertTrue(cross.headers[HttpHeaders.AccessControlExposeHeaders]!!.contains(HttpHeaders.WWWAuthenticate, ignoreCase = true))
         // The consent API (our own page, the user's session) is not opened up.
@@ -89,7 +98,12 @@ class OAuthFlowTest {
     }
 
     @Test
-    fun `register, consent, exchange the code with PKCE and refresh with rotation`() = withApp { api ->
+    fun `register, consent, exchange the code with PKCE and refresh with rotation`() {
+        val env = TestEnv()
+        withApp(env) { api -> registerConsentExchangeRefresh(api, env) }
+    }
+
+    private suspend fun registerConsentExchangeRefresh(api: ie.bookanything.support.Api, env: TestEnv) {
         val user = TestUser.create("customer", "Riley Customer")
         val sim = OAuthClientSim(api).register("Helpful Assistant")
         assertTrue(sim.clientId.startsWith("dyn_"))
@@ -142,6 +156,7 @@ class OAuthFlowTest {
         val r = rotated.obj()
         assertTrue(r.s("refresh_token") != second.s("refresh_token"))
         assertEquals(HttpStatusCode.OK, sim.mcp(r.s("access_token"), "tools/list").status)
+        env.clock.instant = env.clock.instant.plus(TokenPolicy.REFRESH_REUSE_GRACE).plusSeconds(1)
         assertEquals("invalid_grant", sim.refresh(second.s("refresh_token")).obj().s("error"))
         assertEquals(HttpStatusCode.Unauthorized, sim.mcp(r.s("access_token"), "tools/list").status)
         assertEquals("invalid_grant", sim.refresh(r.s("refresh_token")).obj().s("error"))
@@ -173,7 +188,6 @@ class OAuthFlowTest {
         }
         expectRedirectError(sim.check(user, sim.authorizeParams(withChallenge = false)).obj(), "invalid_request")
         expectRedirectError(sim.check(user, sim.authorizeParams(method = "plain")).obj(), "invalid_request")
-        expectRedirectError(sim.check(user, sim.authorizeParams(scope = "bookings:read admin")).obj(), "invalid_scope")
         expectRedirectError(sim.check(user, sim.authorizeParams(resource = "https://other.example/mcp")).obj(), "invalid_target")
         expectRedirectError(sim.check(user, sim.authorizeParams() + ("responseType" to "token")).obj(), "unsupported_response_type")
         assertEquals("access_denied", sim.query(sim.decide(user, sim.authorizeParams(), approve = false))["error"])
@@ -249,6 +263,83 @@ class OAuthFlowTest {
             assertEquals("invalid_grant", sim.refresh(again.s("refresh_token")).obj().s("error"))
             assertTrue(api.get("/v1/me/connected-apps", user.token).arr().none { it.s("clientId") == sim.clientId })
             assertError(HttpStatusCode.NotFound, "NOT_FOUND", api.delete("/v1/me/connected-apps/${app.s("id")}", user.token))
+        }
+    }
+
+    @Test
+    fun `scopes we don't have, or of the other server, are dropped instead of failing the connection`() = withApp { api ->
+        val user = TestUser.create("customer")
+        val sim = OAuthClientSim(api).register()
+        fun scopeKeys(consent: kotlinx.serialization.json.JsonObject) = consent["scopes"]!!.a.map { it.s("key") }
+        // OpenID scopes alone: the customer server's defaults.
+        val oidc = sim.check(user, sim.authorizeParams(scope = "openid profile email offline_access")).obj()
+        assertEquals("consent", oidc.s("type"))
+        assertEquals(listOf("bookings:read", "bookings:write", "marketplace:read"), scopeKeys(oidc))
+        // Every scope of the authorization server metadata: the customer ones are kept, the business ones dropped.
+        val everything = "bookings:read bookings:write marketplace:read business:read business:write offline_access"
+        assertEquals(
+            listOf("bookings:read", "bookings:write", "marketplace:read"),
+            scopeKeys(sim.check(user, sim.authorizeParams(scope = everything)).obj()),
+        )
+        // The token response says what was granted.
+        assertEquals("bookings:read", sim.connect(user, scope = "openid bookings:read admin").s("scope"))
+        assertEquals(
+            "bookings:read bookings:write marketplace:read", sim.connect(user, scope = "openid business:read").s("scope"),
+        )
+        // The business server keeps only business scopes.
+        val business = OAuthClientSim.business(api).register()
+        val owner = ie.bookanything.support.Fixtures.clinic(api).owner
+        assertEquals("business:read", business.connect(owner, scope = "openid business:read bookings:write").s("scope"))
+    }
+
+    @Test
+    fun `a refresh token presented again within a minute of rotation gets a new pair, not a revoked grant`() {
+        val env = TestEnv()
+        withApp(env) { api ->
+            val user = TestUser.create("customer")
+            val sim = OAuthClientSim(api).register()
+            val first = sim.connect(user).s("refresh_token")
+
+            // Parallel refreshes with the same token (several requests of one client found the access token expired).
+            val outcomes = ie.bookanything.support.race(3) { sim.refresh(first) }
+            outcomes.forEach { assertEquals(HttpStatusCode.OK, it.status, it.body) }
+            val pairs = outcomes.map { ie.bookanything.support.parse(it.body).o }
+            assertEquals(3, pairs.map { it.s("refresh_token") }.toSet().size, "each gets a pair of its own")
+            pairs.forEach { assertEquals(HttpStatusCode.OK, sim.mcp(it.s("access_token"), "tools/list").status) }
+
+            // A retry after the response was lost on the network, 50 seconds later.
+            env.clock.instant = env.clock.instant.plusSeconds(50)
+            val retried = sim.refresh(first)
+            assertStatus(HttpStatusCode.OK, retried)
+            // Every successor works: the client may have kept any of them.
+            val next = pairs.map { sim.refresh(it.s("refresh_token")).also { r -> assertStatus(HttpStatusCode.OK, r) }.obj() }
+            // Once one of them was used the client has moved on: the old token again, even within the minute, is a replay.
+            assertEquals("invalid_grant", sim.refresh(first).obj().s("error"))
+            assertEquals(HttpStatusCode.Unauthorized, sim.mcp(next.last().s("access_token"), "tools/list").status)
+            assertEquals("invalid_grant", sim.refresh(retried.obj().s("refresh_token")).obj().s("error"))
+
+            // After the minute it is a replay too.
+            val late = OAuthClientSim(api).register()
+            val lateFirst = late.connect(user).s("refresh_token")
+            val lateNext = late.refresh(lateFirst).obj()
+            env.clock.instant = env.clock.instant.plus(TokenPolicy.REFRESH_REUSE_GRACE).plusSeconds(1)
+            assertEquals("invalid_grant", late.refresh(lateFirst).obj().s("error"))
+            assertEquals(HttpStatusCode.Unauthorized, late.mcp(lateNext.s("access_token"), "tools/list").status)
+
+            // One rotated token gives at most a few extra pairs; past that it is a replay.
+            val busy = OAuthClientSim(api).register()
+            val busyFirst = busy.connect(user).s("refresh_token")
+            repeat(1 + TokenPolicy.MAX_REFRESH_REUSES) { assertStatus(HttpStatusCode.OK, busy.refresh(busyFirst)) }
+            assertEquals("invalid_grant", busy.refresh(busyFirst).obj().s("error"))
+
+            // Within the minute, another client presenting it is theft all the same.
+            val own = OAuthClientSim(api).register()
+            val ownFirst = own.connect(user).s("refresh_token")
+            assertStatus(HttpStatusCode.OK, own.refresh(ownFirst))
+            val other = OAuthClientSim(api).register()
+            val stolen = other.token("grant_type" to "refresh_token", "refresh_token" to ownFirst, "client_id" to other.clientId)
+            assertEquals("invalid_grant", stolen.obj().s("error"))
+            assertEquals("invalid_grant", own.refresh(ownFirst).obj().s("error"))
         }
     }
 
