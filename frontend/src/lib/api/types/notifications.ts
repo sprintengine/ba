@@ -2,7 +2,12 @@ import type { AssistantAction } from "../assistant-schema";
 
 /** The kinds of notification (§22). */
 export type NotificationKind =
-  "agent_approval" | "booking_request" | "new_booking" | "booking_cancelled" | "booking_moved";
+  | "agent_approval"
+  | "booking_request"
+  | "new_booking"
+  | "booking_cancelled"
+  | "booking_moved"
+  | "payments_alert";
 
 /** One of the signed-in person's notifications (the bell). */
 export type AppNotification = {

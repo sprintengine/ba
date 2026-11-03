@@ -10,6 +10,10 @@ const PATH = `/v1/businesses/${business.id}`;
 
 const payments = (provider: PaymentsStatus["provider"]): PaymentsStatus => ({
   provider,
+  connectMethod: null,
+  canConnectExisting: false,
+  accountId: null,
+  accountName: null,
   connected: provider === "stripe",
   chargesEnabled: provider === "stripe",
   detailsSubmitted: provider === "stripe",
