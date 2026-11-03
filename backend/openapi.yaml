@@ -107,7 +107,7 @@ paths:
       tags: [health]
       operationId: getHealth
       summary: Health check
-      description: Checks database connectivity with a 3 second timeout. No auth.
+      description: Checks database connectivity with a 3 second timeout, and says which release answers. No auth.
       security: []
       responses:
         '200':
@@ -4213,10 +4213,15 @@ components:
               additionalProperties: { type: string }
     Health:
       type: object
-      required: [status, database]
+      required: [status, database, version]
       properties:
         status: { type: string, enum: [ok, degraded] }
         database: { type: string, enum: [ok, unavailable] }
+        version:
+          type: string
+          description: >-
+            The build running, as the release train named it when it built the image (the nightly, e.g.
+            `0.4.0-nightly.20261104.17`, also once staged and released); `dev` outside the release train.
     SlugAvailability:
       type: object
       required: [available, suggestion]

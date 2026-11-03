@@ -56,6 +56,10 @@ fun parseIpLiteral(raw: String): InetAddress? {
 /**
  * Picks the client address for rate limiting (docs/architecture.md section 10).
  *
+ * With [clientIpHeader] set (`CF-Connecting-IP` behind Cloudflare), a trusted TCP peer's single-address header names
+ * the client: the edge overwrites it on every request, so a client cannot choose it. Otherwise, or when the header is
+ * missing or malformed, `X-Forwarded-For` decides as below.
+ *
  * Without [trustForwardedFor] the TCP peer is the client. With it, `X-Forwarded-For` is read
  * right to left (each proxy appends the address it received the request from):
  * - with [hops] set, the client is the entry appended by the outermost of `hops` proxies;
@@ -67,12 +71,25 @@ class ClientIpResolver(
     private val trustForwardedFor: Boolean,
     trustedProxies: List<String>,
     private val hops: Int? = null,
+    /** The request header that carries the client address, set by the edge proxy; null to use `X-Forwarded-For`. */
+    val clientIpHeader: String? = null,
 ) {
     private val trusted = trustedProxies.mapNotNull { Cidr.parse(it) }
 
     private fun isTrusted(address: InetAddress) = trusted.any { it.contains(address) }
 
-    fun resolve(peer: String, forwardedFor: List<String>): String {
+    /** [headerValue] is the value of [clientIpHeader] on the request, if any. */
+    fun resolve(peer: String, forwardedFor: List<String>, headerValue: String? = null): String =
+        fromEdgeHeader(peer, headerValue) ?: fromForwardedFor(peer, forwardedFor)
+
+    /** The edge's client address header, honoured only from a trusted peer and only when it is one IP literal. */
+    private fun fromEdgeHeader(peer: String, headerValue: String?): String? {
+        if (clientIpHeader == null || headerValue == null) return null
+        if (parseIpLiteral(peer)?.let(::isTrusted) != true) return null
+        return parseIpLiteral(headerValue)?.hostAddress
+    }
+
+    private fun fromForwardedFor(peer: String, forwardedFor: List<String>): String {
         val peerLabel = peer.take(64)
         if (!trustForwardedFor) return peerLabel
         val entries = forwardedFor.flatMap { it.split(',') }.map { it.trim() }.filter { it.isNotEmpty() }

@@ -55,6 +55,8 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStarted
 import io.ktor.server.application.ApplicationStopping
 import io.ktor.server.application.install
+import io.ktor.server.engine.ApplicationEngine
+import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.callid.CallId
@@ -86,7 +88,7 @@ import kotlin.system.exitProcess
 private val log = LoggerFactory.getLogger("ie.bookanything.Application")
 
 @Serializable
-data class HealthDto(val status: String, val database: String)
+data class HealthDto(val status: String, val database: String, val version: String)
 
 fun main(args: Array<String>) {
     val config = try {
@@ -126,11 +128,32 @@ fun main(args: Array<String>) {
     val dataSource = createDataSource(config.database)
     if (config.runMigrationsOnStart) Migrations.migrate(dataSource)
     val ctx = AppContext.create(config, dataSource)
-    embeddedServer(Netty, port = config.port, host = config.host) {
+    embeddedServer(Netty, configure = { serverSettings(config) }) {
         module(ctx, startWorker = config.jobsEnabled)
         monitor.subscribe(ApplicationStopping) { dataSource.close() }
     }.start(wait = true)
 }
+
+/**
+ * Where the server listens, and how it stops. On SIGTERM (a deploy stopping the old container, docs/deployment.md) it
+ * stops accepting connections, gives requests in flight up to [SHUTDOWN_TIMEOUT_MILLIS] to finish (a booking, a reply
+ * from Bo still streaming), then closes. Keep the timeout below the container's stop grace period (20 s in
+ * deploy/server/compose.yml), after which Docker kills the process.
+ */
+fun ApplicationEngine.Configuration.serverSettings(config: AppConfig) {
+    connector {
+        host = config.host
+        port = config.port
+    }
+    shutdownGracePeriod = SHUTDOWN_GRACE_MILLIS
+    shutdownTimeout = SHUTDOWN_TIMEOUT_MILLIS
+}
+
+/** Netty's quiet period before it stops: requests arriving in it are still served. */
+const val SHUTDOWN_GRACE_MILLIS = 1_000L
+
+/** The longest a stopping server waits for requests in flight. */
+const val SHUTDOWN_TIMEOUT_MILLIS = 15_000L
 
 private val SECRET_PATH = Regex("/(manage|invitations)/[^/]+")
 
@@ -192,8 +215,8 @@ private fun Application.installStartupLog(ctx: AppContext) {
     monitor.subscribe(ApplicationStarted) {
         val c = ctx.config
         log.info(
-            "bookanything API started env={} auth={} payments={} email={} sms={} push={} ai={} storage={} stock={} geocoder={} sites={}",
-            c.env, c.authMode, ctx.payments.name,
+            "bookanything API started version={} env={} auth={} payments={} email={} sms={} push={} ai={} storage={} stock={} geocoder={} sites={}",
+            c.version, c.env.wire, c.authMode, ctx.payments.name,
             if (c.email.resendApiKey != null) "resend" else "log", if (ctx.sms.enabled) "twilio" else "off", ctx.push.name,
             ctx.ai.model?.modelId ?: "templates",
             ctx.storage.name, if (ctx.stockImages.enabled) "unsplash" else "off", c.geo.providerName,
@@ -278,9 +301,9 @@ private fun Route.healthRoute(ctx: AppContext) {
             }
         } ?: false
         if (ok) {
-            call.respond(HealthDto("ok", "ok"))
+            call.respond(HealthDto("ok", "ok", ctx.config.version))
         } else {
-            call.respond(HttpStatusCode.ServiceUnavailable, HealthDto("degraded", "unavailable"))
+            call.respond(HttpStatusCode.ServiceUnavailable, HealthDto("degraded", "unavailable", ctx.config.version))
         }
     }
 }

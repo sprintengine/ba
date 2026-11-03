@@ -7,6 +7,7 @@ import ie.bookanything.config.AppConfig
 import ie.bookanything.config.AppEnv
 import ie.bookanything.config.AuthMode
 import ie.bookanything.config.ConfigException
+import ie.bookanything.configWarnings
 import ie.bookanything.payments.DevPaymentProvider
 import ie.bookanything.payments.PaymentProvider
 import ie.bookanything.payments.PaymentProviders
@@ -102,6 +103,8 @@ class ProductionConfigTest {
             credits.keys.forEach { key -> refused(withModel + spelling + credits - key, "$key must be set in production") }
             refused(withModel + spelling + credits + ("AI_CREDITS_PRO" to " "), "AI_CREDITS_PRO must be set")
         }
+        // Staging is production here too.
+        refused(withModel + ("APP_ENV" to "staging"), "AI_CREDIT_MICRO_CENTS, AI_CREDITS_FREE, AI_CREDITS_PRO, AI_CREDITS_BUSINESS")
         val ai = AppConfig.fromEnvironment(withModel + credits).ai
         assertEquals(
             listOf(7L, 11L, 13L, 17L), listOf(ai.creditValue.microCents, ai.allowances.free, ai.allowances.pro, ai.allowances.business),
@@ -114,17 +117,62 @@ class ProductionConfigTest {
         assertEquals(AiConfig().creditValue to AiConfig().allowances, dev.creditValue to dev.allowances)
     }
 
-    /** The production config pointed at the test database, run in-process like the real server. */
-    private fun productionConfig() =
-        AppConfig.fromEnvironment(production).copy(database = TestConfig.config().database, jobsEnabled = false, rateLimitsEnabled = false)
+    private val stagingSpellings: List<Map<String, String>> =
+        listOf(mapOf("APP_ENV" to "staging"), mapOf("APP_ENV" to " Staging "), mapOf("APP_ENV" to "STAGING"))
 
-    private fun productionEnv(payments: PaymentProvider): TestEnv {
-        val config = productionConfig()
+    @Test
+    fun `staging is production in every check, under its own name`() {
+        stagingSpellings.forEach { spelling ->
+            val config = AppConfig.fromEnvironment(production + spelling)
+            assertEquals(AppEnv.STAGING, config.env, spelling.toString())
+            assertEquals("staging", config.env.wire)
+            assertEquals(AuthMode.CLERK, config.authMode)
+            assertTrue(config.isProduction && !config.isDevelopment && config.env.isProductionLike)
+            assertEquals("none", PaymentProviders.select(config).name, "no dev payment provider without Stripe")
+            assertNull(config.storage.localDir, "no local upload directory by default")
+            assertEquals("off", AssetStorages.fromConfig(config).name)
+            assertEquals(false, config.runMigrationsOnStart)
+            assertEquals(true, config.rateLimitsEnabled)
+            assertNull(AppContext.modelClient(config), "no model without a key, never the fake")
+            assertEquals(
+                listOf("CLERK_WEBHOOK_SECRET not set: deleted Clerk users are not anonymised"),
+                configWarnings(config, "none"),
+            )
+
+            refused(production + spelling + ("AUTH_MODE" to "dev"), "AUTH_MODE=dev")
+            refused(production + spelling + ("TOKEN_SECRET" to AppConfig.DEV_TOKEN_SECRET), "TOKEN_SECRET")
+            refused(production + spelling - "TOKEN_SECRET", "TOKEN_SECRET")
+            refused(production + spelling + ("AI_FAKE_SCRIPT" to "demo"), "AI_FAKE_SCRIPT")
+            refused(production + spelling + ("RATE_LIMIT_MULTIPLIER" to "50"), "RATE_LIMIT_MULTIPLIER")
+            refused(production + spelling - "CLERK_AUTHORIZED_PARTIES", "CLERK_AUTHORIZED_PARTIES")
+            refused(production + spelling - "DATABASE_URL", "DATABASE_URL")
+        }
+        val staging = AppConfig.fromEnvironment(production + ("APP_ENV" to "staging"))
+        assertEquals("dev", staging.version)
+        val built = AppConfig.fromEnvironment(production + ("APP_VERSION" to " 0.4.0-nightly.20261104.17 "))
+        assertEquals("0.4.0-nightly.20261104.17", built.version)
+        assertFailsWith<ConfigException> { staging.copy(authMode = AuthMode.DEV) }
+        assertFailsWith<ConfigException> { staging.copy(tokenSecret = AppConfig.DEV_TOKEN_SECRET) }
+        assertFailsWith<ConfigException> { staging.copy(ai = staging.ai.copy(fakeScript = "demo")) }
+        assertFailsWith<ConfigException> { staging.copy(rateLimitMultiplier = 2) }
+        assertFailsWith<ConfigException> { TestConfig.config(env = AppEnv.STAGING) }
+        // Every other name is still refused, and the error lists staging.
+        refused(production + ("APP_ENV" to "stage"), "development, staging or production")
+        assertEquals(listOf("development", "staging", "production", "test"), AppEnv.entries.map { it.wire })
+    }
+
+    /** The production (or staging) config pointed at the test database, run in-process like the real server. */
+    private fun productionConfig(appEnv: String = "production") =
+        AppConfig.fromEnvironment(production + ("APP_ENV" to appEnv))
+            .copy(database = TestConfig.config().database, jobsEnabled = false, rateLimitsEnabled = false)
+
+    private fun productionEnv(payments: PaymentProvider, appEnv: String = "production"): TestEnv {
+        val config = productionConfig(appEnv)
         return TestEnv(config = config, verifier = ClerkJwtVerifier(config.clerk), payments = payments)
     }
 
     @Test
-    fun `the development routes are not there in production, even with the dev payment provider wired in`() {
+    fun `the development routes are not there in production or staging, even with the dev payment provider wired in`() {
         // A real held payment, made in a development-like app on the same database.
         val dev = TestEnv()
         var paymentId = ""
@@ -142,9 +190,12 @@ class ProductionConfigTest {
             assertStatus(HttpStatusCode.OK, api.get("/v1/dev/emails/booking_confirmed"))
         }
 
-        // What production selects (no payments without Stripe), and the dev provider wired in by mistake.
-        for (payments in listOf(PaymentProviders.select(productionConfig()), DevPaymentProvider("http://localhost:3000"))) {
-            withApp(productionEnv(payments)) { api ->
+        // What production and staging select (no payments without Stripe), and the dev provider wired in by mistake.
+        val cases = listOf("production", "staging").flatMap { appEnv ->
+            listOf(PaymentProviders.select(productionConfig(appEnv)), DevPaymentProvider("http://localhost:3000")).map { appEnv to it }
+        }
+        for ((appEnv, payments) in cases) {
+            withApp(productionEnv(payments, appEnv)) { api ->
                 assertError(HttpStatusCode.NotFound, "NOT_FOUND", api.get("/v1/public/dev-payments/$paymentId"))
                 assertError(
                     HttpStatusCode.NotFound, "NOT_FOUND",

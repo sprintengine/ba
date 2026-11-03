@@ -471,6 +471,7 @@ class ReportsAndJobsTest {
         val res = api.get("/v1/health")
         assertStatus(HttpStatusCode.OK, res)
         assertEquals("ok", res.obj().s("database"))
+        assertEquals("dev", res.obj().s("version"), "the release, dev outside the release train")
         assertTrue(res.headers["X-Request-Id"]!!.isNotBlank())
         val echoed = api.client.get("/v1/health") { header("X-Request-Id", "req-abc-12345") }
         assertEquals("req-abc-12345", echoed.headers["X-Request-Id"])
