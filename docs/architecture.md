@@ -1642,13 +1642,29 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
 | Tool | Scope | Does |
 |---|---|---|
 | `search_marketplace` | marketplace:read | §18 search (text, city or point + radius, category, date, deals, paging) |
-| `get_business` | marketplace:read | profile, policies, services (options, add-ons, questions), deals |
+| `get_business` | marketplace:read | profile, policies, services (options, add-ons, resource, questions), deals, `bookingUrl` |
 | `check_availability` | marketplace:read | free times with deal prices, using the customer's own group at that business; `after` steps forward (a business offering only its next available time returns one time and `nextAvailableOnly: true`) |
-| `book` | bookings:write | public booking as the user (verified email, their group); deals apply; paid → `payment_required` + `paymentUrl` for the human; `payment: at_venue` for a service with `allowPayAtVenue`; `idempotencyKey` |
-| `list_my_bookings` | bookings:read | upcoming / past / all |
+| `book` | bookings:write | prepares a booking request (`slug`, `serviceId`, `start`; `optionId`, `addonIds`, `resourceId`, `answers`, `notes`, `phone`, `payment: online \| at_venue`) as the user (verified email, their group); deals apply; nothing is booked until it goes ahead (§20.9) |
+| `list_my_bookings` | bookings:read | upcoming / past / all (`status`, `limit` 1-50) |
 | `get_next_appointment` | bookings:read | next upcoming booking or null |
-| `reschedule_booking` | bookings:write | customer rules (notice window, deal schedule) |
-| `cancel_booking` | bookings:write | without `confirm` returns the refund preview and changes nothing; `confirm: true` cancels |
+| `find_times_to_move` | bookings:read | the times one of the user's bookings can move to (`bookingId`, `from`, `to`, `resourceId`, `after`): its own slot free, its deal's schedule |
+| `get_payment_link` | bookings:read | the checkout link of a booking still held for payment (`bookingId`) |
+| `reschedule_booking` | bookings:write | prepares a move (`bookingId`, `start`, `resourceId`) under the customer rules (notice window, deal schedule) |
+| `cancel_booking` | bookings:write | prepares a cancellation (`bookingId`, `reason`) with the refund the policy gives now |
+| `confirm_action` | bookings:write | carries out a prepared request that is `awaiting_confirmation` (`proposalId`); idempotent |
+| `cancel_action` | bookings:write | drops a prepared request (`proposalId`) |
+| `get_proposal` | bookings:read | where a request stands (`proposalId`): awaiting approval (with `approvalUrl`) or confirmation, confirmed (with the booking and links), rejected, expired, failed |
+
+**How tools are listed** (all three servers, `McpTool.listed`): each has an `outputSchema` generated from its result DTOs
+(`OutputSchemas`: every property required since the API writes defaults and nulls, nullable ones `["type", "null"]`, enums
+listed, additional properties allowed); clients such as the TypeScript SDK reject `structuredContent` that doesn't match, and
+every test that calls a tool checks the result against it (`McpOutputCheck`). Each tool and server carries our icon (`icons`:
+`/icon.svg`, `/icon-192.png`, `/icon-512.png` on the app origin), and `_meta.securitySchemes` says how it is authorized
+(ChatGPT reads it): `[{type: "oauth2", scopes: [<the tool's scope>]}]` on the signed-in servers, `[{type: "noauth"}]` on the
+anonymous one. Annotations: reads are `readOnlyHint`; `book`, `reschedule_booking`, `cancel_booking` and the business write
+tools only prepare a change, so they are not `openWorldHint` (nothing reaches anyone else until it goes ahead);
+`confirm_action` is `destructiveHint` and `openWorldHint`, since carrying out a change books, moves or cancels with a business
+(or, on the business server, changes a customer's booking).
 
 Every tool goes through the same services as the website (`PublicBooking`, `MeService`, `BookingEngine`, `BookingLifecycle`);
 another customer's booking is `NOT_FOUND`. Bookings get `source=api`; audit events use actor `api` with the user and
@@ -1688,15 +1704,14 @@ their role allows. Bo (§17) stays the in-dashboard assistant; the business serv
   approving it on bookanything carries it out. Either way it runs through `ActionService` exactly as Bo's confirm (row locked,
   savepoint, idempotent, `requireRole` again), audited as actor `ai` with `via: oauth:<client_id>` and `approvedBy`
   (`member` | `app`); `cancel_action` drops it. Only the grant that proposed (or the member, §20.8) can decide a proposal; Bo's
-  dashboard confirm route refuses it, and an app can't decide Bo's. `confirm_action` is annotated `destructiveHint`.
+  dashboard confirm route refuses it, and an app can't decide Bo's. `confirm_action` is annotated `destructiveHint` and
+  `openWorldHint` (§20.5).
 - **Tools added with it** (for Bo too): `get_booking` (detail, payments, history), `approve_bookings`, `decline_booking`,
   `set_booking_outcome` (completed / no-show), `mark_paid_in_person`, `update_booking_notes`, `get_customer`, `create_customer`,
   `update_customer`, `list_time_off`, `remove_time_off`, and for admins `list_deals`, `pause_or_resume_deal`. Out of scope, as
   for Bo (§17.4): billing and payouts, deleting the business, team roles and invitations, customer erasure and export, the site.
 - **Limits**: 3000/min per IP before authentication; 120 requests/min per grant; 60 proposals per 10 minutes per grant;
   60 confirmations per 10 minutes per user (across their apps).
-- **Customer server additions** (§20.5): `find_times_to_move` (the times one of the user's bookings can move to: its own slot
-  free, its deal's schedule) and `get_payment_link` (the checkout link of a booking still held for payment), both `bookings:read`.
 
 ### 20.8 Approvals (a person approves what their agent changes)
 

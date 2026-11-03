@@ -30,9 +30,10 @@ class SchemaSnapshotTest {
     @Test
     fun `the MCP tool lists are unchanged`() {
         val tools = ListSerializer(serializer<Tool>())
-        Snapshots.assertMatches("mcp-anonymous-tools", McpJson.encodeToString(tools, AnonymousMcp.TOOLS.map { it.tool }))
-        Snapshots.assertMatches("mcp-customer-tools", McpJson.encodeToString(tools, CustomerTools.ALL.map { it.tool }))
-        Snapshots.assertMatches("mcp-business-tools", McpJson.encodeToString(tools, BusinessTools.ALL.map { it.tool }))
+        val app = "https://bookanything.ie"
+        Snapshots.assertMatches("mcp-anonymous-tools", McpJson.encodeToString(tools, AnonymousMcp.TOOLS.map { it.listed(app) }))
+        Snapshots.assertMatches("mcp-customer-tools", McpJson.encodeToString(tools, CustomerTools.ALL.map { it.listed(app) }))
+        Snapshots.assertMatches("mcp-business-tools", McpJson.encodeToString(tools, BusinessTools.ALL.map { it.listed(app) }))
     }
 
     @Test
