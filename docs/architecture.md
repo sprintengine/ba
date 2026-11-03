@@ -1763,6 +1763,42 @@ runs the command, so approving twice books once (the booking's idempotency key i
 claim is recorded (`failed`, the customer told to check their bookings), so a request never hangs. Requests are kept 90
 days and deleted with the account.
 
+### 20.10 WebMCP (agents in the visitor's browser)
+
+Customers bring their own AI: besides connecting an assistant to the customer MCP (§20), an agent built into their browser
+can use our pages directly through WebMCP (W3C Web Machine Learning Community Group draft; Chrome and Edge origin trials).
+A page registers tools on `document.modelContext`; the agent calls them in the visitor's own tab, with their session, while
+they watch. There is no OAuth and no server side: the tools drive the page and call the API exactly as the page does.
+
+| Page | Tools (`components/…`) |
+|---|---|
+| Booking flow `/[slug]/book` | `get_booking_options`, `check_availability`, `select_appointment`, `fill_booking_details`, `get_booking_status`, `confirm_booking` (`booking/booking-agent-tools.ts`) |
+| Marketplace `/explore` | `search_businesses` (sets the page's own filters, so the visitor sees the results the agent reads), `open_business` (its page or booking flow, whose tools take over) (`explore/explore-agent-tools.ts`) |
+| My bookings `/my/bookings` (signed in) | `list_my_bookings`, `cancel_booking`, `reschedule_booking` (`booking/my-bookings-agent-tools.ts`) |
+
+- **Loading**: `lib/webmcp/use-model-context-tools.ts` registers a page's tools with an `AbortSignal` for as long as the
+  page is shown, and imports them only where `document.modelContext` exists (Chrome before 150: `navigator.modelContext`), so
+  other browsers download nothing. The tools read the page's state as last rendered. Explore's are registered by its layout,
+  so a search that moves to a city's page doesn't unregister them mid-call; `search_businesses` fetches through the page's
+  own query (same key, page size and cache).
+- **Input and output**: input is checked like form input (`lib/booking/agent.ts`); results are in words (dates and times in
+  the business's zone, formatted prices) and never repeat sensitive answers (`lib/booking/agent-views.ts`). A failure is
+  returned as `{ error }` rather than thrown (a thrown error reaches the agent only as "tool rejected"). Every tool declares
+  an `outputSchema`: its result with the keys always present required, or `{ error }` (`toolOutput`); the unit tests check
+  each result against it (ajv, `src/test/model-context.ts`).
+- **One change at a time on My bookings**: while a cancellation or move the agent opened is showing, another is refused,
+  and it lapses once the booking is no longer upcoming.
+- **Nothing consequential happens silently**: `confirm_booking`, `cancel_booking` and `reschedule_booking` are
+  `consequentialHint` (browsers may ask the user first). `confirm_booking` works only on the review step, after the customer
+  has seen the summary and price, and payment stays on the payment provider's page. `cancel_booking` and `reschedule_booking`
+  only open the booking card's own dialog (the refund, or the free times): the customer confirms there or dismisses it.
+  Reads that return what a business wrote are `untrustedContentHint`.
+- **Origin trials**: `WEBMCP_ORIGIN_TRIAL_TOKEN` (Chrome) and `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` (Edge) are sent together in
+  one `Origin-Trial` header on every page (`next.config.ts`: a trial is per document, and visitors reach the pages with
+  tools by client-side navigation); each browser uses the token it signed.
+- **Tests**: Vitest drives each page's tools through a fake `document.modelContext`; the Playwright `webmcp.spec.ts`
+  installs a stand-in before the page loads and runs explore → booking page and a cancellation that only opens the dialog.
+
 ## 21. Release schedules (when days open for online booking)
 
 A business decides when each day's times go on sale, not only how far ahead people may book: a GP practice opens

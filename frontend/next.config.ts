@@ -16,11 +16,25 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS?.split(",")
   .filter(Boolean);
 
 /**
- * WebMCP (lib/webmcp): Chrome offers `document.modelContext` to sites in its origin trial. The token is per origin:
- * register at https://developer.chrome.com/origintrials and set `WEBMCP_ORIGIN_TRIAL_TOKEN`. Without it, only
- * browsers with WebMCP switched on (chrome://flags/#enable-webmcp-testing) see the booking page's tools.
+ * WebMCP (lib/webmcp): Chrome and Edge offer `document.modelContext` to sites in their origin trials, each with its own
+ * token per origin: register at https://developer.chrome.com/origintrials (`WEBMCP_ORIGIN_TRIAL_TOKEN`) and at
+ * https://developer.microsoft.com/microsoft-edge/origin-trials (`WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN`). Both go in one
+ * `Origin-Trial` header (a comma-separated list); each browser uses the token it signed. Without them, only browsers
+ * with WebMCP switched on (chrome://flags/#enable-webmcp-testing) see the pages' tools.
  */
-const webmcpOriginTrialToken = process.env.WEBMCP_ORIGIN_TRIAL_TOKEN?.trim();
+const webmcpOriginTrialTokens = [
+  process.env.WEBMCP_ORIGIN_TRIAL_TOKEN,
+  process.env.WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN,
+]
+  .map((token) => token?.trim())
+  .filter(Boolean)
+  .join(", ");
+
+/**
+ * The trial is per document, and visitors reach the pages with tools (the booking flow, Explore, My bookings) by
+ * client-side navigation from any page, so every page carries it; API, MCP and static responses don't need it.
+ */
+const webmcpPages = "/((?!api/|mcp|_next/|\\.well-known/).*)";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -70,8 +84,8 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "no-referrer" },
         ],
       },
-      ...(webmcpOriginTrialToken
-        ? [{ source: "/:slug/book", headers: [{ key: "Origin-Trial", value: webmcpOriginTrialToken }] }]
+      ...(webmcpOriginTrialTokens
+        ? [{ source: webmcpPages, headers: [{ key: "Origin-Trial", value: webmcpOriginTrialTokens }] }]
         : []),
     ];
   },
