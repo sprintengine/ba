@@ -72,6 +72,15 @@ updates:
       backend-minor-and-patch:
         update-types: [minor, patch]
 
+  # Base images: the backend's build and runtime (the cloudflared pin in deploy/server/compose.yml moves by hand).
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
