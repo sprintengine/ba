@@ -224,6 +224,23 @@ class OAuthRulesTest {
     }
 
     @Test
+    fun `HTTP Basic names the client, its password ignored`() {
+        fun basic(raw: String) = "Basic " + java.util.Base64.getEncoder().encodeToString(raw.toByteArray())
+        assertEquals(null, OAuthBasic.clientId(null))
+        assertEquals(null, OAuthBasic.clientId("Bearer bat_x"))
+        assertEquals("dyn_abc", OAuthBasic.clientId(basic("dyn_abc:")))
+        assertEquals("dyn_abc", OAuthBasic.clientId(basic("dyn_abc:never-issued")))
+        assertEquals("dyn_abc", OAuthBasic.clientId("basic  " + basic("dyn_abc:").removePrefix("Basic ")))
+        val doc = "https://assistant.example:8443/oauth/client.json"
+        assertEquals(doc, OAuthBasic.clientId(basic("${java.net.URLEncoder.encode(doc, Charsets.UTF_8)}:")), "form-encoded")
+        assertEquals(doc, OAuthBasic.clientId(basic("$doc:")), "sent without encoding")
+        listOf("Basic !!!", basic("no-colon"), basic(":"), basic(":secret")).forEach { header ->
+            val e = kotlin.test.assertFailsWith<OAuthException>(header) { OAuthBasic.clientId(header) }
+            assertEquals("invalid_client", e.error)
+        }
+    }
+
+    @Test
     fun `metadata document client ids are https URLs with a path`() {
         assertTrue(ClientRegistry.isMetadataDocumentId("https://claude.ai/oauth/claude-code-client-metadata"))
         assertFalse(ClientRegistry.isMetadataDocumentId("https://example.com/"))

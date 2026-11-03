@@ -1,6 +1,7 @@
 package ie.bookanything.oauth
 
 import ie.bookanything.support.DEFAULT_NOW
+import ie.bookanything.support.LogCapture
 import ie.bookanything.support.MutableClock
 import ie.bookanything.support.OAuthClientSim
 import ie.bookanything.support.TestConfig
@@ -343,6 +344,66 @@ class OAuthFlowTest {
         }
     }
 
+    @Test
+    fun `the token and revocation endpoints also take client_id from HTTP Basic`() = withApp { api ->
+        val user = TestUser.create("basic")
+        val sim = OAuthClientSim(api).register()
+        fun basic(id: String, secret: String = "") =
+            "Basic " +
+                java.util.Base64.getEncoder().encodeToString("${java.net.URLEncoder.encode(id, Charsets.UTF_8)}:$secret".toByteArray())
+        suspend fun form(path: String, auth: String?, vararg fields: Pair<String, String?>) = api.client.submitForm(
+            path, io.ktor.http.parameters { fields.forEach { (k, v) -> if (v != null) append(k, v) } },
+        ) { if (auth != null) header(HttpHeaders.Authorization, auth) }
+
+        // A code exchanged with the client named only in the header (a password, never issued, is ignored).
+        val code = sim.code(user)
+        val exchanged = form(
+            "/v1/oauth/token", basic(sim.clientId, "ignored"), "grant_type" to "authorization_code", "code" to code,
+            "redirect_uri" to sim.redirectUri, "code_verifier" to sim.verifier,
+        )
+        assertStatus(HttpStatusCode.OK, exchanged)
+        val t = exchanged.obj()
+        val refreshed = form(
+            "/v1/oauth/token", basic(sim.clientId), "grant_type" to "refresh_token",
+            "refresh_token" to t.s("refresh_token"),
+        )
+        assertStatus(HttpStatusCode.OK, refreshed)
+        val r = refreshed.obj()
+
+        // A client_id in the body wins over the header; with none there, a malformed header is invalid_client, with the
+        // scheme to use (and nothing is spent).
+        val other = OAuthClientSim(api).register()
+        val bodyWins = form(
+            "/v1/oauth/token", basic(other.clientId), "grant_type" to "refresh_token", "refresh_token" to r.s("refresh_token"),
+            "client_id" to sim.clientId,
+        )
+        assertStatus(HttpStatusCode.OK, bodyWins)
+        val r2 = bodyWins.obj()
+        val malformed = form("/v1/oauth/token", "Basic !!!", "grant_type" to "refresh_token", "refresh_token" to r2.s("refresh_token"))
+        assertEquals(HttpStatusCode.Unauthorized, malformed.status)
+        assertEquals("invalid_client", malformed.obj().s("error"))
+        assertTrue(malformed.headers[HttpHeaders.WWWAuthenticate].orEmpty().startsWith("Basic"))
+        val viaHeader = form(
+            "/v1/oauth/token", basic(sim.clientId), "grant_type" to "refresh_token", "refresh_token" to r2.s("refresh_token"),
+        )
+        assertStatus(HttpStatusCode.OK, viaHeader)
+        val current = viaHeader.obj()
+
+        // Revocation: another client named in the header can't revoke; this one can.
+        assertStatus(HttpStatusCode.OK, form("/v1/oauth/revoke", basic(other.clientId), "token" to current.s("access_token")))
+        assertEquals(HttpStatusCode.OK, sim.mcp(current.s("access_token"), "tools/list").status)
+        assertStatus(HttpStatusCode.OK, form("/v1/oauth/revoke", basic(sim.clientId), "token" to current.s("access_token")))
+        assertEquals(HttpStatusCode.Unauthorized, sim.mcp(current.s("access_token"), "tools/list").status)
+
+        // Browser-based clients may send the header cross-origin.
+        val preflight = api.client.options("/v1/oauth/token") {
+            header(HttpHeaders.Origin, "https://inspector.example")
+            header(HttpHeaders.AccessControlRequestMethod, "POST")
+            header(HttpHeaders.AccessControlRequestHeaders, "authorization,content-type")
+        }
+        assertEquals(HttpStatusCode.OK, preflight.status)
+    }
+
     private suspend fun io.ktor.client.HttpClient.submitFormRevoke(token: String) =
         submitForm("/v1/oauth/revoke", io.ktor.http.parameters { append("token", token) })
 
@@ -378,6 +439,9 @@ class OAuthFlowTest {
                 "token_endpoint_auth_method":"none"}""",
             "https://liar.example/client.json" to
                 """{"client_id":"https://honest.example/client.json","client_name":"Liar","redirect_uris":["https://liar.example/cb"]}""",
+            "https://secret.example/client.json" to
+                """{"client_id":"https://secret.example/client.json","client_name":"Secretive","redirect_uris":["https://secret.example/cb"],
+                "token_endpoint_auth_method":"client_secret_basic"}""",
         )
         val fetched = mutableListOf<String>()
         val env = TestEnv(
@@ -394,9 +458,25 @@ class OAuthFlowTest {
             val tokens = sim.connect(user)
             assertTrue(tokens.s("access_token").startsWith("bat_"))
             assertEquals(1, fetched.count { it == docUrl }, "cached for the document's max-age")
-            // A document that names another client_id is rejected.
-            val liar = OAuthClientSim(api, "https://liar.example/cb").also { it.clientId = "https://liar.example/client.json" }
-            assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", liar.check(user, liar.authorizeParams()))
+            // A document that names another client_id, or wants client authentication, is rejected, and the log says why
+            // (the user only sees that the app can't be connected).
+            val logs = LogCapture.of(ClientRegistry::class.java)
+            try {
+                val liar = OAuthClientSim(api, "https://liar.example/cb").also { it.clientId = "https://liar.example/client.json" }
+                assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", liar.check(user, liar.authorizeParams()))
+                val secretive = OAuthClientSim(api, "https://secret.example/cb").also { it.clientId = "https://secret.example/client.json" }
+                assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", secretive.check(user, secretive.authorizeParams()))
+                assertTrue(
+                    logs.messages().any { "https://liar.example/client.json rejected: its client_id is not the URL" in it },
+                    logs.messages().toString(),
+                )
+                assertTrue(
+                    logs.messages().any { "https://secret.example/client.json" in it && "client_secret_basic" in it },
+                    logs.messages().toString(),
+                )
+            } finally {
+                logs.close()
+            }
         }
     }
 
