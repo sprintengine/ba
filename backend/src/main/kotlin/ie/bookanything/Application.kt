@@ -31,6 +31,10 @@ import ie.bookanything.notifications.inbox.inboxRoutes
 import ie.bookanything.notifications.push.pushDeviceRoutes
 import ie.bookanything.oauth.oauthRoutes
 import ie.bookanything.oauth.oauthWellKnownRoutes
+import ie.bookanything.observability.JobQueueGauges
+import ie.bookanything.observability.Observability
+import ie.bookanything.observability.RequestTelemetry
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.offers.offerRoutes
 import ie.bookanything.offers.publicOfferRoutes
 import ie.bookanything.payments.paymentSettingsRoutes
@@ -77,6 +81,9 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
@@ -125,12 +132,17 @@ fun main(args: Array<String>) {
             exitProcess(2)
         }
     }
-    val dataSource = createDataSource(config.database)
+    val observability = Observability.start(config.observability)
+    val dataSource = createDataSource(config.database, observability.registry.takeIf { config.observability.metricsEnabled })
     if (config.runMigrationsOnStart) Migrations.migrate(dataSource)
     val ctx = AppContext.create(config, dataSource)
     embeddedServer(Netty, configure = { serverSettings(config) }) {
         module(ctx, startWorker = config.jobsEnabled)
-        monitor.subscribe(ApplicationStopping) { dataSource.close() }
+        if (config.observability.metricsEnabled) installQueueGauges(JobQueueGauges(ctx.db, observability.registry))
+        monitor.subscribe(ApplicationStopping) {
+            dataSource.close()
+            observability.close()
+        }
     }.start(wait = true)
 }
 
@@ -164,11 +176,14 @@ private val REQUEST_ID = Regex("^[A-Za-z0-9._\\-]{8,128}$")
 
 fun Application.module(ctx: AppContext, startWorker: Boolean = false) {
     installRequestLogging()
+    install(RequestTelemetry)
     installCompression()
     install(NoStoreByDefault)
     configureErrors()
     installStartupLog(ctx)
-    installWorker(if (startWorker) JobWorker(ctx) else null)
+    val worker = if (startWorker) JobWorker(ctx) else null
+    Telemetry.metrics.registerAtZero(worker?.handlers?.keys.orEmpty())
+    installWorker(worker)
     routing {
         // Installed on the routing root (not the application) so the MCP route can use MCP's own JSON settings.
         install(ContentNegotiation) { json(ApiJson) }
@@ -236,6 +251,18 @@ fun configWarnings(c: AppConfig, paymentProvider: String): List<String> = listOf
     "EXPO_ACCESS_TOKEN is set but PUSH_NOTIFICATIONS is not expo: push notifications are not sent"
         .takeIf { c.push.expoAccessToken != null && c.push.mode != PushMode.EXPO },
 )
+
+/** Samples the job queue for its gauges every [JobQueueGauges.INTERVAL_SECONDS] while the server runs. */
+private fun Application.installQueueGauges(gauges: JobQueueGauges) {
+    monitor.subscribe(ApplicationStarted) {
+        launch(Dispatchers.IO) {
+            while (isActive) {
+                gauges.sample()
+                delay(JobQueueGauges.INTERVAL_SECONDS * 1000)
+            }
+        }
+    }
+}
 
 /** Starts the job worker once the server is up and stops it on shutdown. */
 private fun Application.installWorker(worker: JobWorker?) {

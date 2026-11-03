@@ -12,10 +12,10 @@ import ie.bookanything.jobs.JobQueue
 import ie.bookanything.jobs.JobRunner
 import ie.bookanything.notifications.NotificationKind
 import ie.bookanything.notifications.Notify
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.payments.PaymentRepository
 import ie.bookanything.payments.PaymentService
 import ie.bookanything.payments.RefundResult
-import ie.bookanything.payments.RefundToSend
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
@@ -78,17 +78,15 @@ class RefundSettlement(private val db: Db, private val payments: PaymentService)
         val (business, toSend) = db.txBlocking(businessId) { conn ->
             BusinessRepository.findById(conn, businessId)?.let { it to payments.refundToSend(conn, it, refundId) }
         } ?: return
-        val result = toSend?.let { sendOrNull(business, it) }
+        val sent = toSend?.let { runCatching { payments.sendRefund(business, it) } }
+        val result = sent?.getOrNull()
         db.txBlocking(businessId) { conn -> settle(conn, business, job, refundId, result) }
-        check(toSend == null || result != null) { "refund $refundId failed at the provider: retrying" }
-    }
-
-    /** Provider boundary: a failure is logged and the job retries. */
-    private fun sendOrNull(business: BusinessRow, toSend: RefundToSend): RefundResult? = try {
-        payments.sendRefund(business, toSend)
-    } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
-        log.warn("refund {} for booking {} failed, will retry: {}", toSend.refund.id, toSend.refund.bookingId, e.message)
-        null
+        sent?.exceptionOrNull()?.let { e ->
+            // Provider boundary: the job retries; the provider's error is the cause, for the report once retries run out.
+            log.warn("refund {} for booking {} failed, will retry: {}", toSend.refund.id, toSend.refund.bookingId, e.message)
+            Telemetry.metrics.refundFailed()
+            throw IllegalStateException("refund $refundId failed at the provider", e)
+        }
     }
 
     /**

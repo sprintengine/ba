@@ -7,6 +7,7 @@ import ie.bookanything.support.StripeWorld
 import ie.bookanything.support.TestEnv
 import ie.bookanything.support.assertError
 import ie.bookanything.support.assertStatus
+import ie.bookanything.support.count
 import ie.bookanything.support.i
 import ie.bookanything.support.inParallel
 import ie.bookanything.support.jsonOf
@@ -15,6 +16,7 @@ import ie.bookanything.support.runTask
 import ie.bookanything.support.s
 import ie.bookanything.support.unique
 import ie.bookanything.support.withApp
+import ie.bookanything.support.withTelemetry
 import io.ktor.http.HttpStatusCode
 import java.util.UUID
 import kotlin.test.Test
@@ -131,7 +133,7 @@ class WebhookIdempotencyTest {
     }
 
     @Test
-    fun `a payment after the hold expired revives the booking while its time is still free`() {
+    fun `a payment after the hold expired revives the booking while its time is still free`() = withTelemetry { registry, _ ->
         val s = StripeWorld()
         withApp(s.env) { api ->
             val clinic = Fixtures.clinic(api)
@@ -156,11 +158,14 @@ class WebhookIdempotencyTest {
                 api.post("${clinic.public}/bookings", Fixtures.bookingBody(clinic, "Paid consult", start, resourceId = alex)),
             )
             assertTrue(s.gateway.refunds.isEmpty())
+            assertEquals(1.0, registry.count("booking.holds", "outcome", "paid_after_expiry"))
+            assertEquals(0.0, registry.count("booking.holds", "outcome", "paid"))
+            assertTrue(registry.find("stripe.webhook.lag").timer()!!.count() >= 1, "each applied event's lag is measured")
         }
     }
 
     @Test
-    fun `a late payment is refunded in full when the booking was cancelled or its time has passed`() {
+    fun `a late payment is refunded in full when the booking was cancelled or its time has passed`() = withTelemetry { registry, _ ->
         val s = StripeWorld()
         withApp(s.env) { api ->
             val clinic = Fixtures.clinic(api)
@@ -187,6 +192,8 @@ class WebhookIdempotencyTest {
             val tooLate = Money.view(api, soon)
             assertEquals("cancelled refunded, paid 5000, refunded 5000", Money.state(tooLate))
             assertEquals("system", Fixtures.sqlAll("SELECT cancelled_by::text FROM bookings WHERE id = ?", Money.bookingId(soon)).single())
+            // The hold that expired is counted as paid too late; the one its customer cancelled ended as no hold outcome.
+            assertEquals(1.0, registry.count("booking.holds", "outcome", "paid_too_late"))
         }
     }
 

@@ -20,6 +20,7 @@ kotlin {
 }
 
 val testcontainersVersion = "2.0.5"
+val micrometerVersion = "1.17.2"
 
 dependencies {
     implementation("io.ktor:ktor-server-core-jvm")
@@ -46,6 +47,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Public MCP endpoint (stateless Streamable HTTP).
     implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
+    // Observability (docs/observability.md): metrics pushed over OTLP, errors to Sentry. Both off until configured.
+    implementation("io.micrometer:micrometer-core:$micrometerVersion")
+    implementation("io.micrometer:micrometer-registry-otlp:$micrometerVersion")
+    implementation("io.sentry:sentry:8.62.0")
 
     testImplementation(kotlin("test"))
     testImplementation(platform("org.junit:junit-bom:5.14.4"))
