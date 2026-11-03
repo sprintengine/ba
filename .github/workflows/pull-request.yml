@@ -1,0 +1,67 @@
+name: Pull request
+
+# Checks on what a pull request publishes, not on the code (CI does that). A workflow of its own so that editing a
+# title or description checks it again without running all of CI. docs/engineering.md, "Commits, pull requests and
+# versions" and "What may be published".
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pull-request-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # The title and every commit are Conventional Commits. Pull requests are merged with a merge commit, so each commit
+  # lands on main as written and versions are derived from them; the title names the merge.
+  commits:
+    name: Conventional commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # The title through the environment, never into the script's text.
+      - name: Title and commits
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+        run: node scripts/conventional-commits.mjs --title "$TITLE" --range "$RANGE"
+
+  # Nothing personal and no competitor's name in the title, the description, the commit messages or the added lines.
+  publication:
+    name: Nothing personal, no competitors
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # From this repository (Dependabot's included, which reads its own copy of the secret) the denylist is required;
+      # a fork gets no secrets, so its pull request is checked without it and a maintainer reads it for names.
+      - name: Title, description, commits and added lines
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+          PUBLICATION_DENYLIST: ${{ secrets.PUBLICATION_DENYLIST }}
+          FROM_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          if [[ "$FROM_FORK" == true ]]; then
+            echo "::warning::A fork's pull request is checked without PUBLICATION_DENYLIST: read it for names before merging."
+            node scripts/publication-check.mjs --text-env TITLE --text-env BODY --range "$RANGE"
+          else
+            node scripts/publication-check.mjs --text-env TITLE --text-env BODY --range "$RANGE" --require-denylist
+          fi

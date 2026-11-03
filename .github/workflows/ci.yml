@@ -96,6 +96,19 @@ jobs:
           path: frontend/coverage/
           if-no-files-found: ignore
 
+  # The repository's own tooling under scripts/ (the pull request checks, the release train) and its tests.
+  scripts:
+    name: Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Script tests
+        run: npm run test:scripts
+
   mobile:
     name: Mobile
     runs-on: ubuntu-latest
