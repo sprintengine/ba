@@ -46,7 +46,7 @@ dependencies {
     // Used directly for the SSRF-guarded website fetch (custom DNS filtering); also the Anthropic SDK transport.
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Public MCP endpoint (stateless Streamable HTTP).
-    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
+    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.16.0")
     // Observability (docs/observability.md): metrics pushed over OTLP, errors to Sentry. Both off until configured.
     implementation("io.micrometer:micrometer-core:$micrometerVersion")
     implementation("io.micrometer:micrometer-registry-otlp:$micrometerVersion")
