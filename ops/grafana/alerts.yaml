@@ -1,0 +1,95 @@
+# Alert rules for the bookanything API, in Prometheus rule format (docs/observability.md, "Alerts").
+# Load them into Grafana Cloud's Mimir ruler with mimirtool (`mimirtool rules load ops/grafana/alerts.yaml`), or import
+# them in Grafana under Alerting > Alert rules > Import. They watch production; copy a group and change `env` for staging.
+groups:
+  - name: bookanything-api
+    interval: 1m
+    rules:
+      - alert: ApiHealthCheckDown
+        # The external uptime check (Synthetic Monitoring, job named in docs/observability.md) is failing.
+        expr: avg_over_time(probe_success{job="bookanything-api-health"}[5m]) < 0.5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: GET /v1/health is failing from outside
+          description: The API or its database is down, or the tunnel in front of it is. Check the container and /v1/health.
+
+      - alert: ApiMetricsMissing
+        # No metrics for 15 minutes: the API is down, or it can't reach the metrics endpoint.
+        expr: absent_over_time(http_server_requests_total{env="production"}[15m])
+        labels:
+          severity: warning
+        annotations:
+          summary: The API has pushed no metrics for 15 minutes
+
+      - alert: ApiServerErrorRateHigh
+        # More than 2% of requests answered 5xx, with enough traffic for the share to mean something.
+        expr: |
+          sum(rate(http_server_requests_total{env="production", status="5xx"}[5m]))
+            / sum(rate(http_server_requests_total{env="production"}[5m])) > 0.02
+          and sum(rate(http_server_requests_total{env="production"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of API requests are failing with 5xx"
+          description: Sentry has the stack traces, tagged with the route template and request id.
+
+      - alert: ApiLatencyHigh
+        # The booking pages and the dashboard; the AI area streams and is slow by nature.
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, area) (rate(http_server_duration_seconds_bucket{env="production", area=~"public|dashboard|account"}[10m]))
+          ) > 1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency in {{ $labels.area }} is {{ $value | humanizeDuration }}"
+
+      - alert: JobQueueStuck
+        # A due job has waited over 10 minutes: the worker is stuck, failing or overloaded (emails, refunds, events).
+        expr: max by (kind) (jobs_queue_oldest_age_seconds{env="production"}) > 600
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.kind }} jobs have waited {{ $value | humanizeDuration }}"
+
+      - alert: StripeWebhookLagHigh
+        # Payments are confirmed late: events wait in the queue, or applying them is slow.
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(stripe_webhook_lag_seconds_bucket{env="production"}[30m]))) > 120
+          or max(jobs_queue_oldest_age_seconds{env="production", kind="stripe_event"}) > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Stripe events are applied late ({{ $value | humanizeDuration }})
+
+      - alert: RefundsFailing
+        # The payment provider refused or failed refunds; each is retried for about a day.
+        expr: sum(increase(payments_refunds_failed_total{env="production"}[30m])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: Refunds are failing at the payment provider
+          description: Customers are waiting for money back. Look at the Stripe dashboard and the backend logs.
+
+      - alert: RefundOutOfRetries
+        # A refund job used all its attempts: someone has to refund by hand.
+        expr: sum(increase(jobs_runs_total{env="production", kind="payment_refund_retry", result="failed"}[1h])) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: A refund failed for good and needs a manual refund
+
+      - alert: JobsFailingForGood
+        # Refunds have their own, critical rule above.
+        expr: sum by (kind) (increase(jobs_runs_total{env="production", result="failed", kind!="payment_refund_retry"}[1h])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.kind }} jobs ran out of attempts"
+          description: Sentry has each one, tagged with the job kind and id.
