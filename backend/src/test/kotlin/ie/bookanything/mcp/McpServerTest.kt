@@ -104,6 +104,48 @@ class McpServerTest {
     }
 
     @Test
+    fun `a 2026-07-28 client falls back to initialize and negotiates 2025-11-25`() = withApp { api ->
+        // Modern clients try a request without initialize first. A 400 whose body isn't a modern error
+        // (HeaderMismatch, UnsupportedProtocolVersion, MissingRequiredClientCapability: -32020..-32022) tells them this
+        // server is of the initialize era, so they fall back to it; one of those codes would make them retry instead.
+        val modern = api.client.post("/v1/mcp") {
+            header("Accept", "application/json, text/event-stream")
+            header("MCP-Protocol-Version", "2026-07-28")
+            header("Mcp-Method", "tools/list")
+            contentType(ContentType.Application.Json)
+            setBody(
+                """{"jsonrpc":"2.0","id":1,"method":"tools/list",""" +
+                    """"params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}""",
+            )
+        }
+        val body = modern.bodyAsText()
+        assertEquals(HttpStatusCode.BadRequest, modern.status, body)
+        val code = runCatching { parse(body).jsonObject["error"]!!.jsonObject["code"]!!.jsonPrimitive.content.toInt() }.getOrNull()
+        assertTrue(code == null || code !in -32022..-32020, "not a modern JSON-RPC error: $body")
+
+        // The fallback initialize carries no version header yet (it is sent once a version is negotiated).
+        val fallback = post(
+            api,
+            buildJsonObject {
+                put("jsonrpc", "2.0"); put("id", 2); put("method", "initialize")
+                put(
+                    "params",
+                    buildJsonObject {
+                        put("protocolVersion", "2026-07-28")
+                        put("capabilities", JsonObject(emptyMap()))
+                        put("clientInfo", buildJsonObject { put("name", "modern"); put("version", "1") })
+                    },
+                )
+            }.toString(),
+            version = null,
+        )
+        assertEquals(HttpStatusCode.OK, fallback.status)
+        assertEquals("2025-11-25", parse(fallback.bodyAsText()).jsonObject["result"]!!.jsonObject.s("protocolVersion"))
+        val tools = post(api, """{"jsonrpc":"2.0","id":3,"method":"tools/list"}""", version = "2025-11-25")
+        assertEquals(HttpStatusCode.OK, tools.status)
+    }
+
+    @Test
     fun `anonymous tools search, read and check availability through the normal engine`() = withApp { api ->
         val clinic = MarketplaceFixtures.listedClinic(api, MarketplaceFixtures.isolatedPoint())
         val found = call(api, "find_business", buildJsonObject { put("slug", clinic.slug) })

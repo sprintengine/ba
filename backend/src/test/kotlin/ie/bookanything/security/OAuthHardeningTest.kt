@@ -236,7 +236,6 @@ class OAuthHardeningTest {
         val user = TestUser.create("scopes")
         val sim = OAuthClientSim(api).register()
         val all = sim.connect(user)
-        assertEquals("invalid_scope", sim.refresh(all.s("refresh_token"), scope = "bookings:read admin").obj().s("error"))
         val narrowed = sim.refresh(all.s("refresh_token"), scope = "marketplace:read")
         assertStatus(HttpStatusCode.OK, narrowed)
         val n = narrowed.obj()
@@ -248,6 +247,38 @@ class OAuthHardeningTest {
             sim.refresh(n.s("refresh_token"), scope = "marketplace:read bookings:write").obj().s("error"),
             "the narrowed refresh token cannot win back what it gave up",
         )
+        // Values that aren't scopes of the grant's resource are dropped, as at the authorization endpoint.
+        suspend fun refreshed(scope: String) = sim.refresh(sim.connect(user).s("refresh_token"), scope = scope).obj().s("scope")
+        assertEquals("bookings:read", refreshed("bookings:read admin"))
+        assertEquals("marketplace:read", refreshed("marketplace:read business:read"))
+    }
+
+    @Test
+    fun `a refresh token reused within the grace minute gets no more than the grant holds now`() = withApp { api ->
+        val user = TestUser.create("reuse")
+        val sim = OAuthClientSim(api).register()
+        val writer = sim.connect(user, scope = "bookings:write marketplace:read")
+        assertStatus(HttpStatusCode.OK, sim.refresh(writer.s("refresh_token")))
+        // The user approves the app again for less: a reuse of the rotated token is cut down to that.
+        sim.connect(user, scope = "marketplace:read")
+        val reused = sim.refresh(writer.s("refresh_token")).obj()
+        assertEquals("marketplace:read", reused.s("scope"))
+        val denied = sim.mcp(reused.s("access_token"), "tools/call", parse("""{"name":"list_my_bookings","arguments":{}}""").o)
+        assertEquals(HttpStatusCode.Forbidden, denied.status)
+        // bookings:write implies bookings:read: narrowing to read keeps read.
+        val other = OAuthClientSim(api).register()
+        val all = other.connect(user, scope = "bookings:write")
+        assertStatus(HttpStatusCode.OK, other.refresh(all.s("refresh_token")))
+        other.connect(user, scope = "bookings:read")
+        assertEquals("bookings:read", other.refresh(all.s("refresh_token")).obj().s("scope"))
+
+        // Disconnected within the minute: no reuse.
+        val gone = OAuthClientSim(api).register()
+        val t = gone.connect(user)
+        assertStatus(HttpStatusCode.OK, gone.refresh(t.s("refresh_token")))
+        val app = api.get("/v1/me/connected-apps", user.token).arr().single { it.s("clientId") == gone.clientId }.o
+        assertStatus(HttpStatusCode.NoContent, api.delete("/v1/me/connected-apps/${app.s("id")}", user.token))
+        assertEquals("invalid_grant", gone.refresh(t.s("refresh_token")).obj().s("error"))
     }
 
     @Test
