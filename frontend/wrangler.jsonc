@@ -1,0 +1,30 @@
+// The website as a Cloudflare Worker, built by OpenNext (`npm run cf:build`, docs/deployment.md). Top level is
+// production; `--env staging` is staging. Settings are not here: the deploy workflow passes them from the GitHub
+// environment, at build time (NEXT_PUBLIC_*, BACKEND_ORIGIN for the /api rewrite) and as the Worker's runtime vars and
+// secrets (BACKEND_ORIGIN for server-side reads, CLERK_SECRET_KEY, the app-link settings).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bookanything-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  // No global_fetch_strictly_public: the /api rewrite to the API hostname must stay a same-zone subrequest, which keeps
+  // the visitor's address in CF-Connecting-IP for the API's rate limits (backend/README.md "Behind a proxy").
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "bookanything.ie", "custom_domain": true }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "bookanything-web" }],
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "bookanything-web-cache" }],
+  "env": {
+    "staging": {
+      "name": "bookanything-web-staging",
+      "routes": [{ "pattern": "staging.bookanything.ie", "custom_domain": true }],
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "bookanything-web-staging" }],
+      "r2_buckets": [
+        { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "bookanything-web-cache-staging" },
+      ],
+    },
+  },
+}
