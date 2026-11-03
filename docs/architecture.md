@@ -1546,10 +1546,12 @@ as them. Customer-facing guide: `/help/ai-assistant`. Business members do the sa
   authorization responses (`authorization_response_iss_parameter_supported: true`), scope challenges (401 `scope`, 403
   `insufficient_scope`), refresh token rotation for public clients, exact redirect URI matching (any loopback port and name,
   RFC 8252), RFC 7009 revocation. This is backwards compatible with clients built for 2025-06-18 and 2025-11-25 authorization.
-- **Transport and lifecycle: MCP 2025-11-25** Streamable HTTP (via the official Kotlin SDK 0.15.0, the latest release; it
+- **Transport and lifecycle: MCP 2025-11-25** Streamable HTTP (via the official Kotlin SDK 0.16.0, the latest release; it
   negotiates 2024-11-05 through 2025-11-25): stateless, JSON responses, no sessions, `initialize` + `tools/list` + `tools/call`.
-  The 2026-07-28 stateless protocol (`server/discover`, no `initialize`) is not in the Kotlin SDK yet; 2026-07-28 clients fall back
-  to the initialize handshake per the spec's backward-compatibility rules. Upgrade the SDK when it ships 2026-07-28.
+  The 2026-07-28 stateless protocol (`server/discover`, no `initialize`) is not in the Kotlin SDK yet (0.16.0 has its types
+  only); 2026-07-28 clients fall back to the initialize handshake per the spec's backward-compatibility rules: a request
+  without `initialize` gets a 400 whose body is not one of the new protocol errors (`-32020`..`-32022`), which is what tells
+  them to (`McpServerTest` pins this). Upgrade the SDK when it serves 2026-07-28.
 
 ### 20.2 Where things live
 

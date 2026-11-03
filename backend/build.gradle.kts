@@ -45,7 +45,7 @@ dependencies {
     // Used directly for the SSRF-guarded website fetch (custom DNS filtering); also the Anthropic SDK transport.
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Public MCP endpoint (stateless Streamable HTTP).
-    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
+    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.16.0")
 
     testImplementation(kotlin("test"))
     testImplementation(platform("org.junit:junit-bom:5.14.4"))
