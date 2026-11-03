@@ -1,0 +1,585 @@
+name: Release
+
+# Main feeds a nightly train; a release stages what a nightly already built, and a promote puts exactly what staging
+# tested into production. docs/releases.md walks through it.
+#
+#   schedule (02:43 UTC)  a nightly of main's head, only when main has commits the last nightly did not build. A main
+#                         that no longer contains the last nightly (history rewritten) FAILS the resolve step.
+#   dispatch nightly      a nightly of main's head now, gate skipped
+#   dispatch release      STAGING ONLY: the newest nightly (or the one named), never rebuilt: its backend image digest
+#                         tagged :staging (the staging VM deploys it, deploy/server/update.sh), its staging website build
+#                         deployed to the staging Worker, both smoke-tested; recorded as the prerelease vX.Y.Z-rc.<run>
+#   dispatch promote      PRODUCTION ONLY: the newest staged candidate that passed (or the one named), byte for byte:
+#                         its digest tagged :production and :latest, its production website build deployed, and the
+#                         release vX.Y.Z created
+#
+# Versions are SemVer from the Conventional Commits since the last release (scripts/release/version.mjs). A nightly
+# builds the backend image once per architecture (native runners, merged into one manifest list), builds the website
+# once per environment (Next.js inlines each environment's public settings at build time; the two builds come from the
+# same commit in the same run), runs the whole CI gate against the commit and smoke-tests the image on both
+# architectures against a throwaway Postgres. The image is pushed under its own version and commit tags as it builds;
+# only after every gate does anything point at it: the prerelease carrying images.json and the website builds, and
+# the :nightly tag. Every channel runs from main only.
+#
+# The gap between release and promote is the human gate: look at staging, then promote; the `production` environment's
+# required reviewer approves the promote itself. Anything not configured yet (docs/releases.md, "One-time setup") is a
+# notice, not a failure. Staging and production run the train's own logic (scripts/release) from this workflow's
+# commit, checked out under .train, so a candidate staged before a change to the train is promoted by the train as it
+# is now.
+run-name: "${{ github.event_name == 'schedule' && 'nightly (scheduled)' || format('{0} {1}{2}', inputs.channel, inputs.nightly, inputs.staged) }}"
+
+on:
+  schedule:
+    - cron: "43 2 * * *"
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "nightly builds main now; release stages a nightly on staging; promote puts a staged build in production"
+        required: true
+        default: nightly
+        type: choice
+        options: [nightly, release, promote]
+      nightly:
+        description: "release only: the nightly tag to stage (default: the newest)"
+        required: false
+        default: ""
+        type: string
+      staged:
+        description: "promote only: the staged vX.Y.Z-rc.N to promote (default: the newest that passed staging)"
+        required: false
+        default: ""
+        type: string
+
+# Two queues (nightly; release and promote together), and no run in progress is ever cancelled: a cancelled release
+# could leave a half-moved tag. GitHub keeps one waiting run per queue, so a second dispatch while one waits replaces
+# the waiting one.
+concurrency:
+  group: release-${{ (github.event_name == 'schedule' || inputs.channel == 'nightly') && 'nightly' || 'release' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bookanything-backend
+
+jobs:
+  resolve:
+    name: Resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # actions: read is how a promote asks whether the run that staged a candidate passed its Staging job.
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      should_build: ${{ steps.resolve.outputs.should_build }}
+      channel: ${{ steps.resolve.outputs.channel }}
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      ref: ${{ steps.resolve.outputs.ref }}
+      previous_tag: ${{ steps.resolve.outputs.previous_tag }}
+      nightly_tag: ${{ steps.resolve.outputs.nightly_tag }}
+      staged_tag: ${{ steps.resolve.outputs.staged_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # A shut gate ends the run here, green, with should_build=false; a refusal (main rewritten under the last
+      # nightly, a commit already released, a candidate that did not pass staging or is behind production) fails it.
+      - id: resolve
+        name: Channel, version and commit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_CHANNEL: ${{ inputs.channel }}
+          DISPATCH_NIGHTLY: ${{ inputs.nightly }}
+          DISPATCH_STAGED: ${{ inputs.staged }}
+          SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+          PRODUCTION_SITE_CONFIGURED: ${{ vars.PRODUCTION_APP_URL != '' && vars.CLOUDFLARE_ACCOUNT_ID != '' }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release/release.mjs resolve
+
+  # ------------------------------------------------------------------------------------------------------ nightly ---
+
+  quality:
+    name: Quality gate
+    needs: resolve
+    if: needs.resolve.outputs.channel == 'nightly' && needs.resolve.outputs.should_build == 'true'
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.resolve.outputs.ref }}
+      release_gate: true
+
+  # One build per architecture on a native runner, pushed by digest only, so a failed platform never leaves a tagged
+  # half image. Provenance off: the manifest list holds the two images and nothing else.
+  image:
+    name: Backend image (${{ matrix.platform }})
+    needs: resolve
+    if: needs.resolve.outputs.channel == 'nightly' && needs.resolve.outputs.should_build == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            pair: linux-amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            pair: linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          platforms: ${{ matrix.platform }}
+          provenance: false
+          sbom: false
+          build-args: |
+            APP_VERSION=${{ needs.resolve.outputs.version }}
+          labels: |
+            org.opencontainers.image.title=bookanything-backend
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.resolve.outputs.ref }}
+            org.opencontainers.image.version=${{ needs.resolve.outputs.version }}
+          cache-from: type=gha,scope=backend-${{ matrix.pair }}
+          cache-to: type=gha,mode=max,scope=backend-${{ matrix.pair }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+      - name: Export digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          [[ "$DIGEST" == sha256:* ]] || { echo "build did not return a sha256 digest: '$DIGEST'" >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-platform-${{ matrix.pair }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-manifest:
+    name: Backend image (manifest)
+    needs: [resolve, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      REF: ${{ needs.resolve.outputs.ref }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: backend-platform-*
+          merge-multiple: true
+          path: platform-digests
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      # Tagged with the run's own tags only; :nightly moves in Publish, after every gate.
+      - name: Merge linux/amd64 and linux/arm64
+        run: |
+          sources=()
+          for path in platform-digests/*; do
+            name="$(basename "$path")"
+            [[ "$name" =~ ^[0-9a-f]{64}$ ]] && sources+=("${IMAGE}@sha256:${name}")
+          done
+          [[ "${#sources[@]}" -eq 2 ]] || { echo "expected 2 platform digests, found ${#sources[@]}" >&2; exit 1; }
+          docker buildx imagetools create -t "${IMAGE}:${VERSION}" -t "${IMAGE}:sha-${REF}" "${sources[@]}"
+      - name: The list holds both platforms
+        run: |
+          docker buildx imagetools inspect --format '{{json .Manifest}}' "${IMAGE}:${VERSION}" > manifest.json
+          jq -e '[.manifests[].platform | "\(.os)/\(.architecture)"] | sort == ["linux/amd64", "linux/arm64"]' manifest.json
+          digest="$(jq -r .digest manifest.json)"
+          [[ "$digest" == sha256:* ]] || { echo "no digest for the list" >&2; exit 1; }
+          sha_digest="$(docker buildx imagetools inspect --format '{{json .Manifest}}' "${IMAGE}:sha-${REF}" | jq -r .digest)"
+          [[ "$digest" == "$sha_digest" ]] || { echo ":${VERSION} and :sha-${REF} differ" >&2; exit 1; }
+          mkdir -p digests
+          echo "${IMAGE}@${digest}" > digests/backend
+          cat digests/backend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-backend
+          path: digests/backend
+          retention-days: 7
+
+  # The website, built once per environment from this commit: Next.js inlines NEXT_PUBLIC_* and the /api rewrite's
+  # destination at build time. An environment whose variables are not set yet is skipped with a notice.
+  site:
+    name: Website build (${{ matrix.environment }})
+    needs: resolve
+    if: needs.resolve.outputs.channel == 'nightly' && needs.resolve.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - environment: staging
+            prefix: STAGING
+            wrangler_env: staging
+          - environment: production
+            prefix: PRODUCTION
+            wrangler_env: ""
+    env:
+      NEXT_PUBLIC_APP_URL: ${{ vars[format('{0}_APP_URL', matrix.prefix)] }}
+      BACKEND_ORIGIN: ${{ vars[format('{0}_API_URL', matrix.prefix)] }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[format('{0}_CLERK_PUBLISHABLE_KEY', matrix.prefix)] }}
+      NEXT_PUBLIC_BUSINESS_MCP_ENABLED: ${{ vars[format('{0}_BUSINESS_MCP_ENABLED', matrix.prefix)] }}
+      WEBMCP_ORIGIN_TRIAL_TOKEN: ${{ vars[format('{0}_WEBMCP_ORIGIN_TRIAL_TOKEN', matrix.prefix)] }}
+    steps:
+      - id: configured
+        name: Is this environment's website set up?
+        run: |
+          if [[ -z "$NEXT_PUBLIC_APP_URL" ]]; then
+            echo "::notice title=No ${{ matrix.environment }} website build::${{ matrix.prefix }}_APP_URL is not set (docs/releases.md, One-time setup)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for name in BACKEND_ORIGIN NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY; do
+            [[ -n "${!name}" ]] || { echo "::error::${{ matrix.prefix }}_APP_URL is set but the variable behind $name is not (docs/releases.md, One-time setup)"; exit 1; }
+          done
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - if: steps.configured.outputs.ok == 'true'
+        working-directory: frontend
+        run: npm ci
+      - name: next build + OpenNext
+        if: steps.configured.outputs.ok == 'true'
+        working-directory: frontend
+        env:
+          WRANGLER_ENV: ${{ matrix.wrangler_env }}
+        run: |
+          npx opennextjs-cloudflare build --env "$WRANGLER_ENV"
+          tar -czf "../site-${{ matrix.environment }}.tar.gz" -C .open-next .
+      - uses: actions/upload-artifact@v4
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          name: site-${{ matrix.environment }}
+          path: site-${{ matrix.environment }}.tar.gz
+          retention-days: 7
+
+  # The image as each kind of VM runs it: pulled by the list's digest on a native runner of each architecture, against
+  # a throwaway Postgres (scripts/release/backend-smoke.sh).
+  acceptance:
+    name: Acceptance (backend image, ${{ matrix.platform }})
+    needs: [resolve, image-manifest]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          persist-credentials: false
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: digest-backend
+          path: digests
+      - name: Pull by digest and smoke-test it like a VM runs it
+        env:
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          docker pull -q "$(cat digests/backend)"
+          scripts/release/backend-smoke.sh "$(cat digests/backend)" "$VERSION"
+
+  publish:
+    name: Publish nightly
+    needs: [resolve, quality, acceptance, site]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+      REF: ${{ needs.resolve.outputs.ref }}
+      PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@v4
+        with:
+          name: digest-backend
+          path: digests
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: site-*
+          merge-multiple: true
+      - name: images.json
+        run: |
+          jq -n --arg version "$VERSION" --arg commit "$REF" --arg backend "$(cat digests/backend)" \
+            '{version: $version, commit: $commit, images: {backend: $backend}}' > images.json
+          cat images.json
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Move :nightly to this digest
+        run: docker buildx imagetools create -t "${IMAGE}:nightly" "$(cat digests/backend)"
+      - name: Release notes
+        env:
+          IMAGES_JSON: images.json
+        run: node scripts/release/release.mjs notes release-notes.md
+      - name: Publish the nightly
+        run: |
+          shopt -s nullglob
+          files=(images.json site-*.tar.gz)
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$REF" --prerelease --latest=false \
+            --title "Nightly ${VERSION}" --notes-file release-notes.md "${files[@]}"
+          {
+            echo "### Nightly \`$TAG\`"
+            echo
+            echo "Commit \`${REF:0:12}\`, image \`$(cat digests/backend)\`, website builds: ${files[*]:1}."
+            echo
+            echo "To stage it: *Actions → Release → Run workflow → release*."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the newest 14 nightly releases
+        run: node scripts/release/release.mjs prune-nightlies 14
+  # ------------------------------------------------------------------------------------------------------ release ---
+
+  # Staging only, never a rebuild: the nightly's digest and its staging website build (scripts/release/ship.sh), then
+  # the record a promote checks. The job's name is what a promote asks GitHub about.
+  staging:
+    name: Staging
+    needs: resolve
+    if: needs.resolve.outputs.channel == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_APP_URL }}
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+      REF: ${{ needs.resolve.outputs.ref }}
+      NIGHTLY_TAG: ${{ needs.resolve.outputs.nightly_tag }}
+      PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      # The train's logic as this workflow has it (see the header).
+      - uses: actions/checkout@v4
+        with:
+          path: .train
+          sparse-checkout: scripts
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: docker/setup-buildx-action@v3
+      - name: The nightly's image and website builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$NIGHTLY_TAG" --repo "$GITHUB_REPOSITORY" -p images.json -p 'site-*.tar.gz'
+          jq . images.json
+          test "$(jq -r .commit images.json)" = "$REF"
+      - id: ship
+        name: Ship it to staging
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ github.token }}
+          API_URL: ${{ vars.STAGING_API_URL }}
+          APP_URL: ${{ vars.STAGING_APP_URL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BACKEND_ORIGIN: ${{ vars.STAGING_API_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.STAGING_CLERK_SECRET_KEY }}
+          APPLE_APP_IDS: ${{ vars.STAGING_APPLE_APP_IDS }}
+          ANDROID_PACKAGE_NAME: ${{ vars.STAGING_ANDROID_PACKAGE_NAME }}
+          ANDROID_SHA256_FINGERPRINTS: ${{ vars.STAGING_ANDROID_SHA256_FINGERPRINTS }}
+        run: .train/scripts/release/ship.sh staging
+      # Everything above passed: record it. staged.json carries the digest, the sha256 of images.json and each website
+      # build, the nightly, the commit and this run, which is what a promote checks before it moves anything.
+      - name: Record what was staged
+        env:
+          SITE_DEPLOYED: ${{ steps.ship.outputs.site_deployed }}
+          SITE_URL: ${{ vars.STAGING_APP_URL }}
+        run: node .train/scripts/release/release.mjs record-staged staged.json
+      - name: Release notes
+        env:
+          IMAGES_JSON: images.json
+        run: node .train/scripts/release/release.mjs notes release-notes.md
+      # --target tags the commit that was staged, not wherever main has moved since. The job's last real step, so a
+      # candidate exists only for a staging that passed; promote still asks GitHub how this job ended.
+      - name: Publish the staged candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_URL: ${{ vars.STAGING_APP_URL }}
+        run: |
+          shopt -s nullglob
+          files=(images.json staged.json site-*.tar.gz)
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$REF" --prerelease --latest=false \
+            --title "Staged ${VERSION}" --notes-file release-notes.md "${files[@]}"
+          {
+            echo "### Staged as \`$TAG\`"
+            echo
+            echo "From \`$NIGHTLY_TAG\`, commit \`${REF:0:12}\`. Look at staging${APP_URL:+: $APP_URL}."
+            echo
+            echo "When it is right: *Actions → Release → Run workflow → promote* (staged: \`$TAG\`, or empty for the newest that passed)."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-report-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+
+  # ------------------------------------------------------------------------------------------------------ promote ---
+
+  # Production only, from a staged candidate resolve has vetted (its Staging job passed, its commit is unreleased and
+  # contains what production runs). The files are checked against staged.json before anything moves, so production
+  # gets byte for byte what staging tested: the same digest, and the production website build of the same nightly.
+  production:
+    name: Production
+    needs: resolve
+    if: needs.resolve.outputs.channel == 'promote'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_APP_URL }}
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      TAG: ${{ needs.resolve.outputs.tag }}
+      REF: ${{ needs.resolve.outputs.ref }}
+      STAGED_TAG: ${{ needs.resolve.outputs.staged_tag }}
+      NIGHTLY_TAG: ${{ needs.resolve.outputs.nightly_tag }}
+      PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: .train
+          sparse-checkout: scripts
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: docker/setup-buildx-action@v3
+      - name: The staged build, checked against what staging tested
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$STAGED_TAG" --repo "$GITHUB_REPOSITORY" -p images.json -p staged.json -p 'site-*.tar.gz'
+          jq . staged.json
+          node .train/scripts/release/release.mjs verify-staged
+      - name: Ship it to production
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ github.token }}
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+          APP_URL: ${{ vars.PRODUCTION_APP_URL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BACKEND_ORIGIN: ${{ vars.PRODUCTION_API_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.PRODUCTION_CLERK_SECRET_KEY }}
+          APPLE_APP_IDS: ${{ vars.PRODUCTION_APPLE_APP_IDS }}
+          ANDROID_PACKAGE_NAME: ${{ vars.PRODUCTION_ANDROID_PACKAGE_NAME }}
+          ANDROID_SHA256_FINGERPRINTS: ${{ vars.PRODUCTION_ANDROID_SHA256_FINGERPRINTS }}
+        run: .train/scripts/release/ship.sh production
+      - name: Release notes
+        env:
+          IMAGES_JSON: images.json
+        run: node .train/scripts/release/release.mjs notes release-notes.md
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(images.json staged.json site-*.tar.gz)
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$REF" --latest \
+            --title "bookanything ${VERSION}" --notes-file release-notes.md "${files[@]}"
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-report-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            frontend/playwright-report
+            frontend/test-results
