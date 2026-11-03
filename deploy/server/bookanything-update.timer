@@ -1,0 +1,11 @@
+# Checks the environment's image tag every minute (bookanything-update.service). Installed by bootstrap.sh.
+[Unit]
+Description=bookanything: check the environment's image tag every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=1min
+RandomizedDelaySec=10s
+
+[Install]
+WantedBy=timers.target

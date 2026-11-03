@@ -12,6 +12,9 @@ dashboard, and customers book, pay and manage their bookings.
   iPhone/iPad/Android; shares `frontend/src/lib`)
 - Engineering guide: [`docs/engineering.md`](docs/engineering.md) (module layout, layering, errors, testing, how to add
   a feature, lint/format/coverage checks)
+- Deployment: [`docs/deployment.md`](docs/deployment.md) (Cloudflare in front, the API on one EU VM behind a Cloudflare
+  Tunnel, managed Postgres; production and staging) and [`docs/releases.md`](docs/releases.md) (nightly, staging and
+  production releases, versions, the production monitor). Nothing is live yet.
 
 ## Prerequisites
 
