@@ -98,6 +98,9 @@ GitHub (Settings of the repository):
 | `STAGING_WEBMCP_ORIGIN_TRIAL_TOKEN`, `PRODUCTION_WEBMCP_ORIGIN_TRIAL_TOKEN` | Chrome's origin-trial token for that origin | optional, the website builds |
 | `STAGING_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN`, `PRODUCTION_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` | Edge's origin-trial token for that origin | optional, the website builds |
 | `STAGING_APPLE_APP_IDS`, `PRODUCTION_APPLE_APP_IDS`; `…_ANDROID_PACKAGE_NAME`; `…_ANDROID_SHA256_FINGERPRINTS` | as frontend/README.md §9 | optional, the Workers' runtime vars |
+| `STAGING_WEB_SENTRY_DSN`, `PRODUCTION_WEB_SENTRY_DSN` | the website's Sentry project DSN (public; may be the same for both, the environment tells them apart) | optional, the website builds and, through them, the Workers (unset: no error tracking; frontend/README.md "Error tracking (Sentry)") |
+| `STAGING_WEB_SENTRY_TRACES_SAMPLE_RATE`, `PRODUCTION_WEB_SENTRY_TRACES_SAMPLE_RATE` | `0.05` | optional, the website builds (unset: errors only) |
+| `SENTRY_ORG`, `SENTRY_WEB_PROJECT` | the Sentry organization and the website project's slugs | optional, the website builds' source-map upload (with `SENTRY_AUTH_TOKEN`) |
 
 4. **Repository secrets**:
 
@@ -105,6 +108,7 @@ GitHub (Settings of the repository):
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | the Workers token (deployment.md 2.1, step 5) |
 | `STAGING_CLERK_SECRET_KEY`, `PRODUCTION_CLERK_SECRET_KEY` | each Clerk instance's secret key, the Workers' only secret |
+| `SENTRY_AUTH_TOKEN` | optional: a Sentry organization token with release and source-map upload rights; the website builds upload their source maps under the train's version only when it, `SENTRY_ORG`, `SENTRY_WEB_PROJECT` and the environment's DSN are set |
 | `PUBLICATION_DENYLIST` | the pull request check's list of names that must never be published (engineering.md §14) |
 
 The nightly database backups have secrets and variables of their own (deployment.md section 4). The VMs need nothing

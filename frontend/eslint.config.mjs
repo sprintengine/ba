@@ -72,6 +72,10 @@ const WEB_ONLY_LIB = [
   "src/lib/hooks/use-unsaved-changes-guard.ts",
   "src/lib/hooks/use-url-params.ts",
   "src/lib/oauth/app-url.ts",
+  "src/lib/observability/sentry-client.ts",
+  "src/lib/observability/sentry-loader.ts",
+  "src/lib/observability/sentry-options.ts",
+  "src/lib/observability/sentry-worker.ts",
   "src/lib/site/fonts.ts",
   "src/lib/theme/business-theme.tsx",
   "src/lib/theme/theme-provider.tsx",
@@ -109,6 +113,8 @@ const WEB_ONLY_PACKAGES = [
   "tailwind-merge",
   "class-variance-authority",
   "server-only",
+  "@sentry/nextjs",
+  "@sentry/nextjs/*",
 ];
 
 /** Browser globals; React Native has none of them. `fetch` stays banned as everywhere (use the API layer). */
