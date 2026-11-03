@@ -1598,7 +1598,10 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
   Metadata documents: an https `client_id` with a path is fetched SSRF-safely (public addresses only, checked per connection, no
   redirects, 2 s, 5 KB, JSON), must name itself exactly, list valid `redirect_uris`, a `client_name`, and `none` authentication.
   Only the authorization endpoint fetches (at most 4 at a time; a document that failed is not fetched again for 5 minutes); the
-  token endpoint only knows clients stored by then.
+  token endpoint only knows clients stored by then. A refused document is logged with the reason (`ClientRegistry`, warn: the
+  user only sees that the app can't be connected). The token and revocation endpoints take `client_id` in the form or, when
+  the form has none, from `Authorization: Basic` (RFC 6749 2.3.1, the password ignored: there are no secrets; an unencoded
+  `https://` client_id is read up to the last colon).
 - **Authorize**: unknown client or unregistered redirect → our error page, never redirected. Otherwise errors
   (`unsupported_response_type`, `invalid_request` for missing/non-S256 PKCE, `invalid_target` for another `resource`) go back
   to the registered redirect with `state` and `iss`. The consent screen shows the app, where it will send the user (hostname,
@@ -1632,8 +1635,9 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
 - **CORS**: the well-known documents, `/v1/oauth/register|token|revoke` and the MCP servers allow any origin (bearer tokens or
   public data only, no cookies), exposing `WWW-Authenticate`, for browser-based MCP clients. The MCP servers allow the
   `Authorization`, `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` request headers (2026-07-28 clients send the last two
-  on every request; a preflight refusing them fails before the client can fall back to an older version). The consent API
-  (`/v1/oauth/authorize`) and everything else keep the default same-origin policy.
+  on every request; a preflight refusing them fails before the client can fall back to an older version). The token and
+  revocation endpoints allow `Authorization` too (Basic client identification). The consent API (`/v1/oauth/authorize`) and
+  everything else keep the default same-origin policy.
 - **Consent page hardening**: `/oauth/*` is served with `X-Frame-Options: DENY`, `frame-ancestors 'none'` (no clickjacking of
   "Allow") and `Referrer-Policy: no-referrer`; it only ever navigates to a `redirectTo` returned by the API (a registered redirect).
 
