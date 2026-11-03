@@ -22,9 +22,12 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
 import io.ktor.client.request.options
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -402,6 +405,38 @@ class OAuthFlowTest {
             header(HttpHeaders.AccessControlRequestHeaders, "authorization,content-type")
         }
         assertEquals(HttpStatusCode.OK, preflight.status)
+    }
+
+    @Test
+    fun `the MCP servers refuse a null or malformed Origin and allow real ones`() = withApp { api ->
+        suspend fun list(path: String, origin: String?) = api.client.post(path) {
+            if (origin != null) header(HttpHeaders.Origin, origin)
+            header(HttpHeaders.Accept, "application/json, text/event-stream")
+            header("MCP-Protocol-Version", "2025-11-25")
+            contentType(ContentType.Application.Json)
+            setBody("""{"jsonrpc":"2.0","id":1,"method":"tools/list"}""")
+        }
+        listOf(
+            null, "https://inspector.example", "http://localhost:6274", "http://[::1]:6274", "chrome-extension://abcdefghijklmnop",
+            "http://build_box.local:3000",
+        )
+            .forEach { assertEquals(HttpStatusCode.OK, list("/v1/mcp", it).status, "$it") }
+        listOf(
+            "null", "https://inspector.example/path", "inspector.example", "https://user@inspector.example", "https://a.example?x",
+            "https://a.example:",
+        )
+            .forEach { origin ->
+                val res = list("/v1/mcp", origin)
+                assertEquals(HttpStatusCode.Forbidden, res.status, origin)
+                assertEquals(-32600, res.obj()["error"]!!.o.i("code"), origin)
+            }
+        // Before authentication and CORS: the signed-in servers and preflights too.
+        assertEquals(HttpStatusCode.Forbidden, list("/v1/mcp/customer", "null").status)
+        val preflight = api.client.options("/v1/mcp") {
+            header(HttpHeaders.Origin, "null")
+            header(HttpHeaders.AccessControlRequestMethod, "POST")
+        }
+        assertEquals(HttpStatusCode.Forbidden, preflight.status)
     }
 
     private suspend fun io.ktor.client.HttpClient.submitFormRevoke(token: String) =
