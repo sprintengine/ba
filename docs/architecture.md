@@ -1638,6 +1638,11 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
   on every request; a preflight refusing them fails before the client can fall back to an older version). The token and
   revocation endpoints allow `Authorization` too (Basic client identification). The consent API (`/v1/oauth/authorize`) and
   everything else keep the default same-origin policy.
+- **Origin** (Streamable HTTP: an `Origin` that is present and invalid gets 403): the MCP routes refuse, before CORS and
+  authentication, an `Origin` of `null` (sandboxed frames, `file:` pages) or anything that isn't `scheme://host[:port]`, with a
+  JSON-RPC error with a null id (`McpOriginCheck`). Every real origin is allowed: the rule exists against DNS rebinding of
+  local servers, while ours are public, take bearer tokens and never cookies, and browser-based clients run on their own
+  sites. Requests without `Origin` (desktop and server-side clients) are unaffected.
 - **Consent page hardening**: `/oauth/*` is served with `X-Frame-Options: DENY`, `frame-ancestors 'none'` (no clickjacking of
   "Allow") and `Referrer-Policy: no-referrer`; it only ever navigates to a `redirectTo` returned by the API (a registered redirect).
 
