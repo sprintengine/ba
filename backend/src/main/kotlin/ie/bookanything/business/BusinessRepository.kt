@@ -44,7 +44,9 @@ object BusinessRepository {
         b.min_notice_minutes, b.max_advance_days, b.cancellation_notice_hours, b.late_cancellation_refund_percent,
         b.allow_customer_cancel, b.allow_customer_reschedule, b.hold_minutes, b.require_customer_phone,
         b.next_available_only,
-        b.stripe_account_id, b.stripe_charges_enabled, b.stripe_details_submitted, b.plan::text AS plan, b.plan_status,
+        b.stripe_account_id, b.stripe_charges_enabled, b.stripe_details_submitted, b.stripe_connect_method, b.stripe_account_generation,
+        b.plan::text AS plan,
+        b.plan_status,
         b.stripe_customer_id, b.stripe_subscription_id, b.created_at, b.ai_agents_access,
         b.ai_agents_auto_approve
     """
@@ -89,6 +91,8 @@ object BusinessRepository {
             AiAgentsAccess.parse(rs.str("ai_agents_access")),
             rs.stringList("ai_agents_auto_approve").mapNotNull(AgentChangeKind::parse).toSet(),
         ),
+        stripeConnectMethod = rs.strOrNull("stripe_connect_method"),
+        stripeAccountGeneration = rs.int("stripe_account_generation"),
     )
 
     /** Suspends a business (its last owner was deleted): kept for support to recover, hidden everywhere else. */

@@ -22,6 +22,13 @@ class TokenService(secret: String) {
     fun manageToken(bookingId: UUID): String = derive("manage:$bookingId")
     fun inviteToken(memberId: UUID): String = derive("invite:$memberId")
 
+    /** A MAC of [data] for [purpose] (e.g. a signed OAuth `state`); compare with [verify], never with `==`. */
+    fun sign(purpose: String, data: String): String = derive("$purpose:$data")
+
+    /** Whether [signature] is [sign] of [data] for [purpose] (constant time). */
+    fun verify(purpose: String, data: String, signature: String): Boolean =
+        MessageDigest.isEqual(sign(purpose, data).toByteArray(Charsets.UTF_8), signature.toByteArray(Charsets.UTF_8))
+
     private fun derive(input: String): String {
         val mac = Mac.getInstance("HmacSHA256")
         mac.init(key)

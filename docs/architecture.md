@@ -455,8 +455,11 @@ S* = staff only for resources linked to them; admins for all.
 
 | Method | Path | Auth | → |
 |---|---|---|---|
-| GET | `/payments/status` | A | `{provider:"stripe"|"dev"|"none", connected, chargesEnabled, detailsSubmitted}` (Stripe: read live from the account and stored) |
-| POST | `/payments/connect` | O | `{returnUrl}` → `{url}` (Stripe account onboarding link; creates the connected account on first call). Stripe returns to `returnUrl?stripe=return` (or `?stripe=refresh` when the link expired: call again) |
+| GET | `/payments/status` | A | `{provider:"stripe"|"dev"|"none", connected, chargesEnabled, detailsSubmitted, connectMethod:"created"|"oauth"|null, canConnectExisting, accountId, accountName}` (Stripe: read live from the account and stored) |
+| POST | `/payments/connect` | O | `{returnUrl}` → `{url}` (Stripe account onboarding link; creates the connected account on first call). Stripe returns to `returnUrl?stripe=return` (or `?stripe=refresh` when the link expired: call again). 409 for an account connected with OAuth (managed in its own Stripe dashboard) |
+| POST | `/payments/connect/existing` | O | `{returnUrl}` → `{url}` (Stripe Connect OAuth page with a signed single-use state); 409 when the business has an account, `PAYMENTS_NOT_CONFIGURED` without `STRIPE_CONNECT_CLIENT_ID`. Stripe sends the browser to `GET /v1/payments/stripe/callback` (no session; connects nothing), which redirects to `returnUrl?stripe=complete&code=…&state=…`, or `?stripe=connect_error&reason=denied|expired|invalid|failed` |
+| POST | `/payments/connect/existing/complete` | O | `{state, code}` → `{outcome: "connected"|"expired"|"invalid"|"forbidden"|"already_connected"|"account_in_use"|"currency"|"failed", currency}`; the state must be this business's and the caller's |
+| POST | `/payments/disconnect` | O | → `PaymentsStatus`: forgets the account, then closes its open checkouts and deauthorizes an OAuth account; 409 when none, or (OAuth) while upcoming bookings paid on it could need a refund |
 | GET | `/billing` | O | `{plan, status, usage:{bookingsThisMonth, limit}, prices:[…]}` (each plan's features include its monthly AI credits) |
 | GET | `/ai/usage` | A | `AiUsage`: this month's AI credits, per-feature usage, daily series (§16) |
 | POST | `/billing/checkout` | O | `{plan:"pro"|"business", returnUrl}` → `{url}` (Stripe returns to `returnUrl?billing=success|cancelled`); 409 `CONFLICT` when a subscription already exists (use the portal) |
@@ -648,10 +651,72 @@ type BusinessSetup = {
   (`PAYMENTS_NOT_CONFIGURED` when a paid service is booked, and paid services
   cannot be published: services needing online payment are omitted from
   `GET /v1/public/businesses/{slug}/services` while the business cannot take payments).
-- **Stripe Connect**: connected accounts with Stripe-hosted onboarding
-  (Account Links). The business is merchant of record: charges are created
-  **on the connected account** (`Stripe-Account` header), **no application
-  fee**. `account.updated` updates `stripe_charges_enabled`.
+- **Stripe Connect**: the owner either has us create an account (Stripe-hosted
+  onboarding, Account Links; `stripe_connect_method = 'created'`) or connects
+  one they already have (Connect OAuth, `'oauth'`; offered when
+  `STRIPE_CONNECT_CLIENT_ID` is set). The business is merchant of record:
+  charges are created **on the connected account** (`Stripe-Account` header),
+  **no application fee**. `account.updated` updates `stripe_charges_enabled`.
+  One business per account (unique `stripe_account_id`).
+- **Connecting an existing account** (`ConnectExisting`; Stripe's OAuth for
+  Standard accounts, still the way to link an account a platform didn't create;
+  Accounts v2 has no replacement and Stripe keeps OAuth platforms on v1):
+  1. `POST /payments/connect/existing` (owner): a random nonce is stored hashed
+     in `stripe_connect_states` with the business, the owner and the return
+     URL; the `state` is `base64url(v1.business.owner.nonce.expiry)` + an
+     HMAC (`TOKEN_SECRET`), valid 10 minutes.
+  2. Stripe redirects to `GET /v1/payments/stripe/callback` (through the app's
+     `/api` rewrite). It has no session, so it connects nothing: a state that
+     fails the MAC goes to `/dashboard` (`reason=invalid`); a used or expired
+     one, or Stripe's `access_denied` (which spends it), goes back with
+     `connect_error`; otherwise the code and state are passed to the owner's
+     page (`?stripe=complete&code=&state=`).
+  3. That page, signed in, calls `POST /payments/connect/existing/complete`.
+     The state must be this business's and this caller's: someone who starts
+     the flow and gets a victim to approve it at Stripe can't use the code (the
+     victim isn't them), so a victim's account can't be attached to their
+     business. The state is spent (once, row locked), the caller must still be
+     an owner and the business still without an account (checked before the
+     code is exchanged).
+  4. The code is exchanged once (`stripe.oauth.token`, no network retries:
+     Stripe revokes a connection whose code is used twice) for
+     `stripe_user_id` only; the deprecated access/refresh tokens are never
+     read or stored. The account is read (`charges_enabled`,
+     `details_submitted`, country, default currency) and linked unless another
+     business here has it (`account_in_use`) or it settles in another currency
+     than the business charges in (`currency`). The same account linked a
+     moment ago (a second tab) is success. Whenever Stripe connected an account
+     we then don't link (currency, Stripe failing to describe it, a database
+     error), the connection is deauthorized again, unless a business here uses
+     that account. Audit `payments.connected` / `payments.connect_failed`.
+  - **Each charge remembers its account** (`payments.provider_account`, copied
+    to its refunds): refunds, closing its checkout and Stripe's events about it
+    use that account, whatever the business is connected to now.
+  - **Disconnect** (`POST /payments/disconnect`, owner): the account is
+    forgotten in one transaction (its generation counter,
+    `stripe_account_generation`, goes into the idempotency key that creates an
+    account, so "create one for me" afterwards gets a new one). An account we
+    created stays the owner's, with its full dashboard, and we keep access: its
+    open Checkout Sessions are expired after the commit (one paid meanwhile
+    still confirms its booking) and its charges can still be refunded. For an
+    OAuth account our access ends, so nothing may still need it: its open
+    sessions are expired first (409 when one was just paid), and it is refused
+    (409) while a refund on it waits or an upcoming booking paid on it could be
+    refunded; after the commit it is deauthorized (`stripe.oauth.deauthorize`),
+    so Stripe's event finds no business.
+  - **Deauthorizing is guarded**: an account is never deauthorized (on
+    disconnect, or when undoing a connection) while a business here is linked
+    to it or money on it could still need it, for any business (a pending
+    refund, an open checkout, an upcoming booking paid there).
+  - **The return page** for connecting an existing account is always the
+    business's own payments settings page on `APP_BASE_URL`, never an embed
+    origin, since Stripe's code is passed back there.
+  - **`account.application.deauthorized`** (either way of connecting, from
+    Stripe's side): the business forgets the account (paid services are hidden
+    again), audit `payments.disconnected` (`reason: deauthorized`), and its
+    owners get a `payments_alert` notification. An event from no later than
+    the current link's second (`stripe_connected_at`) is about an earlier link
+    and is ignored.
 - **Checkout**: hosted Stripe Checkout Session per booking payment
   (`mode=payment`, `expires_at = hold expiry`, minimum 30 minutes, so
   the effective hold is `max(hold_minutes, 31)` when Stripe is active).
@@ -673,6 +738,7 @@ type BusinessSetup = {
   Billing events (`customer.subscription.*`, subscription checkouts,
   `invoice.payment_failed`) are only accepted from the platform account (no
   `event.account`); `account.updated` only from the account it describes.
+  `account.application.deauthorized` → the account is disconnected (above).
 - **Refund policy** on cancellation:
   - business cancels → full refund of amount paid.
   - customer cancels ≥ `cancellation_notice_hours` before start → full refund.
@@ -826,6 +892,7 @@ DATABASE_POOL_SIZE=10                     RUN_MIGRATIONS_ON_START=true (dev) / f
 AUTH_MODE=clerk|dev                       CLERK_ISSUER, CLERK_AUTHORIZED_PARTIES, CLERK_WEBHOOK_SECRET
 CLERK_ACCEPT_NATIVE_SESSIONS=false (accept tokens with no azp: the mobile app's; §3.1)
 STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET, STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS
+STRIPE_CONNECT_CLIENT_ID (ca_…; "connect an existing account")   STRIPE_CONNECT_REDIRECT_URI (default ${PUBLIC_API_URL}/v1/payments/stripe/callback)
 RESEND_API_KEY, EMAIL_FROM                TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
 PUSH_NOTIFICATIONS=expo|log|off (default log in development, off otherwise; §22)   EXPO_ACCESS_TOKEN
 ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default claude-opus-5-5)   UNSPLASH_ACCESS_KEY (stock photos)
@@ -1922,7 +1989,8 @@ by `user_id`.
 
 - **Kinds** (`InboxKind`): `agent_approval` (an AI app's change waits for the person's approval, business or customer
   side; emailed by default), and for the team `booking_request`, `new_booking`, `booking_cancelled`, `booking_moved`
-  (in the app only by default: the business's contact email already gets new bookings).
+  (in the app only by default: the business's contact email already gets new bookings), and for owners
+  `payments_alert` (taking payments needs them: Stripe was disconnected; emailed by default).
 - **Who**: approvals go to the person whose app asked. Booking news goes to the business's active owners and admins and
   to staff whose own resource the booking is on (`resources.member_id`), and only for what customers do (online, through
   their AI assistant): new bookings and requests whenever the business is emailed about them (in that job, so the booking

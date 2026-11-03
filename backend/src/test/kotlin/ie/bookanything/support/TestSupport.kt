@@ -240,7 +240,8 @@ class Api(val client: HttpClient) {
 
 fun withApp(env: TestEnv = TestEnv(), block: suspend ApplicationTestBuilder.(Api) -> Unit) = testApplication {
     application { module(env.ctx) }
-    block(Api(client))
+    // A redirect (Stripe's OAuth callback) is the answer under test, never a page to fetch from the app.
+    block(Api(createClient { followRedirects = false }))
 }
 
 fun newId(): UUID = UUID.randomUUID()

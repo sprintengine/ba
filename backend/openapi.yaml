@@ -480,7 +480,9 @@ paths:
         `provider_events` and processed by the job queue exactly once; replays answer 200 with `duplicate: true`.
         Handled types: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
         `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `account.updated`,
-        `customer.subscription.created|updated|deleted`, `invoice.payment_failed`. Other types are acknowledged and ignored.
+        `account.application.deauthorized` (the business's account is forgotten, so it stops taking online payments, and
+        its owners are told), `customer.subscription.created|updated|deleted`, `invoice.payment_failed`. Other types are
+        acknowledged and ignored.
       security: []
       parameters:
         - in: header
@@ -508,6 +510,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+
+  /v1/payments/stripe/callback:
+    get:
+      tags: [payments]
+      operationId: stripeConnectCallback
+      summary: Stripe Connect OAuth redirect (connect an existing account)
+      description: |
+        The redirect URI registered with Stripe (default `${PUBLIC_API_URL}/v1/payments/stripe/callback`, or
+        `STRIPE_CONNECT_REDIRECT_URI`). No session here, so it connects nothing: it checks the signed `state` from
+        `POST /businesses/{businessId}/payments/connect/existing` and always answers 302 to the `returnUrl` given at
+        the start: with `?stripe=complete&code=…&state=…` for the signed-in owner's page to call
+        `POST /businesses/{businessId}/payments/connect/existing/complete`, or with `?stripe=connect_error&reason=`
+        `denied` (the owner said no at Stripe; the state is spent), `expired` (state used or older than 10 minutes),
+        `invalid` (tampered or foreign state: to `/dashboard`) or `failed`.
+      security: []
+      parameters:
+        - { in: query, name: state, schema: { type: string } }
+        - { in: query, name: code, schema: { type: string } }
+        - { in: query, name: scope, schema: { type: string } }
+        - { in: query, name: error, schema: { type: string } }
+        - { in: query, name: error_description, schema: { type: string } }
+      responses:
+        '302':
+          description: Back to the app, with the outcome in the query.
+          headers:
+            Location: { schema: { type: string, format: uri } }
 
   /v1/webhooks/clerk:
     post:
@@ -2187,7 +2215,8 @@ paths:
         Minimum role: **owner**. `returnUrl` must be on the app origin (`APP_BASE_URL`) or an allowed CORS origin.
         With Stripe, the first call creates the business's connected account; the URL is a Stripe-hosted onboarding
         link. Stripe sends the user back to `returnUrl?stripe=return`, or to `returnUrl?stripe=refresh` when the link
-        expired (call this endpoint again). With provider `none`, the response is 409 `PAYMENTS_NOT_CONFIGURED`.
+        expired (call this endpoint again). With provider `none`, the response is 409 `PAYMENTS_NOT_CONFIGURED`; for an
+        account connected with OAuth (managed in its own Stripe dashboard), 409 `CONFLICT`.
         Stripe failures give 502 `PAYMENT_PROVIDER_ERROR`.
       requestBody:
         required: true
@@ -2205,6 +2234,114 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /v1/businesses/{businessId}/payments/connect/existing:
+    parameters:
+      - $ref: '#/components/parameters/BusinessId'
+    post:
+      tags: [payments]
+      operationId: connectExistingPayments
+      summary: Connect a Stripe account the business already has
+      description: |
+        Minimum role: **owner**. `returnUrl` must be this business's payments settings page on the app origin
+        (`${APP_BASE_URL}/dashboard/{slug}/settings/payments`; Stripe's code comes back there, so never an embed origin).
+        Returns Stripe's Connect OAuth page (`connect.stripe.com/oauth/authorize`, scope
+        `read_write`) with a signed, single-use `state` bound to the business and the caller, valid 10 minutes. Stripe
+        sends the browser to `GET /v1/payments/stripe/callback`, which redirects to `returnUrl` with the outcome.
+        409 `CONFLICT` when the business already has a Stripe account (disconnect it first); 409
+        `PAYMENTS_NOT_CONFIGURED` when this server can't (no Stripe, or no `STRIPE_CONNECT_CLIENT_ID`:
+        `PaymentsStatus.canConnectExisting` is false).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReturnUrlInput' }
+      responses:
+        '200':
+          description: Stripe's OAuth URL.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UrlResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /v1/businesses/{businessId}/payments/connect/existing/complete:
+    parameters:
+      - $ref: '#/components/parameters/BusinessId'
+    post:
+      tags: [payments]
+      operationId: completeConnectExistingPayments
+      summary: Finish connecting an existing Stripe account
+      description: |
+        Minimum role: **owner**. The `code` and `state` Stripe's redirect carried to the owner's page. The state must
+        have been issued to this business and to the caller (so a link someone else started can't attach the caller's
+        Stripe account to their business), unused and under 10 minutes old; it is spent. The code is exchanged for the
+        account id only (Stripe's access and refresh tokens are not kept), the account is read and linked. Answers 200
+        with `outcome`: `connected`, or `expired` (state used or too old, or code no longer valid), `invalid` (not
+        issued to this business and caller), `forbidden` (no longer an owner), `already_connected`, `account_in_use`
+        (that account takes payments for another business here), `currency` (with `currency`: the account settles in
+        another currency than the business charges in), `failed` (Stripe failed; try again). When Stripe had connected
+        the account and it can't be linked, the connection is undone at Stripe (unless another business here uses it).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state, code]
+              properties:
+                state: { type: string, maxLength: 512 }
+                code: { type: string, maxLength: 512 }
+      responses:
+        '200':
+          description: How it ended.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [outcome, currency]
+                properties:
+                  outcome:
+                    type: string
+                    enum: [connected, expired, invalid, forbidden, already_connected, account_in_use, currency, failed]
+                  currency: { type: [string, 'null'], description: 'The account''s currency, for `outcome: currency`.' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /v1/businesses/{businessId}/payments/disconnect:
+    parameters:
+      - $ref: '#/components/parameters/BusinessId'
+    post:
+      tags: [payments]
+      operationId: disconnectPayments
+      summary: Disconnect the business's Stripe account
+      description: |
+        Minimum role: **owner**. The account is forgotten and the business stops taking online payments; checkouts
+        still open on it are then closed. An account connected with OAuth is also disconnected at Stripe (the
+        platform's access ends), so it is refused (409 `CONFLICT`) while a refund on it is still being made, a checkout
+        on it was just paid, or upcoming bookings paid on it could still need a refund; it is not deauthorized while
+        another business's payments on it could still need it. An account created through bookanything stays the
+        owner's, with its own dashboard, and refunds of its payments keep working. Returns the new status. 409 `CONFLICT` when no account is connected,
+        `PAYMENTS_NOT_CONFIGURED` without Stripe.
+      responses:
+        '200':
+          description: Status after disconnecting.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentsStatus' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '502': { $ref: '#/components/responses/BadGateway' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
   /v1/businesses/{businessId}/billing:
@@ -5696,15 +5833,23 @@ components:
     # ---------------------------------------------------------------- payments / billing
     PaymentsStatus:
       type: object
-      required: [provider, connected, chargesEnabled, detailsSubmitted]
+      required: [provider, connected, chargesEnabled, detailsSubmitted, connectMethod, canConnectExisting, accountId, accountName]
       properties:
         provider:
           type: string
           enum: [stripe, dev, none]
-          description: The current server only returns `dev` or `none`. `stripe` is reserved for the Stripe provider.
         connected: { type: boolean }
         chargesEnabled: { type: boolean }
         detailsSubmitted: { type: boolean }
+        connectMethod:
+          type: [string, 'null']
+          enum: [created, oauth, null]
+          description: How the Stripe account was linked (`created` through bookanything's onboarding, `oauth` an existing account).
+        canConnectExisting:
+          type: boolean
+          description: Whether "I already have a Stripe account" is offered (`STRIPE_CONNECT_CLIENT_ID` is set).
+        accountId: { type: [string, 'null'], description: 'The Stripe account id (`acct_...`) when connected.' }
+        accountName: { type: [string, 'null'], description: The account's name in Stripe, when Stripe could be asked. }
     ReturnUrlInput:
       type: object
       required: [returnUrl]
@@ -6618,7 +6763,7 @@ components:
       required: [id, kind, title, body, link, businessName, createdAt, read]
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, enum: [agent_approval, booking_request, new_booking, booking_cancelled, booking_moved] }
+        kind: { type: string, enum: [agent_approval, booking_request, new_booking, booking_cancelled, booking_moved, payments_alert] }
         title: { type: string }
         body: { type: [string, 'null'] }
         link: { type: string, description: 'App path to open, e.g. /dashboard/lumen-physio/approvals/<id>.' }
@@ -6635,7 +6780,7 @@ components:
             type: object
             required: [kind, label, description, email, forMembers, forCustomers]
             properties:
-              kind: { type: string, enum: [agent_approval, booking_request, new_booking, booking_cancelled, booking_moved] }
+              kind: { type: string, enum: [agent_approval, booking_request, new_booking, booking_cancelled, booking_moved, payments_alert] }
               label: { type: string }
               description: { type: string }
               email: { type: boolean }

@@ -2,6 +2,9 @@ package ie.bookanything.payments
 
 import com.stripe.StripeClient
 import com.stripe.exception.StripeException
+import com.stripe.exception.oauth.InvalidClientException
+import com.stripe.exception.oauth.OAuthException
+import com.stripe.net.OAuth
 import com.stripe.net.RequestOptions
 import com.stripe.param.AccountCreateParams
 import com.stripe.param.AccountLinkCreateParams
@@ -14,7 +17,7 @@ import org.slf4j.LoggerFactory
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
 /** [StripeGateway] backed by the official stripe-java SDK (`StripeClient`, API v1 services). */
-class SdkStripeGateway(secretKey: String) : StripeGateway {
+class SdkStripeGateway(private val secretKey: String) : StripeGateway {
     private val log = LoggerFactory.getLogger(SdkStripeGateway::class.java)
 
     // Stripe calls are made outside database transactions (docs/architecture.md section 7), but a request still waits on
@@ -39,7 +42,40 @@ class SdkStripeGateway(secretKey: String) : StripeGateway {
 
     override fun retrieveAccount(accountId: String) = call("account.retrieve") {
         val a = client.v1().accounts().retrieve(accountId)
-        StripeAccountState(a.id, a.chargesEnabled == true, a.detailsSubmitted == true)
+        StripeAccountState(
+            a.id, a.chargesEnabled == true, a.detailsSubmitted == true, a.country, a.defaultCurrency?.lowercase(),
+            a.businessProfile?.name ?: a.settings?.dashboard?.displayName,
+        )
+    }
+
+    // OAuth lives on connect.stripe.com and only has the SDK's static API: the key and timeouts go in per request.
+    private fun oauthOptions(retries: Int) = RequestOptions.builder()
+        .setApiKey(secretKey)
+        .setConnectTimeout(CONNECT_TIMEOUT_MS)
+        .setReadTimeout(READ_TIMEOUT_MS)
+        .setMaxNetworkRetries(retries)
+        .build()
+
+    override fun exchangeOAuthCode(code: String): StripeOAuthConnection = call("oauth.token") {
+        try {
+            // No network retries: a second use of the code would revoke the connection the first one made.
+            val r = OAuth.token(mapOf("grant_type" to "authorization_code", "code" to code), oauthOptions(retries = 0))
+            StripeOAuthConnection(r.stripeUserId, r.livemode == true)
+        } catch (e: OAuthException) {
+            log.warn("stripe oauth.token refused: code={} requestId={}", e.code, e.requestId)
+            throw StripeOAuthError(e.code, e)
+        }
+    }
+
+    override fun deauthorizeAccount(clientId: String, accountId: String): Boolean = call("oauth.deauthorize") {
+        try {
+            OAuth.deauthorize(mapOf("client_id" to clientId, "stripe_user_id" to accountId), oauthOptions(MAX_NETWORK_RETRIES))
+            true
+        } catch (e: InvalidClientException) {
+            // Already disconnected (or never connected to this application): nothing left to undo.
+            log.info("stripe oauth.deauthorize for {}: not connected ({})", accountId, e.message)
+            false
+        }
     }
 
     override fun createAccountLink(params: AccountLinkCreateParams): String =

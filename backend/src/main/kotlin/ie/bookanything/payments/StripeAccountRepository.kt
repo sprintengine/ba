@@ -1,5 +1,6 @@
 package ie.bookanything.payments
 
+import ie.bookanything.db.instantOrNull
 import ie.bookanything.db.queryOne
 import ie.bookanything.db.update
 import ie.bookanything.db.uuid
@@ -8,10 +9,12 @@ import java.util.UUID
 
 /** The Stripe columns of `businesses`: the Connect account and its status, the billing customer and the plan. */
 object StripeAccountRepository {
-    fun setConnectStatus(conn: Connection, businessId: UUID, chargesEnabled: Boolean, detailsSubmitted: Boolean) {
+    /** Stores what Stripe said about [accountId], if it is still the business's account. */
+    fun setConnectStatus(conn: Connection, businessId: UUID, accountId: String, chargesEnabled: Boolean, detailsSubmitted: Boolean) {
         conn.update(
-            "UPDATE businesses SET stripe_charges_enabled = ?, stripe_details_submitted = ?, updated_at = now() WHERE id = ?",
-            chargesEnabled, detailsSubmitted, businessId,
+            "UPDATE businesses SET stripe_charges_enabled = ?, stripe_details_submitted = ?, updated_at = now() " +
+                "WHERE id = ? AND stripe_account_id = ?",
+            chargesEnabled, detailsSubmitted, businessId, accountId,
         )
     }
 
@@ -28,10 +31,41 @@ object StripeAccountRepository {
     /** Records a newly created Connect account unless the business already has one. */
     fun setAccountIdIfMissing(conn: Connection, businessId: UUID, accountId: String) {
         conn.update(
-            "UPDATE businesses SET stripe_account_id = ?, updated_at = now() WHERE id = ? AND stripe_account_id IS NULL",
+            "UPDATE businesses SET stripe_account_id = ?, stripe_connect_method = 'created', stripe_connected_at = now(), " +
+                "stripe_charges_enabled = false, stripe_details_submitted = false, updated_at = now() WHERE id = ? AND stripe_account_id IS NULL",
             accountId, businessId,
         )
     }
+
+    /** Links an existing account the owner connected (OAuth) to a business that has none; false when it has one. */
+    fun linkExisting(conn: Connection, businessId: UUID, accountId: String, chargesEnabled: Boolean, detailsSubmitted: Boolean): Boolean =
+        conn.update(
+            """
+            UPDATE businesses SET stripe_account_id = ?, stripe_connect_method = 'oauth', stripe_charges_enabled = ?,
+                stripe_details_submitted = ?, stripe_connected_at = now(), updated_at = now()
+            WHERE id = ? AND stripe_account_id IS NULL
+            """.trimIndent(),
+            accountId, chargesEnabled, detailsSubmitted, businessId,
+        ) == 1
+
+    /** When the business's current Stripe account was linked (null: none, or linked before this was recorded). */
+    fun connectedAt(conn: Connection, businessId: UUID): java.time.Instant? =
+        conn.queryOne("SELECT stripe_connected_at FROM businesses WHERE id = ?", businessId) { it.instantOrNull("stripe_connected_at") }
+
+    /** The business whose Stripe account is [accountId] (at most one: `businesses_stripe_account_uq`). */
+    fun businessIdByAccount(conn: Connection, accountId: String): UUID? =
+        conn.queryOne("SELECT id FROM businesses WHERE stripe_account_id = ?", accountId) { it.uuid("id") }
+
+    /** Forgets the business's Stripe account if it is still [accountId]; online payments stop. False when it wasn't. */
+    fun unlink(conn: Connection, businessId: UUID, accountId: String): Boolean = conn.update(
+        """
+        UPDATE businesses SET stripe_account_id = NULL, stripe_connect_method = NULL, stripe_connected_at = NULL,
+            stripe_charges_enabled = false, stripe_details_submitted = false,
+            stripe_account_generation = stripe_account_generation + 1, updated_at = now()
+        WHERE id = ? AND stripe_account_id = ?
+        """.trimIndent(),
+        businessId, accountId,
+    ) == 1
 
     /** Records a newly created billing customer unless the business already has one. */
     fun setCustomerIdIfMissing(conn: Connection, businessId: UUID, customerId: String) {

@@ -99,6 +99,12 @@ object InboxRepository {
         businessId, UuidArray(resourceIds),
     ) { it.uuid("user_id") }
 
+    /** The business's active owners. */
+    fun ownersOf(conn: Connection, businessId: UUID): List<UUID> = conn.query(
+        "SELECT user_id FROM business_members WHERE business_id = ? AND status = 'active' AND role = 'owner' AND user_id IS NOT NULL",
+        businessId,
+    ) { it.uuid("user_id") }
+
     /**
      * GDPR erasure: forgets the team's notifications that name a customer ([name], as it was before erasure): about
      * their bookings, and AI agents' changes whose summary names them.

@@ -59,7 +59,7 @@ class JobWorker(
 
     val handlers: Map<String, JobHandler> = mapOf(
         Notify.JOB_KIND to JobHandler(NotificationHandler(ctx.db, ctx.email, ctx.sms, ctx.tokens, ctx.config.urls, ctx.inbox)::handle),
-        StripeEvents.JOB_KIND to JobHandler(StripeEventProcessor(ctx.db, ctx.clock, ctx.config.stripe, lifecycle)::handle),
+        StripeEvents.JOB_KIND to JobHandler(StripeEventProcessor(ctx.db, ctx.clock, ctx.config.stripe, lifecycle, ctx.inbox)::handle),
         AiOverage.JOB_KIND to JobHandler { ctx.ai.overageJob.handle(it) },
         GeocodeJobs.KIND to GeocodeJobs.handler(ctx.db, ctx.geocoder, ctx.clock),
         PaymentService.REFUND_RETRY_JOB to JobHandler(ctx.booking.refunds::handle),

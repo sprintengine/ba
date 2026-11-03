@@ -21,6 +21,7 @@ import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.Conflict
 import io.ktor.http.HttpStatusCode.Companion.Created
 import io.ktor.http.HttpStatusCode.Companion.Forbidden
+import io.ktor.http.HttpStatusCode.Companion.Found
 import io.ktor.http.HttpStatusCode.Companion.NoContent
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
@@ -154,6 +155,8 @@ class RouteAccessMatrixTest {
             get("/v1/public/marketplace/meta", Open(OK)),
             get("/v1/public/marketplace/search", Open(OK)),
             post("/v1/webhooks/stripe", Open(ServiceUnavailable)),
+            // Stripe's OAuth redirect: it only relays to the owner's page, a session changes nothing (no state: back to the dashboard).
+            get("/v1/payments/stripe/callback", Open(Found)),
             post("/v1/webhooks/clerk", Open(ServiceUnavailable)),
             get("/v1/dev/emails", Open(OK)),
             get("/v1/dev/emails/{template}", Open(OK)),
@@ -282,6 +285,10 @@ class RouteAccessMatrixTest {
             // 6.8 Payments and billing
             get("$B/payments/status", Member(A, OK)),
             post("$B/payments/connect", Member(O, BadRequest)),
+            post("$B/payments/connect/existing", Member(O, BadRequest)),
+            post("$B/payments/connect/existing/complete", Member(O, BadRequest)),
+            // Development payments: there is no Stripe account to disconnect (409 PAYMENTS_NOT_CONFIGURED).
+            post("$B/payments/disconnect", Member(O, Conflict)),
             get("$B/billing", Member(O, OK)),
             post("$B/billing/checkout", Member(O, BadRequest)),
             post("$B/billing/portal", Member(O, BadRequest)),
