@@ -500,7 +500,8 @@ export function CustomersList() {
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | both / server | enable Clerk; unset = dev auth |
 | `NEXT_PUBLIC_ENABLE_DEV_ROUTES` | build | `true` to expose `/dev/*` in a production build |
 | `NEXT_PUBLIC_BUSINESS_MCP_ENABLED` | build | On unless `false` (set with the backend's `BUSINESS_MCP_ENABLED` kill switch): indexes and links the business agents guide |
-| `WEBMCP_ORIGIN_TRIAL_TOKEN` | build | Chrome's WebMCP origin-trial token for this origin, sent on `/[slug]/book`; unset = only browsers with WebMCP switched on |
+| `WEBMCP_ORIGIN_TRIAL_TOKEN` | build | Chrome's WebMCP origin-trial token for this origin, sent on every page (agents reach the booking flow, `/explore` and `/my` by client-side navigation); unset = only browsers with WebMCP switched on |
+| `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` | build | Edge's WebMCP origin-trial token, sent with Chrome's in the same `Origin-Trial` header |
 | `APPLE_APP_IDS` | server (runtime) | iOS app IDs whose universal links and sign-in this domain vouches for, comma-separated `TEAMID.bundle.id` (`V266333BR2.ie.bookanything.app`; staging `V266333BR2.ie.bookanything.app.preview`). Served at `/.well-known/apple-app-site-association`; unset = 404 |
 | `ANDROID_PACKAGE_NAME` | server (runtime) | Android package for App Links (`ie.bookanything.app`; staging `ie.bookanything.app.preview`). Served at `/.well-known/assetlinks.json` with the fingerprints below; either unset = 404 |
 | `ANDROID_SHA256_FINGERPRINTS` | server (runtime) | Comma-separated SHA-256 signing certificate fingerprints (`AA:BB:…`, 32 hex bytes, any case): the upload key's (`eas credentials`) and Play App Signing's (Play Console › App integrity). Malformed entries are dropped |
@@ -605,8 +606,14 @@ Checks: `npm run format:check`, `lint`, `typecheck`, `test:coverage` (thresholds
   drive the page through the same URL state and details form as clicks, so the customer watches each step and sees the
   review before anything is booked; `confirm_booking` is marked consequential and only works on the review step, and
   payment stays on the provider's page. The agent's input is checked in `lib/booking/agent.ts`; what it is told
-  (sensitive answers never repeated) is `lib/booking/agent-views.ts`. To try it: Chrome with
-  `chrome://flags/#enable-webmcp-testing`, or production with `WEBMCP_ORIGIN_TRIAL_TOKEN`.
+  (sensitive answers never repeated) is `lib/booking/agent-views.ts`. `/explore` offers `search_businesses` (the page's
+  own filters, so the visitor sees the results the agent reads) and `open_business`
+  (`components/explore/explore-agent-tools.ts`); signed in, `/my/bookings` offers `list_my_bookings`, `cancel_booking`
+  and `reschedule_booking` (`components/booking/my-bookings-agent-tools.ts`), the last two consequential: they open the
+  booking card's own dialog and the customer confirms there, never the agent. Every tool declares an `outputSchema`
+  (results and `{ error }`), which the tests check each result against (`src/test/model-context.ts`); the hook is
+  `lib/webmcp/use-model-context-tools.ts`. To try it: Chrome with `chrome://flags/#enable-webmcp-testing`, or
+  production with `WEBMCP_ORIGIN_TRIAL_TOKEN` (and `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` for Edge).
 
 ## 11. Known gaps / next steps
 
