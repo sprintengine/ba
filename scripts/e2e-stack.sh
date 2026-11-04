@@ -3,6 +3,8 @@
 # checkout on its own port, and a production frontend build (with the /dev routes) on another port.
 #
 #   scripts/e2e-stack.sh up      # build, migrate + seed a fresh database, start both servers
+#   scripts/e2e-stack.sh backend # the same without the frontend (the simulation talks to the API only)
+#   scripts/e2e-stack.sh backend-down  # stop the backend only and drop the database (after `backend`)
 #   scripts/e2e-stack.sh frontend  # rebuild and restart only the frontend (after frontend changes)
 #   scripts/e2e-stack.sh test    # run Playwright against it (extra args go to playwright, e.g. --repeat-each 1)
 #   scripts/e2e-stack.sh test-assistant-off  # restart the backend with Bo off, run assistant-off.spec.ts, restart it on
@@ -54,7 +56,7 @@ stop() { # pid file, port: the process we started, then whatever of ours still l
   if [[ -n "$left" ]]; then kill $left; fi
 }
 
-up() {
+backend_up() {
   mkdir -p "$STACK"
   echo "Building the backend distribution..."
   (cd "$ROOT" && ./gradlew -q :backend:distTar)
@@ -66,12 +68,16 @@ up() {
   createdb "$DB"
   (backend_env && "$STACK/backend/bin/backend" seed-demo > "$STACK/seed.log" 2>&1)
 
-  backend_up on
+  start_backend on
+}
+
+up() {
+  backend_up
   frontend_up
   echo "Stack is up: http://localhost:$FRONTEND_PORT (logs in $STACK)"
 }
 
-backend_up() { # on|off: Bo switched on or off
+start_backend() { # on|off: Bo switched on or off
   echo "Backend on :$BACKEND_PORT (Bo $1)..."
   local log="$STACK/backend.log"
   if [[ "$1" == "off" ]]; then log="$STACK/backend-assistant-off.log"; fi
@@ -112,7 +118,7 @@ restart_backend() { # on|off
     if [[ -z "$(lsof -t -iTCP:"$BACKEND_PORT" -sTCP:LISTEN 2>/dev/null || true)" ]]; then break; fi
     sleep 1
   done
-  backend_up "$1"
+  start_backend "$1"
 }
 
 down() {
@@ -122,11 +128,19 @@ down() {
   echo "Stack is down."
 }
 
+backend_down() {
+  stop "$STACK/backend.pid" "$BACKEND_PORT"
+  dropdb --if-exists "$DB" || true
+  echo "Backend is down."
+}
+
 case "${1:-}" in
   up) up ;;
+  backend) backend_up; echo "Backend is up: http://localhost:$BACKEND_PORT (logs in $STACK)" ;;
   frontend) stop "$STACK/frontend.pid" "$FRONTEND_PORT"; frontend_up ;;
   test) shift; run_tests "$@" ;;
   test-assistant-off) shift; run_assistant_off "$@" ;;
+  backend-down) backend_down ;;
   down) down ;;
-  *) echo "usage: $0 up|frontend|test|test-assistant-off|down" >&2; exit 2 ;;
+  *) echo "usage: $0 up|backend|frontend|test|test-assistant-off|backend-down|down" >&2; exit 2 ;;
 esac

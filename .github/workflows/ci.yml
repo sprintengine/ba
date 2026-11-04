@@ -178,6 +178,33 @@ jobs:
           path: mobile/coverage/
           if-no-files-found: ignore
 
+  simulation-checks:
+    name: Simulation checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: simulation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: simulation/package-lock.json
+
+      # Only simulation/ is installed: the website's API client it runs (frontend/src/lib) resolves its packages from
+      # simulation/node_modules (tsconfig.json paths), as the mobile app's shared code does.
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit tests with coverage thresholds
+        run: npm run test:coverage
+
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest

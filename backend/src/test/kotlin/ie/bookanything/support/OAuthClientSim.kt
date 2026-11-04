@@ -1,5 +1,7 @@
 package ie.bookanything.support
 
+import ie.bookanything.mcp.business.BusinessTools
+import ie.bookanything.mcp.customer.CustomerTools
 import ie.bookanything.oauth.Pkce
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
@@ -135,7 +137,9 @@ class OAuthClientSim(
 
     /** `tools/call`; returns the result (check [isError]). */
     suspend fun call(accessToken: String, tool: String, args: JsonElement = JsonObject(emptyMap())): JsonObject =
-        rpc(accessToken, "tools/call", buildJsonObject { put("name", tool); put("arguments", args) })
+        rpc(accessToken, "tools/call", buildJsonObject { put("name", tool); put("arguments", args) }).also {
+            McpOutputCheck.assertValid(if (mcpPath == BUSINESS_MCP_PATH) BusinessTools.ALL else CustomerTools.ALL, tool, it)
+        }
 
     /** The same app (same client id), connecting to the business MCP. */
     fun forBusiness(): OAuthClientSim =

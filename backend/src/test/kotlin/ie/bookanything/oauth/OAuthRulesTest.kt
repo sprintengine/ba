@@ -42,6 +42,15 @@ class OAuthRulesTest {
         assertTrue(RedirectUris.matches(registered, "http://localhost:3118/callback"), "RFC 8252 7.3: any loopback port")
         assertTrue(RedirectUris.matches(registered, "http://127.0.0.1:50000/callback"))
         assertFalse(RedirectUris.matches(registered, "http://localhost:3118/other"))
+        // Loopback names are one host: clients register one and listen on another.
+        assertTrue(RedirectUris.matches(listOf("http://localhost/callback"), "http://127.0.0.1:50000/callback"))
+        assertTrue(RedirectUris.matches(listOf("http://127.0.0.1:8080/callback"), "http://[::1]:9/callback"))
+        assertTrue(RedirectUris.matches(listOf("http://[::1]/callback"), "http://LOCALHOST:3118/callback"))
+        assertFalse(RedirectUris.matches(listOf("http://localhost/callback"), "http://127.0.0.2:3118/callback"), "loopback names only")
+        assertFalse(RedirectUris.matches(listOf("http://localhost/callback"), "https://127.0.0.1:3118/callback"), "same scheme")
+        assertFalse(RedirectUris.matches(listOf("http://localhost/callback"), "http://127.0.0.1:3118/callback?x=1"))
+        assertFalse(RedirectUris.matches(listOf("http://localhost/callback"), "http://127.0.0.1:3118/callback#x"))
+        assertFalse(RedirectUris.matches(listOf("http://localhost/callback"), "http://user@127.0.0.1:3118/callback"))
         assertFalse(RedirectUris.matches(listOf("https://app.example/cb"), "http://localhost:3118/cb"), "loopback only matches loopback")
     }
 
@@ -65,26 +74,35 @@ class OAuthRulesTest {
     }
 
     @Test
-    fun `scopes parse, default and honour the hierarchy`() {
-        assertEquals(ScopeRequest.Valid(customerScopes), ScopeRequest.parse(null))
-        assertEquals(ScopeRequest.Valid(customerScopes), ScopeRequest.parse("offline_access"))
-        assertEquals(ScopeRequest.Valid(setOf(Scope.BOOKINGS_READ)), ScopeRequest.parse("bookings:read offline_access"))
-        assertEquals(ScopeRequest.Unknown(listOf("admin")), ScopeRequest.parse("bookings:read admin"))
+    fun `scopes parse leniently, default and honour the hierarchy`() {
+        assertEquals(customerScopes, ScopeRequest.parse(null))
+        assertEquals(customerScopes, ScopeRequest.parse("offline_access"))
+        assertEquals(setOf(Scope.BOOKINGS_READ), ScopeRequest.parse("bookings:read offline_access"))
+        // Scopes we don't have are dropped, not refused; none left means the resource's defaults.
+        assertEquals(setOf(Scope.BOOKINGS_READ), ScopeRequest.parse("bookings:read admin"))
+        assertEquals(customerScopes, ScopeRequest.parse("openid profile email"))
+        assertEquals(emptySet(), ScopeRequest.requested("openid profile email", McpResource.CUSTOMER))
         assertTrue(Scope.satisfies(setOf(Scope.BOOKINGS_WRITE), Scope.BOOKINGS_READ), "write implies read")
         assertFalse(Scope.satisfies(setOf(Scope.BOOKINGS_READ), Scope.BOOKINGS_WRITE))
         assertFalse(Scope.satisfies(setOf(Scope.BOOKINGS_WRITE), Scope.MARKETPLACE_READ))
         assertEquals("bookings:read bookings:write marketplace:read", Scope.format(customerScopes.reversed()))
+        // Implied scopes are dropped from the minimal form; within() never holds more than either side.
+        assertEquals(setOf(Scope.BOOKINGS_WRITE, Scope.MARKETPLACE_READ), Scope.minimal(customerScopes))
+        assertEquals(customerScopes, Scope.within(customerScopes, customerScopes), "kept as requested")
+        assertEquals(setOf(Scope.BOOKINGS_READ), Scope.within(setOf(Scope.BOOKINGS_WRITE), setOf(Scope.BOOKINGS_READ)))
+        assertEquals(setOf(Scope.BOOKINGS_READ), Scope.within(setOf(Scope.BOOKINGS_READ), setOf(Scope.BOOKINGS_WRITE)))
+        assertEquals(emptySet(), Scope.within(setOf(Scope.BOOKINGS_READ), setOf(Scope.MARKETPLACE_READ)))
     }
 
     @Test
     fun `each scope belongs to one resource, and a request may only hold its resource's scopes`() {
         assertEquals(setOf(Scope.BUSINESS_READ, Scope.BUSINESS_WRITE), Scope.of(McpResource.BUSINESS))
-        assertEquals(ScopeRequest.Valid(Scope.of(McpResource.BUSINESS)), ScopeRequest.parse(null, McpResource.BUSINESS))
-        assertEquals(ScopeRequest.Valid(setOf(Scope.BUSINESS_READ)), ScopeRequest.parse("business:read", McpResource.BUSINESS))
-        assertEquals(
-            ScopeRequest.OtherResource(listOf("bookings:read")), ScopeRequest.parse("business:read bookings:read", McpResource.BUSINESS),
-        )
-        assertEquals(ScopeRequest.OtherResource(listOf("business:write")), ScopeRequest.parse("business:write"))
+        assertEquals(Scope.of(McpResource.BUSINESS), ScopeRequest.parse(null, McpResource.BUSINESS))
+        assertEquals(setOf(Scope.BUSINESS_READ), ScopeRequest.parse("business:read", McpResource.BUSINESS))
+        // The other server's scopes are dropped (clients copy every scope of the authorization server metadata).
+        assertEquals(setOf(Scope.BUSINESS_READ), ScopeRequest.parse("business:read bookings:read", McpResource.BUSINESS))
+        assertEquals(customerScopes, ScopeRequest.parse("business:write"))
+        assertEquals(Scope.of(McpResource.BUSINESS), ScopeRequest.parse(Scope.format(Scope.ALL), McpResource.BUSINESS))
         assertTrue(Scope.satisfies(setOf(Scope.BUSINESS_WRITE), Scope.BUSINESS_READ), "write implies read")
         assertFalse(Scope.satisfies(setOf(Scope.BUSINESS_WRITE), Scope.BOOKINGS_READ))
         assertFalse(Scope.satisfies(setOf(Scope.BOOKINGS_WRITE), Scope.BUSINESS_READ))
@@ -113,9 +131,18 @@ class OAuthRulesTest {
     }
 
     @Test
-    fun `refresh tokens rotate, and presenting a rotated one is a replay`() {
+    fun `refresh tokens rotate, and presenting a rotated one after the grace window is a replay`() {
         assertIs<Redemption.Valid<TokenRecord>>(TokenPolicy.classifyRefresh(token(SecretKind.REFRESH), now))
-        assertEquals(Redemption.Replayed(grant), TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now), now))
+        // A parallel refresh, or a retry after a lost response, within a minute of the rotation.
+        assertIs<Redemption.Reused<TokenRecord>>(TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now), now))
+        assertIs<Redemption.Reused<TokenRecord>>(TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now.minusSeconds(60)), now))
+        assertEquals(Redemption.Replayed(grant), TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now.minusSeconds(61)), now))
+        assertEquals(
+            Redemption.Replayed(grant),
+            TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now, expiresAt = now), now),
+            "an expired token gets no grace",
+        )
+        assertEquals(Redemption.Invalid, TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, usedAt = now, revoked = true), now))
         assertEquals(Redemption.Invalid, TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, expiresAt = now.minusSeconds(1)), now))
         assertEquals(Redemption.Invalid, TokenPolicy.classifyRefresh(token(SecretKind.REFRESH, revoked = true), now))
         assertEquals(
@@ -194,6 +221,23 @@ class OAuthRulesTest {
         assertEquals(null, off.resourceFor("$app/mcp/business"))
         assertEquals(listOf(McpResource.CUSTOMER), off.resources)
         assertTrue(off.scopes.none { it.resource == McpResource.BUSINESS })
+    }
+
+    @Test
+    fun `HTTP Basic names the client, its password ignored`() {
+        fun basic(raw: String) = "Basic " + java.util.Base64.getEncoder().encodeToString(raw.toByteArray())
+        assertEquals(null, OAuthBasic.clientId(null))
+        assertEquals(null, OAuthBasic.clientId("Bearer bat_x"))
+        assertEquals("dyn_abc", OAuthBasic.clientId(basic("dyn_abc:")))
+        assertEquals("dyn_abc", OAuthBasic.clientId(basic("dyn_abc:never-issued")))
+        assertEquals("dyn_abc", OAuthBasic.clientId("basic  " + basic("dyn_abc:").removePrefix("Basic ")))
+        val doc = "https://assistant.example:8443/oauth/client.json"
+        assertEquals(doc, OAuthBasic.clientId(basic("${java.net.URLEncoder.encode(doc, Charsets.UTF_8)}:")), "form-encoded")
+        assertEquals(doc, OAuthBasic.clientId(basic("$doc:")), "sent without encoding")
+        listOf("Basic !!!", basic("no-colon"), basic(":"), basic(":secret")).forEach { header ->
+            val e = kotlin.test.assertFailsWith<OAuthException>(header) { OAuthBasic.clientId(header) }
+            assertEquals("invalid_client", e.error)
+        }
     }
 
     @Test

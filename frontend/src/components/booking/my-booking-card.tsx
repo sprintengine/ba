@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarClock, CalendarX2, Clock, CreditCard, Hourglass, MapPin, UserRound } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
@@ -52,10 +52,30 @@ import { DateTile } from "./date-tile";
 import { CustomerPaymentBadge } from "./payment-badge";
 import { ReschedulePanel, useRescheduleState } from "./reschedule";
 
-/** One booking on My bookings, in its business's colour, with pay / calendar / reschedule / cancel. */
-export function MyBookingCard({ booking: b, past }: { booking: CustomerBooking; past: boolean }) {
+/**
+ * One booking on My bookings, in its business's colour, with pay / calendar / reschedule / cancel. `agentAction` opens
+ * the cancel or reschedule dialog for an AI agent in the browser (WebMCP), for the customer to confirm or dismiss;
+ * `onAgentActionDone` is called when they close it.
+ */
+export function MyBookingCard({
+  booking: b,
+  past,
+  agentAction = null,
+  onAgentActionDone,
+}: {
+  booking: CustomerBooking;
+  past: boolean;
+  agentAction?: "cancel" | "reschedule" | null;
+  onAgentActionDone?: () => void;
+}) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const showCancel = cancelOpen || agentAction === "cancel";
+  const showReschedule = rescheduleOpen || agentAction === "reschedule";
+  const card = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (agentAction) card.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [agentAction]);
   const cancel = useCancelMyBooking();
   const remaining = useCountdown(b.status === "held" ? b.holdExpiresAt : null);
   const awaitingPayment = b.status === "held" && remaining !== null && remaining > 0;
@@ -64,6 +84,7 @@ export function MyBookingCard({ booking: b, past }: { booking: CustomerBooking; 
   return (
     <BusinessThemeProvider primaryColor={b.business.branding.primaryColor}>
       <article
+        ref={card}
         className={cn(
           "group relative overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-shadow hover:shadow-sm dark:bg-surface-raised",
           inactive && "bg-surface/60",
@@ -106,12 +127,23 @@ export function MyBookingCard({ booking: b, past }: { booking: CustomerBooking; 
       </article>
       <CancelBookingDialog
         booking={b}
-        open={cancelOpen}
-        onOpenChange={setCancelOpen}
+        open={showCancel}
+        onOpenChange={(open) => {
+          setCancelOpen(open);
+          if (!open && agentAction === "cancel") onAgentActionDone?.();
+        }}
         cancel={(reason) => cancel.mutateAsync({ id: b.id, input: { reason } })}
         successMessage={`${b.service.name} with ${b.business.name} was cancelled`}
       />
-      {rescheduleOpen && <RescheduleDialog booking={b} onClose={() => setRescheduleOpen(false)} />}
+      {showReschedule && (
+        <RescheduleDialog
+          booking={b}
+          onClose={() => {
+            setRescheduleOpen(false);
+            if (agentAction === "reschedule") onAgentActionDone?.();
+          }}
+        />
+      )}
     </BusinessThemeProvider>
   );
 }

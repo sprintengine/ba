@@ -258,7 +258,8 @@ function resolve() {
       version: full,
       tag: full ? `v${full}` : "",
       ref: head,
-      previous_tag: lastTag ?? "",
+      // The notes cover what is new since the last nightly, or since the last release before the first nightly.
+      previous_tag: lastTag ?? released[0] ?? "",
       nightly_tag: "",
       staged_tag: "",
     });

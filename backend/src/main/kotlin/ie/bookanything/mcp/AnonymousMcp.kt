@@ -44,6 +44,7 @@ object AnonymousMcp {
                 description = "A business's public profile by slug: name, description, address, contact details, timezone, currency, " +
                     "booking policies (notice, cancellation), customer groups, whether it takes online payments, and its booking page URL.",
                 inputSchema = toolSchema(listOf("slug")) { string("slug", MarketplaceTools.SLUG) },
+                outputSchema = OutputSchemas.of(serializer<PublicBusiness>(), extra = listOf("bookingUrl" to OutputSchemas.string())),
                 annotations = READ_ONLY,
             ),
             null,
@@ -65,6 +66,13 @@ object AnonymousMcp {
                 "The bookable services of a business: duration, price in minor units (cents), payment mode, options (choose " +
                     "one with optionId), add-ons, the selectable resource (e.g. a therapist) and the booking questions.",
                 inputSchema = toolSchema(listOf("slug")) { string("slug", MarketplaceTools.SLUG) },
+                outputSchema = OutputSchemas.objectOf(
+                    listOf(
+                        "business" to OutputSchemas.string(), "currency" to OutputSchemas.string(),
+                        "timezone" to OutputSchemas.string(),
+                        "services" to OutputSchemas.schema(ListSerializer(serializer<PublicServiceDto>())),
+                    ),
+                ),
                 annotations = READ_ONLY,
             ),
             null,
@@ -81,7 +89,10 @@ object AnonymousMcp {
     )
 
     fun server(ctx: AppContext, call: ApplicationCall): Server = Server(
-        Implementation(name = "bookanything", version = "1.1.0", title = "bookanything", websiteUrl = ctx.config.appBaseUrl),
+        Implementation(
+            name = "bookanything", version = "1.1.0", title = "bookanything", websiteUrl = ctx.config.appBaseUrl,
+            icons = McpIcons.of(ctx.config.appBaseUrl),
+        ),
         ServerOptions(capabilities = ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = false))),
         "Search bookanything's marketplace of Irish businesses, read a business's services and check free times. This server is " +
             "read-only: to book, reschedule or cancel as the user, connect the signed-in bookanything server " +

@@ -19,7 +19,8 @@ object MeService {
     fun me(conn: Connection, user: CurrentUser, tokens: TokenService): MeDto {
         val pending = user.verifiedEmail?.let { email ->
             val invitations = Invitations.pendingFor(conn, email)
-            invitations.forEach { Invitations.accept(conn, it, user, strict = false) }
+            // In business order: each acceptance takes its business's seat lock, so two sign-ins can't wait on each other.
+            invitations.sortedBy { it.businessId }.forEach { Invitations.accept(conn, it, user, strict = false) }
             if (invitations.isEmpty()) emptyList() else Invitations.pendingFor(conn, email)
         }.orEmpty()
         val businesses = BusinessRepository.findByIds(conn, pending.map { it.businessId }.toSet())
