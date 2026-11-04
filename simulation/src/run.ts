@@ -112,7 +112,7 @@ const RETIRE_AFTER_MS = 2 * 3_600_000;
  */
 async function openBusiness(sim: Sim, n: number, limitScenario: boolean): Promise<SimBusiness | null> {
   const key = limitScenario ? "limit" : `b${n}`;
-  const ownerId = identity(sim.tag, "owner", limitScenario ? 0 : n);
+  const ownerId = identity(sim.tag, "owner", limitScenario ? 0 : n, sim.auth.namespace);
   let created: SimBusiness | null = null;
   await sim.act(
     "setup.business",
@@ -162,7 +162,8 @@ async function openRegularBusiness(sim: Sim, n: number): Promise<SimBusiness | n
 
 /** The businesses, then the Free plan scenario on a business of its own. */
 async function setUp(sim: Sim) {
-  for (let i = 1; i <= sim.options.customers; i++) sim.customers.push(identity(sim.tag, "customer", i));
+  for (let i = 1; i <= sim.options.customers; i++)
+    sim.customers.push(identity(sim.tag, "customer", i, sim.auth.namespace));
   const health = await attempt(publicApi.health());
   if (!health.ok)
     throw new Error(`The API at ${sim.options.baseUrl} is not healthy: ${health.code} ${health.message}`);

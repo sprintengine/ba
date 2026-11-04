@@ -864,7 +864,7 @@ export function seats(b: SimBusiness): number {
 export async function teamInvite(sim: Sim, a: ActionScope, b: SimBusiness): Promise<string> {
   const resource = a.rng.maybePick(persons(b).filter((r) => r.memberId === null));
   const full = seats(b) >= 3;
-  const staff = identity(sim.tag, `staff${b.key}x`, a.seq);
+  const staff = identity(sim.tag, `staff${b.key}x`, a.seq, sim.auth.namespace);
   const result = await a.expect(
     "invite staff",
     teamApi.invite(b.id, { email: staff.email, role: "staff", resourceId: resource?.id ?? null }),

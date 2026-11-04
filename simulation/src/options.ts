@@ -1,5 +1,6 @@
 /** Command-line options (docs/simulation.md, "Options"); environment variables give defaults for CI and staging. */
 import { parseArgs } from "node:util";
+import type { AuthMode } from "./auth";
 import { parseDuration } from "./time";
 
 export type PaymentsMode = "dev" | "stripe-checkout";
@@ -30,6 +31,8 @@ export type Options = {
   /** Read-only SQL access for the checker (optional). */
   databaseUrl: string | null;
   payments: PaymentsMode;
+  /** How bots sign in: dev tokens, or staging's simulation tokens (SIMULATION_AUTH_SECRET). */
+  auth: AuthMode;
   /** With `stripe-checkout`: the share of paid bookings paid through Checkout; the rest are abandoned or cancelled. */
   stripeShare: number;
   /** Drive one Free business to its monthly limit (and race past it) at the start. */
@@ -72,6 +75,8 @@ export const USAGE = `Usage: npm run sim -- [options]            (run)
   --report PATH         Markdown report (SIM_REPORT, default ${DEFAULTS.report}, out/replay.md for a replay; "-" for none)
   --database-url URL    read-only Postgres URL for SQL checks (SIM_DATABASE_URL)
   --payments dev|stripe-checkout   how bots pay (SIM_PAYMENTS, default dev)
+  --auth dev|simulation-token      how bots sign in (SIM_AUTH, default dev; simulation-token for staging, with
+                        SIMULATION_AUTH_SECRET in the environment)
   --stripe-share F      share of paid bookings paid through Stripe Checkout (SIM_STRIPE_SHARE, default 0.1)
   --no-plan-limit       skip the Free plan limit scenario
   --strict              known failures fail the run too
@@ -128,6 +133,7 @@ export function parseOptions(argv: string[]): Options {
       report: { type: "string" },
       "database-url": { type: "string" },
       payments: { type: "string" },
+      auth: { type: "string" },
       "stripe-share": { type: "string" },
       "no-plan-limit": { type: "boolean" },
       strict: { type: "boolean" },
@@ -177,6 +183,7 @@ export function parseOptions(argv: string[]): Options {
       "dev",
       "stripe-checkout",
     ] as const),
+    auth: oneOf(values.auth ?? env("SIM_AUTH") ?? "dev", "auth", ["dev", "simulation-token"] as const),
     stripeShare: share,
     planLimit: !values["no-plan-limit"],
     strict: values.strict ?? false,

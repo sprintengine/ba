@@ -6,7 +6,7 @@ import { onboardingApi } from "@shared/api/onboarding";
 import { resourcesApi } from "@shared/api/resources";
 import { servicesApi } from "@shared/api/services";
 import type { BusinessSetup, Policies } from "@shared/api/types";
-import type { SimIdentity } from "./auth";
+import { DEV_NAMESPACE, type IdentityNamespace, type SimIdentity } from "./auth";
 import type { RuleLike } from "./oracle";
 import type { Rng } from "./rng";
 import type { SimBusiness, SimResource } from "./shadow";
@@ -82,11 +82,16 @@ export function randomHours(rng: Rng): RuleLike[] {
   return weeklyHours(open, close, withBreak, closedDay);
 }
 
-export function identity(tag: string, role: string, n: number): SimIdentity {
-  const domain = role === "customer" ? "example.test" : "bookanything.test";
+/** A bot's identity in [namespace] (the auth provider's: dev tokens' by default, `sim_…` for simulation tokens). */
+export function identity(
+  tag: string,
+  role: string,
+  n: number,
+  namespace: IdentityNamespace = DEV_NAMESPACE,
+): SimIdentity {
   return {
-    sub: `dev_sim_${tag}_${role}${n}`,
-    email: `sim-${tag}-${role}${n}@${domain}`,
+    sub: `${namespace.subjectPrefix}${tag}_${role}${n}`,
+    email: `sim-${tag}-${role}${n}@${namespace.emailDomain(role)}`,
     name: `${role[0]!.toUpperCase()}${role.slice(1)} ${n} ${tag}`,
   };
 }
