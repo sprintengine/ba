@@ -11,7 +11,11 @@ import ie.bookanything.http.ApiException
 import io.ktor.http.HttpStatusCode
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
-/** A connected account as Stripe reports it; [country], [defaultCurrency] (lowercase) and [displayName] when known. */
+/**
+ * A connected account as Stripe reports it; [country], [defaultCurrency] (lowercase) and [displayName] when known, its
+ * [metadata], and what Stripe still needs before it enables it ([requirementsDue]: currently and past due, and
+ * [disabledReason]).
+ */
 data class StripeAccountState(
     val id: String,
     val chargesEnabled: Boolean,
@@ -19,6 +23,9 @@ data class StripeAccountState(
     val country: String? = null,
     val defaultCurrency: String? = null,
     val displayName: String? = null,
+    val metadata: Map<String, String> = emptyMap(),
+    val requirementsDue: List<String> = emptyList(),
+    val disabledReason: String? = null,
 )
 
 /**
@@ -74,9 +81,16 @@ class StripeRefusedException(val stripeCode: String?) :
  * assert exactly what would be sent (connected account, no application fee, expiry, metadata)
  * with a fake gateway and no network.
  */
+@Suppress("TooManyFunctions") // One method per Stripe call we make, so the fake can stand in for each.
 interface StripeGateway {
     fun createAccount(params: AccountCreateParams, options: RequestOptions): String
     fun retrieveAccount(accountId: String): StripeAccountState
+
+    /**
+     * Deletes a connected account the platform controls (test mode: any it created); false when Stripe has none by
+     * that id (deleted already). Only the staging simulation's accounts are ever deleted ([SimulationStripeAccounts]).
+     */
+    fun deleteAccount(accountId: String): Boolean
     fun createAccountLink(params: AccountLinkCreateParams): String
 
     /**

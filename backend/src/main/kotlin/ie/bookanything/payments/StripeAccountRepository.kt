@@ -28,14 +28,12 @@ object StripeAccountRepository {
             chargesEnabled, detailsSubmitted, accountId, chargesEnabled, detailsSubmitted,
         ) { it.uuid("id") }
 
-    /** Records a newly created Connect account unless the business already has one. */
-    fun setAccountIdIfMissing(conn: Connection, businessId: UUID, accountId: String) {
-        conn.update(
-            "UPDATE businesses SET stripe_account_id = ?, stripe_connect_method = 'created', stripe_connected_at = now(), " +
-                "stripe_charges_enabled = false, stripe_details_submitted = false, updated_at = now() WHERE id = ? AND stripe_account_id IS NULL",
-            accountId, businessId,
-        )
-    }
+    /** Records a newly created Connect account unless the business already has one; false when it had. */
+    fun setAccountIdIfMissing(conn: Connection, businessId: UUID, accountId: String): Boolean = conn.update(
+        "UPDATE businesses SET stripe_account_id = ?, stripe_connect_method = 'created', stripe_connected_at = now(), " +
+            "stripe_charges_enabled = false, stripe_details_submitted = false, updated_at = now() WHERE id = ? AND stripe_account_id IS NULL",
+        accountId, businessId,
+    ) == 1
 
     /** Links an existing account the owner connected (OAuth) to a business that has none; false when it has one. */
     fun linkExisting(conn: Connection, businessId: UUID, accountId: String, chargesEnabled: Boolean, detailsSubmitted: Boolean): Boolean =

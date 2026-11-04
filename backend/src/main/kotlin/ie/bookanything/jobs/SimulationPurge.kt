@@ -1,6 +1,6 @@
 package ie.bookanything.jobs
 
-import ie.bookanything.auth.SimulationIdentity
+import ie.bookanything.auth.SimulationBusinesses
 import ie.bookanything.config.AppConfig
 import ie.bookanything.db.Db
 import ie.bookanything.db.UuidArray
@@ -8,6 +8,9 @@ import ie.bookanything.db.count
 import ie.bookanything.db.query
 import ie.bookanything.db.update
 import ie.bookanything.db.uuid
+import ie.bookanything.payments.SimulationStripeAccounts
+import ie.bookanything.payments.SimulationStripeAccounts.Deleted
+import org.slf4j.LoggerFactory
 import java.io.PrintStream
 import java.sql.Connection
 import java.time.Clock
@@ -26,32 +29,31 @@ import javax.sql.DataSource
  *   member who isn't one (a real tester invited into a simulated business keeps it). Deleting one deletes its
  *   bookings, customers, payments, audit trail and emails with it;
  * - **users** created before the cutoff whose subject (`sim_…`) and email (`…@sim.bookanything.test`) are both the
- *   simulation's ([SimulationIdentity]), who belong to no business and are no business's customer any more.
+ *   simulation's ([ie.bookanything.auth.SimulationIdentity]), who belong to no business and are no business's customer
+ *   any more;
+ * - the deleted businesses' **Stripe test accounts** ([SimulationStripeAccounts]), once the businesses are gone: only
+ *   accounts marked as the simulation's for that business, only with a test key, best effort (a failure is logged and
+ *   counted, and the purge goes on).
  *
  * The cutoff must be older than any run still going: a run's checker reads every business it opened until it ends.
  */
 object SimulationPurge {
-    data class Result(val businesses: Int, val users: Int)
+    /**
+     * What was deleted (or with a dry run, would be): businesses, users, and the businesses' Stripe accounts
+     * ([stripeAccounts] deleted or gone already, [stripeAccountsLeft] not deleted: no test key, not the simulation's,
+     * or Stripe failed).
+     */
+    data class Result(val businesses: Int, val users: Int, val stripeAccounts: Int = 0, val stripeAccountsLeft: Int = 0)
+
+    private val log = LoggerFactory.getLogger(SimulationPurge::class.java)
 
     const val DEFAULT_DAYS = 7L
     private const val BATCH = 20
 
-    /** A simulation user, `u` in the query (both namespace checks, as [SimulationIdentity.isUser]). */
-    private val SIM_USER = """
-        (left(u.clerk_user_id, ${SimulationIdentity.SUBJECT_PREFIX.length}) = '${SimulationIdentity.SUBJECT_PREFIX}'
-         AND lower(split_part(u.email::text, '@', 2)) = '${SimulationIdentity.EMAIL_DOMAIN}')
-    """.trimIndent()
+    private val SIM_USER = SimulationBusinesses.SIM_USER
 
     /** A simulation business, `b` in the query, created before the cutoff (the first parameter). */
-    private val SIM_BUSINESS = """
-        b.created_at < ? AND left(b.slug, 4) = 'sim-'
-          AND EXISTS (
-            SELECT 1 FROM business_members m JOIN users u ON u.id = m.user_id
-            WHERE m.business_id = b.id AND m.role = 'owner' AND $SIM_USER)
-          AND NOT EXISTS (
-            SELECT 1 FROM business_members m JOIN users u ON u.id = m.user_id
-            WHERE m.business_id = b.id AND NOT $SIM_USER)
-    """.trimIndent()
+    private val SIM_BUSINESS = "b.created_at < ? AND ${SimulationBusinesses.SIM_BUSINESS}"
 
     private val BUSINESSES = "SELECT b.id FROM businesses b WHERE $SIM_BUSINESS ORDER BY b.created_at"
 
@@ -68,25 +70,51 @@ object SimulationPurge {
           AND NOT EXISTS (SELECT 1 FROM customers c WHERE c.user_id = u.id)
     """.trimIndent()
 
-    /** Deletes (or with [dryRun] only counts) the simulation's businesses and users created before [before]. */
-    fun purge(db: Db, before: Instant, dryRun: Boolean = false): Result {
+    /**
+     * Deletes (or with [dryRun] only counts) the simulation's businesses and users created before [before], and with
+     * [stripe] (a test key) the deleted businesses' Stripe test accounts.
+     */
+    fun purge(db: Db, before: Instant, dryRun: Boolean = false, stripe: SimulationStripeAccounts? = null): Result {
         val businesses = db.txBlocking(readOnly = true) { conn -> conn.query(BUSINESSES, before) { it.uuid("id") } }
         if (dryRun) {
             // Users that would go once those businesses have: count them as if they had.
-            val users = db.txBlocking(readOnly = true) { conn -> countUsersAfter(conn, before, businesses) }
-            return Result(businesses.size, users)
+            val (users, accounts) = db.txBlocking(readOnly = true) { conn ->
+                countUsersAfter(conn, before, businesses) to conn.count(
+                    "SELECT count(*) FROM businesses WHERE id = ANY(?) AND stripe_account_id IS NOT NULL", UuidArray(businesses),
+                ).toInt()
+            }
+            // Linked accounts: deleted with a test key (unless Stripe says they aren't the simulation's), else left.
+            return Result(businesses.size, users, if (stripe != null) accounts else 0, if (stripe != null) 0 else accounts)
         }
+        val accounts = mutableListOf<Pair<UUID, String>>()
         val deleted = businesses.chunked(BATCH).sumOf { chunk ->
             db.txBlocking { conn ->
                 conn.query(LOCK_BUSINESSES, UuidArray(chunk)) { it.uuid("id") }
                 val still = UuidArray(conn.query(STILL_SIM_BUSINESSES, UuidArray(chunk), before) { it.uuid("id") })
                 // email_log keeps its rows when a business goes (business_id is set null): these are the simulation's.
                 conn.update("DELETE FROM email_log WHERE business_id = ANY(?)", still)
-                conn.update("DELETE FROM businesses WHERE id = ANY(?)", still)
+                val gone = conn.query("DELETE FROM businesses WHERE id = ANY(?) RETURNING id, stripe_account_id", still) {
+                    it.uuid("id") to it.getString("stripe_account_id")
+                }
+                // Stripe is called once the deletion has committed, outside the transaction.
+                gone.mapNotNullTo(accounts) { (id, account) -> account?.let { id to it } }
+                gone.size
             }
         }
         val users = db.txBlocking { conn -> conn.update("DELETE FROM users u WHERE $USERS_WHERE", before) }
-        return Result(deleted, users)
+        val outcomes = accounts.map { (business, account) ->
+            val outcome = stripe?.deleteIfOurs(account, business) ?: Deleted.FAILED
+            if (outcome == Deleted.DELETED) log.info("simulation purge: deleted Stripe account {} of business {}", account, business)
+            outcome
+        }
+        if (stripe == null && accounts.isNotEmpty()) {
+            log.warn(
+                "simulation purge: {} Stripe accounts of deleted businesses left at Stripe (no Stripe test key): {}",
+                accounts.size, accounts.joinToString { it.second },
+            )
+        }
+        val done = outcomes.count { it == Deleted.DELETED || it == Deleted.GONE }
+        return Result(deleted, users, done, outcomes.size - done)
     }
 
     private fun countUsersAfter(conn: Connection, before: Instant, businesses: List<UUID>): Int = conn.count(
@@ -109,6 +137,8 @@ object SimulationPurge {
         out: PrintStream = System.out,
         err: PrintStream = System.err,
         clock: Clock = Clock.systemUTC(),
+        /** The Stripe test accounts to delete with the businesses: none without a test key. */
+        stripe: () -> SimulationStripeAccounts? = { SimulationStripeAccounts.forKey(config.stripe.secretKey) },
         dataSource: () -> DataSource,
     ): Int {
         if (!config.env.allowsSimulationAuth) {
@@ -122,12 +152,18 @@ object SimulationPurge {
         val before = clock.instant().minus(Duration.ofDays(options.days))
         val ds = dataSource()
         val result = try {
-            purge(Db(ds), before, options.dryRun)
+            purge(Db(ds), before, options.dryRun, stripe())
         } finally {
             (ds as? AutoCloseable)?.close()
         }
         val verb = if (options.dryRun) "would delete" else "deleted"
         out.println("purge-simulation: $verb ${result.businesses} businesses and ${result.users} users created before $before")
+        if (result.stripeAccounts > 0 || result.stripeAccountsLeft > 0) {
+            out.println(
+                "purge-simulation: $verb ${result.stripeAccounts} Stripe test accounts" +
+                    if (result.stripeAccountsLeft > 0) ", ${result.stripeAccountsLeft} left at Stripe (see the log)" else "",
+            )
+        }
         return 0
     }
 

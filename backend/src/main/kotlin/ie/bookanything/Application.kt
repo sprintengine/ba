@@ -42,6 +42,7 @@ import ie.bookanything.observability.Telemetry
 import ie.bookanything.offers.offerRoutes
 import ie.bookanything.offers.publicOfferRoutes
 import ie.bookanything.payments.paymentSettingsRoutes
+import ie.bookanything.payments.simulationPaymentRoutes
 import ie.bookanything.payments.stripeConnectCallbackRoutes
 import ie.bookanything.payments.stripeWebhookRoutes
 import ie.bookanything.releases.releaseRoutes
@@ -332,6 +333,7 @@ private fun Route.apiRoutes(ctx: AppContext) {
             teamRoutes(ctx)
             reportRoutes(ctx)
             paymentSettingsRoutes(ctx)
+            simulationPaymentRoutes(ctx)
             if (ctx.config.sitesEnabled) siteRoutes(ctx)
             uploadRoutes(ctx)
             aiUsageRoutes(ctx)
