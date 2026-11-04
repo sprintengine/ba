@@ -1,11 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  authHeader,
-  BO_SWITCHED_ON,
-  requireLiveBackend,
-  signInAs,
-  waitForDashboard,
-} from "./dashboard-helpers";
+import { authHeader, BO_SWITCHED_ON, requireLiveBackend, signInAs } from "./dashboard-helpers";
 import { createSiteBusiness } from "./site-helpers";
 
 /**
@@ -38,7 +32,10 @@ test("the dashboard has no Bo: no launcher, ⌘J or Ask Bo, and its routes aren'
   page.on("request", (r) => asked.push(new URL(r.url()).pathname));
   await signInAs(page, owner);
   await page.goto(`/dashboard/${slug}`);
-  await waitForDashboard(page);
+  // The sidebar's navigation on wide screens, the tab bar on phones.
+  await expect(page.getByRole("navigation", { name: /^(Dashboard|Quick navigation)$/ }).first()).toBeVisible({
+    timeout: 20_000,
+  });
   await expect(page.getByRole("button", { name: /^Open Bo/ })).toHaveCount(0);
 
   // ⌘J first; then ⌘K, which loads after the page as Bo's panel would: once it's up, a panel would be too.
