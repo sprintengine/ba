@@ -33,7 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-server-cors-jvm")
     implementation("io.ktor:ktor-server-compression-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.11.0")
-    implementation("com.zaxxer:HikariCP:6.3.3")
+    implementation("com.zaxxer:HikariCP:7.1.0")
     implementation("org.postgresql:postgresql:42.7.14")
     implementation("org.liquibase:liquibase-core:4.33.0")
     implementation("com.nimbusds:nimbus-jose-jwt:10.10")
