@@ -109,6 +109,24 @@ export function businesses() {
   return Array.from({ length: count }, (_, i) => createBusiness(run, i + 1));
 }
 
+/**
+ * Warms the backend up before measuring: a freshly started JVM answers its first requests slowly while it compiles
+ * them, which a short run would report as latency. Each business's availability is read a few times over the ranges
+ * the scenarios use; tagged `warm-up`, so these requests count towards no threshold.
+ */
+export function warmUp(targets) {
+  for (let round = 0; round < 3; round++) {
+    for (const t of targets) {
+      for (const days of [6, 30]) {
+        http.get(`${BASE_URL}/v1/public/businesses/${t.slug}/availability?serviceId=${t.serviceId}&from=${day(1)}&to=${day(1 + days)}`, {
+          tags: { name: "warm-up" },
+        });
+      }
+      http.get(`${BASE_URL}/v1/public/businesses/${t.slug}`, { tags: { name: "warm-up" } });
+    }
+  }
+}
+
 /** The first public service of [slug] that needs no online payment. */
 export function serviceOf(slug) {
   const res = http.get(`${BASE_URL}/v1/public/businesses/${slug}/services`, { tags: { name: "services" } });

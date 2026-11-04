@@ -9,7 +9,7 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Counter } from "k6/metrics";
-import { BASE_URL, EXPECTED, businesses, day, json, serviceOf, uid } from "./lib.js";
+import { BASE_URL, EXPECTED, businesses, day, json, serviceOf, uid, warmUp } from "./lib.js";
 
 http.setResponseCallback(EXPECTED);
 
@@ -74,7 +74,9 @@ export const options = {
 
 export function setup() {
   const slugs = businesses();
-  return { targets: slugs.map((slug) => ({ slug, serviceId: serviceOf(slug) })) };
+  const targets = slugs.map((slug) => ({ slug, serviceId: serviceOf(slug) }));
+  warmUp(targets);
+  return { targets };
 }
 
 function target(data) {
