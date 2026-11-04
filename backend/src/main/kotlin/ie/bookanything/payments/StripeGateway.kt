@@ -46,6 +46,19 @@ data class StripeSessionRef(
     val expiresAt: Long? = null,
 )
 
+/** A platform subscription as Stripe has it now (not as an event described it): what billing is applied from. */
+data class StripeSubscription(
+    val id: String,
+    val status: String,
+    val customer: String?,
+    val priceIds: List<String>,
+    val metadata: Map<String, String>,
+    val latestInvoice: String?,
+)
+
+/** A payment of an invoice: its PaymentIntent and how much it paid. */
+data class StripeInvoicePayment(val paymentIntent: String, val amountPaid: Long, val currency: String)
+
 /** A refund as Stripe reports it: [status] "succeeded", "pending", "requires_action", "failed" or "canceled". */
 data class StripeRefundRef(val id: String, val status: String?, val failureReason: String? = null)
 
@@ -82,6 +95,15 @@ interface StripeGateway {
     fun createRefund(params: RefundCreateParams, options: RequestOptions): StripeRefundRef
     fun createCustomer(params: CustomerCreateParams, options: RequestOptions): String
     fun createPortalSession(params: PortalSessionCreateParams): String
+
+    /** A platform subscription as it is now; null when Stripe has none by that id. */
+    fun retrieveSubscription(subscriptionId: String): StripeSubscription?
+
+    /** Cancels a platform subscription at once (no proration, no final invoice); [idempotencyKey] makes it once. */
+    fun cancelSubscription(subscriptionId: String, idempotencyKey: String)
+
+    /** The paid payments of a platform invoice. */
+    fun invoicePayments(invoiceId: String): List<StripeInvoicePayment>
 
     /** Billing Meter event (AI overage, docs/architecture.md section 16). */
     fun createMeterEvent(params: MeterEventCreateParams)

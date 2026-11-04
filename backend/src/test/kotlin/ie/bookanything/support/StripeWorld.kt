@@ -34,12 +34,14 @@ class StripeWorld(val clock: MutableClock = MutableClock(DEFAULT_NOW), config: S
         return account
     }
 
-    suspend fun post(api: Api, payload: String, secret: String = StripeTest.CONNECT_SECRET): HttpResponse =
-        api.client.post("/v1/webhooks/stripe") {
+    suspend fun post(api: Api, payload: String, secret: String = StripeTest.CONNECT_SECRET): HttpResponse {
+        gateway.observe(payload)
+        return api.client.post("/v1/webhooks/stripe") {
             header("Stripe-Signature", StripeTest.signature(payload, secret, clock.instant().epochSecond))
             contentType(ContentType.Application.Json)
             setBody(payload)
         }
+    }
 
     suspend fun send(api: Api, payload: String, secret: String = StripeTest.CONNECT_SECRET): JsonObject =
         post(api, payload, secret).also { assertStatus(HttpStatusCode.OK, it) }.obj()

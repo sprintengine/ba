@@ -57,6 +57,7 @@ class StripePaymentsTest {
     }
 
     private suspend fun send(api: Api, s: StripeEnv, payload: String, secret: String = StripeTest.CONNECT_SECRET): JsonObject {
+        s.gateway.observe(payload)
         val res = api.client.post("/v1/webhooks/stripe") {
             header("Stripe-Signature", StripeTest.signature(payload, secret, s.env.clock.instant().epochSecond))
             contentType(io.ktor.http.ContentType.Application.Json)
@@ -558,7 +559,10 @@ class StripePaymentsTest {
                 api, s,
                 StripeTest.event(
                     "invoice.payment_failed",
-                    mapOf("id" to "in_1", "object" to "invoice", "customer" to customerId, "amount_due" to 1200),
+                    mapOf(
+                        "id" to "in_1", "object" to "invoice", "customer" to customerId, "amount_due" to 1200,
+                        "parent" to mapOf("subscription_details" to mapOf("subscription" to "sub_${clinic.slug}")),
+                    ),
                 ),
                 StripeTest.WEBHOOK_SECRET,
             )
