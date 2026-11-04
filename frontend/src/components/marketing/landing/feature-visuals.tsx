@@ -1,4 +1,4 @@
-import { Check, EyeOff, Lock, X } from "lucide-react";
+import { ArrowUpRight, Bot, Check, EyeOff, Lock, X } from "lucide-react";
 import { ASSISTANT_NAME } from "@/lib/assistant/constants";
 import { BusinessThemeProvider } from "@/lib/theme/business-theme";
 import { cn } from "@/lib/utils";
@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { INDUSTRY_LIST } from "../industry-content";
 import { CalBlock, CAL_BOOKINGS, CAL_COLUMNS } from "./prism/face-calendar";
-import { BoPebble, LIGHT_BAR, Tile } from "./prism/face-parts";
+import { BoPebble, LIGHT_BAR, LIGHT_LINE, Tile } from "./prism/face-parts";
 import s from "./prism/prism.module.css";
 
 /** A pane of glass that tilts with the tile it sits in. */
@@ -92,6 +92,63 @@ export function AssistantChat() {
           Not now
         </span>
         <span className="sr-only">{ASSISTANT_NAME} proposes; a person confirms.</span>
+      </div>
+    </Pane>
+  );
+}
+
+/** The owner's own AI assistant (business MCP): it prepares the change, and the owner approves it on bookanything. */
+export function OwnAssistantChat() {
+  return (
+    <Pane className="flex w-[18rem] max-w-full flex-col gap-3 p-4 text-[0.84375rem] leading-[1.45]">
+      <p className="self-end rounded-[14px_14px_4px_14px] bg-primary px-[13px] py-[9px] text-[0.8125rem] text-primary-foreground">
+        Who’s free Friday at 3?
+      </p>
+      <div className="flex gap-2.5">
+        <Tile className="size-[26px] rounded-full shadow-md [&_svg]:size-3.5">
+          <Bot />
+        </Tile>
+        <p>Aoife is. I’ve prepared a change: Seán Murphy’s follow-up moves to her.</p>
+      </div>
+      <span className="inline-flex h-8 w-fit items-center gap-1.5 rounded-[10px] bg-primary px-[13px] text-[0.78125rem] font-semibold text-primary-foreground [&_svg]:size-3.5">
+        Approve on bookanything
+        <ArrowUpRight />
+      </span>
+    </Pane>
+  );
+}
+
+/** A class: several clients in one session, until the places run out. */
+export function GroupSession() {
+  const booked = ["Orla Kenny", "Liam Byrne", "Ciarán Walsh", "Gráinne Lynch", "Dara Quinn", "Seán Murphy"];
+  return (
+    <Pane className="flex w-[18rem] max-w-full flex-col gap-3.5 p-4">
+      <div className="flex items-start justify-between gap-2">
+        <span className="min-w-0">
+          <b className="block text-[0.8125rem] font-semibold">Rehab class</b>
+          <span className="text-xs text-muted-foreground">Thursday 18:00 · Rehab gym</span>
+        </span>
+        <Badge className="h-5 px-1.5 text-2xs">Up to 8</Badge>
+      </div>
+      <div className="flex gap-1.5">
+        {booked.map((name) => (
+          <Avatar key={name} name={name} size="sm" />
+        ))}
+        {[0, 1].map((i) => (
+          <span
+            key={i}
+            className="size-6 rounded-full border-[1.5px] border-dashed border-border-strong bg-surface"
+          />
+        ))}
+      </div>
+      <div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-(--prism-hairline)">
+          <div className={cn("h-full w-3/4 rounded-full", LIGHT_LINE)} />
+        </div>
+        <div className="mt-2 flex justify-between text-xs">
+          <span className="tnum font-semibold">6 of 8 booked</span>
+          <span className="text-muted-foreground">2 places left</span>
+        </div>
       </div>
     </Pane>
   );

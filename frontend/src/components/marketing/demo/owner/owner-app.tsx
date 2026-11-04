@@ -1,5 +1,6 @@
 "use client";
 
+import { assistantMarketed } from "@/lib/assistant/flag";
 import { DemoOverlay, DemoSheet, DemoToast } from "./primitives";
 import { BoPanel } from "./screens/bo-panel";
 import { BookingDrawer } from "./screens/booking-drawer";
@@ -26,10 +27,13 @@ function Screen({ s }: { s: OwnerState }) {
 
 /** The replica dashboard in one state of the script (loaded on its own: see OwnerDemo). */
 export function OwnerApp({ s }: { s: OwnerState }) {
-  const overlay = !!s.sheet || !!s.drawer || s.bo.open;
+  // Without Bo on the public pages, the replica has no launcher or panel either (the tour skips Bo's chapter).
+  const bo = assistantMarketed();
+  const overlay = !!s.sheet || !!s.drawer || (bo && s.bo.open);
   return (
     <DemoShell
       route={s.route}
+      bo={bo}
       boOpen={s.bo.open}
       scroll={s.scroll}
       overlays={
@@ -41,9 +45,11 @@ export function OwnerApp({ s }: { s: OwnerState }) {
           <DemoSheet open={!!s.drawer} width={520} className="overflow-hidden">
             <BookingDrawer />
           </DemoSheet>
-          <DemoSheet open={s.bo.open} width={440}>
-            <BoPanel bo={s.bo} />
-          </DemoSheet>
+          {bo && (
+            <DemoSheet open={s.bo.open} width={440}>
+              <BoPanel bo={s.bo} />
+            </DemoSheet>
+          )}
           <DemoToast toast={s.toast} />
         </>
       }

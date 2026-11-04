@@ -1,11 +1,15 @@
 import { ASSISTANT_NAME } from "@/lib/assistant/constants";
+import { assistantMarketed } from "@/lib/assistant/flag";
+import { businessAgentsLive } from "@/lib/oauth/app-url";
 import { cn } from "@/lib/utils";
 import {
   AssistantChat,
   BrandSwatches,
   DoubleBooking,
+  GroupSession,
   GroupWindows,
   MiniCalendar,
+  OwnAssistantChat,
   SensitiveQuestion,
   TeamList,
   Vocabulary,
@@ -16,7 +20,32 @@ import { Tilt } from "./tilt";
 
 type TileSpec = { title: string; body: string; wide?: boolean; visual: React.ReactNode };
 
-const TILES: TileSpec[] = [
+const BO_TILE: TileSpec = {
+  title: `${ASSISTANT_NAME}, an assistant for your team`,
+  body: "Ask about your week or have it draft changes. Someone on your team approves each one first.",
+  visual: <AssistantChat />,
+};
+const OWN_ASSISTANT_TILE: TileSpec = {
+  title: "Bring your own AI assistant",
+  body: "Connect Claude, ChatGPT or another assistant to ask about your week or prepare changes. By default, each one waits for approval on bookanything.",
+  visual: <OwnAssistantChat />,
+};
+const GROUP_TILE: TileSpec = {
+  title: "Classes and group sessions",
+  body: "Let several clients book the same session, and show them how many places are left.",
+  visual: <GroupSession />,
+};
+
+/**
+ * The third tile, for AI: Bo where it's offered, else the owner's own assistant on the business server. With neither
+ * on, a class takes the slot, so the grid keeps its shape.
+ */
+function aiTile(): TileSpec {
+  if (assistantMarketed()) return BO_TILE;
+  return businessAgentsLive() ? OWN_ASSISTANT_TILE : GROUP_TILE;
+}
+
+const tiles = (): TileSpec[] => [
   {
     title: "Book the person and the room together",
     body: "A session with Sam holds the rehab gym too, so nobody turns up to find the room taken.",
@@ -28,11 +57,7 @@ const TILES: TileSpec[] = [
     body: "The check runs in the database, so it holds even when two people grab the same slot at once.",
     visual: <DoubleBooking />,
   },
-  {
-    title: `${ASSISTANT_NAME}, an assistant for your team`,
-    body: "Ask about your week or have it draft changes. Someone on your team approves each one first.",
-    visual: <AssistantChat />,
-  },
+  aiTile(),
   {
     title: "Ask what you need to know",
     body: "Add your own questions to the booking form. Mark one sensitive and the answer stays with your team.",
@@ -77,7 +102,7 @@ export function FeaturesSection() {
           lead="Set your rules once and every booking follows them, whether it comes from your page, your team or a client’s assistant."
         />
         <div className="mt-14 grid gap-3 sm:mt-16 md:grid-cols-2 lg:grid-cols-3 lg:gap-4">
-          {TILES.map((t) => (
+          {tiles().map((t) => (
             <Tilt
               key={t.title}
               className={cn(

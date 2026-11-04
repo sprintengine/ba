@@ -2,8 +2,9 @@
  * Where the glass slab sits, as pure functions: the hero's slab above (or beside) the hero copy, and the closing
  * slab in its anchor under the last call to action. The stage feeds these from the viewport each frame.
  *
- * Faces: 0 hero · 1 today · 2 calendar · 3 reminders · 4 payments · 5 Bo · 6 the client's booking page · 7 closing CTA.
- * Faces 0 and 7 ride the slab; 1–6 are glass cards in the page's flow, one per story beat (see story-beats.tsx).
+ * Faces: 0 hero · 1 today · 2 calendar · 3 reminders · 4 payments · 5 an AI assistant (Bo, or the owner's own) ·
+ * 6 the client's booking page · 7 closing CTA. Faces 0 and 7 ride the slab; 1–6 are glass cards in the page's flow,
+ * one per story beat (see story-beats.tsx).
  */
 
 export type FaceSize = { w: number; h: number; r: number };
@@ -30,8 +31,6 @@ export const PHONE_FACES: readonly FaceSize[] = [
   { w: 350, h: 320, r: 34 },
 ];
 export const FACE_COUNT = DESK_FACES.length;
-/** The six story beats after the hero (faces 1–6). */
-export const BEATS = ["Today", "Calendar", "Reminders", "Payments", "Bo", "Clients"] as const;
 
 /** Below this width the faces use the phone designs. */
 export const PHONE_MAX = 760;
