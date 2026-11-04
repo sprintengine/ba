@@ -2412,6 +2412,7 @@ paths:
         subscription session; Stripe returns to `returnUrl?billing=success` or `?billing=cancelled`. The plan changes
         when the subscription webhook arrives. Returns 409 `PAYMENTS_NOT_CONFIGURED` until Stripe billing is configured,
         409 `CONFLICT` when a subscription already exists (use the portal), 502 `PAYMENT_PROVIDER_ERROR` on Stripe failures.
+        Asked for again within the same 30-minute clock window (same plan and `returnUrl`), it answers the same checkout.
       requestBody:
         required: true
         content:

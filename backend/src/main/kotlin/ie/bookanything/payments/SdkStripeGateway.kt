@@ -11,7 +11,9 @@ import com.stripe.net.RequestOptions
 import com.stripe.param.AccountCreateParams
 import com.stripe.param.AccountLinkCreateParams
 import com.stripe.param.CustomerCreateParams
+import com.stripe.param.InvoicePaymentListParams
 import com.stripe.param.RefundCreateParams
+import com.stripe.param.SubscriptionCancelParams
 import com.stripe.param.billing.MeterEventCreateParams
 import com.stripe.param.checkout.SessionCreateParams
 import ie.bookanything.http.Errors
@@ -108,6 +110,35 @@ class SdkStripeGateway(private val secretKey: String) : StripeGateway {
 
     override fun createPortalSession(params: PortalSessionCreateParams): String =
         call("billing_portal.session.create") { client.v1().billingPortal().sessions().create(params).url }
+
+    override fun retrieveSubscription(subscriptionId: String): StripeSubscription? = try {
+        call("subscription.retrieve") {
+            val s = client.v1().subscriptions().retrieve(subscriptionId)
+            StripeSubscription(
+                s.id, s.status, s.customer, s.items?.data.orEmpty().mapNotNull { it.price?.id }, s.metadata.orEmpty(), s.latestInvoice,
+            )
+        }
+    } catch (e: StripeRefusedException) {
+        if (e.stripeCode == "resource_missing") null else throw e
+    }
+
+    override fun cancelSubscription(subscriptionId: String, idempotencyKey: String) {
+        call("subscription.cancel") {
+            client.v1().subscriptions().cancel(
+                subscriptionId,
+                SubscriptionCancelParams.builder().setProrate(false).setInvoiceNow(false).build(),
+                RequestOptions.builder().setIdempotencyKey(idempotencyKey).build(),
+            )
+        }
+    }
+
+    override fun invoicePayments(invoiceId: String): List<StripeInvoicePayment> = call("invoice_payment.list") {
+        client.v1().invoicePayments().list(
+            InvoicePaymentListParams.builder().setInvoice(invoiceId).setStatus(InvoicePaymentListParams.Status.PAID).build(),
+        ).data.mapNotNull { p ->
+            p.payment?.paymentIntent?.let { StripeInvoicePayment(it, p.amountPaid ?: 0L, p.currency.orEmpty()) }
+        }
+    }
 
     override fun createMeterEvent(params: MeterEventCreateParams) {
         call("billing.meter_event.create") { client.v1().billing().meterEvents().create(params) }

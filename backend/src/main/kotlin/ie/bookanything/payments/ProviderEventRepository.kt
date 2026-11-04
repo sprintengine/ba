@@ -23,6 +23,11 @@ object ProviderEventRepository {
             id, provider, type, Jsonb(payload),
         ) == 1
 
+    /** The event as stored, without locking it (to read what it is about before processing it). */
+    fun peek(conn: Connection, id: String): StoredProviderEvent? = conn.queryOne(
+        "SELECT type, payload::text AS payload, processed_at IS NOT NULL AS done FROM provider_events WHERE id = ?", id,
+    ) { StoredProviderEvent(it.str("type"), it.str("payload"), it.getBoolean("done")) }
+
     /** Locks the event for processing (FOR UPDATE); null when it is unknown. */
     fun lock(conn: Connection, id: String): StoredProviderEvent? = conn.queryOne(
         "SELECT type, payload::text AS payload, processed_at IS NOT NULL AS done FROM provider_events WHERE id = ? FOR UPDATE", id,

@@ -51,6 +51,7 @@ class StripeEventProcessor(
     private val lifecycle: BookingLifecycle,
     private val inbox: Inbox,
     private val refunds: RefundSettlement,
+    private val subscriptions: PlatformSubscriptions? = null,
 ) {
     private val log = LoggerFactory.getLogger(StripeEventProcessor::class.java)
     private val json = Json { ignoreUnknownKeys = true }
@@ -58,10 +59,13 @@ class StripeEventProcessor(
     fun handle(job: Job) {
         val eventId = job.payload["eventId"]?.jsonPrimitive?.content ?: return
         try {
+            // Stripe sends subscription events out of order: the subscription is read as it is now, outside the
+            // transaction, and applied instead of the event's (perhaps older) copy.
+            val current = currentSubscription(eventId, lastAttempt = job.attempts >= job.maxAttempts)
             val lag = db.txBlocking { conn ->
                 val stored = ProviderEventRepository.lock(conn, eventId) ?: return@txBlocking null
                 if (stored.processed) return@txBlocking null
-                process(conn, stored.type, json.parseToJsonElement(stored.payload) as JsonObject)
+                process(conn, stored.type, json.parseToJsonElement(stored.payload) as JsonObject, current)
                 ProviderEventRepository.markProcessed(conn, eventId)
             }
             lag?.let(Telemetry.metrics::stripeWebhookLag)
@@ -74,7 +78,29 @@ class StripeEventProcessor(
         }
     }
 
-    fun process(conn: Connection, type: String, event: JsonObject) {
+    /**
+     * For a platform subscription event, the subscription as Stripe has it now. Null otherwise, when Stripe has none, or
+     * when it can't be read (refused, or unreachable on the event's last attempt): the event's own copy is applied then.
+     */
+    private fun currentSubscription(eventId: String, lastAttempt: Boolean): StripeSubscription? {
+        val stored = db.txBlocking(readOnly = true) { ProviderEventRepository.peek(it, eventId) } ?: return null
+        if (stored.processed || stored.type !in SUBSCRIPTION_EVENTS) return null
+        val event = json.parseToJsonElement(stored.payload) as JsonObject
+        if (event.string("account") != null) return null
+        val id = event.obj("data")?.obj("object")?.string("id") ?: return null
+        return try {
+            subscriptions?.currentSubscription(id)
+        } catch (e: StripeRefusedException) {
+            log.warn("subscription {} couldn't be read ({}): applying event {} as sent", id, e.stripeCode, eventId)
+            null
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // Unreachable: retried, then the event's copy.
+            if (!lastAttempt) throw e
+            log.warn("subscription {} couldn't be read ({}): applying event {} as sent", id, e.message, eventId)
+            null
+        }
+    }
+
+    fun process(conn: Connection, type: String, event: JsonObject, currentSubscription: StripeSubscription? = null) {
         val obj = event.obj("data")?.obj("object") ?: return
         val account = event.string("account")
         // Billing (plans) lives on the platform account only. Connect events carry `account`, and a business with a
@@ -116,8 +142,8 @@ class StripeEventProcessor(
             } else {
                 ignoredConnect(type, account)
             }
-            "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted" ->
-                if (platform) subscriptionChanged(conn, type, obj) else ignoredConnect(type, account)
+            in SUBSCRIPTION_EVENTS ->
+                if (platform) subscriptionChanged(conn, type, obj, currentSubscription) else ignoredConnect(type, account)
             "invoice.payment_failed" -> if (platform) invoicePaymentFailed(conn, obj) else ignoredConnect(type, account)
         }
     }
@@ -355,23 +381,36 @@ class StripeEventProcessor(
         )
     }
 
-    private fun subscriptionChanged(conn: Connection, type: String, sub: JsonObject) {
-        val subId = sub.string("id") ?: return
+    /**
+     * A platform subscription changed. Applied as Stripe has it now ([current], read before the transaction) when it
+     * could be read, else as the event says, so an older event arriving late doesn't write its own older copy. (Two
+     * events of one subscription handled at the same moment can still commit their reads out of order; the next event
+     * puts it right.)
+     */
+    private fun subscriptionChanged(conn: Connection, type: String, event: JsonObject, current: StripeSubscription?) {
+        val sub = current ?: subscriptionOf(event) ?: return
+        val subId = sub.id
         // Events can arrive late or be retried: one about a subscription already deleted must not bring its plan back.
         if (type != "customer.subscription.deleted" && ProviderEventRepository.subscriptionDeleted(conn, subId)) {
             log.info("subscription {} {} ignored: the subscription was deleted", subId, type)
             return
         }
-        val business = businessForBilling(conn, sub.obj("metadata")?.string("businessId"), sub.string("customer"))
+        val found = businessForBilling(conn, sub.metadata["businessId"], sub.customer)
             ?: run { log.warn("subscription {} does not match a business", subId); return }
-        val priceIds = (sub.obj("items")?.get("data") as? JsonArray).orEmpty()
-            .mapNotNull { (it as? JsonObject)?.obj("price")?.string("id") }
+        // Locked: events of two subscriptions of one business (its own and a duplicate) are decided one after the other.
+        val business = BusinessRepository.lockById(conn, found.id) ?: return
+        val plan = PlanMapping.planForPrices(sub.priceIds, stripe, sub.metadata["plan"])
+        // Another subscription of the customer that isn't for a plan (made by hand in Stripe, say) is not the plan's.
+        if (plan == null && business.stripeSubscriptionId != subId) {
+            log.info("subscription {} {} ignored for business {}: not a plan subscription", subId, type, business.id)
+            return
+        }
+        if (plan != null && duplicate(conn, business, sub, type)) return
         val change = PlanMapping.fromSubscription(
-            type, subId, sub.string("status").orEmpty(), priceIds, sub.obj("metadata")?.string("plan"),
-            stripe, business.plan, business.stripeSubscriptionId,
+            type, subId, sub.status, sub.priceIds, sub.metadata["plan"], stripe, business.plan, business.stripeSubscriptionId,
         )
             ?: run { log.info("subscription {} {} ignored for business {}", subId, type, business.id); return }
-        StripeAccountRepository.setPlan(conn, business.id, change, sub.string("customer"))
+        StripeAccountRepository.setPlan(conn, business.id, change, sub.customer)
         Audit.record(
             conn, business.id, Actor.SYSTEM, "billing.plan_changed", "business", business.id,
             mapOf(
@@ -381,9 +420,58 @@ class StripeEventProcessor(
         )
     }
 
+    private fun subscriptionOf(obj: JsonObject): StripeSubscription? = StripeSubscription(
+        id = obj.string("id") ?: return null,
+        status = obj.string("status").orEmpty(),
+        customer = obj.string("customer"),
+        priceIds = (obj.obj("items")?.get("data") as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.obj("price")?.string("id") },
+        metadata = obj.obj("metadata")?.mapNotNull { (k, v) -> (v as? JsonPrimitive)?.takeIf { it.isString }?.let { k to it.content } }
+            ?.toMap().orEmpty(),
+        latestInvoice = obj.string("latest_invoice"),
+    )
+
+    /**
+     * A second live subscription while the business is billed for another (two checkouts finished at once): the one it
+     * has stays, and this one is cancelled and refunded ([DuplicateSubscriptions]), once; true when this one is the
+     * duplicate. When the one it has is past due and this one is paid, this one replaces it and the old one goes.
+     */
+    private fun duplicate(conn: Connection, business: BusinessRow, sub: StripeSubscription, type: String): Boolean {
+        val currentId = business.stripeSubscriptionId
+        val live = type != "customer.subscription.deleted" && sub.status in DuplicateSubscriptions.LIVE
+        if (!live || currentId == null || currentId == sub.id || !business.hasPaidSubscription) return false
+        // Never one flagged as a duplicate already: its cancellation may be under way.
+        val replaces = business.planStatus == "past_due" && sub.status in setOf("active", "trialing") &&
+            !DuplicateSubscriptions.flagged(conn, business.id, sub.id)
+        if (replaces) {
+            flagDuplicate(conn, business, duplicate = currentId, kept = sub.id, DuplicateSubscriptions.Reason.REPLACED)
+            return false
+        }
+        flagDuplicate(conn, business, duplicate = sub.id, kept = currentId, DuplicateSubscriptions.Reason.DUPLICATE)
+        return true
+    }
+
+    /** Queues cancelling [duplicate], once: its later events (updated, deleted once cancelled) find it flagged already. */
+    private fun flagDuplicate(
+        conn: Connection, business: BusinessRow, duplicate: String, kept: String, reason: DuplicateSubscriptions.Reason,
+    ) {
+        if (DuplicateSubscriptions.flagged(conn, business.id, duplicate)) return
+        log.warn("business {} has a second subscription {} (keeps {}): cancelling it", business.id, duplicate, kept)
+        DuplicateSubscriptions.enqueue(conn, business.id, duplicate, reason)
+        Audit.record(
+            conn, business.id, Actor.SYSTEM, "billing.duplicate_subscription", "business", business.id,
+            mapOf("subscription" to duplicate, "kept" to kept),
+        )
+    }
+
     private fun invoicePaymentFailed(conn: Connection, invoice: JsonObject) {
         val business = businessForBilling(conn, null, invoice.string("customer")) ?: return
         if (!business.plan.isPaid) return
+        // Only the plan's own subscription: a duplicate's (or any other) invoice failing doesn't make the plan past due.
+        val subscription = invoice.string("subscription") ?: invoice.obj("parent")?.obj("subscription_details")?.string("subscription")
+        if (subscription == null || subscription != business.stripeSubscriptionId) {
+            log.info("invoice {} of subscription {} failed: not business {}'s plan", invoice.string("id"), subscription, business.id)
+            return
+        }
         StripeAccountRepository.markPastDue(conn, business.id)
         Audit.record(
             conn, business.id, Actor.SYSTEM, "billing.payment_failed", "business", business.id,
@@ -405,6 +493,9 @@ fun enqueueStripeEvent(conn: Connection, eventId: String) {
 }
 
 private const val MAX_ERROR_LENGTH = 2000
+
+private val SUBSCRIPTION_EVENTS =
+    setOf("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted")
 
 /** How long a dashboard refund's failure may wait for its charge.refunded (retried meanwhile). */
 private val DASHBOARD_RACE: java.time.Duration = java.time.Duration.ofHours(1)

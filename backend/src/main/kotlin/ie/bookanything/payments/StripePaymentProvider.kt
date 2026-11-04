@@ -6,6 +6,7 @@ import com.stripe.param.AccountLinkCreateParams
 import com.stripe.param.CustomerCreateParams
 import com.stripe.param.RefundCreateParams
 import com.stripe.param.checkout.SessionCreateParams
+import ie.bookanything.booking.RefundSettlement
 import ie.bookanything.business.BusinessRow
 import ie.bookanything.business.Plan
 import ie.bookanything.config.StripeConfig
@@ -30,7 +31,7 @@ class StripePaymentProvider(
     private val gateway: StripeGateway,
     private val config: StripeConfig,
     private val clock: Clock = Clock.systemUTC(),
-) : PaymentProvider {
+) : PaymentProvider, PlatformSubscriptions {
     private val log = LoggerFactory.getLogger(StripePaymentProvider::class.java)
 
     override val name = "stripe"
@@ -277,10 +278,11 @@ class StripePaymentProvider(
     }
 
     fun billingCheckoutParams(
-        business: BusinessRow, customerId: String, plan: Plan, price: String, returnUrl: String,
+        business: BusinessRow, customerId: String, plan: Plan, price: String, returnUrl: String, expiresAt: Instant,
     ): SessionCreateParams =
         SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+            .setExpiresAt(expiresAt.epochSecond)
             .setCustomer(customerId)
             .addLineItem(SessionCreateParams.LineItem.builder().setPrice(price).setQuantity(1L).build())
             .setClientReferenceId(business.id.toString())
@@ -309,11 +311,72 @@ class StripePaymentProvider(
                 .build(),
             RequestOptions.builder().setIdempotencyKey("bookanything-customer-${business.id}").build(),
         ).also { created = it }
+        // Two clicks (or tabs) asking for the same plan within a window get the same session, not two subscriptions: the
+        // idempotency key and the parameters (expiry included) are the window's. Another plan gets its own session; a
+        // second subscription that comes of it is cancelled and refunded (duplicate, see the event processor).
+        val window = clock.instant().epochSecond / BILLING_WINDOW.seconds
+        // Stripe wants at least 30 minutes: the margin covers the request's time on the way and a clock a little ahead.
+        val expiresAt = Instant.ofEpochSecond((window + 2) * BILLING_WINDOW.seconds).plus(BILLING_EXPIRY_MARGIN)
+        // The subscription state too: a checkout finished (or a plan ended) within the window starts a new session.
+        val state = "${business.stripeSubscriptionId ?: "none"}-${business.planStatus ?: "none"}"
+        val key = "bookanything-billing-${business.id}-${plan.wire}-$price-$window-$state-${returnUrl.hashCode().toUInt()}"
         val session = gateway.createCheckoutSession(
-            billingCheckoutParams(business, customerId, plan, price, returnUrl),
-            RequestOptions.builder().build(),
+            billingCheckoutParams(business, customerId, plan, price, returnUrl, expiresAt),
+            RequestOptions.builder().setIdempotencyKey(key).build(),
         )
         return BillingSession(session.url ?: throw Errors.providerError(), created)
+    }
+
+    override fun currentSubscription(subscriptionId: String): StripeSubscription? = gateway.retrieveSubscription(subscriptionId)
+
+    override fun cancelDuplicateSubscription(subscriptionId: String): Boolean = try {
+        gateway.cancelSubscription(subscriptionId, "bookanything-duplicate-cancel-$subscriptionId")
+        true
+    } catch (e: StripeRefusedException) {
+        log.warn("cancelling duplicate subscription {} refused: {}", subscriptionId, e.stripeCode)
+        false
+    }
+
+    override fun refundDuplicateSubscription(subscriptionId: String, latestInvoice: String?, lastAttempt: Boolean): DuplicateCancel {
+        // Each payment once: idempotency keys, and Stripe refusing a second refund of a refunded charge.
+        val unlisted = DuplicateCancel(cancelled = true, notRefunded = listOfNotNull(latestInvoice))
+        val payments = try {
+            latestInvoice?.let(gateway::invoicePayments).orEmpty()
+        } catch (e: StripeRefusedException) {
+            log.warn("listing the payments of duplicate subscription {} refused: {}", subscriptionId, e.stripeCode)
+            return unlisted
+        } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // Unreachable: retried, then reported.
+            if (!lastAttempt) throw e
+            log.warn("listing the payments of duplicate subscription {} failed: {}", subscriptionId, e.message)
+            return unlisted
+        }
+        val (refunded, refused) = payments.partition { refundDuplicatePayment(subscriptionId, it, lastAttempt) }
+        return DuplicateCancel(
+            cancelled = true,
+            refunded = refunded.groupBy { it.currency.uppercase() }.mapValues { (_, p) -> p.sumOf { it.amountPaid } },
+            notRefunded = refused.map { it.paymentIntent },
+        )
+    }
+
+    /** Refunds one payment of a cancelled duplicate subscription; false when Stripe refused it (or stayed unreachable). */
+    private fun refundDuplicatePayment(subscriptionId: String, payment: StripeInvoicePayment, lastAttempt: Boolean): Boolean = try {
+        gateway.createRefund(
+            RefundCreateParams.builder()
+                .setPaymentIntent(payment.paymentIntent)
+                .putMetadata("subscription", subscriptionId)
+                .putMetadata("reason", "duplicate_subscription")
+                .build(),
+            RequestOptions.builder().setIdempotencyKey("bookanything-duplicate-refund-${payment.paymentIntent}").build(),
+        )
+        true
+    } catch (e: StripeRefusedException) {
+        log.warn("refunding duplicate subscription payment {} refused: {}", payment.paymentIntent, e.stripeCode)
+        // Refunded already (by an earlier attempt, or from the Stripe dashboard): the money is back.
+        e.stripeCode in RefundSettlement.ALREADY_REFUNDED
+    } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // Unreachable: the job retries, then reports it.
+        if (!lastAttempt) throw e
+        log.warn("refunding duplicate subscription payment {} failed: {}", payment.paymentIntent, e.message)
+        false
     }
 
     override fun createBillingPortal(business: BusinessRow, returnUrl: String): String {
@@ -336,6 +399,10 @@ class StripePaymentProvider(
             else -> RefundOutcome.PENDING
         }
         const val OAUTH_AUTHORIZE_URL = "https://connect.stripe.com/oauth/authorize"
+
+        /** Plan checkouts asked for within one window share a session; each lives 32 to 62 minutes. */
+        val BILLING_WINDOW: Duration = Duration.ofMinutes(30)
+        private val BILLING_EXPIRY_MARGIN: Duration = Duration.ofMinutes(2)
 
         /** Stripe keeps idempotency keys for 24 hours: the generation makes the key new once the last account was forgotten. */
         fun accountIdempotencyKey(business: BusinessRow) =
