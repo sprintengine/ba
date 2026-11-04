@@ -3,7 +3,6 @@ package ie.bookanything.payments
 import com.stripe.net.RequestOptions
 import com.stripe.param.AccountCreateParams
 import ie.bookanything.business.BusinessRow
-import ie.bookanything.http.ApiException
 import ie.bookanything.http.Errors
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
@@ -60,10 +59,11 @@ class SimulationStripeAccounts(private val gateway: StripeGateway) {
      * Deletes [accountId] at Stripe if it is the simulation's account for [businessId] (its metadata says so); best
      * effort: a failure is logged and reported, never thrown.
      */
+    @Suppress("TooGenericExceptionCaught") // Best effort by contract: nothing Stripe or the SDK throws may stop a purge.
     fun deleteIfOurs(accountId: String, businessId: UUID): Deleted = try {
         val state = gateway.retrieveAccount(accountId)
         if (!isOurs(state, businessId)) {
-            log.warn("simulation purge: Stripe account {} of business {} isn't a simulation account; left as it is", accountId, businessId)
+            log.warn("Stripe account {} of business {} isn't the simulation's: left as it is", accountId, businessId)
             Deleted.NOT_OURS
         } else if (gateway.deleteAccount(accountId)) {
             Deleted.DELETED
@@ -71,15 +71,23 @@ class SimulationStripeAccounts(private val gateway: StripeGateway) {
             Deleted.GONE
         }
     } catch (e: StripeRefusedException) {
-        if (e.stripeCode == "resource_missing") {
+        if (isGone(e)) {
             Deleted.GONE
         } else {
-            log.warn("simulation purge: Stripe refused to delete account {} ({})", accountId, e.stripeCode)
+            log.warn("Stripe refused to delete account {} ({})", accountId, e.stripeCode)
             Deleted.FAILED
         }
-    } catch (e: ApiException) {
-        log.warn("simulation purge: couldn't delete Stripe account {}: {}", accountId, e.message)
+    } catch (e: RuntimeException) {
+        log.warn("couldn't delete Stripe account {}: {}", accountId, e.message)
         Deleted.FAILED
+    }
+
+    /** Whether [accountId] is the simulation's account for [businessId], as Stripe has it (false when it can't say). */
+    @Suppress("TooGenericExceptionCaught", "SwallowedException") // A read for a dry run: "can't say" is the answer.
+    fun isOursAt(accountId: String, businessId: UUID): Boolean = try {
+        isOurs(gateway.retrieveAccount(accountId), businessId)
+    } catch (e: RuntimeException) {
+        false
     }
 
     /**
@@ -185,6 +193,12 @@ class SimulationStripeAccounts(private val gateway: StripeGateway) {
         /** For the purge command, which has no app: Stripe on [key] when it is a test key, else null. */
         fun forKey(key: String?): SimulationStripeAccounts? =
             if (key != null && isTestKey(key)) SimulationStripeAccounts(SdkStripeGateway(key)) else null
+
+        /**
+         * Stripe no longer has the account for us: deleted (`resource_missing`), or the platform can't reach it any more
+         * (`account_invalid`, how Stripe answers for a deleted connected account).
+         */
+        fun isGone(e: StripeRefusedException) = e.stripeCode == "resource_missing" || e.stripeCode == "account_invalid"
 
         fun isOurs(state: StripeAccountState, businessId: UUID): Boolean =
             state.metadata[MARKER] == "true" && state.metadata["businessId"] == businessId.toString()

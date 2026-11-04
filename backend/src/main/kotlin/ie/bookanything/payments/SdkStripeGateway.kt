@@ -58,7 +58,7 @@ class SdkStripeGateway(private val secretKey: String) : StripeGateway {
     override fun deleteAccount(accountId: String): Boolean = try {
         call("account.delete") { client.v1().accounts().delete(accountId).deleted == true }
     } catch (e: StripeRefusedException) {
-        if (e.stripeCode == "resource_missing") false else throw e
+        if (SimulationStripeAccounts.isGone(e)) false else throw e
     }
 
     // OAuth lives on connect.stripe.com and only has the SDK's static API: the key and timeouts go in per request.

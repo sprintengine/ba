@@ -146,8 +146,9 @@ the backend also accepts its own simulation tokens beside Clerk's:
 - **Test payments.** `POST /businesses/{id}/payments/simulation-account` gives a simulated business a
   platform-controlled Stripe test account (requirements filled in with Stripe's verification test values), so the
   simulation can pay through Checkout. The route exists only on staging with the secret; it answers only a caller
-  signed in with a simulation token who owns a business that is the simulation's (a `sim-` slug, no member outside the
-  namespace, re-checked under the row lock when the account is stored), and anything else gets the 404 of an unknown
+  signed in with a simulation token who owns a business that is the simulation's (a `sim-` slug, no member or pending
+  invitation outside the namespace, re-checked with the business and its memberships locked when the account is
+  stored), and anything else gets the 404 of an unknown
   path. It needs a Stripe test key, only stores an account it just created (marked as the simulation's for that
   business in Stripe's metadata), and never replaces an existing one. The purge deletes only accounts so marked.
 - Email to special-use domains (`.test`, `.example`, `.invalid`, `.localhost`) is never handed to the email provider in

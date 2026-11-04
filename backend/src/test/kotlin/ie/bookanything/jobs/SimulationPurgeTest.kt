@@ -96,16 +96,25 @@ class SimulationPurgeTest {
             UUID.fromString(mixed.id), UUID.fromString(userId("dev_" + realMember.email.substringBefore('@'))),
         )
         val unslugged = createBusiness(setup(unique("purge-plain").lowercase()), busy)
+        // A real person invited, not yet accepted.
+        val invited = createBusiness(setup(simSlug()), simUser("invitingowner").second)
+        Fixtures.sql(
+            "INSERT INTO business_members (business_id, role, invited_email, status) VALUES (?, 'staff', ?, 'invited')",
+            UUID.fromString(invited.id), "${unique("tester")}@example.com",
+        )
 
         // A real (dev) subject with an address on the simulation's domain: one mark is not enough.
         val impostorSub = "dev_${unique("impostor").lowercase()}"
         signIn(TestUser(devToken(impostorSub, "${impostorSub.removePrefix("dev_")}@sim.bookanything.test"), "x"))
 
-        listOf(old, realOwned, mixed, unslugged).forEach { age("businesses", it.id) }
+        listOf(old, realOwned, mixed, unslugged, invited).forEach { age("businesses", it.id) }
         listOf(ownerSub, customerSub, lonelySub, busySub, impostorSub).forEach { age("users", userId(it)!!) }
         return World(
             purged = listOf(old),
-            kept = mapOf("young" to youngShop, "real owner" to realOwned, "real member" to mixed, "no sim- slug" to unslugged),
+            kept = mapOf(
+                "young" to youngShop, "real owner" to realOwned, "real member" to mixed, "no sim- slug" to unslugged,
+                "real person invited" to invited,
+            ),
             goneUsers = listOf(ownerSub, customerSub, lonelySub),
             keptUsers = mapOf("member of a kept business" to busySub, "young" to youngSub, "dev subject" to impostorSub),
         )
@@ -151,8 +160,9 @@ class SimulationPurgeTest {
             (ours + other).forEach { (shop, _) -> age("businesses", shop.id) }
             val cutoff = Instant.now().minus(Duration.ofDays(7))
 
+            // A dry run asks Stripe which are the simulation's: those would go, the other stays.
             val dry = SimulationPurge.purge(env.db, cutoff, dryRun = true, stripe = stripe)
-            assertEquals(SimulationPurge.Result(3, 0, stripeAccounts = 3), dry)
+            assertEquals(SimulationPurge.Result(3, 0, stripeAccounts = 2, stripeAccountsLeft = 1), dry)
             assertTrue(gateway.deletedAccounts.isEmpty(), "a dry run deletes nothing")
 
             gateway.failAccountDeletes.set(1)

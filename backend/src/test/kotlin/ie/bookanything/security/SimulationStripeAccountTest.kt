@@ -162,6 +162,20 @@ class SimulationStripeAccountTest {
                 UUID.fromString(mixed.id), real,
             )
             assertError(HttpStatusCode.NotFound, "NOT_FOUND", api.simulationAccount(mixed, owner.token))
+            // ...or invited to it, before they accept.
+            val invited = api.createBusiness(setup(), owner)
+            Fixtures.sql(
+                "INSERT INTO business_members (business_id, role, invited_email, status) VALUES (?, 'staff', ?, 'invited')",
+                UUID.fromString(invited.id), "${unique("tester")}@example.com",
+            )
+            assertError(HttpStatusCode.NotFound, "NOT_FOUND", api.simulationAccount(invited, owner.token))
+            // An invitation to another bot is still the simulation's.
+            val botInvited = api.createBusiness(setup(), owner)
+            Fixtures.sql(
+                "INSERT INTO business_members (business_id, role, invited_email, status) VALUES (?, 'staff', ?, 'invited')",
+                UUID.fromString(botInvited.id), SimulationFixtures.identity("staff").second,
+            )
+            assertStatus(HttpStatusCode.OK, api.simulationAccount(botInvited, owner.token))
 
             // A business that already has an account of its own keeps it.
             val linked = api.createBusiness(setup(), owner)
@@ -172,8 +186,33 @@ class SimulationStripeAccountTest {
             assertError(HttpStatusCode.Conflict, "CONFLICT", api.simulationAccount(linked, owner.token))
             assertEquals("oauth", stripeColumns(linked)[1])
 
-            assertTrue(w.gateway.accounts.isEmpty(), "no account was created")
+            assertEquals(listOf(botInvited.id), w.gateway.accounts.map { it.params.metadata.let { m -> (m as Map<*, *>)["businessId"] } })
             assertNull(stripeColumns(shop)[0])
+        }
+    }
+
+    @Test
+    fun `a disconnected simulation account is deleted at Stripe, and one gone at Stripe is replaced`() {
+        val w = World()
+        withApp(w.env) { api ->
+            val owner = SimulationFixtures.user(w.tokens, "owner")
+            val shop = api.createBusiness(setup(), owner)
+            val first = api.simulationAccount(shop, owner.token).obj().s("accountId")
+            assertStatus(HttpStatusCode.OK, api.post("${shop.base}/payments/disconnect", null, owner.token))
+            assertEquals(listOf(first), w.gateway.deletedAccounts)
+
+            // A new one (the next generation: Stripe's idempotency would give back the deleted one).
+            val second = api.simulationAccount(shop, owner.token).obj().s("accountId")
+            assertTrue(second != first)
+            // Deleted at Stripe behind our back: forgotten and replaced on the next call.
+            w.gateway.deleteAccount(second)
+            val third = api.simulationAccount(shop, owner.token).also { assertStatus(HttpStatusCode.OK, it) }.obj().s("accountId")
+            assertTrue(third != second)
+            assertEquals(third, stripeColumns(shop)[0])
+            assertEquals(
+                listOf("-0", "-1", "-2").map { "bookanything-sim-account-${shop.id}$it" },
+                w.gateway.accounts.map { it.options!!.idempotencyKey },
+            )
         }
     }
 

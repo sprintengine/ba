@@ -45,22 +45,20 @@ fun Route.simulationPaymentRoutes(ctx: AppContext) {
         val stripe = ctx.simulationStripe ?: throw Errors.paymentsNotConfigured(
             "Simulation Stripe accounts need Stripe in test mode on this server (STRIPE_SECRET_KEY=sk_test_…).",
         )
-        val business = access.business.takeIf { it.stripeAccountId != null } ?: createAccount(ctx, stripe, access)
-        val id = business.id
+        var business = access.business.takeIf { it.stripeAccountId != null } ?: createAccount(ctx, stripe, access.business, access.actor)
+        val state = try {
+            withContext(Dispatchers.IO) { stripe.state(business.stripeAccountId!!) }
+        } catch (e: StripeRefusedException) {
+            if (!SimulationStripeAccounts.isGone(e) || business.stripeConnectMethod != "created") throw e
+            // The stored account is gone at Stripe (deleted by hand, say): forget it and make another, once.
+            business = createAccount(ctx, stripe, forgetAccount(ctx, business), access.actor)
+            withContext(Dispatchers.IO) { stripe.state(business.stripeAccountId!!) }
+        }
         val accountId = business.stripeAccountId!!
-        val state = withContext(Dispatchers.IO) { stripe.state(accountId) }
-        if (!SimulationStripeAccounts.isOurs(state, id)) {
+        if (!SimulationStripeAccounts.isOurs(state, business.id)) {
             throw Errors.conflict("This business has a Stripe account that isn't a simulation account; it is left as it is.")
         }
-        if (state.chargesEnabled != business.stripeChargesEnabled || state.detailsSubmitted != business.stripeDetailsSubmitted) {
-            ctx.db.tx(id) {
-                StripeAccountRepository.setConnectStatus(it, id, accountId, state.chargesEnabled, state.detailsSubmitted)
-                Audit.record(
-                    it, id, Actor.SYSTEM, "payments.account_updated", "business", id,
-                    mapOf("chargesEnabled" to state.chargesEnabled, "detailsSubmitted" to state.detailsSubmitted),
-                )
-            }
-        }
+        storeConnectStatus(ctx, business, accountId, state.chargesEnabled, state.detailsSubmitted)
         call.respond(
             SimulationAccountDto(accountId, state.chargesEnabled, state.detailsSubmitted, state.requirementsDue, state.disabledReason),
         )
@@ -81,17 +79,23 @@ private suspend fun ApplicationCall.simulationOwner(ctx: AppContext): BusinessAc
     return access
 }
 
-/** Creates the business's test account and stores it, if it is still a simulation business with no account. */
-private suspend fun createAccount(ctx: AppContext, stripe: SimulationStripeAccounts, access: BusinessAccess): BusinessRow {
-    val id = access.businessId
-    val created = withContext(Dispatchers.IO) { stripe.create(access.business) }
+/**
+ * Creates [business]'s test account and stores it, if it is still a simulation business with no account (checked under
+ * its locks). Otherwise the new account is deleted and the business moves to its next account generation, so a later
+ * call doesn't get the deleted one back from Stripe's idempotency.
+ */
+private suspend fun createAccount(ctx: AppContext, stripe: SimulationStripeAccounts, business: BusinessRow, actor: Actor): BusinessRow {
+    val id = business.id
+    val created = withContext(Dispatchers.IO) { stripe.create(business) }
     val stored = ctx.db.tx(id) { conn ->
-        BusinessRepository.lockById(conn, id)
-        if (!SimulationBusinesses.isSimulation(conn, id)) return@tx null
-        if (StripeAccountRepository.setAccountIdIfMissing(conn, id, created)) {
-            Audit.record(conn, id, access.actor, "payments.simulation_account_created", "business", id, mapOf("accountId" to created))
+        SimulationBusinesses.lock(conn, listOf(id))
+        val sim = SimulationBusinesses.isSimulation(conn, id)
+        if (sim && StripeAccountRepository.setAccountIdIfMissing(conn, id, created)) {
+            Audit.record(conn, id, actor, "payments.simulation_account_created", "business", id, mapOf("accountId" to created))
         }
-        BusinessRepository.findById(conn, id)
+        val now = BusinessRepository.findById(conn, id)
+        if (now?.stripeAccountId != created) StripeAccountRepository.nextAccountGeneration(conn, id)
+        now.takeIf { sim }
     }
     if (stored?.stripeAccountId != created) {
         // A member who isn't the simulation's joined meanwhile, or the business got another account first.
@@ -99,6 +103,14 @@ private suspend fun createAccount(ctx: AppContext, stripe: SimulationStripeAccou
         throw if (stored == null) hidden() else Errors.conflict("This business got another Stripe account meanwhile.")
     }
     return stored
+}
+
+/** Forgets [business]'s account (gone at Stripe) if it is still a simulation business; returns it as it is now. */
+private suspend fun forgetAccount(ctx: AppContext, business: BusinessRow): BusinessRow = ctx.db.tx(business.id) { conn ->
+    SimulationBusinesses.lock(conn, listOf(business.id))
+    if (!SimulationBusinesses.isSimulation(conn, business.id)) throw hidden()
+    StripeAccountRepository.unlink(conn, business.id, business.stripeAccountId!!)
+    BusinessRepository.findById(conn, business.id) ?: throw hidden()
 }
 
 /** The answer to a path that doesn't exist, so the route can't be told apart from one. */

@@ -168,8 +168,9 @@ real visitors' buckets are untouched. Raise the multiplier (up to 1000) for high
 4. Run the workflow by hand with `duration: 10m` to check it; the nightly run then follows.
 5. Clean up weekly on the staging VM (docs/deployment.md, 2.4):
    `docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` (`--dry-run` to count first).
-   It deletes the simulation's businesses (slug `sim-…`, owned only by simulation users) and users created before the
-   cutoff, and the businesses' Stripe test accounts, and nothing else. Keep the cutoff longer than any run still going.
+   It deletes the simulation's businesses (slug `sim-…`, owned and staffed only by simulation users) and users
+   created before the cutoff, and the businesses' Stripe test accounts, and nothing else. Keep the cutoff longer than
+   any run still going.
 
 From any machine: `SIMULATION_AUTH_SECRET=<secret> npm --prefix simulation run sim -- --auth simulation-token
 --base-url https://api-staging.bookanything.ie --app-url https://staging.bookanything.ie --payments stripe-checkout
@@ -192,8 +193,9 @@ within a minute. The endpoint is not a way to attach an account to a business:
 - it only exists on staging with `SIMULATION_AUTH_SECRET` set (which production refuses at startup): anywhere else the
   path is a 404 like any unknown one;
 - the caller must be signed in with a simulation token as the business's owner, and the business must be a simulation
-  business: a `sim-` slug, a simulation owner and no member who isn't a simulation user (the purge's rule; checked
-  again under the business's row lock when the account is stored). Anything else is the same 404;
+  business: a `sim-` slug, a simulation owner, and no member or pending invitation that isn't the simulation's (the
+  purge's rule; checked again with the business and its memberships locked when the account is stored). Anything
+  else is the same 404;
 - Stripe must be on a test key (`sk_test_…` or `rk_test_…`), else it answers `PAYMENTS_NOT_CONFIGURED`;
 - it only ever stores an account it just created, marked in Stripe's metadata as the simulation's for that business
   (never one the caller names), and leaves a business with another account alone (409).
@@ -213,9 +215,10 @@ were off there, and why. That is not a violation, but nothing paid online was te
   `PAYMENTS_NOT_CONFIGURED` with Stripe's code). The nightly Stripe contract test (backend/README.md, "Stripe contract
   tests") creates the same kind of account and checks that Stripe enables it.
 
-`purge-simulation` also deletes the purged businesses' test accounts at Stripe (only accounts marked as the
-simulation's for that business, and only with a test key; a failure is logged and counted, and the purge goes on), so
-days of runs don't pile accounts up.
+`purge-simulation` also deletes the purged businesses' test accounts at Stripe (on staging with a test key, only
+accounts marked as the simulation's for that business; a failure is logged and counted, and the purge goes on), so
+days of runs don't pile accounts up. Disconnecting payments at a simulated business deletes its test account too, and
+an account deleted at Stripe by hand is replaced on the next run.
 
 **Long runs.** A GitHub-hosted job stops after 6 hours, so a workflow run is at most 5h30m; the nightly run is 5 hours,
 which covers holds, reminders, auto-completion and several businesses filling up and being replaced. For runs of days,

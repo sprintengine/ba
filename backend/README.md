@@ -196,9 +196,10 @@ Clean up after long runs with `backend purge-simulation` (on the VM: `sudo -u de
 backend purge-simulation --older-than-days 7`; `--dry-run` counts first). It deletes only businesses with a `sim-`
 slug whose owner and every member are simulation users, created before the cutoff (with their bookings, customers and
 emails, and a real tester's booking there too), then simulation users created before it who belong to no business and
-are no business's customer. Each business is re-checked under a row lock before it is deleted. Once they are gone, it
-deletes their Stripe test accounts (with a test `STRIPE_SECRET_KEY` only, and only accounts whose metadata marks them as
-the simulation's for that business; failures are logged and counted, not fatal). Pick a cutoff longer than any run
+are no business's customer. A pending invitation to anyone else keeps a business too. Each business is re-checked with
+it and its memberships locked before it is deleted. Once a batch is gone, it deletes their Stripe test accounts (on
+staging with a test `STRIPE_SECRET_KEY` only, and only accounts whose metadata marks them as the simulation's for that
+business; failures are logged and counted, not fatal; `--dry-run` asks Stripe which would go). Pick a cutoff longer than any run
 still going: a run reads every business it opened until it ends.
 
 ## Integrations (all optional; each is off until its keys are set)

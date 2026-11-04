@@ -65,6 +65,14 @@ object StripeAccountRepository {
         businessId, accountId,
     ) == 1
 
+    /**
+     * Moves the business on to its next account generation (a new idempotency key for the next account it gets), as
+     * forgetting an account does: after one was deleted unstored, Stripe would otherwise give the same one back.
+     */
+    fun nextAccountGeneration(conn: Connection, businessId: UUID) {
+        conn.update("UPDATE businesses SET stripe_account_generation = stripe_account_generation + 1 WHERE id = ?", businessId)
+    }
+
     /** Records a newly created billing customer unless the business already has one. */
     fun setCustomerIdIfMissing(conn: Connection, businessId: UUID, customerId: String) {
         conn.update(
