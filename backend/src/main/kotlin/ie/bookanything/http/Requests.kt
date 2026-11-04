@@ -2,13 +2,8 @@
 
 package ie.bookanything.http
 
-import io.ktor.http.HttpHeaders
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.contentCharset
-import io.ktor.server.request.receiveChannel
-import io.ktor.utils.io.readBuffer
 import kotlinx.coroutines.CancellationException
-import kotlinx.io.readByteArray
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.SerializationException
@@ -36,34 +31,6 @@ val ApiJson = Json {
     coerceInputValues = false
     isLenient = false
 }
-
-/** The most a request body may be, in bytes; a larger one is refused with 413 PAYLOAD_TOO_LARGE before it is read. */
-object BodyLimits {
-    /** OAuth forms and client registrations. */
-    const val OAUTH = 64 * 1024L
-
-    /** JSON bodies unless a route says otherwise (and the MCP servers). */
-    const val DEFAULT = 256 * 1024L
-
-    /** Site plans, business setups (up to 100 services with their options) and provider webhooks. */
-    const val LARGE = 1024 * 1024L
-}
-
-/**
- * The raw request body, at most [maxBytes]: a larger declared `Content-Length` is refused unread, and a body without one
- * (chunked) is read only to [maxBytes] + 1 bytes before it is refused. Either way a 413 PAYLOAD_TOO_LARGE.
- */
-suspend fun ApplicationCall.receiveBytes(maxBytes: Long): ByteArray {
-    val declared = request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
-    if (declared != null && declared > maxBytes) throw Errors.payloadTooLarge(maxBytes)
-    val bytes = receiveChannel().readBuffer(maxBytes + 1).readByteArray()
-    if (bytes.size > maxBytes) throw Errors.payloadTooLarge(maxBytes)
-    return bytes
-}
-
-/** The request body as text (its charset, else UTF-8), at most [maxBytes] ([receiveBytes]). */
-suspend fun ApplicationCall.receiveBoundedText(maxBytes: Long): String =
-    String(receiveBytes(maxBytes), request.contentCharset() ?: Charsets.UTF_8)
 
 /** Decodes the request body; any malformed/missing field becomes a 400 INVALID_REQUEST. */
 suspend fun <T> ApplicationCall.receiveBody(deserializer: DeserializationStrategy<T>, maxBytes: Long = BodyLimits.DEFAULT): T {

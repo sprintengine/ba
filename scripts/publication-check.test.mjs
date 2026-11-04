@@ -12,6 +12,7 @@ test("passes placeholders, example domains and the product's own addresses", () 
     "/Users/dev/bookanything, /home/runner/work, /Volumes/dev/repo, /opt/bookanything",
     "dev@example.com, owner@bookanything.test, bookings@bookanything.ie, a@b.example",
     "Co-Authored-By: Claude <noreply@anthropic.com>, 1+someone@users.noreply.github.com",
+    "Signed-off-by: dependabot[bot] <support@github.com>",
     "198.51.100.20 and 10.0.0.7 and 100.63.0.1 are not tailnet addresses",
   ].join("\n");
   assert.deepEqual(findings(text), []);
@@ -30,6 +31,12 @@ test("finds tailnets, Tailscale addresses, home directories, volumes and emails"
     "a home directory or local volume (/home/someone)",
     "a home directory or local volume (/Volumes/backup)",
     "an email address (me@gmail.com)",
+  ]);
+  // Only Dependabot's sign-off is allowed at github.com, not the domain.
+  assert.deepEqual(findings("someone@github.com, notsupport@github.com, support@github.com.example.io"), [
+    "an email address (someone@github.com)",
+    "an email address (notsupport@github.com)",
+    "an email address (support@github.com.example.io)",
   ]);
 });
 

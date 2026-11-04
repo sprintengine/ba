@@ -4,6 +4,7 @@ import ie.bookanything.AppContext
 import ie.bookanything.http.ApiError
 import ie.bookanything.http.BodyLimits
 import ie.bookanything.http.RateLimiter
+import ie.bookanything.http.ReplayableBody
 import ie.bookanything.http.receiveJsonObjectOrNull
 import ie.bookanything.http.respondError
 import ie.bookanything.oauth.BearerCheck
@@ -13,7 +14,6 @@ import ie.bookanything.oauth.Scope
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.plugins.doublereceive.DoubleReceive
 import io.ktor.server.response.header
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** For `tools/call`, the tool name in the JSON-RPC body (the body can be read again: DoubleReceive). */
+/** For `tools/call`, the tool name in the JSON-RPC body (the MCP transport reads the body again: [ReplayableBody]). */
 private suspend fun ApplicationCall.calledTool(): String? {
     val body = receiveJsonObjectOrNull(BodyLimits.DEFAULT) ?: return null
     if ((body["method"] as? JsonPrimitive)?.content != "tools/call") return null
@@ -45,7 +45,7 @@ fun Route.oauthMcpRoutes(
     scopeFor: (String) -> Scope?,
     server: suspend (ApplicationCall, McpPrincipal) -> Server,
 ) {
-    install(DoubleReceive)
+    install(ReplayableBody) { maxBytes = BodyLimits.DEFAULT }
 
     suspend fun ApplicationCall.authorize(): McpPrincipal? {
         val guard = ctx.oauth.guard
