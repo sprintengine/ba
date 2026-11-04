@@ -12,6 +12,7 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Kotlin static analysis | `./gradlew :backend:detektMain :backend:detektTest` | detekt 2.0, `backend/config/detekt.yml` (no baseline) |
 | Backend tests + coverage floor | `./gradlew :backend:test :backend:koverVerify` (report: `koverHtmlReport`) | JUnit 5, Testcontainers, Kover |
 | Everything backend | `./gradlew :backend:check` (or `npm run backend:check`) | |
+| Stripe contract (test mode) | `STRIPE_TEST_SECRET_KEY=sk_test_... ./gradlew :backend:stripeContractTest` | Real `SdkStripeGateway` against Stripe test mode; nightly workflow `stripe-contract.yml`, skipped without the secret (backend/README.md) |
 | Frontend formatting | `npm --prefix frontend run format:check` (fix: `format`) | Prettier, `frontend/.prettierrc.json` |
 | Frontend lint | `npm --prefix frontend run lint` | ESLint 9, `frontend/eslint.config.mjs` (no suppressions) |
 | Types | `npm --prefix frontend run typecheck` | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`) |
