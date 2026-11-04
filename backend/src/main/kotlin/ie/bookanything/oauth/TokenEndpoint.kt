@@ -16,7 +16,8 @@ data class TokenResponse(
 /**
  * `POST /v1/oauth/token` (form-encoded): `authorization_code` with PKCE, and `refresh_token` with rotation.
  * Every client is public, so the client is identified by `client_id` and proves possession with PKCE (codes) or the
- * single-use refresh token. A replayed code or refresh token revokes the whole grant.
+ * single-use refresh token. A replayed code or refresh token revokes the whole grant, except that a refresh token may be
+ * presented again with its `client_id` shortly after its rotation ([TokenPolicy.REFRESH_REUSE_GRACE]).
  */
 class TokenEndpoint(
     private val config: OAuthConfig, private val clients: ClientRegistry, private val store: TokenStore, private val clock: Clock,
@@ -55,6 +56,7 @@ class TokenEndpoint(
         val record = when (val r = store.redeemCode(code, now)) {
             is Redemption.Valid -> r.record
             is Redemption.Replayed -> throw OAuthException.invalidGrant("This authorization code was already used; access was revoked")
+            is Redemption.Reused -> error("Authorization codes have no reuse grace")
             Redemption.Invalid -> throw OAuthException.invalidGrant("The authorization code is invalid or expired")
         }
         // The code is spent from here on: any mismatch below means a failed attempt, and the client must start again.
@@ -66,7 +68,7 @@ class TokenEndpoint(
         }
         if (!Pkce.verify(params["code_verifier"], record.codeChallenge)) throw OAuthException.invalidGrant("PKCE verification failed")
         checkResource(params["resource"], record.resource)
-        return issue(record.grantId, record.scopes, record.resource)
+        return issue(record.grantId, record.scopes, record.resource, rotatedFrom = null)
     }
 
     private fun refresh(params: Map<String, String?>): TokenResponse {
@@ -77,13 +79,18 @@ class TokenEndpoint(
         // so the client can retry with the same refresh token instead of being disconnected. (A replayed token still
         // reaches the replay detection below.)
         val current = store.findToken(token)
-        val redeemable = TokenPolicy.classifyRefresh(current, clock.instant()) is Redemption.Valid
+        val redeemable = when (TokenPolicy.classifyRefresh(current, clock.instant())) {
+            is Redemption.Valid, is Redemption.Reused -> true
+            else -> false
+        }
         if (current != null && redeemable && current.clientId == client.clientId) {
             scopesFor(current, requested)
             checkResource(params["resource"], current.resource)
         }
         val record = when (val r = store.redeemRefresh(token, clock.instant())) {
+            // Reused: a parallel or retried refresh by the same client gets a pair of its own (the client check is below).
             is Redemption.Valid -> r.record
+            is Redemption.Reused -> r.record
             is Redemption.Replayed -> throw OAuthException.invalidGrant("This refresh token was already used; access was revoked")
             Redemption.Invalid -> throw OAuthException.invalidGrant("The refresh token is invalid, expired or revoked")
         }
@@ -93,26 +100,28 @@ class TokenEndpoint(
         }
         val scopes = scopesFor(record, requested)
         checkResource(params["resource"], record.resource)
-        return issue(record.grantId, scopes, record.resource)
+        return issue(record.grantId, scopes, record.resource, rotatedFrom = token)
     }
 
-    /** A narrower scope of the grant's resource may be requested (RFC 6749 6); never a wider one. */
-    private fun scopesFor(record: TokenRecord, raw: String?): Set<Scope> = when (
-        val requested = raw?.let { ScopeRequest.parse(it, config.resourceFor(record.resource) ?: McpResource.CUSTOMER) }
-    ) {
-        null -> record.scopes
-        is ScopeRequest.Unknown -> throw OAuthException.invalidScope("Unknown scope: ${requested.values.joinToString(" ")}")
-        is ScopeRequest.OtherResource -> throw OAuthException.invalidScope("Scope exceeds the original grant")
-        is ScopeRequest.Valid -> if (record.scopes.containsAll(requested.scopes)) {
-            requested.scopes
-        } else {
-            throw OAuthException.invalidScope("Scope exceeds the original grant")
+    /**
+     * A narrower scope of the grant's resource may be requested (RFC 6749 6); never a wider one. Values that aren't scopes
+     * of the grant's resource are dropped as at the authorization endpoint (some clients repeat `openid` and the like), and
+     * a request that names none of them keeps the presented token's scopes.
+     */
+    private fun scopesFor(record: TokenRecord, raw: String?): Set<Scope> {
+        val requested = ScopeRequest.requested(raw, config.resourceFor(record.resource) ?: McpResource.CUSTOMER)
+        return when {
+            requested.isEmpty() -> record.scopes
+            Scope.covered(record.scopes).containsAll(requested) -> requested
+            else -> throw OAuthException.invalidScope("Scope exceeds the original grant")
         }
     }
 
-    private fun issue(grantId: java.util.UUID, scopes: Set<Scope>, resource: String): TokenResponse {
+    private fun issue(grantId: java.util.UUID, scopes: Set<Scope>, resource: String, rotatedFrom: String?): TokenResponse {
         val now = clock.instant()
-        val t = store.issueTokens(grantId, scopes, resource, now.plus(config.accessTokenTtl), now.plus(config.refreshTokenTtl), now)
+        val t = store.issueTokens(
+            grantId, scopes, resource, now.plus(config.accessTokenTtl), now.plus(config.refreshTokenTtl), now, rotatedFrom,
+        ) ?: throw OAuthException.invalidGrant("Access was revoked or no longer covers this scope; connect the app again")
         return TokenResponse(t.accessToken, expiresIn = t.expiresInSeconds, refreshToken = t.refreshToken, scope = Scope.format(t.scopes))
     }
 

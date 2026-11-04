@@ -16,6 +16,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
@@ -46,6 +47,7 @@ data class RegistrationResponse(
  * current MCP authorization spec). Metadata documents are cached in `oauth_clients` per their HTTP cache lifetime.
  */
 class ClientRegistry(private val db: Db, private val fetcher: ClientMetadataFetcher) {
+    private val log = LoggerFactory.getLogger(ClientRegistry::class.java)
     private val fetches = Semaphore(MAX_CONCURRENT_FETCHES)
 
     /** client_id -> until when its document is not fetched again (the last fetch failed). Bounded by [rememberFailure]. */
@@ -58,6 +60,10 @@ class ClientRegistry(private val db: Db, private val fetcher: ClientMetadataFetc
         private const val MIN_CACHE_SECONDS = 300L
         private const val MAX_CACHE_SECONDS = 86_400L
         private const val MAX_CLIENT_ID_LENGTH = 512
+        private const val MAX_LOGGED = 200
+
+        /** Control, format (bidi overrides) and line/paragraph separator characters, kept out of log lines. */
+        private val UNPRINTABLE = Regex("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]")
 
         /** Metadata documents fetched at once; another request waits up to [FETCH_WAIT_MILLIS] for a turn, then fails. */
         const val MAX_CONCURRENT_FETCHES = 4
@@ -154,6 +160,18 @@ class ClientRegistry(private val db: Db, private val fetcher: ClientMetadataFetc
         return client
     }
 
+    /**
+     * Logs why [clientId]'s document was refused (the user only sees that the app can't be connected), and returns null.
+     * The document is public metadata: nothing secret is logged.
+     */
+    private fun rejected(clientId: String, reason: String): OAuthClient? {
+        log.warn("Client ID metadata document {} rejected: {}", printable(clientId), reason)
+        return null
+    }
+
+    /** [text] safe for a log line: shortened, control characters replaced. */
+    private fun printable(text: String) = text.take(MAX_LOGGED).replace(UNPRINTABLE, "?")
+
     private fun rememberFailure(clientId: String, now: Instant) {
         if (failures.size >= MAX_REMEMBERED_FAILURES) {
             failures.entries.removeIf { !it.value.isAfter(now) }
@@ -163,15 +181,20 @@ class ClientRegistry(private val db: Db, private val fetcher: ClientMetadataFetc
     }
 
     private fun fetchAndStore(clientId: String, now: Instant): OAuthClient? {
-        val doc = fetcher.fetch(clientId) ?: return null
-        val json = runCatching { ie.bookanything.http.ApiJson.parseToJsonElement(doc.body).jsonObject }.getOrNull() ?: return null
+        val doc = fetcher.fetch(clientId) ?: return rejected(clientId, "it could not be fetched, or wasn't a JSON body under 5 KB")
+        val json = runCatching { ie.bookanything.http.ApiJson.parseToJsonElement(doc.body).jsonObject }.getOrNull()
+            ?: return rejected(clientId, "it is not a JSON object")
         // The document must name itself exactly (draft-ietf-oauth-client-id-metadata-document 4.1).
-        if (json.string("client_id") != clientId) return null
-        val redirects = json.strings("redirect_uris")?.takeIf { it.isNotEmpty() && it.size <= MAX_REDIRECT_URIS } ?: return null
-        if (redirects.any { RedirectUris.problem(it) != null }) return null
+        if (json.string("client_id") != clientId) return rejected(clientId, "its client_id is not the URL it was fetched from")
+        val redirects = json.strings("redirect_uris")?.takeIf { it.isNotEmpty() && it.size <= MAX_REDIRECT_URIS }
+            ?: return rejected(clientId, "redirect_uris must list 1 to $MAX_REDIRECT_URIS URIs")
+        redirects.firstNotNullOfOrNull { uri -> RedirectUris.problem(uri)?.let { "redirect URI ${printable(uri)} $it" } }
+            ?.let { return rejected(clientId, it) }
         // We only support public clients (PKCE, no client authentication).
-        json.string("token_endpoint_auth_method")?.let { if (it != "none") return null }
-        val name = json.string("client_name")?.take(100)?.takeIf { it.isNotEmpty() } ?: return null
+        json.string("token_endpoint_auth_method")?.let {
+            if (it != "none") return rejected(clientId, "token_endpoint_auth_method is ${printable(it)}, and only none is supported")
+        }
+        val name = json.string("client_name")?.take(100)?.takeIf { it.isNotEmpty() } ?: return rejected(clientId, "client_name is missing")
         val uri = json.string("client_uri")?.takeIf { it.startsWith("https://") && it.length <= 500 }
         val ttl = (doc.maxAgeSeconds ?: DEFAULT_CACHE_SECONDS).coerceIn(MIN_CACHE_SECONDS, MAX_CACHE_SECONDS)
         db.txBlocking { conn ->

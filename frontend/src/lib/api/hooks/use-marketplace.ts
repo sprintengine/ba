@@ -32,6 +32,22 @@ export function useMarketplaceMeta(options?: QueryOptions<MarketplaceMeta>) {
 }
 
 /**
+ * The marketplace search's query key, function and paging: for `useMarketplaceSearch`, and for code that fetches
+ * exactly what Explore shows (its WebMCP tools), sharing the cache.
+ */
+export function marketplaceSearchQuery(query: Omit<MarketplaceSearchQuery, "cursor">) {
+  return {
+    queryKey: qk.marketplace.search(query),
+    queryFn: ({ pageParam, signal }: { pageParam: string | null; signal: AbortSignal }) =>
+      marketplaceApi.search({ ...query, cursor: pageParam }, { signal }),
+    ...cursorPaging,
+  };
+}
+
+/** How long a search's results are fresh. */
+export const MARKETPLACE_SEARCH_STALE_MS = 30_000;
+
+/**
  * Marketplace search, one page per `fetchNextPage()`. Keeps the previous results while a new query loads so the
  * list doesn't flash empty between filter changes.
  */
@@ -40,12 +56,10 @@ export function useMarketplaceSearch(
   options?: InfiniteQueryOptions<Listing>,
 ) {
   return useInfiniteQuery({
-    staleTime: 30_000,
+    staleTime: MARKETPLACE_SEARCH_STALE_MS,
     placeholderData: keepPreviousData,
     ...options,
-    queryKey: qk.marketplace.search(query),
-    queryFn: ({ pageParam, signal }) => marketplaceApi.search({ ...query, cursor: pageParam }, { signal }),
-    ...cursorPaging,
+    ...marketplaceSearchQuery(query),
   });
 }
 
