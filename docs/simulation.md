@@ -3,9 +3,9 @@
 A suite that runs the app the way its users do, for as long as you let it: customers book random times, pay or
 walk away from payment, cancel and reschedule; owners approve requests, book for customers, add and retire services,
 add staff, change who can do what and their hours, take time off and close for the day. Throughout, a checker asserts
-the invariants below. It runs for 10 minutes in CI, and is built to run for days on a staging environment (once the
-simulation can sign in there; see [On staging](#on-staging)), to show the app stays correct under sustained,
-overlapping, realistic use, and to find the bugs that only show up then.
+the invariants below. It runs for 10 minutes in CI, and nightly for 5 hours against staging (built to run for days;
+see [On staging](#on-staging)), to show the app stays correct under sustained, overlapping, realistic use, and to find
+the bugs that only show up then.
 
 The bots are scripted, not AI: every decision comes from a seeded random stream, so a seed names a run. The code is in
 `simulation/` (TypeScript, Node 22). It drives the API through the website's own client (`frontend/src/lib/api`, the
@@ -114,6 +114,7 @@ backend logs too), plus each violation and check; `report.md` is the summary.
 | `--check-every` | `60s` | |
 | `--settle` | `90s` | pause after the last action before the final check |
 | `--database-url` | `SIM_DATABASE_URL` | read-only SQL checks |
+| `--auth` | `dev` | `dev` (dev tokens) or `simulation-token` (staging; `SIMULATION_AUTH_SECRET` in the environment) |
 | `--no-plan-limit` | | skip the Free plan scenario |
 | `--strict`, `--fail-fast` | | known failures fail too; stop at the first failure |
 
@@ -132,26 +133,110 @@ action log, report and backend log are uploaded as the `simulation` artifact: do
 
 ### On staging
 
-Phase 1 runs against development stacks only. Two seams are ready for staging:
+The nightly **Simulation (staging)** workflow (`.github/workflows/simulation-staging.yml`) runs the simulation against
+the staging deploy for 5 hours at 30 actions a minute, with Stripe Checkout payments, and uploads the action log and
+report as the `simulation-staging` artifact. It also runs by hand (`workflow_dispatch`: duration, rate, share paid
+through Checkout, seed). It never runs for pull requests, and skips itself with a notice until staging is configured.
 
-- **Sign-in** (`simulation/src/auth.ts`). Bots sign in with dev tokens, which only a development backend accepts.
-  Staging needs a staging-only simulation sign-in in the backend (with APP_ENV=staging): for example tokens signed with
-  a secret shared with the simulation, accepted only when that secret is configured and only for identities in a
-  reserved namespace, so they can't be used to sign in as a real user. A second `AuthProvider` then mints them. The
-  backend has no such mode yet.
-- **Payments** (`simulation/src/payer.ts`). `--payments stripe-checkout` pays a share of paid bookings
-  (`--stripe-share`, 0.1 by default) through real Stripe Checkout in test mode, driven by Playwright with the
-  4242 4242 4242 4242 test card; the others are abandoned (their hold lapses). Confirmation arrives through Stripe's
-  webhook after the redirect, so the bots read the booking until it stops being held (up to 90 seconds), and expect
-  holds of at least 31 minutes. It needs `npm --prefix simulation install --no-save playwright && npx playwright
-  install chromium`, and Stripe test keys and the webhook on staging. It can't be verified until staging exists.
+**Sign-in.** Staging has no dev auth, and bots can't sign in through Clerk. With `--auth simulation-token` the runner
+mints the backend's staging-only simulation tokens itself (`SimulationTokenAuthProvider` in `simulation/src/auth.ts`)
+from `SIMULATION_AUTH_SECRET`, the same secret the staging backend is configured with. The backend accepts them only
+with that secret set, which production refuses at startup, and only for identities in a reserved namespace: subjects
+`sim_…` and emails on `sim.bookanything.test`, so a leaked secret can't sign in as a real user. Tokens are HMAC-signed,
+live 10 minutes (the backend accepts at most 15) and are renewed after 5. The design and every check are in
+docs/architecture.md §3.2a. Bots are otherwise ordinary users, so they exercise the real code paths; the namespace
+tells them apart for cleanup and on dashboards (`simulation="true"` on the request metrics, `simulation=true` in log
+lines).
 
-Also for staging: `RATE_LIMIT_MULTIPLIER` is refused outside development, and the public booking limit is 20 per
-10 minutes per address, so either run at a low rate (about 5 actions a minute) from one address, or give the
-simulation's sign-in an allowance as part of the staging sim mode. Point `--app-url` at the staging website and
-`--base-url` at its API, and pass a read-only `SIM_DATABASE_URL` if one is available. Simulated businesses are named
-`Sim Business ...` with slugs `sim-<tag>-...` and are left in place after a run (a staging database can be cleaned of
-them by slug).
+**Rate limits.** Staging's limits are production's (`RATE_LIMIT_MULTIPLIER` is refused outside development). The
+simulation's requests get buckets of their own instead: per identity when signed in, and for guest bookings, which all
+come from the runner's one address, an `X-Simulation-Token` header signed with the same secret marks them as the
+simulation's. Each such bucket allows `SIMULATION_RATE_LIMIT_MULTIPLIER` (default 50) times every limit: the public
+booking limit of 20 per 10 minutes becomes 1,000 per 10 minutes. Limits are never switched off, and
+real visitors' buckets are untouched. Raise the multiplier (up to 1000) for higher rates.
+
+**Setup.**
+
+1. Generate a secret: `openssl rand -base64 48`.
+2. Staging backend (`backend.env` on the staging VM): `SIMULATION_AUTH_SECRET=<secret>`, optionally
+   `SIMULATION_RATE_LIMIT_MULTIPLIER=50`; then `sudo -u deploy ./deploy.sh`. The startup line says `simulation=on`.
+   Never set it in production: the API refuses to start.
+3. GitHub (Settings → Environments → `staging`; its deployment branches must stay limited to `main`, so a run
+   dispatched on another branch can't read them): secret `STAGING_SIMULATION_AUTH_SECRET=<secret>`, variables
+   `STAGING_API_URL` (the staging API, e.g. `https://api-staging.bookanything.ie`) and `STAGING_APP_URL` (the staging
+   website), and optionally the secret `STAGING_SIM_DATABASE_URL`, a read-only `postgres://` URL for the SQL checks.
+4. Run the workflow by hand with `duration: 10m` to check it; the nightly run then follows.
+5. Clean up weekly on the staging VM (docs/deployment.md, 2.4):
+   `docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` (`--dry-run` to count first).
+   It deletes the simulation's businesses (slug `sim-…`, owned and staffed only by simulation users) and users
+   created before the cutoff, and the businesses' Stripe test accounts, and nothing else. Keep the cutoff longer than
+   any run still going.
+
+From any machine: `SIMULATION_AUTH_SECRET=<secret> npm --prefix simulation run sim -- --auth simulation-token
+--base-url https://api-staging.bookanything.ie --app-url https://staging.bookanything.ie --payments stripe-checkout
+--rate 30 --duration 2h`. Keep the secret out of shell history (read it from a file or a password manager).
+
+**Payments on staging.** Staging has no dev payment provider, so run with `--payments stripe-checkout`: a share of paid
+bookings (`--stripe-share`, 0.1 by default) is paid through real Stripe Checkout in test mode, driven by Playwright
+with the 4242 4242 4242 4242 test card; the others are abandoned (their hold lapses). Confirmation arrives through
+Stripe's webhook after the redirect, so the bots read the booking until it stops being held (up to 90 seconds), and
+expect holds of at least 31 minutes. Refunds of those payments go back through Stripe the same way.
+
+A business takes online payments only with a Connect account that has charges enabled. When it opens a business, the
+simulation asks the backend for one (`POST /v1/businesses/{id}/payments/simulation-account`, the `setup.payments`
+action) and waits up to three minutes for Stripe to enable it. The backend creates a **platform-controlled test
+account** for that business (the platform collects its requirements, there is no Stripe dashboard or hosted
+onboarding), filled in with Stripe's verification test values (an individual born 1901-01-01 at
+`address_full_match`, Stripe's test IBAN), and stores it as the business's account. Stripe usually enables charges
+within a minute. The endpoint is not a way to attach an account to a business:
+
+- it only exists on staging with `SIMULATION_AUTH_SECRET` set (which production refuses at startup): anywhere else the
+  path is a 404 like any unknown one;
+- the caller must be signed in with a simulation token as the business's owner, and the business must be a simulation
+  business: a `sim-` slug, a simulation owner, and no member or pending invitation that isn't the simulation's (the
+  purge's rule; checked again with the business and its memberships locked when the account is stored). Anything
+  else is the same 404;
+- Stripe must be on a test key (`sk_test_…` or `rk_test_…`), else it answers `PAYMENTS_NOT_CONFIGURED`;
+- it only ever stores an account it just created, marked in Stripe's metadata as the simulation's for that business
+  (never one the caller names), and leaves a business with another account alone (409).
+
+If the server gives no account (Stripe isn't in test mode on staging, the route doesn't exist, Stripe refused the
+account or didn't enable it in time), the business stays in play without online payments: bots book its free and
+pay-at-venue services only, owners don't ask for online payment, and the report's summary says paid online bookings
+were off there, and why. That is not a violation, but nothing paid online was tested at that business. Prerequisites:
+
+- Playwright's Chromium: Playwright itself is pinned in `simulation/package-lock.json`; `npm --prefix simulation ci`
+  then `npx --prefix simulation playwright install chromium` (the workflow does this);
+- Stripe on the staging backend in test mode: `STRIPE_SECRET_KEY` (`sk_test_…`), and both webhook endpoints with
+  their secrets (`STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET`; backend/README.md "Stripe"), the
+  "Connected accounts" one included: confirmations and refunds of these payments arrive through it;
+- in Stripe's test mode, Connect enabled with the **platform profile complete**, its responsibilities for losses
+  included: Stripe refuses platform-controlled accounts without it (the endpoint then answers
+  `PAYMENTS_NOT_CONFIGURED` with Stripe's code). The nightly Stripe contract test (backend/README.md, "Stripe contract
+  tests") creates the same kind of account and checks that Stripe enables it.
+
+`purge-simulation` also deletes the purged businesses' test accounts at Stripe (on staging with a test key, only
+accounts marked as the simulation's for that business; a failure is logged and counted, and the purge goes on), so
+days of runs don't pile accounts up. Disconnecting payments at a simulated business deletes its test account too, and
+an account deleted at Stripe by hand is replaced on the next run.
+
+**Long runs.** A GitHub-hosted job stops after 6 hours, so a workflow run is at most 5h30m; the nightly run is 5 hours,
+which covers holds, reminders, auto-completion and several businesses filling up and being replaced. For runs of days,
+run the simulation from a small machine of your own (Node 22 and outbound HTTPS; leave about 2 GB of memory for
+Chromium when paying through Checkout) under `tmux` or a systemd service, with the command above and `--duration 3d`.
+The JSONL log gains a line per action and per request, so give it disk to match. Chaining the nightly runs instead gives daily
+coverage, but each run starts a fresh world, so it doesn't find the bugs that need days of accumulated state
+(month boundaries, long-lived holds and reminders across days); a run of days does. Either way, purge with a cutoff
+longer than the run.
+
+**What the secret allows.** Anyone with it can sign in on staging as any number of simulation identities (so
+signed-in simulation traffic is in effect unlimited there) and as any account with a `sim.bookanything.test` address:
+never use such an address for a real person. The purge deletes simulated businesses with everything in them, a real
+tester's bookings there included. Production refuses the secret, so none of this reaches it.
+
+Simulated businesses are named `Sim Business …` with slugs `sim-<tag>-…`; `purge-simulation` removes them once they
+are older than the cutoff. Email to their customers is never sent: the backend skips addresses on special-use domains
+(`.test`, `.example`, …), so a run doesn't bounce mail from the staging sending domain.
 
 ## Replaying a failure
 

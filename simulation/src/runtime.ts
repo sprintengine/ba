@@ -19,6 +19,7 @@ import type { Payer } from "./payer";
 import { Rng } from "./rng";
 import { World, type SimBooking } from "./shadow";
 import { Stats } from "./stats";
+import { PaymentsCoverage } from "./stripe";
 import { ActionLog, formatTrailEntry } from "./trail";
 
 /** Codes any call may end in without that being a finding (reported in the summary all the same). */
@@ -29,6 +30,8 @@ export class Sim {
   readonly world = new World();
   readonly stats = new Stats();
   readonly violations = new Violations();
+  /** Which businesses took online payments (Stripe Checkout runs only). */
+  readonly coverage = new PaymentsCoverage();
   readonly log: ActionLog;
   /** A short tag for names, slugs and emails: from the seed, so a replay names things the same way. */
   readonly tag: string;
@@ -49,35 +52,40 @@ export class Sim {
     this.rng = new Rng(options.seed);
     this.tag = this.rng.child("tag").token(5);
     this.log = new ActionLog(options.logPath);
-    installClient(options.baseUrl, `${options.seed}`, (record, ctx) => {
-      this.stats.recordRequest(record.endpoint, record.status, record.ms);
-      this.log.write({
-        type: "request",
-        seq: ctx?.seq,
-        actor: ctx?.actor,
-        businessId: ctx?.businessId,
-        bookingIds: ctx?.bookingIds ? [...ctx.bookingIds] : undefined,
-        method: record.method,
-        path: record.path,
-        status: record.status,
-        code: record.code,
-        ms: record.ms,
-        requestId: record.requestId,
-      });
-      if (record.status === 0 || record.status >= 500) {
-        this.violate(
-          "no-5xx",
-          `${record.method} ${record.endpoint} answered ${record.status === 0 ? "nothing (network error)" : record.status}`,
-          {
-            requestId: record.requestId,
-            actionSeq: ctx?.seq,
-            actor: ctx?.actor,
-            businessId: ctx?.businessId,
-          },
-          record.requestId,
-        );
-      }
-    });
+    installClient(
+      options.baseUrl,
+      `${options.seed}`,
+      (record, ctx) => {
+        this.stats.recordRequest(record.endpoint, record.status, record.ms);
+        this.log.write({
+          type: "request",
+          seq: ctx?.seq,
+          actor: ctx?.actor,
+          businessId: ctx?.businessId,
+          bookingIds: ctx?.bookingIds ? [...ctx.bookingIds] : undefined,
+          method: record.method,
+          path: record.path,
+          status: record.status,
+          code: record.code,
+          ms: record.ms,
+          requestId: record.requestId,
+        });
+        if (record.status === 0 || record.status >= 500) {
+          this.violate(
+            "no-5xx",
+            `${record.method} ${record.endpoint} answered ${record.status === 0 ? "nothing (network error)" : record.status}`,
+            {
+              requestId: record.requestId,
+              actionSeq: ctx?.seq,
+              actor: ctx?.actor,
+              businessId: ctx?.businessId,
+            },
+            record.requestId,
+          );
+        }
+      },
+      () => auth.guestHeaders(),
+    );
     this.violations.onViolation((v) => {
       this.log.write({
         type: "violation",

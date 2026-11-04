@@ -41,14 +41,15 @@ export function UserMenu({
         {variant === "row" ? (
           <button
             type="button"
-            // Collapsed, only the avatar's initials show: name the menu button.
-            aria-label={collapsed ? "Account menu" : undefined}
             className={cn(
               "flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:bg-accent pointer-coarse:min-h-11",
               collapsed && "justify-center",
             )}
           >
-            <Avatar name={user.name ?? user.email} src={user.imageUrl} size="sm" />
+            {/* The avatar repeats the name beside it. Collapsed, the name is screen-reader text, not an aria-label,
+                which would have to contain the initials shown (WCAG 2.5.3, label in name). */}
+            <Avatar name={user.name ?? user.email} src={user.imageUrl} size="sm" aria-hidden />
+            {collapsed && <span className="sr-only">Account menu</span>}
             {!collapsed && (
               <>
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -62,10 +63,10 @@ export function UserMenu({
         ) : (
           <button
             type="button"
-            aria-label="Account menu"
             className="inline-flex items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none pointer-coarse:size-11"
           >
-            <Avatar name={user.name ?? user.email} src={user.imageUrl} size="md" />
+            <Avatar name={user.name ?? user.email} src={user.imageUrl} size="md" aria-hidden />
+            <span className="sr-only">Account menu</span>
           </button>
         )}
       </DropdownMenuTrigger>

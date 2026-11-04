@@ -109,6 +109,51 @@ is over its limit: 256 KB, 64 KB for OAuth, 1 MB for site plans, business setups
   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is unset: `/sign-in` shows an email+name
   form and demo-account quick picks, stored in `localStorage`.
 
+### 3.2a Simulation sign-in (staging only)
+
+The reliability simulation (docs/simulation.md, "On staging") needs to sign bots in on staging, where there is no dev
+auth and bots can't sign in through Clerk. With `SIMULATION_AUTH_SECRET` set (at least 32 bytes, not `TOKEN_SECRET`),
+the backend also accepts its own simulation tokens beside Clerk's:
+
+- **Never in production.** `AppConfig` refuses to start with the secret set unless `APP_ENV` is `staging` (or
+  `development`; the test harness too), and every spelling of production, a missing `APP_ENV` included, fails. The
+  verifier itself refuses to be built for production. Without the secret nothing of it exists: a `sim.` token is a 401
+  and the guest header below is ignored.
+- **Format.** `Authorization: Bearer sim.<payload>.<signature>`: `<payload>` is base64url JSON `{sub, email, name?,
+  iat, exp, jti?}`, `<signature>` base64url HMAC-SHA256 with the secret over
+  `bookanything-simulation/v1\n<kind>.<payload>` (`<kind>` is `sim`). There is no header or algorithm field: anything
+  not exactly three base64url parts with the `sim` kind is refused before the payload is read, the signature is
+  compared in constant time before the JSON is parsed, and unknown claims are refused. A token lives at most 15
+  minutes (`exp - iat`), with 30 seconds of clock skew.
+- **A reserved namespace.** Only subjects `sim_[A-Za-z0-9_-]{1,100}` and emails exactly on `sim.bookanything.test`
+  are accepted, so a leaked secret can't sign in as a real user: Clerk's subjects are `user_…`, and nobody can verify an
+  address on a `.test` domain. The email counts as verified (invitations to it are accepted on sign-in).
+- **Ordinary users.** The `users` row is upserted as for any sign-in, so bots exercise the real code paths; their
+  subject and email tell them apart for cleanup (`backend purge-simulation`) and metrics.
+- **Rate limits.** A request signed in with a simulation token, or an anonymous one carrying a valid
+  `X-Simulation-Token: simg.<payload>.<signature>` header (same format, kind `simg`, no identity claims), is counted in
+  a bucket of its own (per identity; per address for guests) allowed `SIMULATION_RATE_LIMIT_MULTIPLIER` (default 50)
+  times each limit. Limits still apply. The guest header counts only on a request with no `Authorization` header.
+- **Observability.** Such requests carry `simulation="true"` on the `http_server_requests_total` and
+  `http_server_duration_seconds` series and a `simulation=true` log field (docs/observability.md).
+- **What the secret allows.** Whoever holds it can sign in as any identity in the namespace, as many as they like, so
+  signed-in simulation traffic is in effect not rate limited on staging (each identity has its own bucket). It can
+  also sign in as anyone who registered or was invited with an address on `sim.bookanything.test`: never enter such an
+  address for a real person. Treat the secret like any staging credential, and rotate it by changing it on both sides.
+- **Cleanup.** `backend purge-simulation` deletes a simulated business with everything in it, so a real tester's
+  booking or customer record at one goes with it; it re-checks each business under a row lock before deleting it,
+  then deletes its Stripe test account (below).
+- **Test payments.** `POST /businesses/{id}/payments/simulation-account` gives a simulated business a
+  platform-controlled Stripe test account (requirements filled in with Stripe's verification test values), so the
+  simulation can pay through Checkout. The route exists only on staging with the secret; it answers only a caller
+  signed in with a simulation token who owns a business that is the simulation's (a `sim-` slug, no member or pending
+  invitation outside the namespace, re-checked with the business and its memberships locked when the account is
+  stored), and anything else gets the 404 of an unknown
+  path. It needs a Stripe test key, only stores an account it just created (marked as the simulation's for that
+  business in Stripe's metadata), and never replaces an existing one. The purge deletes only accounts so marked.
+- Email to special-use domains (`.test`, `.example`, `.invalid`, `.localhost`) is never handed to the email provider in
+  any environment (logged as `skipped`): it can't be delivered, and bounces hurt the sending domain.
+
 ### 3.3 Roles
 
 Per business, via `business_members`:
@@ -966,7 +1011,7 @@ hold's end.
 ## 10. Configuration (backend env)
 
 ```
-APP_ENV=development|production            APP_BASE_URL=http://localhost:3000
+APP_ENV=development|staging|production    APP_BASE_URL=http://localhost:3000
 PORT=8080  APP_HOST=0.0.0.0               DATABASE_URL / DATABASE_USERNAME / DATABASE_PASSWORD
 DATABASE_POOL_SIZE=10                     RUN_MIGRATIONS_ON_START=true (dev) / false (prod: run `migrate` command)
 AUTH_MODE=clerk|dev                       CLERK_ISSUER, CLERK_AUTHORIZED_PARTIES, CLERK_WEBHOOK_SECRET
@@ -990,11 +1035,14 @@ TRUST_FORWARDED_FOR=false, TRUSTED_PROXIES (CIDRs; default loopback+private), TR
 JOBS_ENABLED=true                         CORS_ALLOWED_ORIGINS (embeds; default none)
 TOKEN_SECRET (required in production; HMAC key for manage/invite tokens)
 CLERK_JWKS_URL (default ${CLERK_ISSUER}/.well-known/jwks.json)   RATE_LIMITS_ENABLED=true   LOG_LEVEL=INFO
+SIMULATION_AUTH_SECRET (staging only, refused in production: the simulation sign-in, §3.2a)
+SIMULATION_RATE_LIMIT_MULTIPLIER=50 (the simulation's rate-limit allowance; only with SIMULATION_AUTH_SECRET)
 MAPBOX_ACCESS_TOKEN (marketplace geocoding; §18)
 OAUTH_ISSUER (default APP_BASE_URL)   PUBLIC_API_URL (default ${APP_BASE_URL}/api)   MCP_RESOURCE_URL (default ${APP_BASE_URL}/mcp)  (§20)
 ```
 
-CLI commands: `migrate`, `seed-demo` (development only), `email-preview [dir]`.
+CLI commands: `migrate`, `seed-demo` (development only), `email-preview [dir]`, `purge-simulation [--older-than-days N]
+[--dry-run]` (staging: deletes the simulation's old businesses and users, §3.2a; refused in production).
 
 Production: the Next.js `/api` rewrite must forward `X-Forwarded-For`, and
 the API must not be directly reachable, when `TRUST_FORWARDED_FOR=true`.

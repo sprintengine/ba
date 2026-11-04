@@ -17,6 +17,7 @@ import type { Sim } from "./runtime";
 import { todayIn } from "./actions/common";
 import { createBusiness, identity } from "./setup";
 import type { SimBusiness } from "./shadow";
+import { enableOnlinePayments, requestSimulationAccount } from "./stripe";
 import { formatDuration } from "./time";
 
 type Kind = { name: string; weight: number; run: (sim: Sim, rng: Rng) => Promise<string> | null };
@@ -112,7 +113,7 @@ const RETIRE_AFTER_MS = 2 * 3_600_000;
  */
 async function openBusiness(sim: Sim, n: number, limitScenario: boolean): Promise<SimBusiness | null> {
   const key = limitScenario ? "limit" : `b${n}`;
-  const ownerId = identity(sim.tag, "owner", limitScenario ? 0 : n);
+  const ownerId = identity(sim.tag, "owner", limitScenario ? 0 : n, sim.auth.namespace);
   let created: SimBusiness | null = null;
   await sim.act(
     "setup.business",
@@ -147,7 +148,31 @@ async function openBusiness(sim: Sim, n: number, limitScenario: boolean): Promis
   return b;
 }
 
-/** A regular business, in play once it has one staff member (linked to a person). */
+/**
+ * With Stripe Checkout: the business's Stripe test account, once Stripe can take charges on it (`stripe.ts`). Without
+ * one it stays in play with online payments off, which the report says.
+ */
+async function setUpPayments(sim: Sim, b: SimBusiness) {
+  // Off until Stripe can take charges, so a setup that breaks leaves it off, not believed on.
+  b.onlinePayments = false;
+  await sim.act(
+    "setup.payments",
+    owner.ownerOf(b),
+    b.id,
+    async () => {
+      const result = await enableOnlinePayments(() => requestSimulationAccount(b.id));
+      b.onlinePayments = result.on;
+      sim.coverage.record(b.key, result);
+      sim.log.write({ type: "note", note: "payments", key: b.key, id: b.id, ...result });
+      if (!result.on && !sim.options.quiet)
+        process.stdout.write(`Online payments off at ${b.key}: ${result.reason}\n`);
+      return result.on ? "online" : "offline";
+    },
+    { setup: true, stream: `setup.payments:${b.key}` },
+  );
+}
+
+/** A regular business, in play once it has one staff member (linked to a person) and, with Stripe, its account. */
 async function openRegularBusiness(sim: Sim, n: number): Promise<SimBusiness | null> {
   const b = await openBusiness(sim, n, false);
   if (!b) return null;
@@ -156,13 +181,15 @@ async function openRegularBusiness(sim: Sim, n: number): Promise<SimBusiness | n
     // Keyed by business, so an opening that failed doesn't shift the next one's draws.
     stream: `setup.staff:${b.key}`,
   });
+  if (sim.options.payments === "stripe-checkout") await setUpPayments(sim, b);
   sim.world.addBusiness(b);
   return b;
 }
 
 /** The businesses, then the Free plan scenario on a business of its own. */
 async function setUp(sim: Sim) {
-  for (let i = 1; i <= sim.options.customers; i++) sim.customers.push(identity(sim.tag, "customer", i));
+  for (let i = 1; i <= sim.options.customers; i++)
+    sim.customers.push(identity(sim.tag, "customer", i, sim.auth.namespace));
   const health = await attempt(publicApi.health());
   if (!health.ok)
     throw new Error(`The API at ${sim.options.baseUrl} is not healthy: ${health.code} ${health.message}`);
@@ -175,6 +202,8 @@ async function setUp(sim: Sim) {
     if (b) {
       await sim.act("scenario.member_cap", owner.ownerOf(b), b.id, (a) => memberCapScenario(sim, a, b));
       await sim.act("scenario.plan_limit", owner.ownerOf(b), b.id, (a) => planLimitScenario(sim, a, b));
+      // Its owner may make a service paid later on.
+      if (sim.options.payments === "stripe-checkout") await setUpPayments(sim, b);
       sim.world.addBusiness(b);
     }
   }
@@ -335,6 +364,7 @@ export async function run(sim: Sim): Promise<boolean> {
     bookings: sim.world.bookings().length,
     checks: checker.runs,
     harnessErrors: sim.harnessErrors,
+    coverage: sim.coverage.summary(),
     violations: sim.violations.list,
     passed: failing.length === 0 && sim.harnessErrors === 0,
   };

@@ -1,4 +1,4 @@
-// ESLint 9 flat config: the recommended JS and type-aware TypeScript rules, formatting left to Prettier.
+// ESLint 10 flat config: the recommended JS and type-aware TypeScript rules, formatting left to Prettier.
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier/flat";
 import { defineConfig, globalIgnores } from "eslint/config";

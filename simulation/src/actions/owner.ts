@@ -171,7 +171,11 @@ export async function staffBook(
   if (!availability.ok) return "no_slots";
   const slot = pickSlot(a.rng, slotsOf(availability.value));
   if (!slot) return "no_slot";
-  const paymentMode = opts.paymentMode ?? a.rng.pick(["none", "at_venue", "collect_online"] as const);
+  const paymentMode =
+    opts.paymentMode ??
+    a.rng.pick(
+      b.onlinePayments ? (["none", "at_venue", "collect_online"] as const) : (["none", "at_venue"] as const),
+    );
   const n = a.seq;
   const body: CreateStaffBooking = {
     serviceId: service.id,
@@ -864,7 +868,7 @@ export function seats(b: SimBusiness): number {
 export async function teamInvite(sim: Sim, a: ActionScope, b: SimBusiness): Promise<string> {
   const resource = a.rng.maybePick(persons(b).filter((r) => r.memberId === null));
   const full = seats(b) >= 3;
-  const staff = identity(sim.tag, `staff${b.key}x`, a.seq);
+  const staff = identity(sim.tag, `staff${b.key}x`, a.seq, sim.auth.namespace);
   const result = await a.expect(
     "invite staff",
     teamApi.invite(b.id, { email: staff.email, role: "staff", resourceId: resource?.id ?? null }),
