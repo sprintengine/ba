@@ -100,6 +100,7 @@ services/commands, repositories, DTOs and rules.
 | `ai` (+ `ai/usage`, `ai/fake`), `assistant` (Bo) | the model seam, metering, the business assistant |
 | `marketplace`, `offers`, `geo`, `mcp`, `oauth` | `/explore`, deals, geocoding, the MCP servers and OAuth |
 | `auth`, `audit`, `http`, `db`, `config`, `seed` | cross-cutting: identity, audit log, HTTP helpers and errors, JDBC, config, demo data |
+| `observability` | error reporting (Sentry) and metrics (Micrometer, OTLP): `Telemetry`, the request metrics plugin, the job queue gauges ([`observability.md`](observability.md)) |
 
 `AppContext.kt` is the composition root: infrastructure and seams come in through its constructor (tests pass
 fakes), and it builds one **feature module** per feature from them, once: `ctx.ai` (`AiModule`: credit meter,
@@ -199,6 +200,12 @@ from config: `PaymentProvider` (Stripe Connect or the dev provider), `EmailSende
 `support/TestSupport.kt`); a feature module can also be built on its own from its constructor arguments. Generators degrade gracefully: without a model, `TemplateDraftGenerator` and
 `TemplateSiteGenerator` stand in.
 
+Error reporting and metrics are the exception: like the logger they are process-wide (`observability/Telemetry`),
+installed once by `main` (Sentry, the OTLP push) and no-ops until then, so a rule deep in a command can count an
+outcome without taking another constructor argument. Count after the commit (`conn.afterCommit { ... }`), never for
+work that rolls back, and only with labels from a small fixed set ([`observability.md`](observability.md) §3). Tests
+record into their own registry with `withTelemetry`.
+
 ## 5. Registries
 
 Adding a variant is one entry in a list; nothing else should switch on the type.
@@ -217,8 +224,8 @@ Adding a variant is one entry in a list; nothing else should switch on the type.
 
 A client-visible failure is an `ApiException` from the `Errors` catalogue (`Errors.field("to", "Must be on or after
 from")`, `Errors.notFound("Booking")`, `Errors.slotUnavailable()`). `StatusPages` renders it as
-`{"error": {"code", "message", "fields"}}`; messages and fields are safe to show users. Unknown exceptions are logged
-and become a generic 500. SQL constraint violations that mean something to the user are translated where they
+`{"error": {"code", "message", "fields"}}`; messages and fields are safe to show users. Unknown exceptions are logged,
+reported to Sentry when it is configured, and become a generic 500. SQL constraint violations that mean something to the user are translated where they
 happen (an exclusion violation on allocations is `SLOT_UNAVAILABLE`). Validation collects field problems with
 `http/Validator` and throws once (`v.throwIfInvalid()`).
 

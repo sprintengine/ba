@@ -4,6 +4,7 @@ import ie.bookanything.db.Jsonb
 import ie.bookanything.db.instant
 import ie.bookanything.db.int
 import ie.bookanything.db.json
+import ie.bookanything.db.long
 import ie.bookanything.db.query
 import ie.bookanything.db.queryOne
 import ie.bookanything.db.str
@@ -17,6 +18,9 @@ import java.time.Instant
 import java.util.UUID
 
 data class Job(val id: UUID, val kind: String, val payload: JsonObject, val attempts: Int, val maxAttempts: Int)
+
+/** The jobs of one [kind] that are due and waiting: how many, and how long the oldest has been due. */
+data class QueueBacklog(val kind: String, val due: Long, val oldestDue: Duration)
 
 /**
  * Postgres-backed job queue. Enqueue inside the caller's transaction (transactional outbox):
@@ -75,17 +79,21 @@ object JobQueue {
         conn.update("UPDATE jobs SET status = 'done', locked_at = NULL, last_error = NULL WHERE id = ?", id)
     }
 
-    /** Exponential backoff: 10s, 20s, 40s … capped at 1 hour; failed after max_attempts. */
-    fun fail(conn: Connection, job: Job, error: String) {
+    /**
+     * Exponential backoff: 10s, 20s, 40s … capped at 1 hour; failed after max_attempts. Returns true when the job failed
+     * for good (nothing will retry it).
+     */
+    fun fail(conn: Connection, job: Job, error: String): Boolean {
         val delaySeconds = minOf(3600L, 10L * (1L shl minOf(job.attempts - 1, 16)))
-        conn.update(
+        return conn.queryOne(
             """
             UPDATE jobs SET status = CASE WHEN attempts >= max_attempts THEN 'failed'::job_status ELSE 'pending'::job_status END,
                 run_at = now() + make_interval(secs => ?), locked_at = NULL, locked_by = NULL, last_error = ?
             WHERE id = ?
+            RETURNING status = 'failed' AS final
             """.trimIndent(),
             delaySeconds.toInt(), error.take(MAX_ERROR_LENGTH), job.id,
-        )
+        ) { it.getBoolean("final") } ?: false
     }
 
     /** Returns jobs stuck in `running` (crashed worker) to the queue. */
@@ -99,6 +107,12 @@ object JobQueue {
     fun purgeFailed(conn: Connection, before: Instant, limit: Int): Int = conn.update(
         "DELETE FROM jobs WHERE id IN (SELECT id FROM jobs WHERE status = 'failed' AND created_at < ? LIMIT ?)", before, limit,
     )
+
+    /** Due pending jobs by kind (found through the pending-jobs index on run_at): the queue's depth and lag, for metrics. */
+    fun backlog(conn: Connection): List<QueueBacklog> = conn.query(
+        "SELECT kind, count(*) AS due, (EXTRACT(EPOCH FROM now() - min(run_at)) * 1000)::bigint AS age_ms FROM jobs " +
+            "WHERE status = 'pending' AND run_at <= now() GROUP BY kind",
+    ) { QueueBacklog(it.str("kind"), it.long("due"), Duration.ofMillis(it.long("age_ms").coerceAtLeast(0))) }
 
     fun purgeFinished(conn: Connection, olderThanDays: Int = 14): Int = conn.update(
         "DELETE FROM jobs WHERE status = 'done' AND created_at < now() - make_interval(days => ?)", olderThanDays,

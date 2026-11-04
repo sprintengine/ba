@@ -10,6 +10,7 @@ import ie.bookanything.config.StripeConfig
 import ie.bookanything.db.Db
 import ie.bookanything.jobs.Job
 import ie.bookanything.jobs.JobQueue
+import ie.bookanything.observability.Telemetry
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -49,12 +50,13 @@ class StripeEventProcessor(
     fun handle(job: Job) {
         val eventId = job.payload["eventId"]?.jsonPrimitive?.content ?: return
         try {
-            db.txBlocking { conn ->
-                val stored = ProviderEventRepository.lock(conn, eventId) ?: return@txBlocking
-                if (stored.processed) return@txBlocking
+            val lag = db.txBlocking { conn ->
+                val stored = ProviderEventRepository.lock(conn, eventId) ?: return@txBlocking null
+                if (stored.processed) return@txBlocking null
                 process(conn, stored.type, json.parseToJsonElement(stored.payload) as JsonObject)
                 ProviderEventRepository.markProcessed(conn, eventId)
             }
+            lag?.let(Telemetry.metrics::stripeWebhookLag)
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // Records the error on the event and rethrows.
             runCatching {
                 val error = (e.message ?: e.javaClass.simpleName).take(MAX_ERROR_LENGTH)

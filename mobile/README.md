@@ -33,6 +33,21 @@ the same Wi-Fi reaches the local backend with no setup. Another port: `EXPO_PUBL
 **Sign in.** Without `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` the app offers the seeded demo accounts (owner, staff,
 customer) or any email: the backend's dev tokens (it must run `AUTH_MODE=dev`). With a key it uses Clerk.
 
+**Configuration.** Public settings are environment variables read by `app.config.ts` into `extra` (EAS environment
+variables for builds, `mobile/.env.local` locally, see `.env.example`); the app reads them through `env`
+(`src/config/env.ts`). Restart Metro after changing them.
+
+| Variable                            | Default                                        | What it does                                                                                |
+| ----------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `APP_VARIANT`                       | `development`                                  | `development`, `preview` or `production` (set per EAS profile)                              |
+| `EXPO_PUBLIC_API_URL`               | development: `http://<Metro host>:8080`        | API origin                                                                                  |
+| `EXPO_PUBLIC_API_PORT`              | `8080`                                         | development: the local API's port                                                           |
+| `EXPO_PUBLIC_WEB_URL`               | the variant's website (development: `:3000`)   | website origin                                                                              |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | unset: dev sign-in                             | Clerk                                                                                       |
+| `EXPO_PUBLIC_SENTRY_DSN`            | unset: no error reporting, Sentry never starts | Sentry crash and error reporting (`docs/mobile.md` "Errors and crash reporting")            |
+| `EXPO_PUBLIC_SENTRY_ENVIRONMENT`    | `development` / `staging` / `production`       | overrides the Sentry environment derived from the variant                                   |
+| `SENTRY_AUTH_TOKEN` (EAS secret)    | unset: no upload                               | build time only: uploads source maps and debug symbols; with `SENTRY_ORG`, `SENTRY_PROJECT` |
+
 **A physical iPhone.** `npx expo run:ios --device` lists paired devices. Signing uses the team in `app.config.ts`
 (`appleTeamId`, override with `APPLE_TEAM_ID`); the phone needs Developer Mode on and the Mac's certificate trusted.
 

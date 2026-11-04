@@ -5,6 +5,7 @@ import ie.bookanything.db.queryOne
 import ie.bookanything.db.str
 import ie.bookanything.db.update
 import java.sql.Connection
+import java.time.Duration
 import java.time.Instant
 
 /** A webhook event as stored: its type, raw JSON payload and whether it has been applied. */
@@ -27,10 +28,12 @@ object ProviderEventRepository {
         "SELECT type, payload::text AS payload, processed_at IS NOT NULL AS done FROM provider_events WHERE id = ? FOR UPDATE", id,
     ) { StoredProviderEvent(it.str("type"), it.str("payload"), it.getBoolean("done")) }
 
-    /** Marks the event applied (or deliberately ignored) and clears any earlier error. */
-    fun markProcessed(conn: Connection, id: String) {
-        conn.update("UPDATE provider_events SET processed_at = now(), error = NULL WHERE id = ?", id)
-    }
+    /** Marks the event applied (or deliberately ignored) and clears any earlier error. Returns how long ago it arrived. */
+    fun markProcessed(conn: Connection, id: String): Duration? = conn.queryOne(
+        "UPDATE provider_events SET processed_at = now(), error = NULL WHERE id = ? " +
+            "RETURNING (EXTRACT(EPOCH FROM clock_timestamp() - received_at) * 1000)::bigint AS lag_ms",
+        id,
+    ) { Duration.ofMillis(it.getLong("lag_ms")) }
 
     /**
      * Whether Stripe has told the platform that [subscriptionId] was deleted. A deleted subscription never comes back,

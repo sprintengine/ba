@@ -108,7 +108,13 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `JOBS_ENABLED` | `true` | Runs the in-process job worker (notifications, hold expiry, reminders, auto-complete). |
 | `CORS_ALLOWED_ORIGINS` | none | Comma-separated origins allowed to call `/v1/public/*` from the browser (embeds). |
 | `LOG_LEVEL` | `INFO` | Root log level. |
-| `APP_VERSION` | `dev` | The build running, reported by `/v1/health` and the startup log. The release train's image sets it to the nightly that built it (`0.4.0-nightly.20261104.17`); leave it unset elsewhere. |
+| `APP_VERSION` | `dev` | The build running, reported by `/v1/health` and the startup log, and Sentry's release. The release train's image sets it to the nightly that built it (`0.4.0-nightly.20261104.17`); leave it unset elsewhere. |
+| `LOG_FORMAT` | `logfmt` | `json` writes one JSON object per line, for a log shipper ([`docs/observability.md`](../docs/observability.md)). |
+| `SENTRY_DSN` | — | Reports unhandled errors, provider failures and jobs out of attempts to Sentry, scrubbed of personal data. Unset: nothing is reported. |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0` | Share of requests sent to Sentry as performance traces (`0`–`1`). |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | Pushes metrics over OTLP/HTTP to `<endpoint>/v1/metrics` every minute (Grafana Cloud's OTLP gateway). Unset: no metrics. |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Headers for the push, `key=value` pairs, percent-encoded (Grafana Cloud: `Authorization=Basic%20…`). |
+| `OTEL_SERVICE_INSTANCE_ID` | `HOSTNAME` | Tells instances apart in the metrics. |
 | `MAPBOX_ACCESS_TOKEN` | — | Geocodes business addresses for the marketplace with Mapbox (see "Geocoding"). Without it, the built-in table of Irish places is used. |
 | `OAUTH_ISSUER` | `APP_BASE_URL` | Issuer of our OAuth authorization server (section 20). The consent page is `${OAUTH_ISSUER}/oauth/authorize`. |
 | `PUBLIC_API_URL` | `${APP_BASE_URL}/api` | Public base URL of this API, used for the token, registration and revocation endpoints in the OAuth metadata. |
