@@ -28,6 +28,8 @@ describe("resolveEnv", () => {
       webUrl: "https://bookanything.ie",
       authMode: "clerk",
       clerkPublishableKey: "pk_live_x",
+      sentryDsn: null,
+      sentryEnvironment: "production",
     });
     expect(configProblem(e)).toBeNull();
   });
@@ -36,6 +38,14 @@ describe("resolveEnv", () => {
     expect(configProblem(resolveEnv({ variant: "preview" }, null))).toMatch(/API/);
     expect(configProblem(resolveEnv({ variant: "preview", apiUrl: "https://x" }, null))).toMatch(/sign-in/);
     expect(configProblem(resolveEnv({}, null))).toBeNull();
+  });
+
+  it("reports to Sentry only with a DSN, under the variant's environment unless overridden", () => {
+    expect(resolveEnv({}, null)).toMatchObject({ sentryDsn: null, sentryEnvironment: "development" });
+    expect(resolveEnv({ variant: "preview", sentryDsn: "https://key@sentry.example/1" }, null)).toMatchObject(
+      { sentryDsn: "https://key@sentry.example/1", sentryEnvironment: "staging" },
+    );
+    expect(resolveEnv({ variant: "preview", sentryEnvironment: "qa" }, null).sentryEnvironment).toBe("qa");
   });
 
   it("reads the host out of a Metro host URI", () => {
