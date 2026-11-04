@@ -50,7 +50,10 @@ async function findSlot(
   b: SimBusiness,
   filter?: (s: Service) => boolean,
 ): Promise<Pick | null> {
-  const services = activeServices(b, true).filter((s) => !filter || filter(s));
+  // A business without online payments (no Stripe test account on staging) is booked for what isn't paid online.
+  const services = activeServices(b, true).filter(
+    (s) => (b.onlinePayments || !needsOnlinePayment(s)) && (!filter || filter(s)),
+  );
   const service = a.rng.maybePick(services);
   if (!service) return null;
   const mark = configMark(b);

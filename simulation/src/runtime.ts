@@ -19,6 +19,7 @@ import type { Payer } from "./payer";
 import { Rng } from "./rng";
 import { World, type SimBooking } from "./shadow";
 import { Stats } from "./stats";
+import { PaymentsCoverage } from "./stripe";
 import { ActionLog, formatTrailEntry } from "./trail";
 
 /** Codes any call may end in without that being a finding (reported in the summary all the same). */
@@ -29,6 +30,8 @@ export class Sim {
   readonly world = new World();
   readonly stats = new Stats();
   readonly violations = new Violations();
+  /** Which businesses took online payments (Stripe Checkout runs only). */
+  readonly coverage = new PaymentsCoverage();
   readonly log: ActionLog;
   /** A short tag for names, slugs and emails: from the seed, so a replay names things the same way. */
   readonly tag: string;

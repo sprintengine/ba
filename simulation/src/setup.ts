@@ -311,6 +311,7 @@ export async function createBusiness(
     cappedMonth: null,
     cappedAt: null,
     dormant: false,
+    onlinePayments: true,
   };
   for (const r of resources) {
     const availability = await resourcesApi.availability(business.id, r.id);

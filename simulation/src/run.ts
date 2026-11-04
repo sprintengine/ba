@@ -17,6 +17,7 @@ import type { Sim } from "./runtime";
 import { todayIn } from "./actions/common";
 import { createBusiness, identity } from "./setup";
 import type { SimBusiness } from "./shadow";
+import { enableOnlinePayments, requestSimulationAccount } from "./stripe";
 import { formatDuration } from "./time";
 
 type Kind = { name: string; weight: number; run: (sim: Sim, rng: Rng) => Promise<string> | null };
@@ -147,7 +148,29 @@ async function openBusiness(sim: Sim, n: number, limitScenario: boolean): Promis
   return b;
 }
 
-/** A regular business, in play once it has one staff member (linked to a person). */
+/**
+ * With Stripe Checkout: the business's Stripe test account, once Stripe can take charges on it (`stripe.ts`). Without
+ * one it stays in play with online payments off, which the report says.
+ */
+async function setUpPayments(sim: Sim, b: SimBusiness) {
+  await sim.act(
+    "setup.payments",
+    owner.ownerOf(b),
+    b.id,
+    async () => {
+      const result = await enableOnlinePayments(() => requestSimulationAccount(b.id));
+      b.onlinePayments = result.on;
+      sim.coverage.record(b.key, result);
+      sim.log.write({ type: "note", note: "payments", key: b.key, id: b.id, ...result });
+      if (!result.on && !sim.options.quiet)
+        process.stdout.write(`Online payments off at ${b.key}: ${result.reason}\n`);
+      return result.on ? "online" : "offline";
+    },
+    { setup: true, stream: `setup.payments:${b.key}` },
+  );
+}
+
+/** A regular business, in play once it has one staff member (linked to a person) and, with Stripe, its account. */
 async function openRegularBusiness(sim: Sim, n: number): Promise<SimBusiness | null> {
   const b = await openBusiness(sim, n, false);
   if (!b) return null;
@@ -156,6 +179,7 @@ async function openRegularBusiness(sim: Sim, n: number): Promise<SimBusiness | n
     // Keyed by business, so an opening that failed doesn't shift the next one's draws.
     stream: `setup.staff:${b.key}`,
   });
+  if (sim.options.payments === "stripe-checkout") await setUpPayments(sim, b);
   sim.world.addBusiness(b);
   return b;
 }
@@ -336,6 +360,7 @@ export async function run(sim: Sim): Promise<boolean> {
     bookings: sim.world.bookings().length,
     checks: checker.runs,
     harnessErrors: sim.harnessErrors,
+    coverage: sim.coverage.summary(),
     violations: sim.violations.list,
     passed: failing.length === 0 && sim.harnessErrors === 0,
   };
