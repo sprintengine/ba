@@ -177,6 +177,19 @@ export default defineConfig([
       // Turbopack can't shake zod's re-exported `z` namespace: `import { z }` ships every locale and the JSON
       // Schema tooling (380 KB raw on almost every page), `import * as z` only the schemas we call (106 KB).
       "no-restricted-syntax": ["error", ZOD_NAMESPACE_IMPORT],
+
+      // next/font/google downloads the fonts while building, so a build fails whenever Google is unreachable.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "next/font/google",
+              message: "Commit the font files instead (src/lib/site/fonts.module.css, or next/font/local).",
+            },
+          ],
+        },
+      ],
     },
   },
 
