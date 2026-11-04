@@ -7,28 +7,16 @@ import ie.bookanything.support.LocalHttpServer
 import ie.bookanything.templates.BlockedUrlException
 import ie.bookanything.templates.SafeWebsiteFetcher
 import ie.bookanything.templates.UrlGuard
-import okhttp3.Address
-import okhttp3.Authenticator
-import okhttp3.Call
-import okhttp3.Connection
-import okhttp3.ConnectionSpec
-import okhttp3.Dns
-import okhttp3.Handshake
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.Interceptor
-import okhttp3.Protocol
 import okhttp3.Request
-import okhttp3.Response
-import okhttp3.ResponseBody.Companion.toResponseBody
-import okhttp3.Route
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.net.ProxySelector
 import java.net.Socket
-import java.util.concurrent.TimeUnit
+import java.net.SocketAddress
 import javax.net.SocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -37,7 +25,8 @@ import kotlin.test.assertTrue
  * Server-side fetches of user-supplied URLs (`templates/UrlGuard`): the AI setup's website fetch, OAuth client metadata
  * documents and stock photo download tracking. `templates/UrlGuardTest` and `AiDraftTest` cover the address ranges and the
  * basic forms; this adds the encodings attackers use, every hop the guard sees (redirects, DNS rebinding) and the fetchers.
- * No test touches the network: blocked URLs are refused before connecting, and hops are checked on a simulated chain.
+ * No test touches the network: blocked URLs are refused before connecting, hops are checked with `UrlGuard.checkHop`,
+ * and the safe client is driven through OkHttp against a loopback server whose DNS answers it is told to believe.
  */
 class SsrfTest {
     @Test
@@ -69,58 +58,68 @@ class SsrfTest {
         ).forEach { assertNull(UrlGuard.problem(it), "should allow $it") }
     }
 
-    /** One hop as OkHttp's network interceptors see it: the request URL and the address actually connected to. */
-    private class Hop(private val request: Request, connectedTo: InetAddress) : Interceptor.Chain {
-        var proceeded = false
-        private val connection = object : Connection {
-            private val address = Address(
-                request.url.host, request.url.port, Dns.SYSTEM, SocketFactory.getDefault(), null, null, null, Authenticator.NONE,
-                null, listOf(Protocol.HTTP_1_1), listOf(ConnectionSpec.CLEARTEXT), ProxySelector.getDefault(),
-            )
-            private val route = Route(address, java.net.Proxy.NO_PROXY, InetSocketAddress(connectedTo, request.url.port))
-            override fun route() = route
-            override fun socket(): Socket = throw UnsupportedOperationException()
-            override fun handshake(): Handshake? = null
-            override fun protocol() = Protocol.HTTP_1_1
-        }
-        override fun request() = request
-        override fun proceed(request: Request): Response {
-            proceeded = true
-            return Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK").body("ok".toResponseBody())
-                .build()
-        }
-        override fun connection(): Connection = connection
-        override fun call(): Call = throw UnsupportedOperationException()
-        override fun connectTimeoutMillis() = 1000
-        override fun withConnectTimeout(timeout: Int, unit: TimeUnit) = this
-        override fun readTimeoutMillis() = 1000
-        override fun withReadTimeout(timeout: Int, unit: TimeUnit) = this
-        override fun writeTimeoutMillis() = 1000
-        override fun withWriteTimeout(timeout: Int, unit: TimeUnit) = this
-    }
-
-    private val guard: Interceptor = UrlGuard.safeClient(1_000, followRedirects = true).networkInterceptors.single()
-
-    private fun hop(url: String, connectedTo: String): Hop =
-        Hop(Request.Builder().url(url).build(), InetAddress.getByName(connectedTo)).also { chain ->
-            runCatching { guard.intercept(chain) }.exceptionOrNull()?.let { assertTrue(it is BlockedUrlException, it.toString()) }
-        }
+    /** Whether one hop (as OkHttp's network interceptor sees it: URL and the address connected to) may go ahead. */
+    private fun hop(url: String, connectedTo: String): Boolean =
+        runCatching { UrlGuard.checkHop(url.toHttpUrl(), InetAddress.getByName(connectedTo)) }.fold(
+            onSuccess = { true },
+            onFailure = {
+                assertTrue(it is BlockedUrlException, it.toString())
+                false
+            },
+        )
 
     @Test
     fun `every hop is checked against the address actually connected to (DNS rebinding, redirects)`() {
         // A public name whose DNS answer changed to an internal address between the check and the connection.
         listOf("127.0.0.1", "10.1.2.3", "169.254.169.254", "100.64.1.1", "::1", "fd00::1", "fe80::1", "::ffff:127.0.0.1").forEach {
-            assertEquals(false, hop("http://rebind.example/", it).proceeded, "connected to $it")
+            assertEquals(false, hop("http://rebind.example/", it), "connected to $it")
         }
         // A redirect from a public page to an internal one is a new hop and is refused the same way, by URL or by address.
         listOf(
             "http://169.254.169.254/latest/meta-data/" to "169.254.169.254", "http://localhost/admin" to "127.0.0.1",
             "http://[::1]/" to "::1", "http://2130706433/" to "127.0.0.1", "http://public.example:8080/" to "93.184.215.14",
             "http://internal.example/" to "192.168.1.10",
-        ).forEach { (url, address) -> assertEquals(false, hop(url, address).proceeded, "redirect to $url") }
+        ).forEach { (url, address) -> assertEquals(false, hop(url, address), "redirect to $url") }
         // A public name on a public address goes ahead.
-        assertTrue(hop("https://example.com/about", "93.184.215.14").proceeded)
-        assertTrue(hop("https://example.com/", "2606:4700:4700::1111").proceeded)
+        assertTrue(hop("https://example.com/about", "93.184.215.14"))
+        assertTrue(hop("https://example.com/", "2606:4700:4700::1111"))
+    }
+
+    /** Connects every socket to loopback:[target], whatever address the route names, so a route can claim any address. */
+    private class LoopbackSockets(private val target: Int) : SocketFactory() {
+        override fun createSocket(): Socket = object : Socket() {
+            override fun connect(endpoint: SocketAddress, timeout: Int) =
+                super.connect(InetSocketAddress(InetAddress.getLoopbackAddress(), target), timeout)
+        }
+        override fun createSocket(host: String, port: Int): Socket = throw UnsupportedOperationException()
+        override fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket =
+            throw UnsupportedOperationException()
+        override fun createSocket(host: InetAddress, port: Int): Socket = throw UnsupportedOperationException()
+        override fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int): Socket =
+            throw UnsupportedOperationException()
+    }
+
+    @Test
+    fun `the safe client checks every hop through OkHttp, redirects included`() {
+        LocalHttpServer { req ->
+            if (req.path == "/start") {
+                LocalHttpServer.Response(302, headers = mapOf("Location" to "http://internal.example/next"))
+            } else {
+                LocalHttpServer.Response(200, "secret", "text/plain")
+            }
+        }.use { server ->
+            val answers = mapOf("public.example" to "93.184.215.14", "internal.example" to "10.1.2.3")
+            // A resolver that lies (as rebinding would), so only the network interceptor stands between the redirect and
+            // the server.
+            val client = UrlGuard.safeClient(1_000, followRedirects = true).newBuilder()
+                .dns { host -> listOf(InetAddress.getByName(answers.getValue(host))) }
+                .socketFactory(LoopbackSockets(server.baseUrl.substringAfterLast(':').toInt()))
+                .build()
+            assertFailsWith<BlockedUrlException> {
+                client.newCall(Request.Builder().url("http://public.example/start").build()).execute().close()
+            }
+            assertEquals(listOf("/start"), server.requests.map { it.path }, "the redirect to an internal address was never sent")
+        }
     }
 
     @Test
