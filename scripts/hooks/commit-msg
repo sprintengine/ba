@@ -1,0 +1,4 @@
+#!/bin/sh
+# Opt-in local check that a commit message is a Conventional Commit, the same check pull requests run
+# (scripts/conventional-commits.mjs). Turn it on with `npm run hooks:install`.
+exec node "$(git rev-parse --show-toplevel)/scripts/conventional-commits.mjs" --message-file "$1"

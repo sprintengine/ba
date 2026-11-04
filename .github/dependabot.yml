@@ -1,0 +1,84 @@
+# Weekly dependency updates. Minor and patch updates arrive as one pull request per directory; a major version arrives
+# on its own, because each one is a migration to read, not a bump. Commit messages are Conventional Commits
+# (`build(deps): …`, `ci(deps): …`) so they pass the pull request check.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    open-pull-requests-limit: 10
+    groups:
+      frontend-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # The OpenNext adapter supports a range of Next.js releases (its peer dependency): Next moves by hand, with the
+      # adapter, after `npm run cf:build` and `npm run cf:preview` (frontend/README.md "Deploying").
+      - dependency-name: next
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: eslint-config-next
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # Expo pins React Native and the expo-* packages to one SDK release, so their minor and major versions move with an
+  # SDK upgrade, by hand (`npx expo install --check`); patches still come here.
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    open-pull-requests-limit: 5
+    groups:
+      mobile-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: expo
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "expo-*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@expo/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: jest-expo
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: babel-preset-expo
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: eslint-config-expo
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: react-native
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # React Native carries its own renderer, built against one exact React: even a React patch it was not built
+      # with stops the app at launch.
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: react-test-renderer
+      - dependency-name: "react-native-*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@react-native-community/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    open-pull-requests-limit: 10
+    groups:
+      backend-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ["*"]
