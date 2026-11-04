@@ -29,7 +29,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const items = visibleSettings(business, perms.can);
   return (
     <PageContainer size="default">
-      <PageHeader title="Settings" description={`Configure how ${business.name} works.`} />
+      <PageHeader title="Settings" />
       <div className="flex flex-col gap-8 lg:flex-row">
         <nav
           aria-label="Settings"
