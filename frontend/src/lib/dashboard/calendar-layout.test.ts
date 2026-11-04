@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   assignLanes,
+  capLanes,
+  groupSessions,
   groupByDate,
   layoutDay,
   minuteOfDate,
@@ -208,5 +210,81 @@ describe("snapMinute / weeks", () => {
     expect(snapMinute(37, 1, 480)).toBe(510);
     expect(snapMinute(-10, 1, 0)).toBe(0);
     expect(snapMinute(99999, 1, 0)).toBe(1425);
+  });
+});
+
+describe("groupSessions", () => {
+  const b = (id: string, service: string, start: string, end: string, resources: string[]) => ({
+    id,
+    start,
+    end,
+    service: { id: service },
+    resources: resources.map((r) => ({ id: r })),
+  });
+
+  it("draws a class's attendees as one entry, and keeps clashes and other times apart", () => {
+    const entries = groupSessions([
+      b("a", "class", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["studio"]),
+      b("b", "class", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["studio"]),
+      b("c", "class", "2026-11-04T16:00:00Z", "2026-11-04T17:00:00Z", ["studio"]),
+      b("d", "check", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["studio"]),
+      b("e", "class", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["hall"]),
+    ]);
+    expect(entries.map((e) => e.bookings.map((x) => x.id))).toEqual([["a", "b"], ["c"], ["d"], ["e"]]);
+    expect(entries[0]?.id).toMatch(/^session:/);
+    expect(entries[1]?.id).toBe("c");
+  });
+
+  it("keeps the longest buffers of a session", () => {
+    const [entry] = groupSessions([
+      { ...b("a", "s", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["r"]), bufferAfterMinutes: 10 },
+      { ...b("b", "s", "2026-11-04T15:00:00Z", "2026-11-04T16:00:00Z", ["r"]), bufferAfterMinutes: 15 },
+    ]);
+    expect(entry?.bufferAfterMinutes).toBe(15);
+    expect(entry?.bufferBeforeMinutes).toBe(0);
+  });
+});
+
+describe("capLanes", () => {
+  const ev = (id: string, startMin: number, endMin: number) => ({
+    item: { id },
+    startMin,
+    endMin,
+    lane: 0,
+    lanes: 1,
+    cluster: 0,
+  });
+
+  it("leaves clusters that fit alone", () => {
+    const events = assignLanes([ev("a", 0, 60), ev("b", 30, 90)]);
+    const { shown, overflow } = capLanes(events, 3);
+    expect(shown).toHaveLength(2);
+    expect(overflow).toEqual([]);
+  });
+
+  it("folds lanes past the limit into '+N' markers in the last lane, one per overlapping run", () => {
+    const events = assignLanes([
+      ev("a", 0, 60),
+      ev("b", 0, 60),
+      ev("c", 0, 60),
+      ev("d", 0, 60),
+      ev("e", 120, 180),
+      ev("f", 120, 180),
+      ev("g", 30, 200),
+    ]);
+    const { shown, overflow } = capLanes(events, 3);
+    expect(shown.every((e) => e.lanes <= 3 && e.lane < 3)).toBe(true);
+    const hidden = overflow.flatMap((o) => o.events.map((e) => e.item.id));
+    expect(new Set([...shown.map((e) => e.item.id), ...hidden]).size).toBe(7);
+    expect(overflow.every((o) => o.lane === 2 && o.lanes === 3)).toBe(true);
+    for (const o of overflow) {
+      expect(o.startMin).toBe(Math.min(...o.events.map((e) => e.startMin)));
+      expect(o.endMin).toBe(Math.max(...o.events.map((e) => e.endMin)));
+    }
+  });
+
+  it("gives each cluster its own index in time order", () => {
+    const events = assignLanes([ev("late", 300, 360), ev("a", 0, 60), ev("b", 30, 90)]);
+    expect(Object.fromEntries(events.map((e) => [e.item.id, e.cluster]))).toEqual({ a: 0, b: 0, late: 1 });
   });
 });

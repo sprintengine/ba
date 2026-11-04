@@ -36,6 +36,8 @@ export type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label">
     /** Accessible name — required. Also shown as a tooltip unless `tooltip={false}`. */
     label: string;
     tooltip?: boolean;
+    /** A keyboard shortcut, shown in the tooltip after the label. */
+    shortcut?: string;
     loading?: boolean;
   };
 
@@ -43,6 +45,7 @@ export type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label">
 export function IconButton({
   label,
   tooltip = true,
+  shortcut,
   loading,
   variant,
   size,
@@ -62,5 +65,11 @@ export function IconButton({
       {loading ? <Spinner /> : children}
     </button>
   );
-  return tooltip ? <Tooltip content={label}>{button}</Tooltip> : button;
+  return tooltip ? (
+    <Tooltip content={label} shortcut={shortcut}>
+      {button}
+    </Tooltip>
+  ) : (
+    button
+  );
 }

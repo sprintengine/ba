@@ -164,7 +164,8 @@ describe("CalendarView", () => {
     render();
     await screen.findByRole("button", { name: /Alex Morgan/ });
     const title = screen.getByRole("button", { name: /^Thursday, 1 October/ });
-    expect(title).toHaveTextContent(/Today$/);
+    // The Today button beside it already says so.
+    expect(title).not.toHaveTextContent(/Today/);
     await user.click(title);
     await user.click(await screen.findByRole("button", { name: /\b15 October 2099/ }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-15`);
@@ -343,6 +344,7 @@ describe("CalendarView", () => {
       booking({
         ...short,
         id: "bk2",
+        service: { id: "other", name: "Review", color: "#0a7" },
         customer: { id: "c2", name: "Cass Lane", email: null, phone: null, groupId: null },
       }),
     ]);
@@ -354,6 +356,75 @@ describe("CalendarView", () => {
     // Room for the status dot of the pending one.
     const pending = screen.getByRole("button", { name: /Alex Morgan/ });
     expect(must(within(pending).getByText("Alex Morgan").parentElement)).toHaveClass("pr-3");
+  });
+
+  it("draws a class as one block with its count, and lists who is booked", async () => {
+    const session = { start: "2099-10-01T12:00:00+01:00", end: "2099-10-01T13:00:00+01:00" };
+    const attendee = (id: string, name: string, status: Booking["status"] = "confirmed") =>
+      booking({
+        ...session,
+        id,
+        status,
+        customer: { id, name, email: null, phone: null, groupId: null },
+      });
+    api([attendee("a", "Alex Morgan"), attendee("b", "Cass Lane"), attendee("c", "Dee Roy", "cancelled")]);
+    const user = userEvent.setup();
+    render();
+    const block = await screen.findByRole("button", { name: /12:00–13:00, 2 booked/ });
+    expect(screen.queryByRole("button", { name: /^.*Cass Lane/ })).not.toBeInTheDocument();
+    await user.click(block);
+    const row = await screen.findByRole("button", { name: /Cass Lane/ });
+    await expectNoAxeViolations(document.body);
+    await user.click(row);
+    expect(actions.openBooking).toHaveBeenCalledWith("b");
+    expect(actions.openNewBooking).not.toHaveBeenCalled();
+  });
+
+  it("folds overlaps that don't fit a narrow column into a '+N' marker that lists them", async () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private readonly callback: ResizeObserverCallback) {}
+        observe() {
+          this.callback([{ contentRect: { width: 150 } } as ResizeObserverEntry], this);
+        }
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    const overlapping = (id: string, name: string, start: string, end: string) =>
+      booking({
+        id,
+        start: `2099-10-01T${start}:00+01:00`,
+        end: `2099-10-01T${end}:00+01:00`,
+        service: { id: `s${id}`, name: `Service ${id}`, color: "#0a7" },
+        customer: { id, name, email: null, phone: null, groupId: null },
+      });
+    api([
+      overlapping("a", "Ann One", "12:00", "13:00"),
+      overlapping("b", "Bea Two", "12:00", "13:00"),
+      overlapping("c", "Cy Three", "12:15", "13:00"),
+      overlapping("d", "Di Four", "12:30", "13:00"),
+    ]);
+    const user = userEvent.setup();
+    render();
+    // 150px holds two lanes: one booking and the marker.
+    const marker = await screen.findByRole("button", { name: /^3 more appointments, 12:00 to 13:00/ });
+    expect(screen.getAllByRole("button", { name: /Ann One/ })).toHaveLength(1);
+    await user.click(marker);
+    await user.click(await screen.findByRole("button", { name: /Di Four/ }));
+    expect(actions.openBooking).toHaveBeenCalledWith("d");
+  });
+
+  it("puts the now line under the bookings, with the time on the gutter", async () => {
+    api();
+    const { container } = render();
+    await screen.findByRole("button", { name: /Alex Morgan/ });
+    // 11:30Z is 12:30 in Dublin; the fake clock is on the visible day.
+    expect(within(container).getAllByText("12:30")).not.toHaveLength(0);
+    const line = must(container.querySelector(".bg-danger.h-px")).parentElement;
+    expect(line).toHaveClass("z-[4]");
+    expect(line).not.toHaveClass("z-20");
   });
 
   it("says when there are no resources yet", async () => {

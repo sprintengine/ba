@@ -9,8 +9,7 @@ import { ResourceKindIcon, useFmt } from "../common";
 import type { CalendarColumn } from "./use-calendar-data";
 
 /** Minimum column width: resources get more room in day view than days in week view. */
-export const colMin = (view: CalendarMode) =>
-  view === "day" ? "min-w-36 sm:min-w-44" : "min-w-28 sm:min-w-32";
+export const colMin = (view: CalendarMode) => (view === "day" ? "min-w-36" : "min-w-24 sm:min-w-28");
 
 const shownCount = (c: CalendarColumn) => c.bookings.filter((b) => b.status !== "cancelled").length;
 
@@ -131,7 +130,9 @@ function DayHeader({
         <span className={cn("text-xs font-medium", isToday ? "text-brand" : "text-muted-foreground")}>
           {fmt.date(date, "weekday")}
         </span>
-        <span className="tnum text-2xs text-subtle-foreground">{count > 0 ? `${count} booked` : "—"}</span>
+        <span className="tnum text-2xs text-subtle-foreground">
+          {count > 0 ? `${count} booked` : "\u00a0"}
+        </span>
       </span>
     </button>
   );
