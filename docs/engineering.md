@@ -14,7 +14,7 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Everything backend | `./gradlew :backend:check` (or `npm run backend:check`) | |
 | Stripe contract (test mode) | `STRIPE_TEST_SECRET_KEY=sk_test_... ./gradlew :backend:stripeContractTest` | Real `SdkStripeGateway` against Stripe test mode; nightly workflow `stripe-contract.yml`, skipped without the secret (backend/README.md) |
 | Frontend formatting | `npm --prefix frontend run format:check` (fix: `format`) | Prettier, `frontend/.prettierrc.json` |
-| Frontend lint | `npm --prefix frontend run lint` | ESLint 9, `frontend/eslint.config.mjs` (no suppressions) |
+| Frontend lint | `npm --prefix frontend run lint` | ESLint 10, `frontend/eslint.config.mjs` (no suppressions); `overrides` in `frontend/package.json` install the import, jsx-a11y and react plugins, which still declare ESLint 9 at most, on 10 (drop each once it declares 10). Until the react plugin supports 10, it no longer reads JSDoc, so a class component marked only by an `@extends React.Component` comment is not recognised as one (the site has none) |
 | Types | `npm --prefix frontend run typecheck` | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`) |
 | Unit tests + coverage thresholds | `npm --prefix frontend run test:coverage` | Vitest (v8 coverage) |
 | End to end | `npm run test:e2e` (backend running, see §9) | Playwright, desktop + mobile |
