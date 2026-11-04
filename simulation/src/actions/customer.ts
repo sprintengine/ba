@@ -49,10 +49,14 @@ async function findSlot(
   a: ActionScope,
   b: SimBusiness,
   filter?: (s: Service) => boolean,
+  /** Whether the caller pays at the venue where it can't pay online (only `book` does). */
+  atVenue = false,
 ): Promise<Pick | null> {
   // A business without online payments (no Stripe test account on staging) is booked for what isn't paid online.
   const services = activeServices(b, true).filter(
-    (s) => (b.onlinePayments || !needsOnlinePayment(s)) && (!filter || filter(s)),
+    (s) =>
+      (b.onlinePayments || !needsOnlinePayment(s) || (atVenue && s.allowPayAtVenue)) &&
+      (!filter || filter(s)),
   );
   const service = a.rng.maybePick(services);
   if (!service) return null;
@@ -242,11 +246,16 @@ function syncFromManaged(sim: Sim, booking: SimBooking, view: ManagedBooking) {
 export async function book(sim: Sim, a: ActionScope): Promise<string> {
   const b = pickBusiness(sim, a);
   if (!b) return "skipped";
-  const pick = await findSlot(sim, a, b);
+  const pick = await findSlot(sim, a, b, undefined, true);
   if (!pick) return "no_slot";
   const customer = customerFor(sim, a);
   const signedIn = a.rng.chance(0.2);
-  const payment = pick.service.allowPayAtVenue && a.rng.chance(0.3) ? "at_venue" : "online";
+  const payment =
+    !b.onlinePayments && needsOnlinePayment(pick.service)
+      ? "at_venue"
+      : pick.service.allowPayAtVenue && a.rng.chance(0.3)
+        ? "at_venue"
+        : "online";
   const body = bookingBody(sim, pick, customer, payment);
   const key = idempotencyKey(sim, a);
   const create = () => publicApi.createBooking(b.slug, body, key);

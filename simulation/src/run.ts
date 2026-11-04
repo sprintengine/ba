@@ -153,6 +153,8 @@ async function openBusiness(sim: Sim, n: number, limitScenario: boolean): Promis
  * one it stays in play with online payments off, which the report says.
  */
 async function setUpPayments(sim: Sim, b: SimBusiness) {
+  // Off until Stripe can take charges, so a setup that breaks leaves it off, not believed on.
+  b.onlinePayments = false;
   await sim.act(
     "setup.payments",
     owner.ownerOf(b),
@@ -200,6 +202,8 @@ async function setUp(sim: Sim) {
     if (b) {
       await sim.act("scenario.member_cap", owner.ownerOf(b), b.id, (a) => memberCapScenario(sim, a, b));
       await sim.act("scenario.plan_limit", owner.ownerOf(b), b.id, (a) => planLimitScenario(sim, a, b));
+      // Its owner may make a service paid later on.
+      if (sim.options.payments === "stripe-checkout") await setUpPayments(sim, b);
       sim.world.addBusiness(b);
     }
   }
