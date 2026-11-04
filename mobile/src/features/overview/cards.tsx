@@ -267,13 +267,17 @@ export function PendingApprovals({ today }: { today: string }) {
   );
 }
 
-/** What Bo noticed (owners and admins): each with its action, "Ask Bo", and dismiss. */
+/**
+ * What Bo noticed (owners and admins): each with its action, "Ask Bo", and dismiss. Nothing where the deployment doesn't
+ * offer Bo (`assistantAvailable`): its nudges aren't served then.
+ */
 export function Nudges() {
   const { business } = useBusinessContext();
   const perms = usePermissions();
-  const state = useAssistantState(business.id, { enabled: perms.manageAssistant });
+  const shown = perms.manageAssistant && !!business.assistantAvailable;
+  const state = useAssistantState(business.id, { enabled: shown });
   const nudges = state.data?.nudges ?? [];
-  if (!perms.manageAssistant || nudges.length === 0) return null;
+  if (!shown || nudges.length === 0) return null;
   return (
     <View testID="nudges">
       <SectionTitle title={`${ASSISTANT_NAME} noticed`} />
@@ -340,7 +344,7 @@ function NudgeCard({ nudge, canAsk }: { nudge: Nudge; canAsk: boolean }) {
             onPress={() =>
               router.push({
                 pathname: "/assistant",
-                params: { business: business.slug, prompt: nudge.prompt },
+                params: { business: business.slug, ask: nudge.prompt },
               })
             }
           />

@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { AiUsage } from "@shared/api/types";
 import { useAiUsage } from "@shared/api/hooks/use-ai";
-import { creditsPercent, creditsTone, formatCredits } from "@shared/ai/credits";
+import { aiCreditUses, creditsPercent, creditsTone, formatCredits } from "@shared/ai/credits";
 import { useBusinessContext } from "@shared/business/business-context";
 import { formatDate } from "@shared/format";
 import { Banner, Button, Divider, ErrorState, Section, Skeleton, Text, useTheme } from "~/ui";
@@ -15,16 +15,23 @@ const RECENT_DAYS = 7;
 
 /**
  * Settings › Billing's AI credits (the website's AiUsageCard): this month's allowance as a meter, what used it, and
- * credits per day as a list (the website's chart is left out: its table view says the same).
+ * credits per day as a list (the website's chart is left out: its table view says the same). Not shown where nothing on
+ * this deployment draws on them (`aiCreditUses`).
  */
 export function AiUsageCard() {
+  const { business } = useBusinessContext();
+  const uses = aiCreditUses(business);
+  return uses ? <AiUsageSection uses={uses} /> : null;
+}
+
+function AiUsageSection({ uses }: { uses: string }) {
   const { business } = useBusinessContext();
   const usage = useAiUsage(business.id);
   const u = usage.data;
   return (
     <Section
       title="AI credits"
-      description={`One monthly allowance for ${business.sitesEnabled ? "Bo and the AI site builder" : "Bo and AI setup"}. Each AI request uses credits in line with the model work it takes; unused credits don't roll over.`}
+      description={`One monthly allowance for ${uses}. Each AI request uses credits in line with the model work it takes; unused credits don't roll over.`}
       testID="ai-usage"
     >
       {usage.isError && !u ? (
