@@ -270,9 +270,11 @@ for invariants only (a row read back in the same transaction), never for input.
 
 Liquibase formatted SQL in `backend/src/main/resources/db/changelog/db.changelog-master.sql`. Changesets are
 **append-only**: add `--changeset bookanything:00NN-what` at the end; never edit an applied one. Liquibase checksums
-include the comments, so even fixing a typo in a comment breaks every existing database. New business-owned tables
-follow §7 (business_id, composite keys, RLS policy). Migrations run on start in development and with
-`backend migrate` in production.
+include the comments, so even fixing a typo in a comment breaks every existing database. `ChangelogChecksumTest` keeps
+every changeset's checksum in a golden file: a new changeset is added to it with `UPDATE_SNAPSHOTS=true`, and an
+existing entry changes only together with a `--validCheckSum` line for its previous checksum (and the test's
+`previousChecksums`). New business-owned tables follow §7 (business_id, composite keys, RLS policy). Migrations run on
+start in development and with `backend migrate` in production.
 
 ## 9. AI
 
