@@ -199,6 +199,7 @@ class ObservabilityTest {
     fun `logs are logfmt lines by default`() {
         val line = logLine(null)
         assertTrue(line.startsWith("ts=") && " level=INFO " in line && " requestId=req-12345678 " in line, line)
+        assertContains(line, " simulation=false ", message = "only the simulation's requests say true")
         assertContains(line, "msg=\"booked BK-1\"")
     }
 

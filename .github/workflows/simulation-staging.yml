@@ -1,0 +1,126 @@
+name: Simulation (staging)
+
+# The reliability simulation against the staging deploy (docs/simulation.md, "On staging"): bots sign in with the
+# staging-only simulation tokens, minted here from the STAGING_SIMULATION_AUTH_SECRET secret (the same value as the
+# staging backend's SIMULATION_AUTH_SECRET). Nightly for 5 hours, or by hand. Needs that secret and the STAGING_API_URL
+# and STAGING_APP_URL variables in the `staging` environment; without them the run is skipped with a notice, not
+# failed. Never runs for pull requests, and the `staging` environment only deploys from main, so a run dispatched on
+# any other branch is refused before it can read the secrets: they sign bots in on staging and write to it.
+#
+# A GitHub-hosted job stops after 6 hours, so one run here is at most 5h30m. For runs of days, run the simulation from a
+# small machine of your own (docs/simulation.md, "Long runs"), or chain these nightly runs.
+
+on:
+  schedule:
+    # 01:17 UTC: quiet hours in Europe, done before the working day.
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: "How long to run (e.g. 30m, 2h, 5h; at most 5h30m on a hosted runner)"
+        required: true
+        default: 5h
+      rate:
+        description: "Actions per minute"
+        required: true
+        default: "30"
+      payments:
+        description: "stripe-checkout pays a share of paid bookings through Stripe Checkout (test mode)"
+        required: true
+        default: stripe-checkout
+        type: choice
+        options: [stripe-checkout]
+      stripe_share:
+        description: "Share of paid bookings paid through Stripe Checkout (0 to 1)"
+        required: true
+        default: "0.1"
+      seed:
+        description: "Seed (empty: staging-<run id>-<attempt>)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simulation-staging
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Staging configured?
+    runs-on: ubuntu-latest
+    # The secrets live in the environment, whose deployment branches are main only.
+    environment: staging
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          SECRET: ${{ secrets.STAGING_SIMULATION_AUTH_SECRET }}
+          API_URL: ${{ vars.STAGING_API_URL }}
+          APP_URL: ${{ vars.STAGING_APP_URL }}
+        run: |
+          missing=""
+          [ -n "$SECRET" ] || missing="$missing STAGING_SIMULATION_AUTH_SECRET (secret)"
+          [ -n "$API_URL" ] || missing="$missing STAGING_API_URL (variable)"
+          [ -n "$APP_URL" ] || missing="$missing STAGING_APP_URL (variable)"
+          if [ -z "$missing" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::The staging simulation is skipped: set$missing in the staging environment (docs/simulation.md, \"On staging\")."
+          fi
+
+  simulation:
+    name: Simulation against staging
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    environment: staging
+    # The run, the settling pause and the final check, with room for setup; under the 6-hour job limit.
+    timeout-minutes: 345
+    defaults:
+      run:
+        working-directory: simulation
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: simulation/package-lock.json
+
+      # Playwright comes pinned from the lockfile; only its browser is downloaded here.
+      - run: npm ci
+
+      - name: Install Chromium for Stripe Checkout
+        if: ${{ (inputs.payments || 'stripe-checkout') == 'stripe-checkout' }}
+        run: npx playwright install --with-deps chromium
+
+      # Fails on any invariant violation; the report also goes to the job summary. Replay a failure with
+      # `scripts/simulation.sh replay --from-log` on the uploaded log.
+      - name: Run the simulation
+        env:
+          SIM_AUTH: simulation-token
+          SIMULATION_AUTH_SECRET: ${{ secrets.STAGING_SIMULATION_AUTH_SECRET }}
+          SIM_BASE_URL: ${{ vars.STAGING_API_URL }}
+          SIM_APP_URL: ${{ vars.STAGING_APP_URL }}
+          # Optional: a read-only connection to the staging database for the SQL checks.
+          SIM_DATABASE_URL: ${{ secrets.STAGING_SIM_DATABASE_URL }}
+          SIM_SEED: ${{ inputs.seed || format('staging-{0}-{1}', github.run_id, github.run_attempt) }}
+          SIM_DURATION: ${{ inputs.duration || '5h' }}
+          SIM_RATE: ${{ inputs.rate || '30' }}
+          SIM_PAYMENTS: ${{ inputs.payments || 'stripe-checkout' }}
+          SIM_STRIPE_SHARE: ${{ inputs.stripe_share || '0.1' }}
+        run: npm run sim -- --quiet
+
+      - name: Upload the action log and report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: simulation-staging
+          path: simulation/out/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -46,7 +46,7 @@ class UnsplashStockImages(
         val body = try {
             client.newCall(authorized(Request.Builder().url(url)).build()).execute().use { response ->
                 if (!response.isSuccessful) throw StockUnavailableException("Unsplash search failed with ${response.code}")
-                response.body?.string().orEmpty()
+                response.body.string()
             }
         } catch (e: java.io.IOException) {
             throw StockUnavailableException("Unsplash search failed: ${e.message ?: e.javaClass.simpleName}", e)

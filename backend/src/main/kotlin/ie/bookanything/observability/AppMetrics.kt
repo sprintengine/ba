@@ -12,16 +12,19 @@ import java.time.Duration
  * is a new series, and the metrics plan bills by series.
  */
 class AppMetrics(val registry: MeterRegistry) {
-    /** One API request: [route] is the template (`/v1/businesses/{businessId}/bookings`) or [RouteLabels.UNMATCHED]. */
-    fun request(route: String, method: String, status: Int?, elapsed: Duration) {
+    /**
+     * One API request: [route] is the template (`/v1/businesses/{businessId}/bookings`) or [RouteLabels.UNMATCHED];
+     * [simulation] says it came from the reliability simulation (only ever true on staging), a label with two values.
+     */
+    fun request(route: String, method: String, status: Int?, elapsed: Duration, simulation: Boolean = false) {
         Counter.builder("http.server.requests")
             .description("API requests by route template, method and status class")
-            .tags("route", route, "method", methodLabel(method), "status", statusClass(status))
+            .tags("route", route, "method", methodLabel(method), "status", statusClass(status), "simulation", simulation.toString())
             .register(registry).increment()
         // Latency by area, not route: a histogram is ten series per label set, so per route it would cost thousands.
         Timer.builder("http.server.duration")
             .description("API request latency by area")
-            .tag("area", RouteLabels.area(route))
+            .tags("area", RouteLabels.area(route), "simulation", simulation.toString())
             .serviceLevelObjectives(*HTTP_BUCKETS)
             .register(registry).record(elapsed)
     }

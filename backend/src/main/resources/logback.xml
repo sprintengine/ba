@@ -1,9 +1,10 @@
 <configuration>
     <!-- LOG_FORMAT picks the appender (AppConfig refuses other values): logfmt (default) or json, one object per line for
-         a log shipper (docs/observability.md). Request and business ids come from MDC in both. -->
+         a log shipper (docs/observability.md). Request and business ids come from MDC in both, and `simulation=true` marks
+         the reliability simulation's requests (staging only). -->
     <appender name="logfmt" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>ts=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%level logger=%logger{30} requestId=%X{requestId:--} businessId=%X{businessId:--} msg="%replace(%msg){'"','\\"'}"%n%ex</pattern>
+            <pattern>ts=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%level logger=%logger{30} requestId=%X{requestId:--} businessId=%X{businessId:--} simulation=%X{simulation:-false} msg="%replace(%msg){'"','\\"'}"%n%ex</pattern>
         </encoder>
     </appender>
 

@@ -15,11 +15,11 @@ class SafeWebsiteFetcher(
     /** HTML as readable text, or plain text as is; null for any other content type. */
     internal fun text(response: Response): String? {
         val type = response.header("Content-Type")?.lowercase() ?: "text/html"
-        val source = response.body?.source()
-        if (TEXT_TYPES.none { type.startsWith(it) } || source == null) return null
+        if (TEXT_TYPES.none { type.startsWith(it) }) return null
+        val source = response.body.source()
         source.request(maxBytes) // Reads at most maxBytes (+ buffer) and never more.
         val bytes = source.buffer.let { buf -> buf.readByteArray(minOf(buf.size, maxBytes)) }
-        val text = String(bytes, response.body?.contentType()?.charset() ?: Charsets.UTF_8)
+        val text = String(bytes, response.body.contentType()?.charset() ?: Charsets.UTF_8)
         return if (type.startsWith("text/plain")) text.take(20_000) else HtmlText.extract(text)
     }
 

@@ -29,8 +29,8 @@ class HttpClientMetadataFetcher : ClientMetadataFetcher {
     /** A JSON body of at most [MAX_BYTES], with its cache lifetime; null otherwise. */
     internal fun document(response: Response): FetchedDocument? {
         val type = response.header("Content-Type")?.lowercase().orEmpty()
-        val source = response.body?.source()
-        if (!(type.startsWith("application/json") || type.contains("+json")) || source == null) return null
+        if (!(type.startsWith("application/json") || type.contains("+json"))) return null
+        val source = response.body.source()
         source.request(MAX_BYTES + 1)
         if (source.buffer.size > MAX_BYTES) return null
         val maxAge = CacheControl.parse(response.headers).maxAgeSeconds.takeIf { it >= 0 }?.toLong()

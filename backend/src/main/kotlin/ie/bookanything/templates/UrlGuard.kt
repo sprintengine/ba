@@ -3,6 +3,7 @@ package ie.bookanything.templates
 import ie.bookanything.http.Cidr
 import ie.bookanything.http.parseIpLiteral
 import okhttp3.Dns
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -100,22 +101,29 @@ object UrlGuard {
         .proxy(java.net.Proxy.NO_PROXY)
         .addNetworkInterceptor(
             Interceptor { chain ->
-                val url = chain.request().url.toString()
-                problem(url)?.let { throw BlockedUrlException("blocked $url: $it") }
-                val address = chain.connection()?.route()?.socketAddress?.address
-                if (address == null || isBlocked(address)) throw BlockedUrlException("blocked $url: connected to a non-public address")
+                checkHop(chain.request().url, chain.connection()?.route()?.socketAddress?.address)
                 chain.proceed(chain.request())
             },
         )
         .build()
 
-    /** DNS that only returns public addresses, so OkHttp can never connect to an internal one (also defeats DNS rebinding). */
-    val safeDns: Dns = object : Dns {
-        override fun lookup(hostname: String): List<InetAddress> {
-            val all = Dns.SYSTEM.lookup(hostname)
-            val allowed = all.filterNot(::isBlocked)
-            if (allowed.isEmpty() || allowed.size != all.size) throw BlockedUrlException("host $hostname resolves to a non-public address")
-            return allowed
-        }
+    /**
+     * One hop (the first request or a redirect), as the network interceptor sees it: its URL must pass [problem] and the
+     * address actually connected to must be public, whatever DNS said a moment before (DNS rebinding).
+     */
+    internal fun checkHop(url: HttpUrl, connectedTo: InetAddress?) {
+        problem(url.toString())?.let { throw BlockedUrlException("blocked $url: $it") }
+        if (connectedTo == null || isBlocked(connectedTo)) throw BlockedUrlException("blocked $url: connected to a non-public address")
+    }
+
+    /**
+     * DNS that only returns public addresses, so OkHttp can never connect to an internal one (also defeats DNS rebinding).
+     * Only `lookup`: OkHttp 5 then resolves through it alone (no HTTPS records, no asynchronous lookups that bypass it).
+     */
+    val safeDns: Dns = Dns { hostname ->
+        val all = Dns.SYSTEM.lookup(hostname)
+        val allowed = all.filterNot(::isBlocked)
+        if (allowed.isEmpty() || allowed.size != all.size) throw BlockedUrlException("host $hostname resolves to a non-public address")
+        allowed
     }
 }

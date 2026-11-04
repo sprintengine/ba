@@ -3,7 +3,9 @@ package ie.bookanything
 import ie.bookanything.ai.usage.aiUsageRoutes
 import ie.bookanything.assistant.agentRequestRoutes
 import ie.bookanything.assistant.assistantRoutes
+import ie.bookanything.auth.SimulationTraffic
 import ie.bookanything.auth.clerkWebhookRoutes
+import ie.bookanything.auth.isSimulation
 import ie.bookanything.availability.availabilitySettingsRoutes
 import ie.bookanything.booking.manageRoutes
 import ie.bookanything.booking.publicRoutes
@@ -22,6 +24,7 @@ import ie.bookanything.http.ApiJson
 import ie.bookanything.http.NoStoreByDefault
 import ie.bookanything.http.configureErrors
 import ie.bookanything.jobs.JobWorker
+import ie.bookanything.jobs.SimulationPurge
 import ie.bookanything.marketplace.marketplaceSettingsRoutes
 import ie.bookanything.marketplace.publicMarketplaceRoutes
 import ie.bookanything.mcp.customer.customerRequestRoutes
@@ -106,33 +109,10 @@ fun main(args: Array<String>) {
         System.err.println("Configuration error: ${e.message ?: e.javaClass.simpleName}")
         exitProcess(2)
     }
-    when (args.firstOrNull()) {
-        "migrate" -> {
-            createDataSource(config.database).use { Migrations.migrate(it) }
-            log.info("migrations applied")
-            return
-        }
-        "seed-demo" -> {
-            if (!config.isDevelopment) {
-                System.err.println("seed-demo is only available with APP_ENV=development.")
-                exitProcess(2)
-            }
-            createDataSource(config.database).use { ds ->
-                Migrations.migrate(ds)
-                DemoSeeder(AppContext.create(config, ds)).seed()
-            }
-            return
-        }
-        "email-preview" -> {
-            val dir = java.io.File(args.getOrNull(1) ?: "build/email-previews")
-            ie.bookanything.notifications.EmailPreviews.writeAll(dir).forEach { println(it.path) }
-            return
-        }
-        null, "serve" -> Unit
-        else -> {
-            System.err.println("Unknown command '${args.first()}'. Commands: serve (default), migrate, seed-demo, email-preview [dir]")
-            exitProcess(2)
-        }
+    if (args.firstOrNull() !in listOf(null, "serve")) {
+        val code = command(config, args)
+        if (code != 0) exitProcess(code)
+        return
     }
     val observability = Observability.start(config.observability)
     val dataSource = createDataSource(config.database, observability.registry.takeIf { config.observability.metricsEnabled })
@@ -146,6 +126,39 @@ fun main(args: Array<String>) {
             observability.close()
         }
     }.start(wait = true)
+}
+
+/** A one-off command (`backend migrate`, …; backend README "Commands"): returns its exit code. */
+private fun command(config: AppConfig, args: Array<String>): Int {
+    when (args.first()) {
+        "migrate" -> {
+            createDataSource(config.database).use { Migrations.migrate(it) }
+            log.info("migrations applied")
+        }
+        "seed-demo" -> {
+            if (!config.isDevelopment) {
+                System.err.println("seed-demo is only available with APP_ENV=development.")
+                return 2
+            }
+            createDataSource(config.database).use { ds ->
+                Migrations.migrate(ds)
+                DemoSeeder(AppContext.create(config, ds)).seed()
+            }
+        }
+        "purge-simulation" -> return SimulationPurge.command(config, args.drop(1)) { createDataSource(config.database) }
+        "email-preview" -> {
+            val dir = java.io.File(args.getOrNull(1) ?: "build/email-previews")
+            ie.bookanything.notifications.EmailPreviews.writeAll(dir).forEach { println(it.path) }
+        }
+        else -> {
+            System.err.println(
+                "Unknown command '${args.first()}'. Commands: serve (default), migrate, seed-demo, email-preview [dir], " +
+                    "purge-simulation [--older-than-days N] [--dry-run]",
+            )
+            return 2
+        }
+    }
+    return 0
 }
 
 /**
@@ -177,6 +190,8 @@ fun redactPath(path: String): String = SECRET_PATH.replace(path) { "/${it.groupV
 private val REQUEST_ID = Regex("^[A-Za-z0-9._\\-]{8,128}$")
 
 fun Application.module(ctx: AppContext, startWorker: Boolean = false) {
+    // First, so every later plugin and route sees which requests are the simulation's (only ever with its secret set).
+    ctx.simulation?.let { tokens -> install(SimulationTraffic) { this.tokens = tokens } }
     installRequestLogging()
     install(RequestTelemetry)
     installCompression()
@@ -205,6 +220,8 @@ private fun Application.installRequestLogging() {
         level = Level.INFO
         callIdMdc("requestId")
         mdc("businessId") { call -> call.attributes.getOrNull(BusinessIdAttribute) }
+        // Only on the reliability simulation's requests (staging), so its traffic can be told apart in the logs.
+        mdc("simulation") { call -> "true".takeIf { call.isSimulation } }
         filter { call -> call.request.path().startsWith("/v1") && call.request.path() != "/v1/health" }
         format { call -> "${call.request.httpMethod.value} ${redactPath(call.request.path())} -> ${call.response.status()?.value ?: "-"}" }
     }
@@ -233,12 +250,12 @@ private fun Application.installStartupLog(ctx: AppContext) {
         val c = ctx.config
         log.info(
             "bookanything API started version={} env={} auth={} payments={} email={} sms={} push={} ai={} storage={} stock={} " +
-                "geocoder={} sites={} assistant={}",
+                "geocoder={} sites={} assistant={} simulation={}",
             c.version, c.env.wire, c.authMode, ctx.payments.name,
             if (c.email.resendApiKey != null) "resend" else "log", if (ctx.sms.enabled) "twilio" else "off", ctx.push.name,
             ctx.ai.model?.modelId ?: "templates",
             ctx.storage.name, if (ctx.stockImages.enabled) "unsplash" else "off", c.geo.providerName,
-            if (c.sitesEnabled) "on" else "off", if (c.assistantEnabled) "on" else "off",
+            if (c.sitesEnabled) "on" else "off", if (c.assistantEnabled) "on" else "off", if (ctx.simulation != null) "on" else "off",
         )
         configWarnings(c, ctx.payments.name, aiModel = ctx.ai.model != null).forEach { warning -> log.warn(warning) }
     }

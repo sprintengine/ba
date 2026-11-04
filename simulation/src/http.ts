@@ -69,9 +69,15 @@ let counter = 0;
 
 /**
  * Points the shared client at [baseUrl] with the instrumented fetch. [runTag] prefixes each X-Request-Id
- * (`sim-<run>-<n>`), so a request in the action log is easy to find in the backend's log.
+ * (`sim-<run>-<n>`), so a request in the action log is easy to find in the backend's log. [guestHeaders] are added to
+ * every request without an Authorization header.
  */
-export function installClient(baseUrl: string, runTag: string, onRequest: RequestListener) {
+export function installClient(
+  baseUrl: string,
+  runTag: string,
+  onRequest: RequestListener,
+  guestHeaders: () => Record<string, string> = () => ({}),
+) {
   const tag = runTag.replace(/[^A-Za-z0-9._-]/g, "").slice(0, 40) || "run";
   const instrumented: typeof fetch = async (input, init) => {
     const ctx = context.getStore();
@@ -80,6 +86,9 @@ export function installClient(baseUrl: string, runTag: string, onRequest: Reques
     const requestId = `sim-${tag}-${++counter}`;
     const headers = new Headers(init?.headers);
     headers.set("X-Request-Id", requestId);
+    // A guest's request (no token) carries the auth provider's guest headers: on staging, the simulation's signed
+    // X-Simulation-Token, which puts it in the simulation's rate-limit bucket.
+    if (!headers.has("Authorization")) for (const [k, v] of Object.entries(guestHeaders())) headers.set(k, v);
     const sentAt = Date.now();
     let response: Response;
     try {
