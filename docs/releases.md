@@ -94,6 +94,7 @@ GitHub (Settings of the repository):
 | `STAGING_CLERK_PUBLISHABLE_KEY`, `PRODUCTION_CLERK_PUBLISHABLE_KEY` | `pk_test_…`, `pk_live_…` | the website builds |
 | `CLOUDFLARE_ACCOUNT_ID` | the account's ID | website deploys (unset: no website deploys) |
 | `STAGING_BUSINESS_MCP_ENABLED`, `PRODUCTION_BUSINESS_MCP_ENABLED` | `false` to hide the business agents guide | optional, the website builds |
+| `STAGING_ASSISTANT_ENABLED`, `PRODUCTION_ASSISTANT_ENABLED` | `true` to present Bo on the public pages (unset: off); set with the backend's `ASSISTANT_ENABLED` | optional, the website builds |
 | `STAGING_WEBMCP_ORIGIN_TRIAL_TOKEN`, `PRODUCTION_WEBMCP_ORIGIN_TRIAL_TOKEN` | Chrome's origin-trial token for that origin | optional, the website builds |
 | `STAGING_APPLE_APP_IDS`, `PRODUCTION_APPLE_APP_IDS`; `…_ANDROID_PACKAGE_NAME`; `…_ANDROID_SHA256_FINGERPRINTS` | as frontend/README.md §9 | optional, the Workers' runtime vars |
 
