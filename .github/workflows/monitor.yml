@@ -35,7 +35,7 @@ jobs:
         if: env.API_URL == ''
         run: echo "::notice::PRODUCTION_API_URL is not set, so there is nothing to monitor yet (docs/releases.md)."
       # Only what the monitor reads: itself (it imports nothing from the repository).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.API_URL != ''
         with:
           persist-credentials: false
@@ -43,7 +43,7 @@ jobs:
           sparse-checkout: |
             .nvmrc
             scripts/release/monitor.mjs
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: env.API_URL != ''
         with:
           node-version-file: .nvmrc

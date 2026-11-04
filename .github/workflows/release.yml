@@ -82,11 +82,11 @@ jobs:
       nightly_tag: ${{ steps.resolve.outputs.nightly_tag }}
       staged_tag: ${{ steps.resolve.outputs.staged_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
       # A shut gate ends the run here, green, with should_build=false; a refusal (main rewritten under the last
@@ -137,18 +137,18 @@ jobs:
             runner: ubuntu-24.04-arm
             pair: linux-arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           persist-credentials: false
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: backend/Dockerfile
@@ -172,7 +172,7 @@ jobs:
           [[ "$DIGEST" == sha256:* ]] || { echo "build did not return a sha256 digest: '$DIGEST'" >&2; exit 1; }
           mkdir -p "$RUNNER_TEMP/digests"
           touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: backend-platform-${{ matrix.pair }}
           path: ${{ runner.temp }}/digests/*
@@ -191,13 +191,13 @@ jobs:
       VERSION: ${{ needs.resolve.outputs.version }}
       REF: ${{ needs.resolve.outputs.ref }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: backend-platform-*
           merge-multiple: true
           path: platform-digests
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -223,7 +223,7 @@ jobs:
           mkdir -p digests
           echo "${IMAGE}@${digest}" > digests/backend
           cat digests/backend
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: digest-backend
           path: digests/backend
@@ -274,12 +274,12 @@ jobs:
             [[ -n "${!name}" ]] || { echo "::error::${{ matrix.prefix }}_APP_URL is set but the variable behind $name is not (docs/releases.md, One-time setup)"; exit 1; }
           done
           echo "ok=true" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.configured.outputs.ok == 'true'
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.configured.outputs.ok == 'true'
         with:
           node-version-file: .nvmrc
@@ -315,7 +315,7 @@ jobs:
           fi
           npx opennextjs-cloudflare build --env "$WRANGLER_ENV"
           tar -czf "../site-${{ matrix.environment }}.tar.gz" -C .open-next .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: steps.configured.outputs.ok == 'true'
         with:
           name: site-${{ matrix.environment }}
@@ -341,16 +341,16 @@ jobs:
           - platform: linux/arm64
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           persist-credentials: false
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: digest-backend
           path: digests
@@ -376,19 +376,19 @@ jobs:
       PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: digest-backend
           path: digests
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: site-*
           merge-multiple: true
@@ -397,8 +397,8 @@ jobs:
           jq -n --arg version "$VERSION" --arg commit "$REF" --arg backend "$(cat digests/backend)" \
             '{version: $version, commit: $commit, images: {backend: $backend}}' > images.json
           cat images.json
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -447,23 +447,23 @@ jobs:
       NIGHTLY_TAG: ${{ needs.resolve.outputs.nightly_tag }}
       PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           fetch-depth: 0
           persist-credentials: false
       # The train's logic as this workflow has it (see the header).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: .train
           sparse-checkout: scripts
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: The nightly's image and website builds
         env:
           GH_TOKEN: ${{ github.token }}
@@ -517,7 +517,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Keep the report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: staging-report-${{ github.run_id }}
           retention-days: 7
@@ -551,22 +551,22 @@ jobs:
       NIGHTLY_TAG: ${{ needs.resolve.outputs.nightly_tag }}
       PREVIOUS_TAG: ${{ needs.resolve.outputs.previous_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.resolve.outputs.ref }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: .train
           sparse-checkout: scripts
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: The staged build, checked against what staging tested
         env:
           GH_TOKEN: ${{ github.token }}
@@ -602,7 +602,7 @@ jobs:
             --title "bookanything ${VERSION}" --notes-file release-notes.md "${files[@]}"
       - name: Keep the report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: production-report-${{ github.run_id }}
           retention-days: 7
