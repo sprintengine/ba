@@ -35,7 +35,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.11.0")
     implementation("com.zaxxer:HikariCP:6.3.3")
     implementation("org.postgresql:postgresql:42.7.14")
-    implementation("org.liquibase:liquibase-core:4.33.0")
+    implementation("org.liquibase:liquibase-core:5.0.4")
     implementation("com.nimbusds:nimbus-jose-jwt:10.10")
     implementation("ch.qos.logback:logback-classic:1.6.6")
     // Phase B2 integrations. Each is optional at runtime and only used when its env keys are set.
