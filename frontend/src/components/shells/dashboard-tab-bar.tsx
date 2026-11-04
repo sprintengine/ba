@@ -56,7 +56,7 @@ export function DashboardTabBar({
               >
                 <item.icon
                   aria-hidden
-                  className={cn(active && "text-brand")}
+                  className={cn(active && "text-foreground")}
                   strokeWidth={active ? 2.25 : 1.75}
                 />
                 <span>{label}</span>
@@ -76,7 +76,7 @@ export function DashboardTabBar({
               moreOpen || (!onTab && slug !== null) ? "text-foreground" : "text-muted-foreground",
             )}
           >
-            <Menu aria-hidden className={cn(!onTab && slug !== null && "text-brand")} />
+            <Menu aria-hidden className={cn(!onTab && slug !== null && "text-foreground")} />
             <span>More</span>
           </button>
         </li>
