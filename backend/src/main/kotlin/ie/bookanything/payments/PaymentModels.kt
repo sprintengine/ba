@@ -30,6 +30,8 @@ data class PaymentRow(
     val currency: String,
     val status: String,
     val createdAt: Instant,
+    /** The provider account the charge was taken on (Stripe: the connected account); a refund has its charge's. */
+    val providerAccount: String? = null,
 ) {
     fun toDto(business: BusinessRow) =
         PaymentDto(id.toString(), kind, provider, amountCents, currency, status, formatInstant(createdAt, business.zone))

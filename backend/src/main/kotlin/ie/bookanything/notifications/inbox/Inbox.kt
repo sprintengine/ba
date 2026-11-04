@@ -63,6 +63,14 @@ enum class InboxKind(
         "booking_moved", "Moved bookings", "A customer moved their booking to another time.",
         emailByDefault = false, forMembers = true, forCustomers = false, pushText = "A booking was moved",
     ),
+
+    /** Owners only: taking payments needs them (their Stripe account was disconnected). */
+    @SerialName("payments_alert")
+    PAYMENTS_ALERT(
+        "payments_alert", "Payment problems",
+        "For owners: your Stripe account was disconnected, so online payments stopped.",
+        emailByDefault = true, forMembers = true, forCustomers = false, pushText = "Online payments need your attention",
+    ),
     ;
 
     companion object {
@@ -127,6 +135,19 @@ class Inbox(private val push: Boolean) {
                 conn,
                 NewNotification(
                     userId, event.kind, title, body, "/dashboard/${business.slug}/bookings?booking=${b.id}", business.id, b.id, key,
+                ),
+            )
+        }
+    }
+
+    /** Tells the business's owners about a problem with taking payments ([InboxKind.PAYMENTS_ALERT]), once per [dedupeKey]. */
+    fun paymentsAlert(conn: Connection, business: BusinessRow, title: String, body: String, dedupeKey: String) {
+        InboxRepository.ownersOf(conn, business.id).forEach { userId ->
+            notify(
+                conn,
+                NewNotification(
+                    userId, InboxKind.PAYMENTS_ALERT, title, body, "/dashboard/${business.slug}/settings/payments", business.id,
+                    business.id, dedupeKey,
                 ),
             )
         }

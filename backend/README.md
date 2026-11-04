@@ -78,6 +78,8 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `STRIPE_WEBHOOK_SECRET` | — | Signing secret of the platform ("Your account") webhook endpoint. |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | — | Signing secret of the Connect ("Connected accounts") endpoint, if it is a separate endpoint. Both may point at the same URL; each event is checked against both secrets. |
 | `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS` | — | Recurring price ids (`price_…`) for the Pro and Business plans. |
+| `STRIPE_CONNECT_CLIENT_ID` | — | The platform's Connect OAuth client id (`ca_…`, test or live to match the key). With it, owners can connect a Stripe account they already have; without it, only "create one for me" is offered. |
+| `STRIPE_CONNECT_REDIRECT_URI` | `${PUBLIC_API_URL}/v1/payments/stripe/callback` | Where Stripe's OAuth page sends the owner back. Must be listed exactly in the Connect OAuth settings. |
 | `RESEND_API_KEY` | — | Sends email through Resend. Without it emails are logged and recorded in `email_log`. |
 | `EMAIL_FROM` | `bookanything <bookings@bookanything.ie>` | The address must be on a domain verified in Resend. Emails show the business name as the sender name with this address, and set Reply-To to the business contact email. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | — | All three enable SMS reminders (Pro/Business plans, customers who gave a phone number). `TWILIO_FROM` is an E.164 number or a Messaging Service SID (`MG…`). |
@@ -171,9 +173,17 @@ platform takes **no application fee**. Plans are billed on the platform account 
 
 1. **Connect settings** (Dashboard → Connect → Settings): enable Connect, set the platform name,
    icon and brand colour (shown during onboarding), and add your frontend origin to the allowed
-   redirect domains. Accounts are created with `controller` settings equivalent to Standard
-   accounts: Stripe-hosted onboarding (Account Links), Stripe collects requirements, the connected
-   account pays its own Stripe fees and has the full Stripe dashboard.
+   redirect domains. Owners get a Stripe account one of two ways:
+   - **Create one for me**: accounts are created with `controller` settings equivalent to Standard
+     accounts: Stripe-hosted onboarding (Account Links), Stripe collects requirements, the connected
+     account pays its own Stripe fees and has the full Stripe dashboard.
+   - **I already have a Stripe account**: Connect OAuth (Settings → Connect → Onboarding options →
+     OAuth): turn on OAuth for Standard accounts, copy the client id (`ca_…`; test mode has its own)
+     into `STRIPE_CONNECT_CLIENT_ID`, and add the redirect URI
+     `https://<app-host>/api/v1/payments/stripe/callback` (`http://localhost:3000/api/v1/payments/stripe/callback`
+     in test mode for local development; the Next.js `/api` rewrite forwards it to the API). Only the
+     account id is kept: the access and refresh tokens Stripe's token endpoint returns are deprecated
+     and never read or stored; every call uses the platform key with the `Stripe-Account` header.
 2. **Products** (Dashboard → Product catalogue): create the "Pro" and "Business" monthly recurring
    prices and put their ids in `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS`.
    Configure the **customer portal** (Settings → Billing → Customer portal): allow switching
@@ -184,8 +194,8 @@ platform takes **no application fee**. Plans are billed on the platform account 
      `customer.subscription.deleted`, `invoice.payment_failed` → secret in `STRIPE_WEBHOOK_SECRET`.
    - Endpoint listening to **Connected accounts** events: `checkout.session.completed`,
      `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
-     `checkout.session.expired`, `charge.refunded`, `account.updated` →
-     secret in `STRIPE_CONNECT_WEBHOOK_SECRET`.
+     `checkout.session.expired`, `charge.refunded`, `account.updated`,
+     `account.application.deauthorized` → secret in `STRIPE_CONNECT_WEBHOOK_SECRET`.
 
    Events are verified with the Stripe SDK, stored once in `provider_events` and processed by the
    job worker exactly once (retries with backoff; errors are kept in `provider_events.error`).
@@ -202,6 +212,21 @@ was taken is refunded in full automatically with an apology email. Refunds (poli
 requests) are created on the connected account with an idempotency key; if Stripe is unreachable the
 cancellation still succeeds and the refund is retried by the `payment_refund_retry` job. Refunds made
 in the Stripe dashboard are recorded from `charge.refunded`.
+
+Connecting an existing account (`ConnectExisting`): `POST /payments/connect/existing` (owner) stores a
+single-use nonce for the business and owner and returns Stripe's OAuth page with a state signed with
+`TOKEN_SECRET` (10 minutes). Stripe redirects the browser to `GET /v1/payments/stripe/callback`, which
+connects nothing (no session there): it checks the state and passes the code back to the owner's page,
+which calls `POST /payments/connect/existing/complete` signed in. That checks the state was issued to
+this business and this caller, spends it, checks they are still an owner and the business still has no
+account, exchanges the code (never retried: a reused code revokes the connection), and links the account
+unless another business here uses it or its default currency isn't the business's (Stripe's connection is
+then undone). Each charge stores the account it was taken on (`payments.provider_account`), so refunds
+and Stripe's events keep using it after a change. Disconnecting (`POST /payments/disconnect`) forgets the
+account and closes its open checkouts; an OAuth account is also deauthorized, and refused while a refund on
+it waits, a checkout on it was just paid or an upcoming booking paid on it could need a refund. No account is
+deauthorized while a business here uses it or any business's money on it could still need it. Stripe's
+`account.application.deauthorized` forgets the account from Stripe's side and tells the owners.
 
 ### Email (Resend)
 

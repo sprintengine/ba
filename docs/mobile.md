@@ -46,7 +46,11 @@ or an authentication session:
   (App Store 3.1.1). It goes through the website's `/sign-in?redirect_url=…` (straight on when the browser is signed
   in), which the app doesn't claim as a universal link, so the link isn't handed back to the app.
 - **Stripe**: Checkout for paying a booking and Connect onboarding (Settings › Payments) are Stripe-hosted pages;
-  the app opens them with `WebBrowser.openAuthSessionAsync` and a return URL back into the app.
+  the app opens them with `WebBrowser.openAuthSessionAsync` and a return URL back into the app. Settings › Payments
+  offers both ways to connect. An existing Stripe account goes through Stripe's OAuth page in an authentication session
+  that returns to the website's payments page (an associated domain): the app takes the code and state from that
+  address and finishes connecting signed in (`/payments/connect/existing/complete`), then says how it went. A new
+  account's onboarding opens in the in-app browser. The status is read again when either closes.
 - **The bookanything plan** (Settings › Billing) is read-only in the app: it shows the plan, its status and dates,
   what it includes and AI usage, but offers no way to subscribe, change plan or open Stripe's billing portal, no
   other plans' prices and no pointer to buying on the website. A plan is a digital subscription, which the App Store

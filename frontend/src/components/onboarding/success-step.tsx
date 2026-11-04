@@ -173,17 +173,17 @@ function PaymentsCard({ business, onLeave }: { business: CreatedBusiness; onLeav
         >
           {dev
             ? "Development payments are on, so you don't need a Stripe account locally."
-            : "Connect a Stripe account so customers can pay when they book. It takes about five minutes, and the money goes straight to you."}
+            : status.data?.canConnectExisting
+              ? "Connect the Stripe account you already have, or create one in about five minutes. The money goes straight to you."
+              : "Connect a Stripe account so customers can pay when they book. It takes about five minutes, and the money goes straight to you."}
         </CardText>
-        <Button
-          variant={business.hasPaidServices ? "brand" : "secondary"}
-          onClick={start}
+        <SetUpPayments
+          business={business}
+          choose={!!status.data?.canConnectExisting}
           loading={connect.isPending}
-          className="shrink-0"
-        >
-          Set up payments
-          <ArrowRight />
-        </Button>
+          onStart={start}
+          onLeave={onLeave}
+        />
       </div>
     );
   }
@@ -219,5 +219,38 @@ function CardText({
       </p>
       <p className="text-sm text-pretty text-muted-foreground">{children}</p>
     </div>
+  );
+}
+
+/**
+ * "Set up payments": straight to Stripe's onboarding, or, when an existing Stripe account can be connected too, to the
+ * payments page that asks which.
+ */
+function SetUpPayments({
+  business,
+  choose,
+  loading,
+  onStart,
+  onLeave,
+}: {
+  business: CreatedBusiness;
+  choose: boolean;
+  loading: boolean;
+  onStart: () => void;
+  onLeave: () => void;
+}) {
+  const variant = business.hasPaidServices ? "brand" : "secondary";
+  return choose ? (
+    <Button asChild variant={variant} className="shrink-0">
+      <Link href={`/dashboard/${business.slug}/settings/payments`} onClick={onLeave}>
+        Set up payments
+        <ArrowRight />
+      </Link>
+    </Button>
+  ) : (
+    <Button variant={variant} onClick={onStart} loading={loading} className="shrink-0">
+      Set up payments
+      <ArrowRight />
+    </Button>
   );
 }

@@ -1,5 +1,6 @@
 package ie.bookanything.support
 
+import ie.bookanything.config.StripeConfig
 import ie.bookanything.jobs.JobWorker
 import ie.bookanything.payments.StripePaymentProvider
 import io.ktor.client.request.header
@@ -17,17 +18,18 @@ import java.util.UUID
  * stored events are applied by [worker]. Connected-account events use [StripeTest.CONNECT_SECRET], platform (billing)
  * events [StripeTest.WEBHOOK_SECRET].
  */
-class StripeWorld(val clock: MutableClock = MutableClock(DEFAULT_NOW)) {
+class StripeWorld(val clock: MutableClock = MutableClock(DEFAULT_NOW), config: StripeConfig = StripeTest.config) {
     val gateway = FakeStripeGateway()
-    val provider = StripePaymentProvider(gateway, StripeTest.config, clock)
-    val env = TestEnv(clock, TestConfig.config(stripe = StripeTest.config), payments = provider)
+    val provider = StripePaymentProvider(gateway, config, clock)
+    val env = TestEnv(clock, TestConfig.config(stripe = config), payments = provider)
     val worker = JobWorker(env.ctx)
 
     /** Gives [clinic] a connected account that can take charges; returns its id. */
-    fun connect(clinic: Clinic, account: String = "acct_${UUID.randomUUID().toString().take(8)}"): String {
+    fun connect(clinic: Clinic, account: String = "acct_${UUID.randomUUID().toString().take(8)}", method: String = "created"): String {
         Fixtures.sql(
-            "UPDATE businesses SET stripe_account_id = ?, stripe_charges_enabled = true, stripe_details_submitted = true WHERE id = ?",
-            account, UUID.fromString(clinic.id),
+            "UPDATE businesses SET stripe_account_id = ?, stripe_connect_method = ?, stripe_connected_at = now(), " +
+                "stripe_charges_enabled = true, stripe_details_submitted = true WHERE id = ?",
+            account, method, UUID.fromString(clinic.id),
         )
         return account
     }

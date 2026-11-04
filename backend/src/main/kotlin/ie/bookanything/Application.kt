@@ -39,6 +39,7 @@ import ie.bookanything.observability.Telemetry
 import ie.bookanything.offers.offerRoutes
 import ie.bookanything.offers.publicOfferRoutes
 import ie.bookanything.payments.paymentSettingsRoutes
+import ie.bookanything.payments.stripeConnectCallbackRoutes
 import ie.bookanything.payments.stripeWebhookRoutes
 import ie.bookanything.releases.releaseRoutes
 import ie.bookanything.reports.reportRoutes
@@ -249,6 +250,10 @@ fun configWarnings(c: AppConfig, paymentProvider: String, aiModel: Boolean = tru
         .takeIf { paymentProvider == "stripe" && c.stripe.webhookSecret == null && c.stripe.connectWebhookSecret == null },
     "STRIPE_PRICE_PRO / STRIPE_PRICE_BUSINESS not set: plan checkout is unavailable"
         .takeIf { c.stripe.secretKey != null && (c.stripe.pricePro == null || c.stripe.priceBusiness == null) },
+    "STRIPE_CONNECT_CLIENT_ID is not a Connect client id (ca_...): owners can't connect an existing Stripe account"
+        .takeIf { c.stripe.connectClientId?.startsWith("ca_") == false },
+    "STRIPE_CONNECT_CLIENT_ID not set: owners can only create a new Stripe account, not connect one they have"
+        .takeIf { paymentProvider == "stripe" && c.stripe.connectClientId == null },
     "CLERK_WEBHOOK_SECRET not set: deleted Clerk users are not anonymised".takeIf { c.isProduction && c.clerk.webhookSecret == null },
     "EXPO_ACCESS_TOKEN is set but PUSH_NOTIFICATIONS is not expo: push notifications are not sent"
         .takeIf { c.push.expoAccessToken != null && c.push.mode != PushMode.EXPO },
@@ -291,6 +296,7 @@ private fun Route.apiRoutes(ctx: AppContext) {
         mcpRoutes(ctx)
         oauthRoutes(ctx)
         stripeWebhookRoutes(ctx)
+        stripeConnectCallbackRoutes(ctx)
         clerkWebhookRoutes(ctx)
         meRoutes(ctx)
         inboxRoutes(ctx)

@@ -10,6 +10,7 @@ import ie.bookanything.config.StripeConfig
 import ie.bookanything.db.Db
 import ie.bookanything.jobs.Job
 import ie.bookanything.jobs.JobQueue
+import ie.bookanything.notifications.inbox.Inbox
 import ie.bookanything.observability.Telemetry
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -27,7 +28,7 @@ object StripeEvents {
     const val JOB_KIND = "stripe_event"
     val HANDLED = setOf(
         "checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed",
-        "checkout.session.expired", "charge.refunded", "account.updated",
+        "checkout.session.expired", "charge.refunded", "account.updated", "account.application.deauthorized",
         "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
         "invoice.payment_failed",
     )
@@ -43,6 +44,7 @@ class StripeEventProcessor(
     private val clock: Clock,
     private val stripe: StripeConfig,
     private val lifecycle: BookingLifecycle,
+    private val inbox: Inbox,
 ) {
     private val log = LoggerFactory.getLogger(StripeEventProcessor::class.java)
     private val json = Json { ignoreUnknownKeys = true }
@@ -97,6 +99,12 @@ class StripeEventProcessor(
                     account,
                 )
             }
+            // The account (connected either way) disconnected from the platform, or the platform from it.
+            "account.application.deauthorized" -> if (account != null) {
+                accountDeauthorized(conn, account, event.string("id"), event.long("created"))
+            } else {
+                ignoredConnect(type, account)
+            }
             "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted" ->
                 if (platform) subscriptionChanged(conn, type, obj) else ignoredConnect(type, account)
             "invoice.payment_failed" -> if (platform) invoicePaymentFailed(conn, obj) else ignoredConnect(type, account)
@@ -113,11 +121,10 @@ class StripeEventProcessor(
             ?: session.string("id")?.let { PaymentRepository.chargeByProviderRef(conn, "stripe", it) }
             ?: run { log.warn("stripe checkout session {} does not match a payment", session.string("id")); return null }
         val business = BusinessRepository.findById(conn, payment.businessId) ?: return null
-        if (account == null || account != business.stripeAccountId) {
-            log.warn(
-                "stripe event for payment {} came from account {} but the business uses {}: ignored",
-                payment.id, account, business.stripeAccountId,
-            )
+        // The account the charge was taken on, even if the business has connected another since.
+        val owner = payment.providerAccount ?: business.stripeAccountId
+        if (account == null || account != owner) {
+            log.warn("stripe event for payment {} came from account {} but it was taken on {}: ignored", payment.id, account, owner)
             return null
         }
         return business to payment
@@ -160,10 +167,9 @@ class StripeEventProcessor(
                 ?.let { PaymentRepository.get(conn, it) }?.takeIf { it.kind == "charge" && it.provider == "stripe" }
             ?: run { log.info("charge.refunded for unknown payment intent {}", pi); return }
         val business = BusinessRepository.findById(conn, payment.businessId) ?: return
-        if (account != business.stripeAccountId) {
-            log.warn(
-                "charge.refunded for payment {} from account {} ignored (business uses {})", payment.id, account, business.stripeAccountId,
-            )
+        val owner = payment.providerAccount ?: business.stripeAccountId
+        if (account != owner) {
+            log.warn("charge.refunded for payment {} from account {} ignored (taken on {})", payment.id, account, owner)
             return
         }
         // Thrown, not dropped: the job retries this event once the checkout's own event has recorded the payment.
@@ -194,6 +200,34 @@ class StripeEventProcessor(
             mapOf(
                 "chargesEnabled" to charges, "detailsSubmitted" to details,
             ),
+        )
+    }
+
+    /**
+     * The platform lost access to [account]: the business stops taking online payments (its services that need them are
+     * hidden, as before it connected), the change is audited and its owners are told. A deauthorization from before the
+     * account was (re)linked is about the earlier link and changes nothing.
+     */
+    private fun accountDeauthorized(conn: Connection, account: String, eventId: String?, created: Long?) {
+        val businessId = StripeAccountRepository.businessIdByAccount(conn, account)
+            ?: run { log.info("account.application.deauthorized for {}: no business uses it", account); return }
+        val linkedAt = StripeAccountRepository.connectedAt(conn, businessId)
+        // Stripe's `created` is in whole seconds: one from the second of the link counts as older.
+        if (created != null && linkedAt != null && created <= linkedAt.epochSecond) {
+            log.info("account.application.deauthorized for {} predates its link to business {}: ignored", account, businessId)
+            return
+        }
+        val business = BusinessRepository.findById(conn, businessId) ?: return
+        if (!StripeAccountRepository.unlink(conn, businessId, account)) return
+        Audit.record(
+            conn, businessId, Actor.SYSTEM, "payments.disconnected", "business", businessId,
+            mapOf("account" to account, "method" to business.stripeConnectMethod, "reason" to "deauthorized"),
+        )
+        inbox.paymentsAlert(
+            conn, business, "Stripe was disconnected",
+            "${business.name} can't take online payments until you connect a Stripe account again. Services that need " +
+                "payment are hidden from your booking page meanwhile.",
+            "stripe-deauthorized:${eventId ?: account}",
         )
     }
 

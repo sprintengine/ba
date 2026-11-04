@@ -6,13 +6,14 @@ import ie.bookanything.notifications.inbox.InboxRepository
 import ie.bookanything.notifications.push.PushDeviceRepository
 import ie.bookanything.oauth.PgTokenStore
 import ie.bookanything.payments.ProviderEventRepository
+import ie.bookanything.payments.StripeConnectStateRepository
 import java.sql.Connection
 import java.time.Duration
 import java.time.Instant
 
 /**
  * The daily purge (periodic task `purge-expired`) of rows nothing reads any more, which would otherwise grow without
- * end: expired OAuth codes and tokens, applied webhook events, jobs that failed for good, old notifications, old
+ * end: expired OAuth codes and tokens and Stripe Connect states, applied webhook events, jobs that failed for good, old notifications, old
  * requests from customers' AI apps and phones that no longer get push notifications. Each table is emptied in
  * batches of [BATCH], one transaction each, so a long backlog never holds locks for long or runs into the statement
  * timeout.
@@ -41,6 +42,7 @@ object Retention {
     /** Purges everything due at [now]; returns the rows deleted. */
     fun purge(db: Db, now: Instant, batch: Int = BATCH): Int = listOf<(Connection) -> Int>(
         { PgTokenStore.purgeExpired(it, now.minus(EXPIRED_GRACE), batch) },
+        { StripeConnectStateRepository.purgeExpired(it, now.minus(EXPIRED_GRACE), batch) },
         { ProviderEventRepository.purgeProcessed(it, now.minus(PROCESSED_EVENTS), batch) },
         { JobQueue.purgeFailed(it, now.minus(FAILED_JOBS), batch) },
         { InboxRepository.purgeOld(it, now.minus(NOTIFICATIONS), batch) },

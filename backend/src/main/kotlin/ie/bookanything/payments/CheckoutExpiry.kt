@@ -28,7 +28,8 @@ class CheckoutExpiry(private val db: Db, private val provider: PaymentProvider) 
         } ?: return
         // A checkout made by another provider (development payments before Stripe was set up) has nothing to close.
         if (payment.kind != "charge" || payment.status != "cancelled" || payment.provider != provider.name) return
-        provider.expireCheckout(business, payment.providerRef ?: return)
+        // A session paid meanwhile is left alone: that payment is refunded as a late payment.
+        provider.expireCheckout(business, payment.providerRef ?: return, payment.providerAccount)
     }
 
     companion object {

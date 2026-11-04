@@ -21,6 +21,8 @@ export type BusinessScreenOptions = ProviderOptions & {
   me?: Me;
   /** The screen's path under the business ("team", "settings/general"). */
   path?: string;
+  /** A query string the screen is opened with ("stripe=complete&code=…"), as from a link. */
+  query?: string;
   routes?: Record<string, () => ReactElement>;
 };
 
@@ -53,6 +55,7 @@ export function renderBusinessScreen(
     business: patch,
     me = meFixture,
     path = "",
+    query,
     routes = {},
     ...providers
   }: BusinessScreenOptions = {},
@@ -64,7 +67,7 @@ export function renderBusinessScreen(
     // A stack, as in the app (BusinessStack): screens set their header (title, Save, Invite) through it.
     { _layout: () => <Stack />, [route]: () => ui, ...routes },
     {
-      initialUrl: `/dashboard/${business.slug}${path ? `/${path}` : ""}`,
+      initialUrl: `/dashboard/${business.slug}${path ? `/${path}` : ""}${query ? `?${query}` : ""}`,
       wrapper: ({ children }) => (
         <Providers auth={providers.auth} client={client} scheme={providers.scheme}>
           <BusinessProviders business={business} role={role} me={me}>

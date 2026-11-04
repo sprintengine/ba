@@ -11,6 +11,8 @@ import ie.bookanything.config.StripeConfig
 import ie.bookanything.http.Errors
 import ie.bookanything.payments.StripeAccountState
 import ie.bookanything.payments.StripeGateway
+import ie.bookanything.payments.StripeOAuthConnection
+import ie.bookanything.payments.StripeOAuthError
 import ie.bookanything.payments.StripeRefundRef
 import ie.bookanything.payments.StripeSessionRef
 import java.util.Locale
@@ -43,6 +45,23 @@ class FakeStripeGateway : StripeGateway {
 
     var accountState = StripeAccountState("acct_fake", chargesEnabled = true, detailsSubmitted = true)
 
+    /** Per-account states a test has set (country, currency); others are [accountState]. */
+    val accountStates = ConcurrentHashMap<String, StripeAccountState>()
+
+    /** Connect OAuth: the account each authorization code connects. A code works once, as at Stripe. */
+    val oauthCodes = ConcurrentHashMap<String, String>()
+    val oauthExchanges = CopyOnWriteArrayList<String>()
+
+    /** Accounts deauthorized, as (client id, account id); [connectedAccounts] are those still connected by OAuth. */
+    val deauthorized = CopyOnWriteArrayList<Pair<String, String>>()
+    val connectedAccounts: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /** Gives [account] an authorization code, as Stripe's OAuth page does once its owner allows the connection. */
+    fun authorize(account: String, code: String = "ac_${seq.incrementAndGet()}"): String {
+        oauthCodes[code] = account
+        return code
+    }
+
     /** Number of upcoming refund calls that fail like a Stripe outage. */
     val failRefunds = AtomicInteger(0)
     var refundStatus = "succeeded"
@@ -66,7 +85,24 @@ class FakeStripeGateway : StripeGateway {
     override fun createAccount(params: AccountCreateParams, options: RequestOptions): String {
         accounts.add(Call(params, options)); return "acct_new_${seq.incrementAndGet()}"
     }
-    override fun retrieveAccount(accountId: String) = accountState.copy(id = accountId)
+
+    /** Number of upcoming account reads that fail like a Stripe outage. */
+    val failAccountReads = AtomicInteger(0)
+
+    override fun retrieveAccount(accountId: String): StripeAccountState {
+        if (failAccountReads.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw Errors.providerError()
+        return accountStates[accountId] ?: accountState.copy(id = accountId)
+    }
+    override fun exchangeOAuthCode(code: String): StripeOAuthConnection {
+        oauthExchanges.add(code)
+        val account = oauthCodes.remove(code) ?: throw StripeOAuthError("invalid_grant")
+        connectedAccounts.add(account)
+        return StripeOAuthConnection(account, livemode = false)
+    }
+    override fun deauthorizeAccount(clientId: String, accountId: String): Boolean {
+        deauthorized.add(clientId to accountId)
+        return connectedAccounts.remove(accountId)
+    }
     override fun createAccountLink(params: AccountLinkCreateParams): String {
         accountLinks.add(params); return "https://connect.stripe.test/setup/${params.account}"
     }
@@ -104,7 +140,10 @@ class FakeStripeGateway : StripeGateway {
 object StripeTest {
     const val WEBHOOK_SECRET = "whsec_test_platform_secret"
     const val CONNECT_SECRET = "whsec_test_connect_secret"
-    val config = StripeConfig("sk_test_fake", WEBHOOK_SECRET, CONNECT_SECRET, "price_pro_test", "price_business_test")
+    const val CLIENT_ID = "ca_test_platform"
+    val config = StripeConfig(
+        "sk_test_fake", WEBHOOK_SECRET, CONNECT_SECRET, "price_pro_test", "price_business_test", connectClientId = CLIENT_ID,
+    )
 
     /** A `Stripe-Signature` header exactly as Stripe computes it (HMAC-SHA256 over "t.payload"). */
     fun signature(payload: String, secret: String = WEBHOOK_SECRET, timestamp: Long = System.currentTimeMillis() / 1000): String {
