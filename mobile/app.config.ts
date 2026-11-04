@@ -6,8 +6,8 @@
  * - `production`: the store app.
  *
  * Each variant has its own bundle id and URL scheme, so all three install side by side and a link opens the right
- * one. Public build-time settings come from the environment (EAS environment variables on EAS, `mobile/.env` locally;
- * see `.env.example`). Nothing secret belongs here: everything in `extra` ships inside the app.
+ * one. Public build-time settings come from the environment (EAS environment variables on EAS, `mobile/.env.local`
+ * locally; see `.env.example`). Nothing secret belongs here: everything in `extra` ships inside the app.
  */
 import type { ConfigContext, ExpoConfig } from "expo/config";
 import { withInfoPlist, type ConfigPlugin } from "expo/config-plugins";
@@ -59,6 +59,14 @@ function variantFromEnv(): Variant {
   if (value === "development" || value === "preview" || value === "production") return value;
   throw new Error(`APP_VARIANT must be development, preview or production (got "${value}")`);
 }
+
+/**
+ * Sentry's build steps (upload source maps and native debug symbols; docs/mobile.md "Errors and crash reporting")
+ * only when the build can authenticate: without `SENTRY_AUTH_TOKEN` they would fail it. The SDK is linked either way
+ * and runs only with a DSN. Org and project come from `SENTRY_ORG` and `SENTRY_PROJECT` in the build's environment.
+ */
+const sentryBuildPlugin = (): string[] =>
+  process.env.SENTRY_AUTH_TOKEN ? ["@sentry/react-native/expo"] : [];
 
 /** Store builds: drop the dev launcher's local-network purpose string (the launcher isn't in release builds). */
 const withoutDevLauncherStrings: ConfigPlugin = (config) =>
@@ -200,6 +208,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           dark: { image: "./assets/images/splash-icon.png", backgroundColor: "#0c0d0f" },
         },
       ],
+      ...sentryBuildPlugin(),
     ],
     // tsconfigPaths off: metro.config.js resolves the aliases (shared-code.js); tsconfig's package paths are for tsc only.
     experiments: { typedRoutes: true, reactCompiler: true, tsconfigPaths: false },
@@ -210,6 +219,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       webUrl,
       /** Clerk publishable key (public by design). Without one, the app uses dev auth (development only). */
       clerkPublishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "",
+      /** Sentry DSN (public by design). Without one, nothing is reported (src/lib/error-reporting.ts). */
+      sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? "",
+      /** Overrides the variant's Sentry environment (development, staging, production). */
+      sentryEnvironment: process.env.EXPO_PUBLIC_SENTRY_ENVIRONMENT ?? "",
       router: {},
       eas: { projectId: process.env.EAS_PROJECT_ID },
     },

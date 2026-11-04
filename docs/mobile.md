@@ -180,7 +180,50 @@ sections `@shared/dashboard/nav` allows the member's role (`businessNav`); on ph
 - React Compiler is on (`experiments.reactCompiler`), so components memoise automatically; Clerk's SDK is loaded only
   in builds that use Clerk.
 - Errors: data errors are screen states (`ErrorState`); render errors hit the route `ErrorBoundary`
-  (`RootErrorBoundary`) and `logError`; a crash reporter plugs into `setErrorReporter` (no DSN in the repo yet).
+  (`RootErrorBoundary`) and `logError`, which reports them to Sentry when the build has a DSN (below).
+
+### Errors and crash reporting (Sentry)
+
+`src/lib/error-reporting.ts` starts Sentry (`@sentry/react-native`) at start-up and registers it with the logger's
+`setErrorReporter`, so features keep calling `logError` and nothing else knows about Sentry.
+
+- **Off without a DSN.** With no `EXPO_PUBLIC_SENTRY_DSN` the SDK is never loaded or initialised: no network, no
+  reporter, `logError` only logs in development. Development, tests and CI need no Sentry account.
+- **What is captured:** native crashes, unhandled JS errors and promise rejections, and whatever `logError` reports
+  (render errors from `RootErrorBoundary`, unexpected failures in features) with its context. `isReportable` applies
+  to the JS side's events: offline, signed out, 4xx and "unavailable" API errors are states, not bugs, and aren't
+  sent, except as the cause of a crash (level fatal), which always is. Breadcrumbs (console, the JS side's requests,
+  app lifecycle) come along, scrubbed. Errors only: no `tracesSampleRate`, profiling or replay options at all (even
+  at 0 they install that machinery), no trace headers on our requests, no screenshots or view hierarchy.
+- **Personal data:** `sendDefaultPii: false`. The user is Clerk's opaque user id (`setReportedUser` from the root
+  layout); under dev sign-in, whose id is made from the email address, nobody is named. `beforeSend` and
+  `beforeBreadcrumb` scrub every JS event and breadcrumb: emails and phone numbers (percent-encoded ones and
+  `tel:`/`sms:` links too) in messages, exception values, breadcrumbs and context; the secret in `/manage/<token>`
+  and `/invitations/<token>`, secret-looking query parameters (`?token=`…), bearer tokens and JWTs; the query and
+  fragment of every absolute URL and of request breadcrumbs (searches and addresses go there); and all of a
+  request but its URL (no body, headers or cookies). Failed HTTP requests aren't captured as errors. Native crash
+  reports are built by the iOS and Android SDKs and never pass through JS: they carry the JS breadcrumbs already
+  scrubbed, iOS's own request breadcrumbs are off, and otherwise they rely on Sentry's server-side scrubbing (below).
+- **Environment:** `development`, `staging` (the `preview` variant) or `production`, from `APP_VARIANT`;
+  `EXPO_PUBLIC_SENTRY_ENVIRONMENT` overrides it. **Release and dist** are the SDK's defaults:
+  `<bundle id>@<version>+<build number>` and the build number (EAS increments it for production).
+- **Source maps and debug symbols:** Metro adds debug ids to the bundle and its maps (`getSentryExpoConfig` in
+  `metro.config.js`, which also leaves session replay out of the bundle). The Sentry config plugin
+  (`@sentry/react-native/expo`), whose build phases upload the maps and native debug symbols, is added only when
+  `SENTRY_AUTH_TOKEN` is set, and takes the org and project from `SENTRY_ORG` and `SENTRY_PROJECT`. Without the
+  token only the upload is skipped: the native SDK is linked in every build and stays idle without a DSN.
+- **EAS environment variables** (per environment, `preview` and `production`):
+
+  | Variable                         | Visibility | Purpose                                                      |
+  | -------------------------------- | ---------- | ------------------------------------------------------------ |
+  | `EXPO_PUBLIC_SENTRY_DSN`         | plain text | turns reporting on (public by design: it ships in the app)   |
+  | `SENTRY_AUTH_TOKEN`              | secret     | organization auth token for source map and symbol upload     |
+  | `SENTRY_ORG`, `SENTRY_PROJECT`   | plain text | the Sentry organization and project slugs the upload goes to |
+  | `EXPO_PUBLIC_SENTRY_ENVIRONMENT` | plain text | optional: overrides the environment derived from the variant |
+
+  In Sentry: one React Native project (its DSN), an organization auth token (Settings › Developer Settings ›
+  Organization Tokens), and in the project's Security & Privacy settings "Prevent storing of IP addresses" and the
+  default data scrubbers on: the only scrubbing native crash reports get, and a second line behind the app's own.
 
 ## 6. Environments and builds
 
@@ -192,6 +235,7 @@ sections `@shared/dashboard/nav` allows the member's role (`businessNav`); on ph
 | Universal links     | –                                                   | `staging.bookanything.ie`     | `bookanything.ie`, `www.bookanything.ie` |
 | API                 | `http://<Metro host>:8080` (`EXPO_PUBLIC_API_PORT`) | `EXPO_PUBLIC_API_URL`         | `EXPO_PUBLIC_API_URL`                    |
 | Auth                | dev tokens (or Clerk if a key is set)               | Clerk                         | Clerk                                    |
+| Sentry environment  | `development` (reporting off without a DSN)         | `staging`                     | `production`                             |
 
 In development the app derives the API host from the Metro server it loaded from, so a physical phone on the same
 Wi-Fi reaches the Mac's backend with no configuration (`src/config/env.ts`). Public settings go in EAS environment

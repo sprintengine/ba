@@ -15,10 +15,13 @@ import { QueryProvider } from "~/api/QueryProvider";
 import { AuthProvider } from "~/auth/AuthProvider";
 import { configProblem } from "~/config/env";
 import { PushNotifications } from "~/features/notifications/push/PushNotifications";
+import { reportedUserId, startErrorReporting } from "~/lib/error-reporting";
+import { setReportedUser } from "~/lib/logger";
 import { RootErrorBoundary } from "~/shell/RootErrorBoundary";
 import { useStackOptions } from "~/shell/stack";
 import { EmptyState, Screen, ThemeProvider, ToastProvider, useTheme } from "~/ui";
 
+startErrorReporting();
 configureApi();
 void SplashScreen.preventAutoHideAsync();
 
@@ -75,11 +78,15 @@ function ThemedNavigation({ children }: { children: ReactNode }) {
 }
 
 function RootStack() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const auth = useAuth();
+  const { isLoaded, isSignedIn } = auth;
   const options = useStackOptions();
+  const userId = reportedUserId(auth);
   useEffect(() => {
     if (isLoaded) SplashScreen.hide();
   }, [isLoaded]);
+  // Errors carry who hit them as Clerk's opaque id (never an email), so one person's reports group.
+  useEffect(() => setReportedUser(userId), [userId]);
   if (!isLoaded) return null;
   return (
     <Stack screenOptions={{ ...options, headerShown: false }}>
