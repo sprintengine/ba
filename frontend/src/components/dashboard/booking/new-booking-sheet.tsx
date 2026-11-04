@@ -183,7 +183,7 @@ function NewBookingSteps({
   const asked = service ? questionsFor(questions, service.id) : [];
   return (
     <div className="flex flex-col gap-8">
-      <Step n={1} title="Service">
+      <Step n={1} title="What">
         <ServiceFields services={services} service={service} />
       </Step>
       <Step n={2} title="When">

@@ -122,14 +122,14 @@ export function SidebarContent({
                 // In the rail the tile alone can be subtle: a bar on the edge marks the current page too.
                 collapsed &&
                   active &&
-                  "before:absolute before:top-1/2 before:-left-2.5 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-brand",
+                  "before:absolute before:top-1/2 before:-left-2.5 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-foreground",
               )}
             >
               <item.icon
                 className={cn(
                   "size-4 shrink-0 transition-colors",
                   collapsed && "pointer-coarse:size-5",
-                  active ? "text-brand" : "text-subtle-foreground group-hover:text-muted-foreground",
+                  active ? "text-foreground" : "text-subtle-foreground group-hover:text-muted-foreground",
                 )}
               />
               {!collapsed && <span className="min-w-0 break-words">{label}</span>}

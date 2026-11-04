@@ -259,8 +259,8 @@
   --subtle-foreground: #61676f;
   --accent: #eef0f3;
   --accent-foreground: #0f1012;
-  --border: #e2e4e8;
-  --border-subtle: #eceef1;
+  --border: #dcdfe4;
+  --border-subtle: #e6e8ec;
   --border-strong: #cfd3d9;
   --input: #cfd3d9;
   --overlay: rgba(15, 16, 18, 0.32);
@@ -391,10 +391,10 @@
   --subtle-foreground: #959ba5;
   --accent: #212328;
   --accent-foreground: #f2f3f5;
-  --border: #26292e;
-  --border-subtle: #1d1f23;
-  --border-strong: #363a41;
-  --input: #33363d;
+  --border: #30343b;
+  --border-subtle: #272a30;
+  --border-strong: #454a52;
+  --input: #41454d;
   --overlay: rgba(0, 0, 0, 0.6);
   --primary: #f2f3f5;
   --primary-hover: #d8dbe0;
@@ -731,6 +731,11 @@
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
+/* Default icons a touch finer than the library's 2, so they sit level with the text; a set stroke width stays as set. */
+svg.lucide[stroke-width="2"] {
+  stroke-width: 1.75;
+}
+
 @layer base {
   *,
   ::before,
