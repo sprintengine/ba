@@ -1,4 +1,4 @@
-// ESLint 9 flat config. Rationale for each choice lives in docs/engineering.md ("Frontend lint rules").
+// ESLint 10 flat config. Rationale for each choice lives in docs/engineering.md ("Frontend lint rules").
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
