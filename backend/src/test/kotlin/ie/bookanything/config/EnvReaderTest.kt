@@ -62,4 +62,16 @@ class EnvReaderTest {
         assertEquals(9L, c.ai.allowances.pro)
         assertEquals(EmailConfig(), AppConfig.fromEnvironment(mapOf("APP_ENV" to "development")).email)
     }
+
+    @Test
+    fun `Bo is off unless ASSISTANT_ENABLED switches it on, in every environment`() {
+        assertEquals(false, AppConfig.fromEnvironment(mapOf("APP_ENV" to "development", "ANTHROPIC_API_KEY" to "sk")).assistantEnabled)
+        val production = mapOf(
+            "APP_ENV" to "production", "DATABASE_URL" to "jdbc:postgresql://localhost/x", "TOKEN_SECRET" to "a-very-long-production-secret",
+            "CLERK_ISSUER" to "https://x.clerk.accounts.dev", "CLERK_AUTHORIZED_PARTIES" to "https://bookanything.ie",
+        )
+        assertEquals(false, AppConfig.fromEnvironment(production).assistantEnabled)
+        assertEquals(true, AppConfig.fromEnvironment(production + ("ASSISTANT_ENABLED" to "true")).assistantEnabled)
+        assertEquals(true, AppConfig.fromEnvironment(mapOf("APP_ENV" to "development", "ASSISTANT_ENABLED" to "true")).assistantEnabled)
+    }
 }

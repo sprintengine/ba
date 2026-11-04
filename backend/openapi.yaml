@@ -88,7 +88,7 @@ tags:
   - name: ai
     description: 'AI usage metering and credits (section 16): every model call is reserved, settled and costed.'
   - name: assistant
-    description: 'Bo, the business assistant (section 17): conversations over SSE, proposals, memory and nudges.'
+    description: 'Bo, the business assistant (section 17): conversations over SSE, proposals, memory and nudges. Only while `ASSISTANT_ENABLED` is on (off by default); otherwise these paths answer 404.'
   - name: marketplace
     description: 'The public marketplace (section 18): search listed businesses; the owner''s listing setting.'
   - name: offers
@@ -2649,6 +2649,7 @@ paths:
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
   # ------------------------------------------------------------------ Bo, the assistant (section 17)
+  # Only served while ASSISTANT_ENABLED is on (off by default): otherwise every /assistant path answers 404.
   /v1/businesses/{businessId}/assistant:
     parameters:
       - $ref: '#/components/parameters/BusinessId'
@@ -4451,6 +4452,7 @@ components:
               items: { $ref: '#/components/schemas/AgentChangeKind' }
               description: "Kinds of single change members' AI apps make once the app confirms them, without approval on bookanything (none by default)."
             aiAgentsAvailable: { type: boolean, description: "This deployment serves the business MCP (`BUSINESS_MCP_ENABLED`)." }
+            assistantAvailable: { type: boolean, description: "This deployment offers Bo (`ASSISTANT_ENABLED`, off by default, and an AI model); the dashboard and the app hide Bo when false." }
     UpdateBusiness:
       type: object
       description: |

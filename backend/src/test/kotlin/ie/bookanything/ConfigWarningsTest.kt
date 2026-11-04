@@ -34,4 +34,14 @@ class ConfigWarningsTest {
         )
         assertEquals(emptyList(), configWarnings(pushOff.copy(push = PushConfig(PushMode.EXPO, "expo-token")), "dev"))
     }
+
+    @Test
+    fun `Bo switched on without a model is warned about`() {
+        assertEquals(
+            listOf("ASSISTANT_ENABLED is on but no AI model is configured (ANTHROPIC_API_KEY): Bo stays hidden"),
+            configWarnings(TestConfig.config(assistant = true), "dev", aiModel = false),
+        )
+        assertEquals(emptyList(), configWarnings(TestConfig.config(assistant = true), "dev", aiModel = true))
+        assertEquals(emptyList(), configWarnings(TestConfig.config(assistant = false), "dev", aiModel = false))
+    }
 }

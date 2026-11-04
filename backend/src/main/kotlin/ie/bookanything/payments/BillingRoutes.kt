@@ -49,6 +49,17 @@ val PLAN_PRICES = listOf(
     ),
 )
 
+/**
+ * What a business's AI credits pay for here: Bo (when offered) and the site builder (`SITES_ENABLED`). Null when neither
+ * is: AI setup runs before the business exists, so it doesn't draw on them.
+ */
+fun aiCreditUses(assistant: Boolean, sites: Boolean): String? = when {
+    assistant && sites -> "Bo and the site builder"
+    assistant -> "Bo"
+    sites -> "the site builder"
+    else -> null
+}
+
 /** The business's own bookanything plan: usage and prices, Stripe Billing checkout and portal. */
 internal fun Route.billingRoutes(ctx: AppContext) {
     get("/billing") {
@@ -59,10 +70,11 @@ internal fun Route.billingRoutes(ctx: AppContext) {
                 plan = access.business.plan.wire,
                 status = access.business.planStatus ?: "active",
                 usage = BillingUsage(used.toInt(), access.business.plan.monthlyBookingLimit),
-                // Each plan's AI credits come from configuration (AI_CREDITS_*).
+                // Each plan's AI credits come from configuration (AI_CREDITS_*), listed for what this deployment offers.
                 prices = PLAN_PRICES.map { p ->
                     val credits = ctx.config.ai.allowances.creditsFor(Plan.parse(p.plan))
-                    p.copy(features = p.features + "${"%,d".format(Locale.ROOT, credits)} AI credits a month for Bo and the site builder")
+                    val uses = aiCreditUses(ctx.assistantAvailable, ctx.config.sitesEnabled) ?: return@map p
+                    p.copy(features = p.features + "${"%,d".format(Locale.ROOT, credits)} AI credits a month for $uses")
                 },
             ),
         )

@@ -65,6 +65,12 @@ data class AppConfig(
      * `/{slug}` is the booking portal and the site routes answer 404. Kept behind this switch rather than deleted.
      */
     val sitesEnabled: Boolean = false,
+    /**
+     * Bo, the business assistant (section 17). Off by default: owners who want AI connect their own assistant to the
+     * business MCP (section 20.7), which stays on either way. When off the `/assistant…` routes answer 404, nudges are
+     * not refreshed and nothing is metered for Bo. Kept behind this switch rather than deleted.
+     */
+    val assistantEnabled: Boolean = false,
     val email: EmailConfig = EmailConfig(),
     val sms: SmsConfig = SmsConfig(),
     /** Push notifications to the mobile app (section 22). */
@@ -145,6 +151,7 @@ data class AppConfig(
                 trustedProxyHops = trustedProxyHops(env),
                 unsplashAccessKey = env.str("UNSPLASH_ACCESS_KEY"),
                 sitesEnabled = env.bool("SITES_ENABLED", false),
+                assistantEnabled = env.bool("ASSISTANT_ENABLED", false),
                 email = EmailConfig.fromEnvironment(env),
                 sms = SmsConfig.fromEnvironment(env),
                 push = PushConfig.fromEnvironment(env, dev),
