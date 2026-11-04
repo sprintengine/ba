@@ -95,6 +95,7 @@ GitHub (Settings of the repository):
 | `CLOUDFLARE_ACCOUNT_ID` | the account's ID | website deploys (unset: no website deploys) |
 | `STAGING_BUSINESS_MCP_ENABLED`, `PRODUCTION_BUSINESS_MCP_ENABLED` | `false` to hide the business agents guide | optional, the website builds |
 | `STAGING_WEBMCP_ORIGIN_TRIAL_TOKEN`, `PRODUCTION_WEBMCP_ORIGIN_TRIAL_TOKEN` | Chrome's origin-trial token for that origin | optional, the website builds |
+| `STAGING_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN`, `PRODUCTION_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` | Edge's origin-trial token for that origin | optional, the website builds |
 | `STAGING_APPLE_APP_IDS`, `PRODUCTION_APPLE_APP_IDS`; `…_ANDROID_PACKAGE_NAME`; `…_ANDROID_SHA256_FINGERPRINTS` | as frontend/README.md §9 | optional, the Workers' runtime vars |
 
 4. **Repository secrets**:

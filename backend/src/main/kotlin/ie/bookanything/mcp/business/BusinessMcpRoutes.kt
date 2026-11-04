@@ -3,6 +3,7 @@ package ie.bookanything.mcp.business
 import ie.bookanything.AppContext
 import ie.bookanything.auth.MemberBusinesses
 import ie.bookanything.http.RateLimiter
+import ie.bookanything.mcp.McpIcons
 import ie.bookanything.mcp.addTools
 import ie.bookanything.mcp.oauthMcpRoutes
 import ie.bookanything.oauth.McpPrincipal
@@ -34,6 +35,7 @@ private suspend fun businessServer(ctx: AppContext, principal: McpPrincipal): Se
     return Server(
         Implementation(
             name = "bookanything-business", version = "1.0.0", title = "bookanything for business", websiteUrl = ctx.config.appBaseUrl,
+            icons = McpIcons.of(ctx.config.appBaseUrl),
         ),
         ServerOptions(capabilities = ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = false))),
         INSTRUCTIONS,

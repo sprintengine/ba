@@ -82,12 +82,408 @@
             "type": "object"
         },
         "description": "Search bookanything's marketplace of businesses in Ireland (physios, car washes, music teachers, GP practices, salons, fitness studios and more). Filter by free text, city or a point with a radius, category, a date with free times and deals. Results include each business's slug, distance, from-price, up to three next free times (with any deal price) and active deals. Use the slug with the other tools. Categories: physio, gp-practice, dental, salon, barber, massage, fitness, music-lessons, tutoring, car-wash, pet-grooming, other. Cities: dublin, cork, galway, limerick, waterford, kilkenny, sligo, athlone, drogheda, dundalk, wexford, killarney, tralee, ennis, letterkenny, bray, navan, carlow, mullingar, castlebar, clonmel, tullamore, naas, swords, portlaoise.",
+        "outputSchema": {
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "business": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "slug": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "timezone": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "object",
+                                        "properties": {
+                                            "line1": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "line2": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "city": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "postcode": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "line1",
+                                            "line2",
+                                            "city",
+                                            "postcode"
+                                        ]
+                                    },
+                                    "branding": {
+                                        "type": "object",
+                                        "properties": {
+                                            "primaryColor": {
+                                                "type": "string"
+                                            },
+                                            "logoUrl": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "coverImageUrl": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "portalStyle": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ],
+                                                "enum": [
+                                                    "clinical",
+                                                    "calm",
+                                                    "bold",
+                                                    "playful",
+                                                    "editorial",
+                                                    "minimal",
+                                                    null
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "primaryColor",
+                                            "logoUrl",
+                                            "coverImageUrl",
+                                            "portalStyle"
+                                        ]
+                                    },
+                                    "location": {
+                                        "type": [
+                                            "object",
+                                            "null"
+                                        ],
+                                        "properties": {
+                                            "latitude": {
+                                                "type": "number"
+                                            },
+                                            "longitude": {
+                                                "type": "number"
+                                            }
+                                        },
+                                        "required": [
+                                            "latitude",
+                                            "longitude"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "slug",
+                                    "name",
+                                    "description",
+                                    "timezone",
+                                    "address",
+                                    "branding",
+                                    "location"
+                                ]
+                            },
+                            "category": {
+                                "type": "object",
+                                "properties": {
+                                    "key": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "plural": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "key",
+                                    "label",
+                                    "plural"
+                                ]
+                            },
+                            "distanceKm": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "rating": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "average": {
+                                        "type": "number"
+                                    },
+                                    "count": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "average",
+                                    "count"
+                                ]
+                            },
+                            "priceFromCents": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "nextSlots": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "start": {
+                                            "type": "string"
+                                        },
+                                        "serviceId": {
+                                            "type": "string"
+                                        },
+                                        "serviceName": {
+                                            "type": "string"
+                                        },
+                                        "optionId": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "optionName": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "offer": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                },
+                                                "originalPriceCents": {
+                                                    "type": "integer"
+                                                },
+                                                "priceCents": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "label",
+                                                "originalPriceCents",
+                                                "priceCents"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "start",
+                                        "serviceId",
+                                        "serviceName",
+                                        "optionId",
+                                        "optionName",
+                                        "priceCents",
+                                        "offer"
+                                    ]
+                                }
+                            },
+                            "deals": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "kind": {
+                                            "type": "string"
+                                        },
+                                        "discount": {},
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "summary": {
+                                            "type": "string"
+                                        },
+                                        "serviceIds": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "validUntil": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "kind",
+                                        "discount",
+                                        "label",
+                                        "summary",
+                                        "serviceIds",
+                                        "validUntil"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "business",
+                            "category",
+                            "distanceKm",
+                            "rating",
+                            "priceFromCents",
+                            "currency",
+                            "nextSlots",
+                            "deals"
+                        ]
+                    }
+                },
+                "nextCursor": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "center": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "latitude": {
+                            "type": "number"
+                        },
+                        "longitude": {
+                            "type": "number"
+                        },
+                        "radiusKm": {
+                            "type": "number"
+                        },
+                        "label": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "latitude",
+                        "longitude",
+                        "radiusKm",
+                        "label"
+                    ]
+                }
+            },
+            "required": [
+                "items",
+                "nextCursor",
+                "center"
+            ],
+            "type": "object"
+        },
         "title": "Search businesses",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "noauth"
+                }
+            ]
         }
     },
     {
@@ -105,12 +501,466 @@
             "type": "object"
         },
         "description": "A business's public profile by slug: name, description, address, contact details, timezone, currency, booking policies (notice, cancellation), customer groups, whether it takes online payments, and its booking page URL.",
+        "outputSchema": {
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "industry": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "locale": {
+                    "type": "string"
+                },
+                "contactEmail": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "contactPhone": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "websiteUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "address": {
+                    "type": "object",
+                    "properties": {
+                        "line1": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "line2": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "city": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "postcode": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "line1",
+                        "line2",
+                        "city",
+                        "postcode"
+                    ]
+                },
+                "branding": {
+                    "type": "object",
+                    "properties": {
+                        "primaryColor": {
+                            "type": "string"
+                        },
+                        "logoUrl": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "coverImageUrl": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "portalStyle": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "clinical",
+                                "calm",
+                                "bold",
+                                "playful",
+                                "editorial",
+                                "minimal",
+                                null
+                            ]
+                        }
+                    },
+                    "required": [
+                        "primaryColor",
+                        "logoUrl",
+                        "coverImageUrl",
+                        "portalStyle"
+                    ]
+                },
+                "vocabulary": {
+                    "type": "object",
+                    "properties": {
+                        "resource": {
+                            "type": "string"
+                        },
+                        "resources": {
+                            "type": "string"
+                        },
+                        "customer": {
+                            "type": "string"
+                        },
+                        "customers": {
+                            "type": "string"
+                        },
+                        "booking": {
+                            "type": "string"
+                        },
+                        "bookings": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "resource",
+                        "resources",
+                        "customer",
+                        "customers",
+                        "booking",
+                        "bookings"
+                    ]
+                },
+                "policies": {
+                    "type": "object",
+                    "properties": {
+                        "minNoticeMinutes": {
+                            "type": "integer"
+                        },
+                        "maxAdvanceDays": {
+                            "type": "integer"
+                        },
+                        "cancellationNoticeHours": {
+                            "type": "integer"
+                        },
+                        "lateCancellationRefundPercent": {
+                            "type": "integer"
+                        },
+                        "allowCustomerCancel": {
+                            "type": "boolean"
+                        },
+                        "allowCustomerReschedule": {
+                            "type": "boolean"
+                        },
+                        "holdMinutes": {
+                            "type": "integer"
+                        },
+                        "requireCustomerPhone": {
+                            "type": "boolean"
+                        },
+                        "nextAvailableOnly": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "minNoticeMinutes",
+                        "maxAdvanceDays",
+                        "cancellationNoticeHours",
+                        "lateCancellationRefundPercent",
+                        "allowCustomerCancel",
+                        "allowCustomerReschedule",
+                        "holdMinutes",
+                        "requireCustomerPhone",
+                        "nextAvailableOnly"
+                    ]
+                },
+                "customerGroups": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "description"
+                        ]
+                    }
+                },
+                "paymentsEnabled": {
+                    "type": "boolean"
+                },
+                "showBadge": {
+                    "type": "boolean"
+                },
+                "site": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "plan": {
+                            "type": "object",
+                            "properties": {
+                                "theme": {
+                                    "type": "string",
+                                    "enum": [
+                                        "clinical",
+                                        "calm",
+                                        "bold",
+                                        "playful",
+                                        "editorial",
+                                        "minimal"
+                                    ]
+                                },
+                                "palette": {
+                                    "type": "object",
+                                    "properties": {
+                                        "primaryColor": {
+                                            "type": "string"
+                                        },
+                                        "accent": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "primaryColor",
+                                        "accent"
+                                    ]
+                                },
+                                "seo": {
+                                    "type": "object",
+                                    "properties": {
+                                        "title": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "title",
+                                        "description"
+                                    ]
+                                },
+                                "sections": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            },
+                                            "enabled": {
+                                                "type": "boolean"
+                                            },
+                                            "content": {}
+                                        },
+                                        "required": [
+                                            "id",
+                                            "type",
+                                            "enabled",
+                                            "content"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "theme",
+                                "palette",
+                                "seo",
+                                "sections"
+                            ]
+                        },
+                        "isDefault": {
+                            "type": "boolean"
+                        },
+                        "context": {
+                            "type": "object",
+                            "properties": {
+                                "team": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "description": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "name",
+                                            "description"
+                                        ]
+                                    }
+                                },
+                                "openingHours": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "dayOfWeek": {
+                                                "type": "integer"
+                                            },
+                                            "intervals": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "start": {
+                                                            "type": "string"
+                                                        },
+                                                        "end": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "start",
+                                                        "end"
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "dayOfWeek",
+                                            "intervals"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "team",
+                                "openingHours"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "plan",
+                        "isDefault",
+                        "context"
+                    ]
+                },
+                "bookingUrl": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "slug",
+                "name",
+                "description",
+                "industry",
+                "timezone",
+                "currency",
+                "locale",
+                "contactEmail",
+                "contactPhone",
+                "websiteUrl",
+                "address",
+                "branding",
+                "vocabulary",
+                "policies",
+                "customerGroups",
+                "paymentsEnabled",
+                "showBadge",
+                "site",
+                "bookingUrl"
+            ],
+            "type": "object"
+        },
         "title": "Find business",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "noauth"
+                }
+            ]
         }
     },
     {
@@ -128,12 +978,347 @@
             "type": "object"
         },
         "description": "The bookable services of a business: duration, price in minor units (cents), payment mode, options (choose one with optionId), add-ons, the selectable resource (e.g. a therapist) and the booking questions.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "category": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "color": {
+                                "type": "string"
+                            },
+                            "durationMinutes": {
+                                "type": "integer"
+                            },
+                            "bufferBeforeMinutes": {
+                                "type": "integer"
+                            },
+                            "bufferAfterMinutes": {
+                                "type": "integer"
+                            },
+                            "slotIntervalMinutes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "minNoticeMinutes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "maxAdvanceDays": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "capacity": {
+                                "type": "integer"
+                            },
+                            "priceCents": {
+                                "type": "integer"
+                            },
+                            "paymentMode": {
+                                "type": "string"
+                            },
+                            "depositCents": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "allowPayAtVenue": {
+                                "type": "boolean"
+                            },
+                            "requiresApproval": {
+                                "type": "boolean"
+                            },
+                            "locationType": {
+                                "type": "string"
+                            },
+                            "sortOrder": {
+                                "type": "integer"
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "durationMinutes": {
+                                            "type": "integer"
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "durationMinutes",
+                                        "priceCents",
+                                        "sortOrder"
+                                    ]
+                                }
+                            },
+                            "addons": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "extraMinutes": {
+                                            "type": "integer"
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "extraMinutes",
+                                        "priceCents",
+                                        "sortOrder"
+                                    ]
+                                }
+                            },
+                            "allowedGroupIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "selectableRequirement": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "resources": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "kind": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "description",
+                                                "kind"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "label",
+                                    "resources"
+                                ]
+                            },
+                            "questions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "helpText": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "kind": {
+                                            "type": "string"
+                                        },
+                                        "options": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": {
+                                            "type": "boolean"
+                                        },
+                                        "sensitive": {
+                                            "type": "boolean"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "label",
+                                        "helpText",
+                                        "kind",
+                                        "options",
+                                        "required",
+                                        "sensitive",
+                                        "sortOrder"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "description",
+                            "category",
+                            "color",
+                            "durationMinutes",
+                            "bufferBeforeMinutes",
+                            "bufferAfterMinutes",
+                            "slotIntervalMinutes",
+                            "minNoticeMinutes",
+                            "maxAdvanceDays",
+                            "capacity",
+                            "priceCents",
+                            "paymentMode",
+                            "depositCents",
+                            "allowPayAtVenue",
+                            "requiresApproval",
+                            "locationType",
+                            "sortOrder",
+                            "options",
+                            "addons",
+                            "allowedGroupIds",
+                            "selectableRequirement",
+                            "questions"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "business",
+                "currency",
+                "timezone",
+                "services"
+            ],
+            "type": "object"
+        },
         "title": "List services",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "noauth"
+                }
+            ]
         }
     },
     {
@@ -191,12 +1376,159 @@
             "type": "object"
         },
         "description": "Free start times for one service of a business between two dates (inclusive, at most 31 days; `to` defaults to `from`), in the business's timezone. Services with options need optionId. Slots with a deal carry `offer` with the discounted price. Pass groupId for restricted customer groups. Pass resourceId to choose a specific person (e.g. a therapist). Some businesses offer only their next available time: then the result has `nextAvailableOnly: true` and at most one time; call again with `after` set to that time to see the next one. A day the business hasn't opened for booking yet has no times and `opensAt` (when it opens), or `held: true` (not open yet, no time set).",
+        "outputSchema": {
+            "properties": {
+                "timezone": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "days": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "date": {
+                                "type": "string"
+                            },
+                            "slots": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "start": {
+                                            "type": "string"
+                                        },
+                                        "end": {
+                                            "type": "string"
+                                        },
+                                        "resourceIds": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "seatsLeft": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ]
+                                        },
+                                        "offer": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                },
+                                                "originalPriceCents": {
+                                                    "type": "integer"
+                                                },
+                                                "priceCents": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "label",
+                                                "originalPriceCents",
+                                                "priceCents"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "start",
+                                        "end",
+                                        "resourceIds",
+                                        "seatsLeft",
+                                        "offer"
+                                    ]
+                                }
+                            },
+                            "opensAt": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "held": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "date",
+                            "slots",
+                            "opensAt",
+                            "held"
+                        ]
+                    }
+                },
+                "nextAvailableOnly": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "timezone",
+                "from",
+                "to",
+                "durationMinutes",
+                "days",
+                "nextAvailableOnly"
+            ],
+            "type": "object"
+        },
         "title": "Check availability",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "noauth"
+                }
+            ]
         }
     }
 ]

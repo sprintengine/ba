@@ -78,6 +78,7 @@ object MarketplaceTools {
             integer("limit", "Results per page (1-30, default 12)", 1, 30)
             string("cursor", "nextCursor from a previous result, to get the next page")
         },
+        outputSchema = OutputSchemas.of(serializer<SearchResultDto>()),
         annotations = READ_ONLY,
     )
 
@@ -131,6 +132,7 @@ object MarketplaceTools {
                 format = "date-time",
             )
         },
+        outputSchema = OutputSchemas.of(serializer<AvailabilityDto>()),
         annotations = READ_ONLY,
     )
 

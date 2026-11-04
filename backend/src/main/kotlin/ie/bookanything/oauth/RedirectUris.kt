@@ -5,7 +5,9 @@ import java.net.URI
 /**
  * Redirect URI rules. Registration accepts https URLs, http on a loopback address (native apps, RFC 8252 7.3) and
  * private-use schemes of native apps. Authorization requests must match a registered URI exactly, except that a
- * loopback redirect may use any port (RFC 8252 7.3: native apps pick an ephemeral port per session).
+ * loopback redirect may use any port (RFC 8252 7.3: native apps pick an ephemeral port per session) and any of the
+ * loopback names: `localhost`, `127.0.0.1` and `[::1]` are the same host (clients register one and listen on another;
+ * RFC 8252 8.3 prefers the IP literals, but the browser only ever goes back to the device it runs on).
  */
 object RedirectUris {
     private val LOOPBACK_HOSTS = setOf("localhost", "127.0.0.1", "[::1]", "::1")
@@ -38,15 +40,14 @@ object RedirectUris {
         return u.scheme.equals("http", ignoreCase = true) && u.host?.lowercase() in LOOPBACK_HOSTS
     }
 
-    /** True when [requested] is one of [registered] (exact), or the same loopback redirect on another port. */
+    /** True when [requested] is one of [registered] (exact), or the same loopback redirect on another port or loopback name. */
     fun matches(registered: Collection<String>, requested: String): Boolean {
         if (requested in registered) return true
         if (!isLoopback(requested)) return false
-        val r = parse(requested) ?: return false
+        val r = parse(requested)?.takeIf { it.rawFragment == null && it.rawUserInfo == null } ?: return false
         return registered.any { reg ->
             val g = parse(reg)
-            g != null && isLoopback(reg) && g.host.equals(r.host, ignoreCase = true) && g.rawPath.orEmpty() == r.rawPath.orEmpty() &&
-                g.rawQuery == r.rawQuery
+            g != null && isLoopback(reg) && g.rawPath.orEmpty() == r.rawPath.orEmpty() && g.rawQuery == r.rawQuery
         }
     }
 

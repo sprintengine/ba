@@ -49,10 +49,17 @@ suspend fun ApplicationCall.respondPostOnly() {
 fun Route.mcpRoutes(ctx: AppContext) {
     route("/mcp") {
         install(ContentNegotiation) { json(McpJson) }
-        // Browser-based MCP clients connect cross-origin; bearer tokens only, no cookies.
+        // Before CORS, so a preflight from a `null` or malformed origin is refused too.
+        install(McpOriginCheck)
+        // Browser-based MCP clients connect cross-origin; bearer tokens only, no cookies. Applies to /customer and /business
+        // too. Mcp-Method and Mcp-Name are sent on every request from 2026-07-28 clients: a preflight refusing them fails
+        // before the client can fall back to an older version.
         openCors(
             listOf(HttpMethod.Post, HttpMethod.Get, HttpMethod.Delete),
-            headers = listOf(HttpHeaders.Authorization, HttpHeaders.Accept, "MCP-Protocol-Version", "Mcp-Session-Id", "Last-Event-ID"),
+            headers = listOf(
+                HttpHeaders.Authorization, HttpHeaders.Accept, "MCP-Protocol-Version", "Mcp-Method", "Mcp-Name", "Mcp-Session-Id",
+                "Last-Event-ID",
+            ),
             expose = listOf(HttpHeaders.WWWAuthenticate, "Mcp-Session-Id"),
         )
         post {

@@ -38,11 +38,21 @@ interface TokenStore {
     /** Marks the code used and returns it; a second presentation is [Redemption.Replayed]. */
     fun redeemCode(code: String, now: Instant): Redemption<CodeRecord>
 
+    /**
+     * Issues an access and refresh token pair for the grant, with [scopes] cut down to what the grant covers now (its
+     * consent may have been narrowed since the code or refresh token was issued). [rotatedFrom] is the refresh token
+     * presented for this pair, if any. Null when the grant was revoked, or covers none of [scopes] any more.
+     */
     fun issueTokens(
         grantId: UUID, scopes: Set<Scope>, resource: String, accessExpiresAt: Instant, refreshExpiresAt: Instant, now: Instant,
-    ): IssuedTokens
+        rotatedFrom: String? = null,
+    ): IssuedTokens?
 
-    /** Marks the refresh token used and returns it; presenting a used one is [Redemption.Replayed]. */
+    /**
+     * Marks the refresh token used and returns it. Presenting a used one is [Redemption.Reused] within the grace window
+     * while none of its successors was used and reuses remain (counted), otherwise [Redemption.Replayed], which revokes
+     * the grant.
+     */
     fun redeemRefresh(refreshToken: String, now: Instant): Redemption<TokenRecord>
 
     fun findToken(token: String): TokenRecord?
