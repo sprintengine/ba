@@ -162,11 +162,7 @@ export function ServiceStep({
     <div className="flex flex-col gap-7">
       {groups.map((g) => (
         <section key={g.category ?? "all"} className="flex flex-col gap-2.5">
-          {g.category && (
-            <h3 className="text-sm font-medium text-muted-foreground">
-              {g.category}
-            </h3>
-          )}
+          {g.category && <h3 className="text-sm font-medium text-muted-foreground">{g.category}</h3>}
           <ul className="flex flex-col gap-2.5">
             {g.services.map((s) => (
               <li key={s.id}>
