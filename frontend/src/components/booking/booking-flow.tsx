@@ -52,7 +52,7 @@ export function BookingFlow({
           <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />
           <FlowStep flow={flow} />
           {action && (
-            <div className="sticky bottom-0 z-10 -mx-2 hidden justify-end bg-background/85 px-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl @2xl:flex">
+            <div className="sticky bottom-0 z-10 -mx-2 hidden justify-end border-t border-border-subtle bg-background px-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] @2xl:flex">
               {action}
             </div>
           )}
