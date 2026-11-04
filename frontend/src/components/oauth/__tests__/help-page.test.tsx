@@ -89,6 +89,25 @@ describe("Help: Run your business from your AI agent", () => {
     );
   });
 
+  it("only mentions the dashboard's assistant where Bo is offered", () => {
+    const renderBusinessPage = () =>
+      render(
+        <TooltipProvider>
+          <BusinessAgentsHelpPage />
+        </TooltipProvider>,
+      );
+    const control = () => screen.getByRole("region", { name: "Stay in control" });
+    const { unmount } = renderBusinessPage();
+    expect(control()).toHaveTextContent("Turning them off stops every member’s agent at once.");
+    expect(control()).not.toHaveTextContent(/assistant in the dashboard/);
+    unmount();
+    vi.stubEnv("NEXT_PUBLIC_ASSISTANT_ENABLED", "true");
+    renderBusinessPage();
+    expect(control()).toHaveTextContent(
+      "Turning them off stops every member’s agent at once; the assistant in the dashboard keeps working.",
+    );
+  });
+
   it("is linked from the customer guide unless the business server is switched off", () => {
     const { unmount } = renderPage();
     expect(screen.getByRole("link", { name: "Run your business from your AI agent" })).toHaveAttribute(

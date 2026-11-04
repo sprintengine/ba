@@ -1,5 +1,6 @@
-# Bo: the owner opens the assistant from a business header and sends a message. Needs the backend with a model, or
-# the scripted fake (`AI_FAKE_SCRIPT=demo`, development only), so Bo streams a reply.
+# Bo: the owner opens the assistant from a business header and sends a message. Needs the backend with Bo switched on
+# (`ASSISTANT_ENABLED=true`; it's off by default, and then the header has no Bo button) and a model, or the scripted fake
+# (`AI_FAKE_SCRIPT=demo`, development only), so Bo streams a reply.
 appId: ${APP_ID || "ie.bookanything.app.dev"}
 name: Bo, open and send a message
 ---

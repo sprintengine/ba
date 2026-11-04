@@ -56,7 +56,8 @@ export function BusinessShell() {
   return (
     <BusinessContextProvider value={{ business: business.data, role: membership.role, me: me.data }}>
       <VocabularyProvider vocabulary={business.data.vocabulary}>
-        {/* Bo's side panel sits beside the sections on large screens (src/features/assistant/AssistantDock). */}
+        {/* Bo's side panel sits beside the sections on large screens (src/features/assistant/AssistantDock), where
+            the deployment offers Bo. */}
         <View style={styles.row}>
           <View style={styles.fill}>
             <AdaptiveTabs
@@ -76,7 +77,7 @@ export function BusinessShell() {
               ))}
             </AdaptiveTabs>
           </View>
-          <AssistantDock />
+          {business.data.assistantAvailable ? <AssistantDock /> : null}
         </View>
       </VocabularyProvider>
     </BusinessContextProvider>

@@ -171,8 +171,13 @@ function CalendarFooter({ count, updating }: { count: number; updating: boolean 
   const business = useCurrentBusiness();
   const { v } = useVocabulary();
   return (
-    // Room for Bo's launcher, which floats over this corner on phones (from sm up it sits in the sidebar).
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-subtle bg-surface-sunken/60 px-4 py-2 text-xs text-muted-foreground max-sm:pr-20">
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-subtle bg-surface-sunken/60 px-4 py-2 text-xs text-muted-foreground",
+        // Room for Bo's launcher, which floats over this corner on phones (from sm up it sits in the sidebar).
+        business.assistantAvailable && "max-sm:pr-20",
+      )}
+    >
       <span className="tnum">
         {updating ? "Updating…" : `${count} ${v("booking", { count })}`} ·{" "}
         {business.timezone.replace(/_/g, " ")}

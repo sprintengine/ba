@@ -10,7 +10,7 @@ import { Button, Card, Checkbox, EmptyState, RadioGroup, Section, Text, useTheme
 import { useSaveFeedback } from "~/ui/form";
 import { borderWidth, radius, space } from "~/ui/tokens";
 import { SettingsPage } from "../SettingsPage";
-import { ACCESS, BUSINESS_MCP_PATH, CONNECTED_APPS_PATH, KINDS } from "./options";
+import { accessOptions, BUSINESS_MCP_PATH, CONNECTED_APPS_PATH, KINDS } from "./options";
 
 /**
  * Settings › AI agents (the website's AiAgentsSettings, §20.7–20.8): who may run this business from their own AI
@@ -34,7 +34,11 @@ export function AiAgentsSettings() {
             testID="ai-agents-unavailable"
             icon={Bot}
             title="Not available yet"
-            description="Connecting your own AI agents isn't switched on for bookanything yet. The assistant in the dashboard works as usual."
+            description={
+              business.assistantAvailable
+                ? "Connecting your own AI agents isn't switched on for bookanything yet. The assistant in the dashboard works as usual."
+                : "Connecting your own AI agents isn't switched on for bookanything yet."
+            }
           />
         </Card>
       </SettingsPage>
@@ -70,7 +74,7 @@ export function AiAgentsSettings() {
           hideLabel
           testID="ai-access"
           value={access}
-          options={ACCESS}
+          options={accessOptions(!!business.assistantAvailable)}
           disabled={locked}
           onChange={(value) => save({ aiAgentsAccess: value }, "Saved who can use AI agents")}
         />

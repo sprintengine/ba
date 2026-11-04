@@ -1,8 +1,10 @@
 /**
  * The business Bo works for, when Bo opens as a modal over the app (`/assistant?business=<slug>`, outside the business
  * shell): loads the membership and the business and provides the website's business context and vocabulary, as the
- * shell does. On iPad, Bo's side panel sits inside the shell and doesn't need this.
+ * shell does. On iPad, Bo's side panel sits inside the shell and doesn't need this. Where the deployment doesn't offer
+ * Bo (`assistantAvailable`), a link here (an old notification, a bookmark) goes to the business instead.
  */
+import { Redirect } from "expo-router";
 import type { ReactNode } from "react";
 import { Building2 } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
@@ -66,6 +68,7 @@ export function AssistantBusinessScope({
       </Screen>
     );
   }
+  if (!business.data.assistantAvailable) return <Redirect href={`/dashboard/${membership.slug}`} />;
   return (
     <BusinessContextProvider value={{ business: business.data, role: membership.role, me: me.data }}>
       <VocabularyProvider vocabulary={business.data.vocabulary}>{children}</VocabularyProvider>

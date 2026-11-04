@@ -23,7 +23,13 @@ object BusinessViews {
         b.branding.portalStyle ?: SiteThemes.choose(b.industry, b.name, b.description, prompt = null)
 
     fun toDto(
-        payments: PaymentProvider, conn: Connection, b: BusinessRow, role: Role, sitesEnabled: Boolean, aiAgentsAvailable: Boolean = false,
+        payments: PaymentProvider,
+        conn: Connection,
+        b: BusinessRow,
+        role: Role,
+        sitesEnabled: Boolean,
+        aiAgentsAvailable: Boolean = false,
+        assistantAvailable: Boolean = false,
     ): BusinessDto {
         val p = toPublic(payments, conn, b)
         return BusinessDto(
@@ -32,6 +38,7 @@ object BusinessViews {
             status = b.status, country = b.country, plan = b.plan.wire, myRole = role.value, createdAt = formatInstant(b.createdAt, b.zone),
             sitesEnabled = sitesEnabled, aiAgentsAccess = b.aiAgents.access,
             aiAgentsAutoApprove = AgentChangeKind.entries.filter { it in b.aiAgents.autoApprove }, aiAgentsAvailable = aiAgentsAvailable,
+            assistantAvailable = assistantAvailable,
         )
     }
 }

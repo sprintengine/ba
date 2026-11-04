@@ -4,7 +4,7 @@ import { business as businessFixture, me as meFixture } from "@shared/api/__test
 import { notification } from "@shared/api/__tests__/fixtures/notifications";
 import type { Business, Me } from "@shared/api/types";
 import { DEMO_ACCOUNTS } from "@shared/auth/dev-token";
-import { mockApi } from "~/test/api-mock";
+import { calls, mockApi } from "~/test/api-mock";
 import { renderApp } from "~/test/app";
 import * as layout from "~/ui/layout";
 import { credits } from "../assistant/fake-assistant-api";
@@ -18,12 +18,12 @@ const memberMe: Me = {
 };
 const approval = { ...notification, link: "/my/approvals/r1", title: "Claude wants to: Book Consult" };
 
-function api() {
+function api(shown: Business = business) {
   return mockApi((method, path) => {
     if (path === "/v1/me") return memberMe;
     if (path === "/v1/me/notifications") return { items: [approval], unreadCount: 1 };
     if (path.endsWith("/read")) return new Response(null, { status: 204 });
-    if (path === `/v1/businesses/lumen-physio` || path === `/v1/businesses/${business.id}`) return business;
+    if (path === `/v1/businesses/lumen-physio` || path === `/v1/businesses/${business.id}`) return shown;
     if (path.endsWith("/assistant"))
       return { configured: true, credits: credits(), nudges: [], threads: [], canEditMemory: true };
     return undefined;
@@ -62,4 +62,28 @@ it("Bo opens from a business screen's header", async () => {
   expect(await screen.findByTestId("assistant-panel")).toBeOnTheScreen();
   expect(app.getPathname()).toBe("/assistant");
   expect(await screen.findByText(/AI credits left/)).toBeOnTheScreen();
+});
+
+describe("where the deployment doesn't offer Bo", () => {
+  const withoutBo: Business = { ...business, assistantAvailable: false };
+
+  it("business headers have no Bo button, on phones and wide windows", async () => {
+    for (const isWide of [false, true]) {
+      jest.spyOn(layout, "useLayout").mockReturnValue({ isWide, width: isWide ? 1180 : 390, height: 820 });
+      const fetch = api(withoutBo);
+      const view = renderApp({ signedInAs: owner, initialUrl: "/dashboard/lumen-physio" });
+      expect(await screen.findByRole("button", { name: "Notifications, 1 new" })).toBeOnTheScreen();
+      expect(screen.queryByTestId("header-assistant")).toBeNull();
+      expect(screen.queryByTestId("assistant-dock")).toBeNull();
+      expect(calls(fetch).filter((c) => c.endsWith("/assistant"))).toEqual([]);
+      view.unmount();
+    }
+  });
+
+  it("a link to Bo goes to the business instead", async () => {
+    api(withoutBo);
+    const app = renderApp({ signedInAs: owner, initialUrl: "/assistant?business=lumen-physio" });
+    await waitFor(() => expect(app.getPathname()).toBe("/dashboard/lumen-physio"));
+    expect(screen.queryByTestId("assistant-panel")).toBeNull();
+  });
 });

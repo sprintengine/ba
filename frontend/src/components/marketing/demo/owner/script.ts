@@ -1,3 +1,4 @@
+import { assistantMarketed } from "@/lib/assistant/flag";
 import type { DemoChapter, DemoStep } from "../engine/types";
 import {
   AFTER_HOURS,
@@ -187,4 +188,15 @@ const askBo: DemoChapter<OwnerState> = {
   ],
 };
 
-export const OWNER_CHAPTERS = [addService, setHours, bookingsArrive, askBo] as const;
+/** The tour without Bo: it ends on the new booking and loops back to adding a service. */
+export const OWNER_TOUR = [addService, setHours, bookingsArrive] as const;
+/** The tour where Bo is offered: the owner then asks Bo to move a booking. */
+export const OWNER_TOUR_WITH_BO = [...OWNER_TOUR, askBo] as const;
+
+/**
+ * The tour the landing plays: Bo's chapter only while the public pages present Bo (assistantMarketed). Either list is
+ * a module constant, so the player keeps the same chapters across renders.
+ */
+export function ownerChapters() {
+  return assistantMarketed() ? OWNER_TOUR_WITH_BO : OWNER_TOUR;
+}

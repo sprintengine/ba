@@ -83,7 +83,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | — | All three enable SMS reminders (Pro/Business plans, customers who gave a phone number). `TWILIO_FROM` is an E.164 number or a Messaging Service SID (`MG…`). |
 | `PUSH_NOTIFICATIONS` | `log` in development, else `off` | Push notifications to the mobile app (see "Push notifications"): `expo` sends them with Expo's push service, `log` logs what would be sent, `off` queues nothing. |
 | `EXPO_ACCESS_TOKEN` | — | Expo access token, sent with every push request when set; required by Expo once the project's "enhanced push security" is on. |
-| `ANTHROPIC_API_KEY` | — | Enables the AI business draft, the AI site builder and Bo. Without it the draft and site builder use the built-in generators and Bo opens in its "AI isn't configured" state. |
+| `ANTHROPIC_API_KEY` | — | Enables the AI business draft, the AI site builder (with `SITES_ENABLED`) and Bo (with `ASSISTANT_ENABLED`). Without it the draft and site builder use the built-in generators and Bo is hidden. |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | Model for every AI feature. |
 | `AI_CREDIT_MICRO_CENTS` | development placeholder | What one AI credit is worth: model list-price cost per credit, in micro-cents (10⁻⁶ of a price-table cent). Required in production when `ANTHROPIC_API_KEY` is set. |
 | `AI_CREDITS_FREE` / `AI_CREDITS_PRO` / `AI_CREDITS_BUSINESS` | development placeholders | The monthly AI credits for each plan, set in deployment config. Required in production when `ANTHROPIC_API_KEY` is set. |
@@ -92,6 +92,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `AI_PRICES_FILE` | bundled `ai/prices.json` | A replacement price table (versioned USD prices per million tokens per model). |
 | `ASSISTANT_EFFORT` | `low` | Bo's reasoning effort (`low`, `medium`, `high`). |
 | `AI_FAKE_SCRIPT` | — | **Development only** (refused in production): `demo` or a JSON file path selects the scripted fake model for every AI feature (Bo plays the script; the draft and site builder fall back to their built-in generators). For UI work and e2e tests without a key. |
+| `ASSISTANT_ENABLED` | `false` | Bo, the business assistant (architecture §17). Off in every environment unless set: the `/assistant…` routes answer 404, nudges aren't refreshed, nothing is metered for Bo and `Business.assistantAvailable` is false, so the dashboard and the app hide it. Owners who want AI connect their own assistant to the business MCP instead (`BUSINESS_MCP_ENABLED`; help page `/help/ai-agents-for-business`), which works either way. Bo also needs a model (`ANTHROPIC_API_KEY` or `AI_FAKE_SCRIPT`). Build the frontend with `NEXT_PUBLIC_ASSISTANT_ENABLED` to match. |
 | `SITES_ENABLED` | `false` | Business websites and the site builder (architecture §15). Off: the public business has no `site`, `/{slug}` is the booking portal and the site routes answer 404. We don't sell websites, so leave it off. |
 | `UNSPLASH_ACCESS_KEY` | — | Enables stock photo search in the site editor (see "Stock photos"). |
 | `STORAGE_LOCAL_DIR` | development: `.data/uploads` | Directory for uploaded images, served by `GET /v1/public/uploads/…`. Set it explicitly to use local storage in production (single instance, persistent disk). |
@@ -308,14 +309,16 @@ subscription, then set `AI_OVERAGE_METER_EVENT`.
 
 ### Bo, the business assistant
 
-`/v1/businesses/{id}/assistant…` (architecture §17): per-member conversations streamed over SSE
-(`POST …/threads/{id}/messages`, `text/event-stream`), a tool registry (`assistant/tools`) whose handlers call the same
-commands as the dashboard as the signed-in member, proposals for every change (confirmed with
-`POST …/actions/{id}/confirm`, audited as `ai`), an owner-editable business memory and deterministic nudges (refreshed
-every 15 minutes). The system prompt is constant and the tool list depends only on the role, with a cache breakpoint
-after them; check `cache_read_input_tokens` on the `ai_usage` rows to confirm caching in production.
+Off unless `ASSISTANT_ENABLED=true` (and a model is configured): we don't offer Bo for now, and owners connect their own
+AI assistant to the business MCP instead (below). When on, `/v1/businesses/{id}/assistant…` (architecture §17):
+per-member conversations streamed over SSE (`POST …/threads/{id}/messages`, `text/event-stream`), a tool registry
+(`assistant/tools`) whose handlers call the same commands as the dashboard as the signed-in member, proposals for every
+change (confirmed with `POST …/actions/{id}/confirm`, audited as `ai`), an owner-editable business memory and
+deterministic nudges (refreshed every 15 minutes). The system prompt is constant and the tool list depends only on the
+role, with a cache breakpoint after them; check `cache_read_input_tokens` on the `ai_usage` rows to confirm caching in
+production.
 
-Try it without a key: `AI_FAKE_SCRIPT=demo` (development only) and ask "book someone in tomorrow", "what's on this
+Try it without a key: `ASSISTANT_ENABLED=true AI_FAKE_SCRIPT=demo` (development only) and ask "book someone in tomorrow", "what's on this
 week?" or "use lots of credits".
 
 ### Geocoding (Mapbox)

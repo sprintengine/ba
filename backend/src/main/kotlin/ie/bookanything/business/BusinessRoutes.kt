@@ -30,7 +30,7 @@ fun Route.onboardingRoutes(ctx: AppContext) {
             val id = SetupInstaller.install(conn, setup, user.id, ie.bookanything.audit.Actor.member(Role.OWNER, user.id))
             BusinessViews.toDto(
                 ctx.payments, conn, BusinessRepository.findById(conn, id)!!, Role.OWNER, ctx.config.sitesEnabled,
-                ctx.config.oauth.businessMcpEnabled,
+                ctx.config.oauth.businessMcpEnabled, ctx.assistantAvailable,
             )
         }
         call.respond(HttpStatusCode.Created, dto)
@@ -61,7 +61,7 @@ fun Route.businessSettingsRoutes(ctx: AppContext) {
             ctx.db.read(access.businessId) {
                 BusinessViews.toDto(
                     ctx.payments, it, access.business, access.role, ctx.config.sitesEnabled,
-                    ctx.config.oauth.businessMcpEnabled,
+                    ctx.config.oauth.businessMcpEnabled, ctx.assistantAvailable,
                 )
             },
         )
@@ -73,7 +73,10 @@ fun Route.businessSettingsRoutes(ctx: AppContext) {
         val dto = ctx.db.tx(access.businessId) { conn ->
             BusinessSettings.update(conn, access, patch)
             val updated = BusinessRepository.findById(conn, access.businessId)!!
-            BusinessViews.toDto(ctx.payments, conn, updated, access.role, ctx.config.sitesEnabled, ctx.config.oauth.businessMcpEnabled)
+            BusinessViews.toDto(
+                ctx.payments, conn, updated, access.role, ctx.config.sitesEnabled, ctx.config.oauth.businessMcpEnabled,
+                ctx.assistantAvailable,
+            )
         }
         call.respond(dto)
     }

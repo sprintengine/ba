@@ -28,7 +28,7 @@ The website is a good responsive site, but wrapping it would ship its weaknesses
 - **The iPad.** A sidebar and real split views (list beside detail) that follow the window as it's resized in Split
   View and Stage Manager; the website's breakpoints were designed for browsers.
 - **Platform features the business side needs**: push notifications, the Keychain for sessions, voice dictation for
-  Bo, the share sheet, calendar and maps, universal links, biometric unlock later. Each is a bridge you build anyway
+  Bo (where offered), the share sheet, calendar and maps, universal links, biometric unlock later. Each is a bridge you build anyway
   in a WebView, without native UI around it.
 - **Accessibility**: VoiceOver/TalkBack semantics, Dynamic Type and Reduce Motion from native controls.
 
@@ -276,6 +276,11 @@ build numbers, `appVersionSource: remote`). Node 22 on EAS and CI; the app also 
 
 ### 8.1 Bo and voice (`src/features/assistant`)
 
+- **Off unless the deployment offers Bo** (`ASSISTANT_ENABLED` on the backend, architecture §17): the app follows the
+  business's `assistantAvailable`. Without it there is no header button, side panel or "Bo noticed" card on Today, the
+  billing screen only lists AI credits for what uses them, and `/assistant?business=<slug>` goes to the business instead.
+  Owners who want AI connect their own assistant to the business MCP (Connect AI, §8.3). The rest of this section
+  describes Bo switched on.
 - The website's Bo (architecture §17) on top of the same shared state machine and hooks (`@shared/assistant/*`,
   `use-assistant`): home (nudges, quick actions, recent conversations), the chat, memory, credits and the "AI isn't
   configured" state. A modal on phones (`/assistant?business=<slug>`, optional `&ask=`), a side panel beside the

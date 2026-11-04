@@ -110,6 +110,9 @@ class AppContext(
     val marketplace = MarketplaceSearch(payments)
     val oauth = OAuthServer(config.oauth, db, clientMetadataFetcher, clock)
 
+    /** Bo is offered to this deployment's businesses: switched on (`ASSISTANT_ENABLED`) and a model to run it. */
+    val assistantAvailable: Boolean get() = config.assistantEnabled && ai.model != null
+
     fun now(): Instant = clock.instant()
 
     companion object {

@@ -121,6 +121,11 @@ data class BusinessDto(
     val aiAgentsAutoApprove: List<AgentChangeKind> = emptyList(),
     /** Whether this deployment serves the business MCP (`BUSINESS_MCP_ENABLED`); the dashboard hides its settings when off. */
     val aiAgentsAvailable: Boolean = false,
+    /**
+     * Whether this deployment offers Bo, the assistant (`ASSISTANT_ENABLED` and an AI model); the dashboard and the app
+     * hide Bo when off.
+     */
+    val assistantAvailable: Boolean = false,
 )
 
 @Serializable

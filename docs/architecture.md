@@ -830,6 +830,8 @@ RESEND_API_KEY, EMAIL_FROM                TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
 PUSH_NOTIFICATIONS=expo|log|off (default log in development, off otherwise; §22)   EXPO_ACCESS_TOKEN
 ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default claude-opus-5-5)   UNSPLASH_ACCESS_KEY (stock photos)
 SITES_ENABLED=false (business websites and the site builder, §15; off: /[slug] is the booking portal)
+ASSISTANT_ENABLED=false (Bo, §17; off: the /assistant routes answer 404, no nudges, nothing metered for Bo; owners
+  connect their own AI assistant to the business MCP instead, §20.7)
 AI_CREDIT_MICRO_CENTS (what a credit is worth), AI_CREDITS_FREE, AI_CREDITS_PRO, AI_CREDITS_BUSINESS (monthly
   credits per plan): development placeholders by default, required in production with a model (§16)
 AI_OVERAGE_METER_EVENT (Stripe Billing Meter event name; unset = hard limit), AI_OVERAGE_MAX_CREDITS=10000
@@ -851,7 +853,8 @@ Production: the Next.js `/api` rewrite must forward `X-Forwarded-For`, and
 the API must not be directly reachable, when `TRUST_FORWARDED_FOR=true`.
 
 Frontend env: `BACKEND_ORIGIN`, `NEXT_PUBLIC_APP_URL`,
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_ASSISTANT_ENABLED=false` (build time: whether the
+public pages present Bo; set it with the backend's `ASSISTANT_ENABLED`).
 
 ## 11. Frontend routes
 
@@ -1297,6 +1300,15 @@ type AiUsage = { plan: "free" | "pro" | "business"; timezone: string; periodStar
 ```
 
 ## 17. Bo, the business assistant
+
+> **Off by default.** We don't offer Bo for now: owners who want AI connect their own assistant (Claude, ChatGPT and
+> others) to the business MCP (§20.7; help page `/help/ai-agents-for-business`), which is on either way. With
+> `ASSISTANT_ENABLED` unset (or `false`, every environment's default) the `/v1/businesses/{id}/assistant…` routes are not
+> mounted (404), the nudges task doesn't run and nothing is metered as `assistant`. The tool registry, the proposals
+> (`assistant_actions`) and `/agent-requests` stay, since the business MCP serves the same tools. `Business.assistantAvailable`
+> (on and a model configured) tells the dashboard and the app whether to show Bo; the public pages follow
+> `NEXT_PUBLIC_ASSISTANT_ENABLED` at build time. Everything below describes Bo switched on; kept behind the switch rather
+> than deleted.
 
 Bo is a persistent assistant for owners, admins and staff, in the dashboard only: a floating character (bottom-left;
 ⌘J, or ⌘K "Ask Bo…") opening a side sheet (a drawer on phones) with nudges, quick actions, recent conversations, the
