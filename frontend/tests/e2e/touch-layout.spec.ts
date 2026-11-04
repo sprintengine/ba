@@ -324,11 +324,14 @@ function auditInPage({
   for (const el of controls) {
     if (!visible(el)) continue;
     const blocks = textBlocks(el);
-    // A row (name over email, time over service) may ellipsize its data; a label may not.
-    if (blocks.length === 1 && blocks.some(isClipped)) clipped.push(describe(el));
-    else if (blocks.length === 1 && isClipped(el) && el.matches("button, [role=tab], [role=radio]")) {
-      clipped.push(describe(el));
-    }
+    // A row (name over email, time over service) may ellipsize its data; a label may not. A calendar event shows data
+    // too: a short booking in a narrow week column truncates the customer's name (its title and screen-reader text
+    // carry everything), so whether it clips depends on the seeded week, not on the layout.
+    const clipsLabel =
+      blocks.length === 1 &&
+      !el.matches("[data-event]") &&
+      (blocks.some(isClipped) || (isClipped(el) && el.matches("button, [role=tab], [role=radio]")));
+    if (clipsLabel) clipped.push(describe(el));
 
     if (!touch) continue;
     if ((el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") continue;
