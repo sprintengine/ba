@@ -141,7 +141,15 @@ the backend also accepts its own simulation tokens beside Clerk's:
   also sign in as anyone who registered or was invited with an address on `sim.bookanything.test`: never enter such an
   address for a real person. Treat the secret like any staging credential, and rotate it by changing it on both sides.
 - **Cleanup.** `backend purge-simulation` deletes a simulated business with everything in it, so a real tester's
-  booking or customer record at one goes with it; it re-checks each business under a row lock before deleting it.
+  booking or customer record at one goes with it; it re-checks each business under a row lock before deleting it,
+  then deletes its Stripe test account (below).
+- **Test payments.** `POST /businesses/{id}/payments/simulation-account` gives a simulated business a
+  platform-controlled Stripe test account (requirements filled in with Stripe's verification test values), so the
+  simulation can pay through Checkout. The route exists only on staging with the secret; it answers only a caller
+  signed in with a simulation token who owns a business that is the simulation's (a `sim-` slug, no member outside the
+  namespace, re-checked under the row lock when the account is stored), and anything else gets the 404 of an unknown
+  path. It needs a Stripe test key, only stores an account it just created (marked as the simulation's for that
+  business in Stripe's metadata), and never replaces an existing one. The purge deletes only accounts so marked.
 - Email to special-use domains (`.test`, `.example`, `.invalid`, `.localhost`) is never handed to the email provider in
   any environment (logged as `skipped`): it can't be delivered, and bounces hurt the sending domain.
 

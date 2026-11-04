@@ -169,7 +169,7 @@ real visitors' buckets are untouched. Raise the multiplier (up to 1000) for high
 5. Clean up weekly on the staging VM (docs/deployment.md, 2.4):
    `docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` (`--dry-run` to count first).
    It deletes the simulation's businesses (slug `sim-…`, owned only by simulation users) and users created before the
-   cutoff, and nothing else. Keep the cutoff longer than any run still going.
+   cutoff, and the businesses' Stripe test accounts, and nothing else. Keep the cutoff longer than any run still going.
 
 From any machine: `SIMULATION_AUTH_SECRET=<secret> npm --prefix simulation run sim -- --auth simulation-token
 --base-url https://api-staging.bookanything.ie --app-url https://staging.bookanything.ie --payments stripe-checkout
@@ -179,15 +179,43 @@ From any machine: `SIMULATION_AUTH_SECRET=<secret> npm --prefix simulation run s
 bookings (`--stripe-share`, 0.1 by default) is paid through real Stripe Checkout in test mode, driven by Playwright
 with the 4242 4242 4242 4242 test card; the others are abandoned (their hold lapses). Confirmation arrives through
 Stripe's webhook after the redirect, so the bots read the booking until it stops being held (up to 90 seconds), and
-expect holds of at least 31 minutes. Prerequisites:
+expect holds of at least 31 minutes. Refunds of those payments go back through Stripe the same way.
+
+A business takes online payments only with a Connect account that has charges enabled. When it opens a business, the
+simulation asks the backend for one (`POST /v1/businesses/{id}/payments/simulation-account`, the `setup.payments`
+action) and waits up to three minutes for Stripe to enable it. The backend creates a **platform-controlled test
+account** for that business (the platform collects its requirements, there is no Stripe dashboard or hosted
+onboarding), filled in with Stripe's verification test values (an individual born 1901-01-01 at
+`address_full_match`, Stripe's test IBAN), and stores it as the business's account. Stripe usually enables charges
+within a minute. The endpoint is not a way to attach an account to a business:
+
+- it only exists on staging with `SIMULATION_AUTH_SECRET` set (which production refuses at startup): anywhere else the
+  path is a 404 like any unknown one;
+- the caller must be signed in with a simulation token as the business's owner, and the business must be a simulation
+  business: a `sim-` slug, a simulation owner and no member who isn't a simulation user (the purge's rule; checked
+  again under the business's row lock when the account is stored). Anything else is the same 404;
+- Stripe must be on a test key (`sk_test_…` or `rk_test_…`), else it answers `PAYMENTS_NOT_CONFIGURED`;
+- it only ever stores an account it just created, marked in Stripe's metadata as the simulation's for that business
+  (never one the caller names), and leaves a business with another account alone (409).
+
+If the server gives no account (Stripe isn't in test mode on staging, the route doesn't exist, Stripe refused the
+account or didn't enable it in time), the business stays in play without online payments: bots book its free and
+pay-at-venue services only, owners don't ask for online payment, and the report's summary says paid online bookings
+were off there, and why. That is not a violation, but nothing paid online was tested at that business. Prerequisites:
 
 - Playwright's Chromium: Playwright itself is pinned in `simulation/package-lock.json`; `npm --prefix simulation ci`
   then `npx --prefix simulation playwright install chromium` (the workflow does this);
 - Stripe on the staging backend in test mode: `STRIPE_SECRET_KEY` (`sk_test_…`), and both webhook endpoints with
-  their secrets (`STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET`; backend/README.md "Stripe");
-- a Connect account with charges enabled on every simulated business. Online payment is refused with
-  `PAYMENTS_NOT_CONFIGURED` without one, and the simulation does not yet connect one when it opens a business, so
-  until it does, paid services on staging end in that refusal (reported as `expected-outcome` violations).
+  their secrets (`STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET`; backend/README.md "Stripe"), the
+  "Connected accounts" one included: confirmations and refunds of these payments arrive through it;
+- in Stripe's test mode, Connect enabled with the **platform profile complete**, its responsibilities for losses
+  included: Stripe refuses platform-controlled accounts without it (the endpoint then answers
+  `PAYMENTS_NOT_CONFIGURED` with Stripe's code). The nightly Stripe contract test (backend/README.md, "Stripe contract
+  tests") creates the same kind of account and checks that Stripe enables it.
+
+`purge-simulation` also deletes the purged businesses' test accounts at Stripe (only accounts marked as the
+simulation's for that business, and only with a test key; a failure is logged and counted, and the purge goes on), so
+days of runs don't pile accounts up.
 
 **Long runs.** A GitHub-hosted job stops after 6 hours, so a workflow run is at most 5h30m; the nightly run is 5 hours,
 which covers holds, reminders, auto-completion and several businesses filling up and being replaced. For runs of days,
