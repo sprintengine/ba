@@ -34,11 +34,21 @@ export type AvatarProps = {
   /** Square-ish for businesses/resources, round for people. */
   shape?: "circle" | "square";
   className?: string;
+  /** Hidden from assistive technology, where what it sits in is named already (a menu button). */
+  "aria-hidden"?: boolean;
 };
 
-export function Avatar({ name, src, size = "md", shape = "circle", className }: AvatarProps) {
+export function Avatar({
+  name,
+  src,
+  size = "md",
+  shape = "circle",
+  className,
+  "aria-hidden": hidden,
+}: AvatarProps) {
   return (
     <AvatarPrimitive.Root
+      aria-hidden={hidden}
       className={cn(
         "relative inline-flex shrink-0 overflow-hidden font-semibold select-none",
         shape === "circle" ? "rounded-full" : "rounded-[28%]",

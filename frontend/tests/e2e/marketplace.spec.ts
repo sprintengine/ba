@@ -178,9 +178,11 @@ test("an owner creates an offer and it appears on explore and in booking", async
       .filter({ visible: true })
       .first()
       .click();
+    // A business with a team asks for a therapist first: wait for that step or the times, as the journey helpers do.
     const anyone = page.getByRole("radio", { name: /^Any / });
-    if (await anyone.isVisible().catch(() => false)) await anyone.click();
     const times = page.getByRole("group", { name: "Available times" });
+    await expect(anyone.or(times).first()).toBeVisible({ timeout: 20_000 });
+    if (await anyone.isVisible()) await anyone.click();
     await expect(times).toBeVisible({ timeout: 20_000 });
     await expect(
       times
