@@ -41,6 +41,34 @@
           "text": "production",
           "value": "production"
         }
+      },
+      {
+        "name": "simulation",
+        "type": "custom",
+        "label": "Traffic",
+        "description": "The reliability simulation's bots (staging only, docs/simulation.md): left out by default.",
+        "query": "Without the simulation : |false,Only the simulation : true,Everything : .*",
+        "current": {
+          "text": "Without the simulation",
+          "value": "|false"
+        },
+        "options": [
+          {
+            "text": "Without the simulation",
+            "value": "|false",
+            "selected": true
+          },
+          {
+            "text": "Only the simulation",
+            "value": "true",
+            "selected": false
+          },
+          {
+            "text": "Everything",
+            "value": ".*",
+            "selected": false
+          }
+        ]
       }
     ]
   },
@@ -160,7 +188,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(http_server_requests_total{env=\"$env\"}[5m]))",
+          "expr": "sum(rate(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\"}[5m]))",
           "refId": "A"
         }
       ]
@@ -214,7 +242,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(http_server_requests_total{env=\"$env\",status=\"5xx\"}[5m])) / sum(rate(http_server_requests_total{env=\"$env\"}[5m]))",
+          "expr": "sum(rate(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\",status=\"5xx\"}[5m])) / sum(rate(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\"}[5m]))",
           "refId": "A"
         }
       ]
@@ -268,7 +296,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_seconds_bucket{env=\"$env\",area=\"public\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_seconds_bucket{env=\"$env\",simulation=~\"$simulation\",area=\"public\"}[5m])))",
           "refId": "A"
         }
       ]
@@ -437,7 +465,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (status) (rate(http_server_requests_total{env=\"$env\"}[5m]))",
+          "expr": "sum by (status) (rate(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\"}[5m]))",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -486,7 +514,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by (le, area) (rate(http_server_duration_seconds_bucket{env=\"$env\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, area) (rate(http_server_duration_seconds_bucket{env=\"$env\",simulation=~\"$simulation\"}[5m])))",
           "legendFormat": "{{area}}",
           "refId": "A"
         }
@@ -537,7 +565,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "topk(15, sum by (route, method) (rate(http_server_requests_total{env=\"$env\"}[1h])))",
+          "expr": "topk(15, sum by (route, method) (rate(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\"}[1h])))",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -589,7 +617,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (route, method) (increase(http_server_requests_total{env=\"$env\",status=\"5xx\"}[1h])) > 0",
+          "expr": "sum by (route, method) (increase(http_server_requests_total{env=\"$env\",simulation=~\"$simulation\",status=\"5xx\"}[1h])) > 0",
           "format": "table",
           "instant": true,
           "refId": "A"

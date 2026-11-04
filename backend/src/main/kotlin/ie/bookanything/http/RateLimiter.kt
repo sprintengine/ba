@@ -1,5 +1,6 @@
 package ie.bookanything.http
 
+import ie.bookanything.auth.simulationCaller
 import ie.bookanything.db.Db
 import ie.bookanything.db.queryOne
 import ie.bookanything.db.update
@@ -17,6 +18,12 @@ class RateLimiter(
     private val ipResolver: ClientIpResolver,
     /** Development only ([ie.bookanything.config.AppConfig.rateLimitMultiplier]): each limit allows this many times its max. */
     private val multiplier: Int = 1,
+    /**
+     * The simulation's allowance ([ie.bookanything.config.SimulationAuthConfig.rateLimitMultiplier]): a request from the
+     * simulation ([simulationCaller], only ever set with the simulation sign-in configured) is counted in a bucket of its
+     * own and allowed this many times each limit. Limits still apply to it.
+     */
+    private val simulationMultiplier: Int = 1,
 ) {
 
     data class Limit(val name: String, val max: Int, val windowSeconds: Long)
@@ -65,10 +72,19 @@ class RateLimiter(
 
     private val log = org.slf4j.LoggerFactory.getLogger(RateLimiter::class.java)
 
-    /** Per client address. */
+    /**
+     * Per client address. A simulation request has buckets of its own, with the simulation's allowance: per identity when
+     * signed in, per address and `guest` when anonymous, so bots never use up real visitors' allowance at a shared address,
+     * nor theirs.
+     */
     suspend fun check(call: ApplicationCall, limit: Limit, now: Instant) {
         if (!enabled) return
-        checkKey(bucket(clientIp(call)), limit, now)
+        val simulation = call.simulationCaller
+        when {
+            simulation == null -> checkKey(bucket(clientIp(call)), limit, now)
+            simulation.signedIn -> count("sim-${simulation.rateLimitKey}", limit, now, simulationMultiplier)
+            else -> count("sim-${simulation.rateLimitKey}:${bucket(clientIp(call))}", limit, now, simulationMultiplier)
+        }
     }
 
     /**
@@ -77,6 +93,10 @@ class RateLimiter(
      */
     suspend fun checkKey(subject: String, limit: Limit, now: Instant) {
         if (!enabled) return
+        count(subject, limit, now, multiplier)
+    }
+
+    private suspend fun count(subject: String, limit: Limit, now: Instant, allowance: Int) {
         val windowStart = Instant.ofEpochSecond(now.epochSecond - now.epochSecond % limit.windowSeconds)
         val count = db.tx { conn ->
             conn.queryOne(
@@ -88,7 +108,7 @@ class RateLimiter(
                 "${limit.name}:$subject", windowStart,
             ) { it.getInt(1) } ?: 0
         }
-        if (count > limit.max * multiplier) throw Errors.rateLimited()
+        if (count > limit.max * allowance) throw Errors.rateLimited()
     }
 
     /** Deletes buckets of windows that ended long ago (run periodically). Returns the number deleted. */

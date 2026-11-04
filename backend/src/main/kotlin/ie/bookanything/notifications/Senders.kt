@@ -48,3 +48,23 @@ class NoopSmsSender : SmsSender {
     override val enabled = false
     override fun send(message: SmsMessage) = SendResult("skipped", null)
 }
+
+/**
+ * Sends through [delegate] except to addresses on a domain that can never receive mail: the special-use top-level
+ * domains `.test`, `.example`, `.invalid` and `.localhost` (RFC 2606, RFC 6761). Those are only ever test data (the
+ * reliability simulation's customers on staging are `…@sim.bookanything.test`); sending would only bounce, which counts
+ * against the sending domain's reputation. Recorded as `skipped`.
+ */
+class SkipUndeliverable(private val delegate: EmailSender) : EmailSender {
+    override val from: String get() = delegate.from
+
+    override fun send(message: EmailMessage): SendResult =
+        if (undeliverable(message.to)) SendResult("skipped", null) else delegate.send(message)
+
+    companion object {
+        private val RESERVED_TLDS = setOf("test", "example", "invalid", "localhost")
+
+        fun undeliverable(address: String): Boolean =
+            address.substringAfterLast('@', "").trimEnd('.', '>', ' ').substringAfterLast('.').lowercase() in RESERVED_TLDS
+    }
+}

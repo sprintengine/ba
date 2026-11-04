@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { resourcesApi } from "@shared/api/resources";
 import { servicesApi } from "@shared/api/services";
-import { DevAuth, type SimIdentity } from "./auth";
+import { authFor, type SimIdentity } from "./auth";
 import { Checker } from "./checker";
 import { runAs } from "./http";
 import { parseOptions, replayOptions, USAGE, type Options } from "./options";
@@ -69,7 +69,7 @@ async function main(): Promise<number> {
     if (options.fromLog) options = replayOptions(options, recordedRun(options.fromLog).options);
     else if (!options.seedGiven) throw new Error("replay needs --from-log PATH or --seed SEED");
   }
-  const sim = new Sim(options, new DevAuth(), payerFor(options.payments, options.stripeShare));
+  const sim = new Sim(options, authFor(options.auth), payerFor(options.payments, options.stripeShare));
   if (options.command === "check") {
     if (!options.fromLog)
       throw new Error("check needs --from-log PATH (the log of the run whose businesses to check)");

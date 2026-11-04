@@ -15,9 +15,10 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text-summary", "html", "json-summary"],
       reportsDirectory: "./coverage",
-      // The pure parts: the shadow model and its comparison, the oracle, refunds, options, statistics and the log. The bots and the
+      // The pure parts: token minting, the shadow model and its comparison, the oracle, refunds, options, statistics and the log. The bots and the
       // runner talk to a live stack and are exercised by running the simulation.
       include: [
+        "src/auth.ts",
         "src/rng.ts",
         "src/time.ts",
         "src/oracle.ts",

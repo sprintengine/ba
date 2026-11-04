@@ -49,35 +49,40 @@ export class Sim {
     this.rng = new Rng(options.seed);
     this.tag = this.rng.child("tag").token(5);
     this.log = new ActionLog(options.logPath);
-    installClient(options.baseUrl, `${options.seed}`, (record, ctx) => {
-      this.stats.recordRequest(record.endpoint, record.status, record.ms);
-      this.log.write({
-        type: "request",
-        seq: ctx?.seq,
-        actor: ctx?.actor,
-        businessId: ctx?.businessId,
-        bookingIds: ctx?.bookingIds ? [...ctx.bookingIds] : undefined,
-        method: record.method,
-        path: record.path,
-        status: record.status,
-        code: record.code,
-        ms: record.ms,
-        requestId: record.requestId,
-      });
-      if (record.status === 0 || record.status >= 500) {
-        this.violate(
-          "no-5xx",
-          `${record.method} ${record.endpoint} answered ${record.status === 0 ? "nothing (network error)" : record.status}`,
-          {
-            requestId: record.requestId,
-            actionSeq: ctx?.seq,
-            actor: ctx?.actor,
-            businessId: ctx?.businessId,
-          },
-          record.requestId,
-        );
-      }
-    });
+    installClient(
+      options.baseUrl,
+      `${options.seed}`,
+      (record, ctx) => {
+        this.stats.recordRequest(record.endpoint, record.status, record.ms);
+        this.log.write({
+          type: "request",
+          seq: ctx?.seq,
+          actor: ctx?.actor,
+          businessId: ctx?.businessId,
+          bookingIds: ctx?.bookingIds ? [...ctx.bookingIds] : undefined,
+          method: record.method,
+          path: record.path,
+          status: record.status,
+          code: record.code,
+          ms: record.ms,
+          requestId: record.requestId,
+        });
+        if (record.status === 0 || record.status >= 500) {
+          this.violate(
+            "no-5xx",
+            `${record.method} ${record.endpoint} answered ${record.status === 0 ? "nothing (network error)" : record.status}`,
+            {
+              requestId: record.requestId,
+              actionSeq: ctx?.seq,
+              actor: ctx?.actor,
+              businessId: ctx?.businessId,
+            },
+            record.requestId,
+          );
+        }
+      },
+      () => auth.guestHeaders(),
+    );
     this.violations.onViolation((v) => {
       this.log.write({
         type: "violation",

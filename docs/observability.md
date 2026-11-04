@@ -68,8 +68,8 @@ Cloud stores them as Prometheus series under these names (OTLP names with dots b
 
 | Series | Labels | What |
 |---|---|---|
-| `http_server_requests_total` | `route`, `method`, `status` | API requests. `route` is the template (`/v1/public/manage/{token}`), or `unmatched` when no route matched; `method` is GET…OPTIONS or `OTHER`; `status` is `2xx`/`3xx`/`4xx`/`5xx`. |
-| `http_server_duration_seconds` | `area` | Latency histogram (buckets 50 ms, 100 ms, 250 ms, 500 ms, 1 s, 2.5 s, 10 s). `area`: `public`, `dashboard`, `account`, `ai`, `mcp`, `oauth`, `webhooks`, `health`, `unmatched`. |
+| `http_server_requests_total` | `route`, `method`, `status`, `simulation` | API requests. `route` is the template (`/v1/public/manage/{token}`), or `unmatched` when no route matched; `method` is GET…OPTIONS or `OTHER`; `status` is `2xx`/`3xx`/`4xx`/`5xx`; `simulation` is `true` for the reliability simulation's requests (staging only, docs/simulation.md) and `false` otherwise: the dashboard's **Traffic** variable leaves the bots out by default (`simulation!="true"` in your own queries). |
+| `http_server_duration_seconds` | `area`, `simulation` | Latency histogram (buckets 50 ms, 100 ms, 250 ms, 500 ms, 1 s, 2.5 s, 10 s). `area`: `public`, `dashboard`, `account`, `ai`, `mcp`, `oauth`, `webhooks`, `health`, `unmatched`. |
 | `bookings_created_total` | `outcome` | Bookings made, by the status they started in: `confirmed`, `held` (waiting for online payment), `pending_approval`. Counted once the booking commits. |
 | `booking_holds_total` | `outcome` | How holds for online payment ended: `paid`, `expired`, `abandoned` (the checkout was left or failed). A payment that arrives after the hold ended is counted again: `paid_after_expiry` (the time was still free, the booking is revived) or `paid_too_late` (refunded in full). |
 | `payments_refunds_failed_total` | — | Refund attempts that failed: the provider unreachable (retried), declining or refusing, or a refund it accepted failing later (docs/architecture.md §7, "Refunds"). |
@@ -100,6 +100,9 @@ So:
 - `TelemetryTest` checks it: requests with many ids produce one series per route template, and one instance through a
   representative workload stays within its budget.
 
+The `simulation` label has two values and is always `false` in production, so it adds no series there; on staging,
+while the simulation runs, it at most doubles the request series (about 200 more).
+
 **Budget: a few hundred series per instance.** The test's workload measured **191** (HTTP 102, JVM 53, pool 16, the
 rest jobs and bookings). In production more routes get traffic: expect about 120 route/method/status combinations,
 90 for the latency histogram, about 60 JVM, 16 pool, 45 for jobs (9 kinds) and 17 for bookings, payments and webhooks:
@@ -110,7 +113,8 @@ dashboard's "Series pushed" panel, or `count({job="bookanything-api"})` in Explo
 
 ## 4. Logs
 
-The backend writes one line per event to stdout, with `requestId` and `businessId` from the request (MDC):
+The backend writes one line per event to stdout, with `requestId` and `businessId` from the request (MDC), and
+`simulation=true` on the reliability simulation's requests (staging; `false` otherwise in logfmt, absent in JSON):
 logfmt by default, JSON with `LOG_FORMAT=json` (`backend/src/main/resources/logback.xml`). Manage and invitation tokens
 are redacted from request lines. `GET /v1/health` is never logged (the uptime check calls it every minute or two), and
 nor is anything outside `/v1`.
@@ -132,7 +136,8 @@ To switch it on, in the VM's deploy directory:
 3. Start it once: `docker compose --profile logs up -d alloy`. It restarts with the VM; deploys leave it running.
 
 Search them in Grafana Explore with `{service="bookanything-api", env="production"} | json`, and follow one request
-with `| requestId="<X-Request-Id>"`.
+with `| requestId="<X-Request-Id>"`. On staging, `| simulation!="true"` leaves the reliability simulation's requests
+out (and `| simulation="true"` shows only them).
 
 ## 5. Dashboard, alerts and the uptime check
 

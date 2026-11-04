@@ -6,7 +6,7 @@
  * - `stripe-checkout` (staging): real Stripe Checkout in test mode, driven by Playwright with the 4242 test card, for a
  *   share of paid bookings (`--stripe-share`); the others are abandoned (their hold lapses) or cancelled. Stripe then
  *   confirms through its webhook, so the booking is confirmed a little after the redirect. Not verified until staging
- *   exists: it needs Playwright (`npx playwright install chromium`) and Stripe test keys on the staging backend.
+ *   exists: it needs Playwright's Chromium (`npx playwright install chromium`) and Stripe test keys on the staging backend.
  */
 import { publicApi } from "@shared/api/public";
 import type { Rng } from "./rng";
@@ -89,7 +89,7 @@ export class StripeCheckoutPayer implements Payer {
       ({ chromium } = (await import(/* @vite-ignore */ name)) as { chromium: typeof chromium });
     } catch {
       throw new Error(
-        "--payments stripe-checkout needs Playwright: npm install --no-save playwright && npx playwright install chromium",
+        "--payments stripe-checkout needs Playwright and Chromium: npm ci && npx playwright install chromium",
       );
     }
     this.browser = await chromium.launch({ headless: true });

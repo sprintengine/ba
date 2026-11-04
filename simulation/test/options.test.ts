@@ -3,6 +3,7 @@ import { parseOptions, randomSeed, replayOptions } from "../src/options";
 
 afterEach(() => {
   delete process.env.SIM_RATE;
+  delete process.env.SIM_AUTH;
 });
 
 describe("parseOptions", () => {
@@ -35,6 +36,15 @@ describe("parseOptions", () => {
     process.env.SIM_RATE = "12";
     expect(parseOptions([]).rate).toBe(12);
     expect(parseOptions(["--rate", "5"]).rate).toBe(5);
+  });
+
+  it("signs in with dev tokens unless asked for staging's simulation tokens", () => {
+    expect(parseOptions([]).auth).toBe("dev");
+    expect(parseOptions(["--auth", "simulation-token"]).auth).toBe("simulation-token");
+    process.env.SIM_AUTH = "simulation-token";
+    expect(parseOptions([]).auth).toBe("simulation-token");
+    expect(parseOptions(["--auth", "dev"]).auth).toBe("dev");
+    expect(() => parseOptions(["--auth", "clerk"])).toThrow(/one of dev, simulation-token/);
   });
 
   it("replays one action at a time and checks write nothing by default", () => {

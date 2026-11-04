@@ -50,6 +50,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `backend migrate` | Applies Liquibase migrations and exits (production deploy step). |
 | `backend seed-demo` | Development only: migrates, then seeds demo data. Safe to rerun. |
 | `docker build -f backend/Dockerfile .` (repo root) | The deployable image: `docker run <image>` serves, `docker run <image> migrate` migrates. Non-root, health-checked on `/v1/health`, heap sized from the container's memory limit (`JAVA_OPTS`). See [`docs/deployment.md`](../docs/deployment.md). |
+| `backend purge-simulation [--older-than-days N] [--dry-run]` | Staging (and development) only, refused in production: deletes the simulation's businesses and users created more than N days ago (default 7). See "Simulation sign-in" below. |
 | `backend email-preview [dir]` | Writes every email template (HTML + text, sample data) to `dir` (default `build/email-previews`). |
 | `./gradlew :backend:test` | Unit + integration tests (needs Docker for Testcontainers; tests fail, never skip, without it). |
 | `./gradlew :backend:check` | Tests plus ktlint, detekt and the Kover coverage floor (what CI runs). `ktlintFormat` fixes formatting; `koverHtmlReport` writes `build/reports/kover/html`. See [`docs/engineering.md`](../docs/engineering.md). |
@@ -58,7 +59,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 
 | Variable | Default | Notes |
 |---|---|---|
-| `APP_ENV` | `production` | `development`, `staging` or `production`. Unset means production (fail closed): set `APP_ENV=development` for local runs. `staging` is production in every check (dev auth, dev payments, `seed-demo`, `AI_FAKE_SCRIPT` and `RATE_LIMIT_MULTIPLIER` are refused, the same settings are required); only its name differs, for logs and error tracking. |
+| `APP_ENV` | `production` | `development`, `staging` or `production`. Unset means production (fail closed): set `APP_ENV=development` for local runs. `staging` is production in every check (dev auth, dev payments, `seed-demo`, `AI_FAKE_SCRIPT` and `RATE_LIMIT_MULTIPLIER` are refused, the same settings are required); it differs only in its name, for logs and error tracking, and in accepting `SIMULATION_AUTH_SECRET`. |
 | `APP_HOST` / `PORT` | `0.0.0.0` / `8080` | |
 | `APP_BASE_URL` | `http://localhost:3000` | Frontend origin; used in emails, manage links and dev checkout URLs. |
 | `DATABASE_URL` | dev: `jdbc:postgresql://localhost:5432/bookanything_dev` | JDBC or `postgres://user:pass@host/db`. Required in production. |
@@ -107,6 +108,8 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `CLIENT_IP_HEADER` | — | A header the edge proxy sets to the client's address on every request, e.g. `CF-Connecting-IP` behind Cloudflare. Honoured only from a trusted peer (`TRUSTED_PROXIES`), and before `X-Forwarded-For`. |
 | `RATE_LIMITS_ENABLED` | `true` | Postgres-backed per-IP limits on public endpoints. |
 | `RATE_LIMIT_MULTIPLIER` | `1` | Development only (refused otherwise): every limit allows this many times its requests, so the e2e suite can book repeatedly through one address with the limiter still on. |
+| `SIMULATION_AUTH_SECRET` | — | **Staging only; production refuses to start with it set.** Switches on the reliability simulation's sign-in ("Simulation sign-in (staging only)" below): HMAC key, at least 32 bytes and not `TOKEN_SECRET`, shared with the simulation runner. Unset: off. |
+| `SIMULATION_RATE_LIMIT_MULTIPLIER` | `50` | Only with `SIMULATION_AUTH_SECRET` (refused otherwise), 1 to 1000: requests from the simulation are counted in buckets of their own, allowed this many times each limit. |
 | `JOBS_ENABLED` | `true` | Runs the in-process job worker (notifications, hold expiry, reminders, auto-complete). |
 | `CORS_ALLOWED_ORIGINS` | none | Comma-separated origins allowed to call `/v1/public/*` from the browser (embeds). |
 | `LOG_LEVEL` | `INFO` | Root log level. |
@@ -162,6 +165,32 @@ The email is treated as verified. Example:
 TOKEN="dev.$(printf '{"sub":"dev_owner","email":"owner@bookanything.test","name":"Avery Morgan"}' | base64 | tr '+/' '-_' | tr -d '=')"
 curl -H "Authorization: Bearer $TOKEN" localhost:8080/v1/me
 ```
+
+### Simulation sign-in (staging only)
+
+The reliability simulation ([`docs/simulation.md`](../docs/simulation.md), "On staging") signs its bots in on staging
+with tokens it mints itself from `SIMULATION_AUTH_SECRET`, shared with the runner. The backend accepts them only when
+the same secret is set, which **production refuses at startup** (every spelling of production, a missing `APP_ENV`
+included); staging, development and the tests may set it. Design and checks: [`docs/architecture.md`](../docs/architecture.md)
+§3.2a. In short:
+
+- `Authorization: Bearer sim.<base64url JSON>.<base64url HMAC-SHA256>`; claims `sub`, `email`, `name` (optional),
+  `iat`, `exp` (at most 15 minutes after `iat`, 30 s of skew) and `jti` (optional); the MAC is over
+  `bookanything-simulation/v1\n<kind>.<payload>`. Anything else, unknown claims included, is a 401.
+- Only subjects `sim_…` with emails on exactly `sim.bookanything.test`: a leaked secret can't become a real user.
+  Users signed in this way are ordinary users (email verified), told apart by those two marks.
+- Rate limits: a simulation request (signed in, or anonymous with a valid `X-Simulation-Token: simg.…` header) gets a
+  bucket of its own with `SIMULATION_RATE_LIMIT_MULTIPLIER` times each limit. Limits are never switched off.
+- Metrics carry `simulation="true"` and log lines `simulation=true` for those requests.
+- Whoever holds the secret can mint any number of identities, so signed-in simulation traffic is in effect unlimited
+  on staging, and can sign in as any account with a `sim.bookanything.test` address: never use one for a real person.
+
+Clean up after long runs with `backend purge-simulation` (on the VM: `sudo -u deploy docker compose run --rm --no-deps
+backend purge-simulation --older-than-days 7`; `--dry-run` counts first). It deletes only businesses with a `sim-`
+slug whose owner and every member are simulation users, created before the cutoff (with their bookings, customers and
+emails, and a real tester's booking there too), then simulation users created before it who belong to no business and
+are no business's customer. Each business is re-checked under a row lock before it is deleted. Pick a cutoff longer
+than any run still going: a run reads every business it opened until it ends.
 
 ## Integrations (all optional; each is off until its keys are set)
 
