@@ -14,6 +14,7 @@ import ie.bookanything.http.Errors
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
 /**
@@ -169,7 +170,8 @@ class StripePaymentProvider(
             .apply { request.customerEmail?.let { setCustomerEmail(it) } }
             .setClientReferenceId(request.paymentId.toString())
             .setExpiresAt(expiresAt.epochSecond)
-            .setSuccessUrl(request.successUrl)
+            // Stripe fills in the session's id: on their return, the customer's page has it confirmed straight away.
+            .setSuccessUrl(withQuery(request.successUrl, "session_id={CHECKOUT_SESSION_ID}"))
             .setCancelUrl(request.cancelUrl)
             .putAllMetadata(metadata)
             // Direct charge on the connected account: no application_fee_amount, no transfer_data.
@@ -189,11 +191,13 @@ class StripePaymentProvider(
 
     override fun createCheckout(request: CheckoutRequest): CheckoutSession {
         if (!chargesEnabled(request.business)) throw Errors.paymentsNotConfigured()
+        val params = checkoutParams(request)
         val session = gateway.createCheckoutSession(
-            checkoutParams(request), connectedAccountOptions(request.business, "bookanything-checkout-${request.paymentId}"),
+            params, connectedAccountOptions(request.business, "bookanything-checkout-${request.paymentId}"),
         )
         val url = session.url ?: throw Errors.providerError()
-        return CheckoutSession(session.id, url)
+        // Stripe's own answer (the same as asked, unless a replay found an older session).
+        return CheckoutSession(session.id, url, Instant.ofEpochSecond(session.expiresAt ?: params.expiresAt))
     }
 
     /**
@@ -209,6 +213,14 @@ class StripePaymentProvider(
             "complete" -> return true
         }
         return false
+    }
+
+    override fun paidCheckout(business: BusinessRow, providerRef: String, account: String?): CompletedCheckout? {
+        if (!providerRef.startsWith("cs_")) return null
+        val options = RequestOptions.builder().setStripeAccount(account ?: business.stripeAccountId ?: return null).build()
+        val s = gateway.retrieveCheckoutSession(providerRef, options)
+        if (s.status != "complete" || s.paymentStatus != "paid") return null
+        return CompletedCheckout(s.id, s.paymentIntentId, s.amountTotal, s.currency)
     }
 
     override fun refund(request: RefundRequest): RefundResult {

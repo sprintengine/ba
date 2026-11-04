@@ -85,12 +85,12 @@ class SdkStripeGateway(private val secretKey: String) : StripeGateway {
 
     override fun createCheckoutSession(params: SessionCreateParams, options: RequestOptions) = call("checkout.session.create") {
         val s = client.v1().checkout().sessions().create(params, options)
-        StripeSessionRef(s.id, s.url, s.paymentIntent)
+        StripeSessionRef(s.id, s.url, s.paymentIntent, s.status, expiresAt = s.expiresAt)
     }
 
     override fun retrieveCheckoutSession(sessionId: String, options: RequestOptions) = call("checkout.session.retrieve") {
         val s = client.v1().checkout().sessions().retrieve(sessionId, options)
-        StripeSessionRef(s.id, s.url, s.paymentIntent, s.status)
+        StripeSessionRef(s.id, s.url, s.paymentIntent, s.status, s.paymentStatus, s.amountTotal, s.currency)
     }
 
     override fun expireCheckoutSession(sessionId: String, options: RequestOptions) = call("checkout.session.expire") {

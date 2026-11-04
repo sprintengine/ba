@@ -181,16 +181,28 @@ class BookingLifecycle(private val engine: BookingEngine, private val refunds: R
         return BookingRepository.get(conn, business.id, b.id)!!
     }
 
-    fun paymentCancelled(conn: Connection, business: BusinessRow, payment: PaymentRow, now: Instant): BookingRow {
+    /**
+     * A checkout that ended unpaid: abandoned or expired, or its delayed payment (a bank debit) [failed], even after the
+     * hold ran out. The held booking expires and releases its time; it owes nothing any more (`not_required`), or shows
+     * the payment that failed (`failed`).
+     */
+    fun paymentCancelled(conn: Connection, business: BusinessRow, payment: PaymentRow, now: Instant, failed: Boolean = false): BookingRow {
         val b = BookingRepository.get(conn, business.id, payment.bookingId, forUpdate = true) ?: throw Errors.notFound("Booking")
-        if (payment.status == "pending") {
-            PaymentRepository.setStatus(conn, payment.id, "cancelled")
+        val current = PaymentRepository.get(conn, payment.id, forUpdate = true) ?: throw Errors.notFound("Payment")
+        if (current.status == "pending" || (failed && current.status == "cancelled")) {
+            PaymentRepository.setStatus(conn, payment.id, if (failed) "failed" else "cancelled")
         }
         if (b.status == BookingStatus.HELD) {
             BookingRepository.setStatus(conn, business.id, b.id, BookingStatus.EXPIRED, now, clearHold = true)
             AllocationRepository.release(conn, business.id, b.id)
-            Audit.record(conn, business.id, Actor.SYSTEM, "booking.expired", "booking", b.id, mapOf("reason" to "checkout_cancelled"))
+            Audit.record(
+                conn, business.id, Actor.SYSTEM, "booking.expired", "booking", b.id,
+                mapOf("reason" to if (failed) "payment_failed" else "checkout_cancelled"),
+            )
             conn.afterCommit { Telemetry.metrics.holds(AppMetrics.HoldOutcome.ABANDONED) }
+        }
+        if (b.status == BookingStatus.HELD || b.status == BookingStatus.EXPIRED) {
+            BookingHolds.setUnpaidStatus(conn, business.id, b.id, if (failed) PaymentStatus.FAILED else PaymentStatus.NOT_REQUIRED)
         }
         return BookingRepository.get(conn, business.id, b.id)!!
     }

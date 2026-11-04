@@ -124,8 +124,25 @@ class FakeStripeGateway : StripeGateway {
         val id = "cs_test_${next()}"
         return StripeSessionRef(id, "https://checkout.stripe.test/c/pay/$id", null)
     }
-    override fun retrieveCheckoutSession(sessionId: String, options: RequestOptions) =
-        StripeSessionRef(sessionId, null, "pi_for_$sessionId", sessionStatus[sessionId] ?: "open")
+
+    /** Sessions a test has the customer pay (Checkout's own page): what reading them back reports. */
+    val paidSessions = ConcurrentHashMap<String, StripeSessionRef>()
+
+    /** The customer pays [sessionId] at Checkout: reading it back says so. */
+    fun pay(sessionId: String, amount: Long, currency: String = "eur", paymentIntent: String = "pi_for_$sessionId") {
+        paidSessions[sessionId] = StripeSessionRef(sessionId, null, paymentIntent, "complete", "paid", amount, currency)
+        sessionStatus[sessionId] = "complete"
+    }
+
+    /** Number of upcoming session reads Stripe refuses (as for an account we can no longer reach). */
+    val refuseSessionReads = AtomicInteger(0)
+    val sessionReads = CopyOnWriteArrayList<String>()
+
+    override fun retrieveCheckoutSession(sessionId: String, options: RequestOptions): StripeSessionRef {
+        sessionReads.add(sessionId)
+        if (refuseSessionReads.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw StripeRefusedException("account_invalid")
+        return paidSessions[sessionId] ?: StripeSessionRef(sessionId, null, "pi_for_$sessionId", sessionStatus[sessionId] ?: "open")
+    }
     override fun expireCheckoutSession(sessionId: String, options: RequestOptions): StripeSessionRef {
         expired.add(Call(sessionId, options))
         sessionStatus[sessionId] = "expired"

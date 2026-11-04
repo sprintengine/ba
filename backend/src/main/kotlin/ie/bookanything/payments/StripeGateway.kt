@@ -30,8 +30,21 @@ data class StripeOAuthConnection(val accountId: String, val livemode: Boolean)
 /** Stripe refused an OAuth request ([code]: `invalid_grant` for an expired or used code, `invalid_client`, ...). */
 class StripeOAuthError(val code: String?, cause: Throwable? = null) : RuntimeException("Stripe OAuth error: ${code ?: "unknown"}", cause)
 
-/** A Checkout Session: [status] is "open", "complete" or "expired" (when Stripe said). */
-data class StripeSessionRef(val id: String, val url: String?, val paymentIntentId: String?, val status: String? = null)
+/**
+ * A Checkout Session: [status] is "open", "complete" or "expired" and [paymentStatus] "paid", "unpaid" or
+ * "no_payment_required" (when Stripe said), with what it charged.
+ */
+data class StripeSessionRef(
+    val id: String,
+    val url: String?,
+    val paymentIntentId: String?,
+    val status: String? = null,
+    val paymentStatus: String? = null,
+    val amountTotal: Long? = null,
+    val currency: String? = null,
+    /** When Stripe closes the session (epoch seconds). */
+    val expiresAt: Long? = null,
+)
 
 /** A refund as Stripe reports it: [status] "succeeded", "pending", "requires_action", "failed" or "canceled". */
 data class StripeRefundRef(val id: String, val status: String?, val failureReason: String? = null)

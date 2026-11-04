@@ -401,7 +401,6 @@ suppressions are gone, `noUncheckedIndexedAccess` and `no-unnecessary-condition`
 Backend
 - A few files still group classes on purpose (Bo's tools by area) or by leftover (`PlanTransforms.kt`,
   `SiteRuleEditor.kt`, `ai/usage/AiOverage.kt`, `ai/usage/Credits.kt`).
-- An expired hold keeps `payment_status = pending` (a late payment may still revive it); clients hide the badge.
 - A refresh token can't narrow `bookings:write` to `bookings:read` (the scope check ignores write-implies-read).
 
 Decisions for the product owner (behaviour the tests pin as it is today):

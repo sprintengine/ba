@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /** What a booking owes or has paid (the booking's `paymentStatus`, not a payment record's). Serialised as its [wire] value. */
 @Serializable
 enum class PaymentStatus {
-    /** Nothing to pay (free, or staff chose no payment). */
+    /** Nothing to pay (free, staff chose no payment, or a hold that ended unpaid and owes nothing any more). */
     @SerialName("not_required")
     NOT_REQUIRED,
 
@@ -23,7 +23,7 @@ enum class PaymentStatus {
     @SerialName("refunded")
     REFUNDED,
 
-    /** In the database type but never set today: a failed checkout cancels its payment record and the booking's hold expires. */
+    /** The online payment failed (a delayed payment such as a bank debit was declined); the hold was released. */
     @SerialName("failed")
     FAILED,
 

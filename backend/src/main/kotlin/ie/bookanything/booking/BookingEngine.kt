@@ -97,7 +97,9 @@ class BookingEngine(
                 val row = BookingRepository.get(conn, business.id, outcome.booking.id)!!
                 CreateOutcome(row, false, null, NewBookingRules.nextStep(row.status))
             }
-        return outcome.copy(checkoutUrl = url, pending = null)
+        // Read again: storing the checkout may have extended the hold to the session's expiry.
+        val booking = db.txBlocking(business.id, readOnly = true) { BookingRepository.get(it, business.id, outcome.booking.id) }
+        return outcome.copy(booking = booking ?: outcome.booking, checkoutUrl = url, pending = null)
     }
 
     /**
@@ -128,6 +130,9 @@ class BookingEngine(
             if (payment.status == "cancelled") CheckoutExpiry.enqueue(conn, business.id, payment.id)
             return null
         }
+        // The customer can pay until the session closes: the hold lasts as long (Stripe's minimum can outlast it when
+        // the session was created late, e.g. after a slow or replayed request).
+        session.expiresAt?.let { BookingHolds.extendHold(conn, business.id, booking.id, it) }
         pending.notifications.forEach { Notify.booking(conn, it, business.id, booking.id) }
         return session.url
     }

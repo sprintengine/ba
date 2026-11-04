@@ -423,6 +423,41 @@ paths:
         '429': { $ref: '#/components/responses/TooManyRequests' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
 
+  /v1/public/manage/{token}/payment/confirm:
+    parameters:
+      - $ref: '#/components/parameters/ManageToken'
+    post:
+      tags: [manage]
+      operationId: confirmManagedPayment
+      summary: Confirm a payment on the customer's return from Checkout
+      description: |
+        Stripe's success URL carries `session_id={CHECKOUT_SESSION_ID}`; the manage page sends it here so the payment is
+        confirmed at once instead of waiting for the webhook. The session must be this booking's checkout; it is read
+        from Stripe on the account it was created on and, when paid, applied exactly as `checkout.session.completed`
+        is (once: whichever comes first confirms the booking, the other changes nothing; another amount or currency
+        is refunded in full). Not paid yet, someone else's session, or already confirmed: nothing changes. Answers the
+        booking as it now is. Rate limit: 30 requests per 10 minutes per IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId: { type: string, pattern: '^cs_', maxLength: 255 }
+      responses:
+        '200':
+          description: The booking as it now is.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ManagedBooking' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
   # ------------------------------------------------------------------ dev payments
   /v1/public/dev-payments/{paymentId}:
     parameters:
