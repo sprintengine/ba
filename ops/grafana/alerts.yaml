@@ -1,6 +1,8 @@
 # Alert rules for the bookanything API, in Prometheus rule format (docs/observability.md, "Alerts").
 # Load them into Grafana Cloud's Mimir ruler with mimirtool (`mimirtool rules load ops/grafana/alerts.yaml`), or import
 # them in Grafana under Alerting > Alert rules > Import. They watch production; copy a group and change `env` for staging.
+# Production never has simulation traffic (it refuses SIMULATION_AUTH_SECRET); a staging copy of the request and latency
+# rules should add `simulation!="true"` to their selectors, so the reliability simulation's bots don't page anyone.
 groups:
   - name: bookanything-api
     interval: 1m

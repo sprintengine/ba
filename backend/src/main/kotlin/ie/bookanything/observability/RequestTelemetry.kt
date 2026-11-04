@@ -1,6 +1,7 @@
 package ie.bookanything.observability
 
 import ie.bookanything.BusinessIdAttribute
+import ie.bookanything.auth.isSimulation
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.createApplicationPlugin
 import io.ktor.server.application.hooks.CallSetup
@@ -19,7 +20,8 @@ import java.time.Duration
 
 /**
  * Counts and times every request by its route template, as matched by routing (`/v1/public/manage/{token}`), so ids and
- * tokens never become labels; a request no route matched is [UNMATCHED]. With traces sampled, each request is also a
+ * tokens never become labels; a request no route matched is [UNMATCHED]. Each is labelled `simulation` true or false,
+ * so staging's dashboards can leave the reliability simulation's bots out. With traces sampled, each request is also a
  * Sentry trace named after its template.
  */
 val RequestTelemetry = createApplicationPlugin("RequestTelemetry") {
@@ -33,7 +35,9 @@ val RequestTelemetry = createApplicationPlugin("RequestTelemetry") {
     on(ResponseSent) { call ->
         val start = call.attributes.getOrNull(StartKey) ?: return@on
         val status = call.response.status()?.value
-        Telemetry.metrics.request(call.routeTemplate, call.request.httpMethod.value, status, Duration.ofNanos(System.nanoTime() - start))
+        Telemetry.metrics.request(
+            call.routeTemplate, call.request.httpMethod.value, status, Duration.ofNanos(System.nanoTime() - start), call.isSimulation,
+        )
         call.attributes.getOrNull(TraceKey)?.finish(status)
     }
 }
@@ -51,6 +55,7 @@ fun ApplicationCall.errorTags(): Map<String, String> = buildMap {
     attributes.getOrNull(BusinessIdAttribute)?.let { put("businessId", it) }
     put("route", routeTemplate)
     put("method", AppMetrics.methodLabel(request.httpMethod.value))
+    if (isSimulation) put("simulation", "true")
 }
 
 object RouteLabels {
