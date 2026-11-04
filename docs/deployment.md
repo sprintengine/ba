@@ -133,12 +133,28 @@ The simulation ([`simulation.md`](simulation.md), "On staging") runs against sta
 | GitHub, `staging` environment secret | `STAGING_SIMULATION_AUTH_SECRET` | the same value as `SIMULATION_AUTH_SECRET`. The environment's deployment branches stay limited to `main`, so a run on any other branch can't read it. |
 | GitHub, `staging` environment variables | `STAGING_API_URL`, `STAGING_APP_URL` | `https://api-staging.bookanything.ie`, `https://staging.bookanything.ie` |
 | GitHub, `staging` environment secret | `STAGING_SIM_DATABASE_URL` | optional: a read-only `postgres://` URL to the staging database, for the SQL checks |
-| Staging VM, crontab of `deploy` | `purge-simulation` | weekly, e.g. `0 4 * * 0 cd /opt/bookanything && docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` |
+| Staging VM, crontab of `deploy` | `purge-simulation` | weekly, e.g. `0 4 * * 0 cd /opt/bookanything && docker compose run --rm --no-deps backend purge-simulation --older-than-days 7`; it also deletes the purged businesses' Stripe test accounts |
+| Staging VM, `backend.env` | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET` | for paid bookings: a **test** key (`sk_test_…`) and the signing secrets of the two test-mode webhook endpoints at `https://api-staging.bookanything.ie/v1/webhooks/stripe` (below) |
 
 After setting the secret, `sudo -u deploy ./deploy.sh` restarts the API with it (its startup line then says
 `simulation=on`); check it with a short run
-(`workflow_dispatch` with `duration: 10m`). Paid bookings need Stripe on staging (test keys and both webhooks) and a
-Connect account with charges enabled on each simulated business (simulation.md, "Payments on staging"). To switch the
+(`workflow_dispatch` with `duration: 10m`).
+
+**Paid bookings on staging.** Each simulated business gets a platform-controlled Stripe test account from the staging
+API (simulation.md, "Payments on staging"); without Stripe in test mode the simulation still runs, with paid online
+bookings off (its report says so). In Stripe's **test mode** (backend/README.md, "Stripe" and "Stripe contract
+tests"):
+
+1. **Connect → Get started**: enable Connect as a platform and complete the platform profile (test data will do),
+   including its responsibilities for losses: Stripe refuses platform-controlled accounts without it.
+2. **Developers → API keys**: the test secret key into staging's `STRIPE_SECRET_KEY`. Never a live key there: the
+   simulation's accounts are only ever made, and deleted, with a test key.
+3. **Developers → Webhooks**: two endpoints at `https://api-staging.bookanything.ie/v1/webhooks/stripe`, one for "Your
+   account" events and one for "Connected accounts" events (the event lists are in backend/README.md, "Stripe"), and
+   their signing secrets into `STRIPE_WEBHOOK_SECRET` and `STRIPE_CONNECT_WEBHOOK_SECRET`.
+4. Redeploy, and run the workflow by hand: the report's summary says whether paid online bookings were on.
+
+To switch the
 simulation off, remove the secret from `backend.env` and redeploy: its tokens stop working at once, and the nightly
 run skips itself once the Actions secret is gone too.
 

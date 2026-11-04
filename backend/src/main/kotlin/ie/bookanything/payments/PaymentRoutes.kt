@@ -17,6 +17,7 @@ import io.ktor.server.routing.post
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Serializable
 data class PaymentsStatusDto(
@@ -59,16 +60,8 @@ fun Route.paymentSettingsRoutes(ctx: AppContext) {
         val b = access.business
         val s = withContext(Dispatchers.IO) { ctx.payments.connectStatus(b) }
         // Keep the stored flags fresh even if an account.updated webhook was missed or delayed.
-        if (ctx.payments.name == "stripe" && b.stripeAccountId != null &&
-            (s.chargesEnabled != b.stripeChargesEnabled || s.detailsSubmitted != b.stripeDetailsSubmitted)
-        ) {
-            ctx.db.tx(b.id) {
-                StripeAccountRepository.setConnectStatus(it, b.id, b.stripeAccountId, s.chargesEnabled, s.detailsSubmitted)
-                Audit.record(
-                    it, b.id, Actor.SYSTEM, "payments.account_updated", "business", b.id,
-                    mapOf("chargesEnabled" to s.chargesEnabled, "detailsSubmitted" to s.detailsSubmitted),
-                )
-            }
+        if (ctx.payments.name == "stripe" && b.stripeAccountId != null) {
+            storeConnectStatus(ctx, b, b.stripeAccountId, s.chargesEnabled, s.detailsSubmitted)
         }
         call.respond(statusDto(ctx, b, s))
     }
@@ -122,6 +115,7 @@ fun Route.paymentSettingsRoutes(ctx: AppContext) {
         if (!withContext(Dispatchers.IO) { ctx.connectExisting.disconnect(access.business, access.actor) }) {
             throw Errors.conflict("This business has no Stripe account connected.")
         }
+        access.business.stripeAccountId?.let { deleteSimulationAccount(ctx, it, access.businessId) }
         val b = access.business.copy(
             stripeAccountId = null, stripeConnectMethod = null, stripeChargesEnabled = false, stripeDetailsSubmitted = false,
         )
@@ -129,6 +123,34 @@ fun Route.paymentSettingsRoutes(ctx: AppContext) {
     }
 
     billingRoutes(ctx)
+}
+
+/**
+ * On staging, a simulation business's test account no one else can use ([SimulationStripeAccounts]) is deleted at
+ * Stripe once forgotten, unless money on it may still need it reachable; anything else is left as it is.
+ */
+private suspend fun deleteSimulationAccount(ctx: AppContext, accountId: String, businessId: UUID) {
+    val stripe = ctx.simulationStripe ?: return
+    if (ctx.db.read { AccountPayments.accountHasOpenPayments(it, accountId, ctx.now(), exceptBusiness = null) }) return
+    withContext(Dispatchers.IO) { stripe.deleteIfOurs(accountId, businessId) }
+}
+
+/** Stores what Stripe now says about [accountId], the business's account, when it differs from what [b] had. */
+internal suspend fun storeConnectStatus(
+    ctx: AppContext,
+    b: BusinessRow,
+    accountId: String,
+    chargesEnabled: Boolean,
+    detailsSubmitted: Boolean,
+) {
+    if (chargesEnabled == b.stripeChargesEnabled && detailsSubmitted == b.stripeDetailsSubmitted) return
+    ctx.db.tx(b.id) {
+        StripeAccountRepository.setConnectStatus(it, b.id, accountId, chargesEnabled, detailsSubmitted)
+        Audit.record(
+            it, b.id, Actor.SYSTEM, "payments.account_updated", "business", b.id,
+            mapOf("chargesEnabled" to chargesEnabled, "detailsSubmitted" to detailsSubmitted),
+        )
+    }
 }
 
 private fun statusDto(ctx: AppContext, b: BusinessRow, s: ConnectStatus) = PaymentsStatusDto(

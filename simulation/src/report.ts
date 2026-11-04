@@ -12,6 +12,8 @@ export type RunSummary = {
   bookings: number;
   checks: number;
   harnessErrors: number;
+  /** Whether paid online bookings were covered (Stripe Checkout runs; null with dev payments). */
+  coverage?: string | null;
   violations: Violation[];
   passed: boolean;
 };
@@ -32,6 +34,10 @@ export function renderReport(summary: RunSummary, stats: Stats): string {
       `${summary.checks} invariant checks, ${summary.harnessErrors} harness errors.`,
   );
   out.push("");
+  if (summary.coverage) {
+    out.push(summary.coverage);
+    out.push("");
+  }
   out.push(
     `Replay: \`npm --prefix simulation run replay -- --seed ${summary.seed}\` (or \`--from-log\` with this run's log).`,
   );

@@ -14,6 +14,7 @@ import com.stripe.param.SubscriptionCreateParams
 import com.stripe.param.billingportal.ConfigurationListParams
 import ie.bookanything.business.Plan
 import ie.bookanything.config.StripeConfig
+import ie.bookanything.http.ApiException
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions.abort
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -193,6 +194,46 @@ class StripeContractTest {
         } finally {
             archive(price)
         }
+    }
+
+    @Test
+    fun `a simulation account in Ireland is enabled from Stripe's test values, takes a payment and a refund, and is deleted`() {
+        val accounts = SimulationStripeAccounts(gateway)
+        val business = business().copy(slug = "sim-contract", name = "Sim Business contract")
+        val account = try {
+            accounts.create(business).also(created::add)
+        } catch (e: ApiException) {
+            // The platform can't create platform-controlled accounts here (its Connect profile, or its country).
+            abort("Can't create a simulation account here: ${e.message}")
+        }
+        // Idempotent: the same request again is the same account.
+        assertEquals(account, accounts.create(business))
+        var state = accounts.state(account)
+        repeat(ENABLE_POLLS) {
+            if (state.chargesEnabled) return@repeat
+            Thread.sleep(ENABLE_POLL_MS)
+            state = accounts.state(account)
+        }
+        assertTrue(state.chargesEnabled, "Stripe didn't enable charges; still due: ${state.requirementsDue} (${state.disabledReason})")
+        assertTrue(SimulationStripeAccounts.isOurs(state, business.id), state.metadata.toString())
+        assertEquals("IE" to "eur", state.country to state.defaultCurrency)
+
+        val options = RequestOptions.builder().setStripeAccount(account).build()
+        val intent = stripe.v1().paymentIntents().create(
+            PaymentIntentCreateParams.builder().setAmount(2000L).setCurrency("eur").setPaymentMethod("pm_card_visa")
+                .addPaymentMethodType("card").setConfirm(true).build(),
+            options,
+        )
+        assertEquals("succeeded", intent.status)
+        val provider = StripePaymentProvider(gateway, StripeConfig(key, null, null, null, null), Clock.systemUTC())
+        val connected = business.copy(stripeAccountId = account, stripeChargesEnabled = true)
+        val refund = provider.refund(RefundRequest(UUID.randomUUID(), connected, intent.id, 2000, "EUR", account))
+        assertTrue(refund.succeeded, refund.toString())
+
+        // Not deleted for another business; deleted for its own.
+        assertEquals(SimulationStripeAccounts.Deleted.NOT_OURS, accounts.deleteIfOurs(account, UUID.randomUUID()))
+        assertEquals(SimulationStripeAccounts.Deleted.DELETED, accounts.deleteIfOurs(account, business.id))
+        created.remove(account)
     }
 
     private fun testPrice(): String = stripe.v1().prices().create(

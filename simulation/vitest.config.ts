@@ -29,6 +29,7 @@ export default defineConfig({
         "src/refunds.ts",
         "src/shadow.ts",
         "src/consistency.ts",
+        "src/stripe.ts",
       ],
       thresholds: { lines: 85, statements: 85, functions: 85, branches: 75 },
     },
