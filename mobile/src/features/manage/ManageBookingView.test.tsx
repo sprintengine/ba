@@ -155,6 +155,29 @@ describe("ManageBookingView", () => {
     expect(await screen.findByText("You're booked and paid", undefined, { timeout: 5000 })).toBeOnTheScreen();
   });
 
+  it("stops reading after a minute and says the confirmation will come by email", async () => {
+    jest.useFakeTimers();
+    try {
+      const holdExpiresAt = new Date(Date.now() + 20 * 60_000).toISOString();
+      const fetch = setup(() =>
+        upcoming({ status: "held", paymentStatus: "pending", amountPaidCents: 0, holdExpiresAt }),
+      );
+      renderScreen(<ManageBookingView token={TOKEN} context="paid" />);
+      expect(await screen.findByText("Confirming your payment…")).toBeOnTheScreen();
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(61_000);
+      });
+      expect(screen.getByText("Still confirming your payment")).toBeOnTheScreen();
+      const reads = calls(fetch).filter((c) => c.endsWith(MANAGE)).length;
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(10_000);
+      });
+      expect(calls(fetch).filter((c) => c.endsWith(MANAGE)).length).toBe(reads);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("says when a link isn't valid any more", async () => {
     setup(() => apiError(404, "NOT_FOUND", "No such booking."));
     renderScreen(<ManageBookingView token={TOKEN} context={null} />);

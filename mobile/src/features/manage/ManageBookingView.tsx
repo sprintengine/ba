@@ -33,7 +33,7 @@ import {
   showsPaymentStatus,
 } from "@shared/booking/booking";
 import { formatCountdown } from "@shared/booking/copy";
-import { manageHero, manageHeroText, type ManageHero } from "@shared/booking/manage";
+import { CONFIRM_POLL_LIMIT_MS, manageHero, manageHeroText, type ManageHero } from "@shared/booking/manage";
 import {
   formatDuration,
   formatMoney,
@@ -83,11 +83,23 @@ export function ManageBookingView({ token, context }: { token: string; context: 
     setGiven(context);
     setCtx(context);
   }
+  // Waiting for a payment's confirmation for CONFIRM_POLL_LIMIT_MS at most: then it says it is taking longer.
+  const [confirmingTooLong, setConfirmingTooLong] = useState(false);
+  useEffect(() => {
+    if (ctx !== "paid") return;
+    const id = setTimeout(() => setConfirmingTooLong(true), CONFIRM_POLL_LIMIT_MS);
+    return () => {
+      clearTimeout(id);
+      setConfirmingTooLong(false);
+    };
+  }, [ctx]);
   const booking = useManagedBooking(token, {
-    // After a payment, read it again until the payment is confirmed (the webhook), or for a few seconds when the
-    // browser closed without saying how it ended.
+    // After a payment, read it again until the payment is confirmed (for a minute: then the email follows), or for a
+    // few seconds when the browser closed without saying how it ended.
     refetchInterval: (q) =>
-      q.state.data?.status === "held" && (ctx === "paid" || ctx === "checking") ? POLL_MS : false,
+      q.state.data?.status === "held" && (ctx === "checking" || (ctx === "paid" && !confirmingTooLong))
+        ? POLL_MS
+        : false,
   });
   const status = booking.data?.status;
   if (ctx === "checking" && status && status !== "held") setCtx("paid");
@@ -141,6 +153,7 @@ export function ManageBookingView({ token, context }: { token: string; context: 
         booking={booking.data}
         context={ctx}
         setContext={setCtx}
+        confirmingTooLong={confirmingTooLong}
         refreshing={booking.isRefetching}
         onRefresh={() => void booking.refetch()}
       />
@@ -153,6 +166,7 @@ function Loaded({
   booking: b,
   context,
   setContext,
+  confirmingTooLong,
   refreshing,
   onRefresh,
 }: {
@@ -160,6 +174,7 @@ function Loaded({
   booking: ManagedBooking;
   context: ViewContext;
   setContext: (c: ViewContext) => void;
+  confirmingTooLong: boolean;
   refreshing: boolean;
   onRefresh: () => void;
 }) {
@@ -185,7 +200,7 @@ function Loaded({
     }
   };
 
-  const hero = manageHero(b, heroContext(context), remaining);
+  const hero = manageHero(b, heroContext(context), remaining, confirmingTooLong);
   return (
     <ScreenScroll testID="manage-booking" refreshing={refreshing} onRefresh={onRefresh}>
       <ManageHeroBanner
@@ -247,6 +262,7 @@ const HERO_ICONS: Record<ShownHero["kind"], IconComponent> = {
   confirmed: Check,
   pending_approval: Hourglass,
   confirming_payment: Clock,
+  still_confirming: Hourglass,
   awaiting_payment: CreditCard,
   cancelled: CalendarX2,
   expired: Clock,
