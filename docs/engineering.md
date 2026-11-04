@@ -26,12 +26,13 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | All of the above but e2e | `npm test` | |
 | Reliability simulation | `npm run simulation:run` (own stack; options in [`simulation.md`](simulation.md)) | scripted bots, invariant checker |
 
-CI (`.github/workflows/ci.yml`) runs six jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
+CI (`.github/workflows/ci.yml`) runs seven jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
 floor), **Frontend** (format, lint, typecheck, unit tests with coverage, the build as a Cloudflare Worker and its
 size: `npm run cf:check`, bundle-size budget), **Mobile**
 (format, lint, design-token lint, typecheck, app config per variant, tests with coverage incl. the shared-code
 boundary; `docs/mobile.md`), **Simulation checks** (format, lint, typecheck, unit tests with coverage of
-`simulation/`; [`simulation.md`](simulation.md)) and **E2E**
+`simulation/`), **Simulation** (the reliability simulation for 10 minutes against a development stack, failing on any
+invariant violation; [`simulation.md`](simulation.md)) and **E2E**
 (Postgres 16 service, seeded backend with dev auth and the scripted fake model, production frontend build with the
 `/dev` routes, the Playwright suite on desktop and mobile, then the web-vitals budgets on their own, whose report is
 uploaded as the `web-vitals-report` artifact and shown in the job summary). A newer push cancels the older run. Backend tests need Docker and **fail, never skip,**

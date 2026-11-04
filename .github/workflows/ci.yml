@@ -205,6 +205,95 @@ jobs:
       - name: Unit tests with coverage thresholds
         run: npm run test:coverage
 
+  simulation:
+    name: Simulation (10 minutes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bookanything_sim
+          POSTGRES_USER: bookanything
+          POSTGRES_PASSWORD: bookanything
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookanything -d bookanything_sim"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      # The same development backend as the E2E job: dev auth, the dev payment provider, no external services.
+      APP_ENV: development
+      AUTH_MODE: dev
+      AI_FAKE_SCRIPT: demo
+      # A few hundred bookings come from one address in ten minutes; development only.
+      RATE_LIMIT_MULTIPLIER: "50"
+      DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_sim
+      DATABASE_USERNAME: bookanything
+      DATABASE_PASSWORD: bookanything
+      APP_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: simulation/package-lock.json
+
+      - name: Build backend
+        run: ./gradlew :backend:installDist
+
+      - name: Migrate
+        run: backend/build/install/backend/bin/backend migrate
+
+      - name: Start backend
+        run: |
+          nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend.log; exit 1
+
+      - name: Install simulation dependencies
+        working-directory: simulation
+        run: npm ci
+
+      # Fails on any invariant violation (docs/simulation.md); the report also goes to the job summary. The seed is the
+      # run's: a failure is replayed with `scripts/simulation.sh replay --from-log` on the uploaded log.
+      - name: Run the simulation
+        working-directory: simulation
+        env:
+          SIM_BASE_URL: http://localhost:8080
+          SIM_APP_URL: http://localhost:3000
+          SIM_DATABASE_URL: postgres://bookanything:bookanything@localhost:5432/bookanything_sim
+          SIM_SEED: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          SIM_DURATION: 10m
+          SIM_RATE: "90"
+        run: npm run sim
+
+      - name: Upload the action log, report and backend log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation
+          path: |
+            simulation/out/
+            backend.log
+          if-no-files-found: ignore
+
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
