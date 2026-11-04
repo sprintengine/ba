@@ -40,10 +40,7 @@ export function AffectedSlotsPreview({ delay = 400 }: { delay?: number }) {
   return (
     <section aria-labelledby="affected-times" className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h3
-          id="affected-times"
-          className="text-sm font-medium text-muted-foreground"
-        >
+        <h3 id="affected-times" className="text-sm font-medium text-muted-foreground">
           Affected times
         </h3>
         {key && settling && preview.data && (
