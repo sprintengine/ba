@@ -36,6 +36,7 @@ import ie.bookanything.notifications.EmailSender
 import ie.bookanything.notifications.LogEmailSender
 import ie.bookanything.notifications.NoopSmsSender
 import ie.bookanything.notifications.ResendEmailSender
+import ie.bookanything.notifications.SkipUndeliverable
 import ie.bookanything.notifications.SmsSender
 import ie.bookanything.notifications.TwilioSmsSender
 import ie.bookanything.notifications.inbox.Inbox
@@ -141,7 +142,8 @@ class AppContext(
                     AuthMode.CLERK -> ClerkJwtVerifier(config.clerk)
                 },
                 payments = PaymentProviders.select(config, clock),
-                email = config.email.resendApiKey?.let { ResendEmailSender(it, config.email.from) } ?: LogEmailSender(config.email.from),
+                email = config.email.resendApiKey?.let { SkipUndeliverable(ResendEmailSender(it, config.email.from)) }
+                    ?: LogEmailSender(config.email.from),
                 sms = with(config.sms) {
                     if (twilioAccountSid != null && twilioAuthToken != null && twilioFrom != null) {
                         TwilioSmsSender(twilioAccountSid, twilioAuthToken, twilioFrom)
