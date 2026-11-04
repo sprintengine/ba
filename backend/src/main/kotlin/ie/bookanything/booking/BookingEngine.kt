@@ -97,7 +97,9 @@ class BookingEngine(
                 val row = BookingRepository.get(conn, business.id, outcome.booking.id)!!
                 CreateOutcome(row, false, null, NewBookingRules.nextStep(row.status))
             }
-        return outcome.copy(checkoutUrl = url, pending = null)
+        // Read again: storing the checkout may have extended the hold to the session's expiry.
+        val booking = db.txBlocking(business.id, readOnly = true) { BookingRepository.get(it, business.id, outcome.booking.id) }
+        return outcome.copy(booking = booking ?: outcome.booking, checkoutUrl = url, pending = null)
     }
 
     /**
@@ -128,6 +130,9 @@ class BookingEngine(
             if (payment.status == "cancelled") CheckoutExpiry.enqueue(conn, business.id, payment.id)
             return null
         }
+        // The customer can pay until the session closes: the hold lasts as long (Stripe's minimum can outlast it when
+        // the session was created late, e.g. after a slow or replayed request).
+        session.expiresAt?.let { BookingHolds.extendHold(conn, business.id, booking.id, it) }
         pending.notifications.forEach { Notify.booking(conn, it, business.id, booking.id) }
         return session.url
     }
@@ -198,13 +203,9 @@ class BookingEngine(
 
         val questions = QuestionRepository.forService(conn, business.id, service.id)
         val answers = BookingAnswers.validate(questions, cmd.answers, enforceRequired = public)
-        BookingSupport.checkBookingLimit(conn, business, now)
-
-        // Lock candidate resources, release stale holds, then re-check the exact slot.
+        // Lock the month's count and the candidate resources, release stale holds, then re-check the exact slot.
         val poolIds = service.requirements.flatMap { it.resourceIds }
-        AllocationRepository.lockResources(conn, business.id, poolIds)
-        // A request with the same Idempotency-Key may have committed while we waited for the locks: it is the answer.
-        replay(conn, business, cmd)?.let { return it }
+        lockForBooking(conn, business, cmd, poolIds, now)?.let { return it }
         BookingSupport.expireStaleHolds(conn, now, business.id, poolIds)
         val forced = if (cmd.forcedIsWholeCalendar) {
             StaffScope.usableFor(cmd.forcedResourceIds.orEmpty(), service).ifEmpty { throw Errors.forbidden(StaffScope.BOOK_OWN_ONLY) }
@@ -252,6 +253,20 @@ class BookingEngine(
         return CreateOutcome(
             row, false, null, NewBookingRules.nextStep(status), pending = checkout?.let { PendingCheckout(it, notifications) },
         )
+    }
+
+    /**
+     * Takes what serialises this booking with others: the business's monthly count when its plan limits bookings (then
+     * counts the month), and the candidate resources. Returns the answer of a request with the same Idempotency-Key that
+     * committed while this one waited for either (not a booking to count or make again), or null to go on.
+     */
+    private fun lockForBooking(
+        conn: Connection, business: BusinessRow, cmd: CreateCommand, poolIds: List<UUID>, now: Instant,
+    ): CreateOutcome? {
+        if (BookingSupport.lockBookingLimit(conn, business)) replay(conn, business, cmd)?.let { return it }
+        BookingSupport.checkBookingLimit(conn, business, now)
+        AllocationRepository.lockResources(conn, business.id, poolIds)
+        return replay(conn, business, cmd)
     }
 
     /** Active (and public, for the customer's own booking), and paid at the venue only if the service lets the customer choose it. */

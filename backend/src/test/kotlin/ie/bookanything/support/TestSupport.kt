@@ -102,6 +102,8 @@ object TestConfig {
         stripe: StripeConfig = StripeConfig(null, null, null, null, null),
         // On here so the site builder stays covered; SitesDisabledTest covers the production default (off).
         sites: Boolean = true,
+        // On here so Bo stays covered; AssistantDisabledTest covers the production default (off).
+        assistant: Boolean = true,
     ) = AppConfig(
         env = env, host = "127.0.0.1", port = 0, appBaseUrl = "http://localhost:3000",
         database = DatabaseConfig(TestDatabase.jdbcUrl, TestDatabase.username, TestDatabase.password, 10),
@@ -110,6 +112,7 @@ object TestConfig {
         trustForwardedFor = false, jobsEnabled = false, corsAllowedOrigins = emptyList(),
         tokenSecret = AppConfig.DEV_TOKEN_SECRET, rateLimitsEnabled = rateLimits,
         sitesEnabled = sites,
+        assistantEnabled = assistant,
     )
 }
 
@@ -237,7 +240,8 @@ class Api(val client: HttpClient) {
 
 fun withApp(env: TestEnv = TestEnv(), block: suspend ApplicationTestBuilder.(Api) -> Unit) = testApplication {
     application { module(env.ctx) }
-    block(Api(client))
+    // A redirect (Stripe's OAuth callback) is the answer under test, never a page to fetch from the app.
+    block(Api(createClient { followRedirects = false }))
 }
 
 fun newId(): UUID = UUID.randomUUID()

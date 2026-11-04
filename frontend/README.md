@@ -105,6 +105,8 @@ src/
                                reducers/), opening-hours edits, validation mirroring SetupInstaller, problem labels
     catalog/                   fixed option lists + labels shared by onboarding and the dashboard: payment modes,
                                location types, resource and question kinds, currencies
+    observability/             error tracking (Sentry, §9): settings, PII/secret scrubbing, early-error queue (shared,
+                               pure), SDK options, the lazy browser loader and SDK start, Worker options (web-only)
     validation/limits.ts       field limits the backend enforces (business, policies, groups, resources, services,
                                questions), each naming the backend rule it mirrors
     slug.ts                    business web address rules (mirrors ReservedSlugs: slugify, slugProblem)
@@ -112,6 +114,7 @@ src/
     status.ts                  booking/payment status labels + tones, status predicates (isBlockingStatus, isReleasedStatus)
     reserved-slugs.ts          mirrors backend ReservedSlugs
   proxy.ts                     Next 16 "proxy" (was middleware): installs clerkMiddleware when Clerk is configured
+  instrumentation.ts           server-side error tracking (Sentry; §9), a no-op without a DSN
 tests/e2e/                     Playwright smoke tests
 ```
 
@@ -411,6 +414,11 @@ const { isLoaded, isSignedIn, user, getToken, signOut, mode } = useAuth();
 
 ### 7b. Bo, the assistant (architecture §17)
 
+- **Off by default.** Only where the business says the deployment offers it (`Business.assistantAvailable`: the
+  backend's `ASSISTANT_ENABLED` and a model); otherwise the layout mounts none of it (no launcher, panel, ⌘J, ⌘K "Ask
+  Bo…", nudges, or Bo in Billing's AI credits, which are hidden when nothing else uses them either). The public pages
+  follow `NEXT_PUBLIC_ASSISTANT_ENABLED` (`assistantMarketed()`, `lib/assistant/flag.ts`) and, off, tell owners to
+  connect their own AI assistant to the business MCP instead.
 - **Dashboard only.** `AssistantProvider` wraps the dashboard layout; `DashboardShell` places the `floating` launcher
   bottom-left of the content and adds ⌘K "Ask Bo…" (`onAskAssistant`). ⌘J toggles the panel. The name is
   `ASSISTANT_NAME` (`lib/assistant/constants.ts`); never write "Bo" in copy.
@@ -507,12 +515,60 @@ export function CustomersList() {
 | `NEXT_PUBLIC_APP_URL` | both | public origin (metadata, `returnUrl`s) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | both / server | enable Clerk; unset = dev auth |
 | `NEXT_PUBLIC_ENABLE_DEV_ROUTES` | build | `true` to expose `/dev/*` in a production build |
+| `NEXT_PUBLIC_ASSISTANT_ENABLED` | build | `true` to present Bo on the public pages (set with the backend's `ASSISTANT_ENABLED`; both off by default). Off, they offer connecting your own AI assistant to the business MCP |
 | `NEXT_PUBLIC_BUSINESS_MCP_ENABLED` | build | On unless `false` (set with the backend's `BUSINESS_MCP_ENABLED` kill switch): indexes and links the business agents guide |
 | `WEBMCP_ORIGIN_TRIAL_TOKEN` | build | Chrome's WebMCP origin-trial token for this origin, sent on every page (agents reach the booking flow, `/explore` and `/my` by client-side navigation); unset = only browsers with WebMCP switched on |
 | `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` | build | Edge's WebMCP origin-trial token, sent with Chrome's in the same `Origin-Trial` header |
 | `APPLE_APP_IDS` | server (runtime) | iOS app IDs whose universal links and sign-in this domain vouches for, comma-separated `TEAMID.bundle.id` (`V266333BR2.ie.bookanything.app`; staging `V266333BR2.ie.bookanything.app.preview`). Served at `/.well-known/apple-app-site-association`; unset = 404 |
 | `ANDROID_PACKAGE_NAME` | server (runtime) | Android package for App Links (`ie.bookanything.app`; staging `ie.bookanything.app.preview`). Served at `/.well-known/assetlinks.json` with the fingerprints below; either unset = 404 |
 | `ANDROID_SHA256_FINGERPRINTS` | server (runtime) | Comma-separated SHA-256 signing certificate fingerprints (`AA:BB:…`, 32 hex bytes, any case): the upload key's (`eas credentials`) and Play App Signing's (Play Console › App integrity). Malformed entries are dropped |
+| `NEXT_PUBLIC_SENTRY_DSN` | build | Sentry project DSN (public by design); unset = no error tracking at all (below) |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | build | `development`, `staging` or `production`; default `production` in a production build, else `development` |
+| `NEXT_PUBLIC_SENTRY_RELEASE` | build | The build's version; the release train passes its own (the backend image's `APP_VERSION`), and the Worker reports under the same one (below); unset = Sentry's build plugin detects one when uploading source maps, else none |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | build | Share of page loads and requests traced, `0`–`1`; default `0` (errors only, and the SDK's tracing code is compiled out) |
+| `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` | build (the train: secret `SENTRY_AUTH_TOKEN`, variables `SENTRY_ORG`, `SENTRY_WEB_PROJECT`) | All three set (and a DSN) = upload source maps to Sentry after `next build` and delete them from the output; any unset = no maps generated or uploaded |
+| `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_TRACES_SAMPLE_RATE` | Worker (runtime) | Optional per-field overrides of the build's settings for the Cloudflare Worker's server side, read from its variables (the `NEXT_PUBLIC_` names work there too), and only for a build with a DSN; environment defaults to `production`. Never read by the build, so another service's server DSN under these names can't reach the browser bundle |
+
+### Error tracking (Sentry)
+
+Off by default. Without `NEXT_PUBLIC_SENTRY_DSN` at build time the site builds and behaves exactly as without
+Sentry: `next.config.ts` defines the variable as empty, so the checks on it are compiled out and no Sentry code
+reaches the browser or the server bundle; builds, tests and CI need no account.
+
+With a DSN (`@sentry/nextjs`, set up in `src/instrumentation.ts`, `src/lib/observability/` and `next.config.ts`):
+
+- **Browser:** `next.config.ts` injects `lib/observability/sentry-loader.ts` ahead of hydration
+  (`instrumentationClientInject`). It holds the first few errors and, once the page is idle, imports the SDK (about
+  33 KB gzip, a lazy chunk; first load grows by about 0.5 KB), which then reports uncaught errors and unhandled
+  rejections. `app/error.tsx` reports the render errors it catches. No session replay; tracing only with a sample
+  rate above 0.
+- **Server:** `onRequestError` reports errors from server components, route handlers and the proxy. Under
+  `next start` the SDK starts in `register()`.
+- **Cloudflare Workers (OpenNext):** there `Sentry.init` creates no client. The Worker entry, `worker.ts` (wrangler's
+  `main`), serves OpenNext's generated handler through `withSentry` from `@sentry/nextjs/cloudflare` when the build
+  has a DSN, and as it is otherwise: no SDK work per request and no change to its async context
+  (`lib/observability/sentry-worker.ts`). The build decides because only a build with a DSN keeps the server's
+  `onRequestError` reporting: a DSN that only the Worker has turns nothing on. The settings reach the Worker through
+  the build's env files, which OpenNext compiles into it (`.open-next/cloudflare/next-env.mjs`); the build's shell
+  environment does not reach the Worker, so the release train writes the build's `NEXT_PUBLIC_SENTRY_*` to
+  `.env.production.local` before building, and the Worker reports to the same DSN, environment and release as the
+  browser without any Worker variable. Only those keys are read from the env files. For a build with a DSN, Worker
+  variables `SENTRY_*` (or the `NEXT_PUBLIC_` names) override them field by field. Traces on the server need a build
+  with a trace rate above 0, which keeps the tracing code. Size: the Worker SDK is bundled even without a DSN (about
+  140 KiB gzipped, never started), and a build with a DSN adds the Node.js SDK the server code imports for
+  `onRequestError` (about 1.4 MiB gzipped); `npm run cf:check` prints the total against the 10 MiB limit.
+- **Privacy:** the SDK's own collection (`dataCollection`, which by default takes IP addresses, cookies, headers,
+  bodies, query strings and local variables) is off but for the user agent. Every event, span and breadcrumb then
+  passes `lib/observability/scrub.ts`: `/manage/{token}` and `/invitations/{token}` segments (raw or URL-encoded) are
+  redacted; query values are dropped except UI state (`tab`, `view`, `from`, `to`, `date`, … in `KEPT_PARAMS`), so
+  searches (`?q=`), OAuth `state`, Clerk handshakes and sign-in `redirect_url`s go; bearer tokens and JWTs are
+  redacted; emails and phone numbers in messages are replaced; requests keep only the URL, method and user agent;
+  console breadcrumbs lose their arguments; the user is at most an opaque id (the app sets none). With tracing on,
+  page loads are named after their route (`/manage/[token]`).
+- **Source maps:** generated, uploaded and deleted from the output only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
+  `SENTRY_PROJECT` are set in the build that is deployed (the one with the DSN; the release train's website builds
+  take them from the `SENTRY_AUTH_TOKEN` secret and the `SENTRY_ORG` and `SENTRY_WEB_PROJECT` variables,
+  docs/releases.md). Otherwise none are generated, so none are published. Sentry's build telemetry is off and its build logs are silent.
 
 ### Deploying: Cloudflare Workers
 
@@ -528,8 +584,10 @@ npm run cf:preview   # the bundle in the local Workers runtime on :8787, cache p
 ```
 
 `wrangler.jsonc` names the Workers, their domains and cache buckets (production at the top level, `--env staging`);
-settings are not in it: the train passes `NEXT_PUBLIC_*` and `BACKEND_ORIGIN` to the build, and `BACKEND_ORIGIN`, the
-app-link settings and `CLERK_SECRET_KEY` to the Worker (`scripts/release/deploy-site.sh`). For `cf:preview`, put runtime
+settings are not in it: the train passes `NEXT_PUBLIC_*` (including Sentry's, which the Worker reads from the build
+too: "Error tracking (Sentry)" above) and `BACKEND_ORIGIN` to the build, and `BACKEND_ORIGIN`, the app-link settings
+and `CLERK_SECRET_KEY` to the Worker (`scripts/release/deploy-site.sh`). The Worker's entry is `worker.ts`, which
+wrangler bundles with `.open-next/` at deploy time. For `cf:preview`, put runtime
 values in `.dev.vars` (git-ignored), e.g. `BACKEND_ORIGIN=http://localhost:8080`. `playwright.deployed.config.ts` runs
 the read-only smoke tests in `tests/deployed/` against a deployed site (`E2E_BASE_URL`), as the train does after each
 deploy.
@@ -547,8 +605,9 @@ How the app's server features behave on Workers (checked with `cf:preview` again
 - **`/.well-known/apple-app-site-association` and `assetlinks.json`** read their settings per request from the Worker's
   vars.
 - **Images**: `next/image` is not used, so there is no image optimization to configure.
-- **Size**: the Worker is about 4.5 MiB gzipped, above the free plan's 3 MiB limit: deploying needs the Workers paid
-  plan, whose limit is 10 MiB (`npm run cf:check` fails above it and warns within 1 MiB of it).
+- **Size**: the Worker is above the free plan's 3 MiB limit (gzipped), more so with a Sentry DSN (above): deploying
+  needs the Workers paid plan, whose limit is 10 MiB (`npm run cf:check` prints the size, fails above the limit and
+  warns within 1 MiB of it).
 
 ---
 
@@ -602,7 +661,9 @@ Checks: `npm run format:check`, `lint`, `typecheck`, `test:coverage` (thresholds
   (`journey-helpers.ts`); page-wide checks (`accessibility.spec.ts`, `layout-and-theme.spec.ts`) cover `main-pages.ts`.
 - Bo's component tests drive the panel against a stateful fake (`components/assistant/__tests__/fake-assistant-api.ts`)
   whose `Turn` pushes real server-sent events at the test's pace. `assistant.spec.ts` (e2e) needs a backend started with
-  `AI_FAKE_SCRIPT=demo` (development only) for the conversation specs and skips them otherwise; for e2e run a second
+  `ASSISTANT_ENABLED=true`, a model (`AI_FAKE_SCRIPT=demo`, development only, or a key) and the demo seed; it fails
+  without them, so a misconfigured stack can't skip it, and the conversation specs skip unless the model is the fake; `assistant-off.spec.ts` runs only with
+  `E2E_ASSISTANT=off` against a backend with Bo off (`scripts/e2e-stack.sh test-assistant-off`); for e2e run a second
   backend with it (e.g. `PORT=8091`) and build the frontend with `BACKEND_ORIGIN` pointing at it.
 - Site specs (`site.spec.ts`, `branding-upload.spec.ts`) create a throwaway business per test (owned by a fresh
   dev user, so the demo businesses are untouched) and expect a backend without `ANTHROPIC_API_KEY` (the deterministic

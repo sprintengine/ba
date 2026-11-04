@@ -45,6 +45,8 @@ object Invitations {
             TeamRepository.markRemoved(conn, invite.id)
             return false
         }
+        // Acceptances at once count one after another (a team can hold more invitations than seats after a downgrade).
+        if (business.plan.memberLimit != null) BusinessRepository.lockSeats(conn, business.id)
         if (!TeamPolicy.hasActiveSeat(business.plan, TeamRepository.activeCount(conn, business.id))) {
             if (strict) throw Errors.planLimit("${business.name} has reached its team member limit on the Free plan.")
             return false

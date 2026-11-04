@@ -224,8 +224,9 @@ expect(calls(api)).toEqual(["GET /v1/me/bookings"]);
 **Maestro (E2E on a simulator or device).** Install: `curl -Ls "https://get.maestro.mobile.dev" | bash` (needs Java).
 With the backend running and seeded, the dev client installed and Metro running: `npm run test:e2e` (all flows in
 `e2e/flows`) or `maestro test e2e/flows/launch-sign-in-home.yaml`. Flows use `testID`s (`id:` in Maestro); sign-in
-is the `e2e/subflows/dev-sign-in.yaml` subflow with `ACCOUNT: dev_customer|dev_owner|dev_staff`. Add a flow for every
-feature's main path.
+is the `e2e/subflows/dev-sign-in.yaml` subflow with `ACCOUNT: dev_customer|dev_owner|dev_staff`. `bo-send-message.yaml`
+needs the backend with Bo switched on (`ASSISTANT_ENABLED=true AI_FAKE_SCRIPT=demo`). Add a flow for every feature's
+main path.
 
 ## Definition of done
 

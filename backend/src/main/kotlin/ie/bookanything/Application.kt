@@ -1,6 +1,7 @@
 package ie.bookanything
 
 import ie.bookanything.ai.usage.aiUsageRoutes
+import ie.bookanything.assistant.agentRequestRoutes
 import ie.bookanything.assistant.assistantRoutes
 import ie.bookanything.auth.clerkWebhookRoutes
 import ie.bookanything.availability.availabilitySettingsRoutes
@@ -38,6 +39,7 @@ import ie.bookanything.observability.Telemetry
 import ie.bookanything.offers.offerRoutes
 import ie.bookanything.offers.publicOfferRoutes
 import ie.bookanything.payments.paymentSettingsRoutes
+import ie.bookanything.payments.stripeConnectCallbackRoutes
 import ie.bookanything.payments.stripeWebhookRoutes
 import ie.bookanything.releases.releaseRoutes
 import ie.bookanything.reports.reportRoutes
@@ -230,26 +232,32 @@ private fun Application.installStartupLog(ctx: AppContext) {
     monitor.subscribe(ApplicationStarted) {
         val c = ctx.config
         log.info(
-            "bookanything API started version={} env={} auth={} payments={} email={} sms={} push={} ai={} storage={} stock={} geocoder={} sites={}",
+            "bookanything API started version={} env={} auth={} payments={} email={} sms={} push={} ai={} storage={} stock={} " +
+                "geocoder={} sites={} assistant={}",
             c.version, c.env.wire, c.authMode, ctx.payments.name,
             if (c.email.resendApiKey != null) "resend" else "log", if (ctx.sms.enabled) "twilio" else "off", ctx.push.name,
             ctx.ai.model?.modelId ?: "templates",
             ctx.storage.name, if (ctx.stockImages.enabled) "unsplash" else "off", c.geo.providerName,
-            if (c.sitesEnabled) "on" else "off",
+            if (c.sitesEnabled) "on" else "off", if (c.assistantEnabled) "on" else "off",
         )
-        configWarnings(c, ctx.payments.name).forEach { warning -> log.warn(warning) }
+        configWarnings(c, ctx.payments.name, aiModel = ctx.ai.model != null).forEach { warning -> log.warn(warning) }
     }
 }
 
-/** Settings that are valid but leave a feature unusable. */
-fun configWarnings(c: AppConfig, paymentProvider: String): List<String> = listOfNotNull(
+/** Settings that are valid but leave a feature unusable. [aiModel]: a model is configured (a key or the scripted fake). */
+fun configWarnings(c: AppConfig, paymentProvider: String, aiModel: Boolean = true): List<String> = listOfNotNull(
     "STRIPE_SECRET_KEY is set but no STRIPE_WEBHOOK_SECRET / STRIPE_CONNECT_WEBHOOK_SECRET: payments will never be confirmed"
         .takeIf { paymentProvider == "stripe" && c.stripe.webhookSecret == null && c.stripe.connectWebhookSecret == null },
     "STRIPE_PRICE_PRO / STRIPE_PRICE_BUSINESS not set: plan checkout is unavailable"
         .takeIf { c.stripe.secretKey != null && (c.stripe.pricePro == null || c.stripe.priceBusiness == null) },
+    "STRIPE_CONNECT_CLIENT_ID is not a Connect client id (ca_...): owners can't connect an existing Stripe account"
+        .takeIf { c.stripe.connectClientId?.startsWith("ca_") == false },
+    "STRIPE_CONNECT_CLIENT_ID not set: owners can only create a new Stripe account, not connect one they have"
+        .takeIf { paymentProvider == "stripe" && c.stripe.connectClientId == null },
     "CLERK_WEBHOOK_SECRET not set: deleted Clerk users are not anonymised".takeIf { c.isProduction && c.clerk.webhookSecret == null },
     "EXPO_ACCESS_TOKEN is set but PUSH_NOTIFICATIONS is not expo: push notifications are not sent"
         .takeIf { c.push.expoAccessToken != null && c.push.mode != PushMode.EXPO },
+    "ASSISTANT_ENABLED is on but no AI model is configured (ANTHROPIC_API_KEY): Bo stays hidden".takeIf { c.assistantEnabled && !aiModel },
 )
 
 /** Samples the job queue for its gauges every [JobQueueGauges.INTERVAL_SECONDS] while the server runs. */
@@ -288,6 +296,7 @@ private fun Route.apiRoutes(ctx: AppContext) {
         mcpRoutes(ctx)
         oauthRoutes(ctx)
         stripeWebhookRoutes(ctx)
+        stripeConnectCallbackRoutes(ctx)
         clerkWebhookRoutes(ctx)
         meRoutes(ctx)
         inboxRoutes(ctx)
@@ -309,7 +318,9 @@ private fun Route.apiRoutes(ctx: AppContext) {
             if (ctx.config.sitesEnabled) siteRoutes(ctx)
             uploadRoutes(ctx)
             aiUsageRoutes(ctx)
-            assistantRoutes(ctx)
+            // Members' AI apps' proposals belong to the business MCP, not Bo: they stay when Bo is off.
+            agentRequestRoutes(ctx)
+            if (ctx.config.assistantEnabled) assistantRoutes(ctx)
             offerRoutes(ctx)
             releaseRoutes(ctx)
             marketplaceSettingsRoutes(ctx)

@@ -35,6 +35,7 @@ class AppMetrics(val registry: MeterRegistry) {
         BOOKING_STATUSES.forEach { counter("bookings.created", "outcome", it) }
         HoldOutcome.entries.forEach { counter("booking.holds", "outcome", it.label) }
         counter("payments.refunds.failed")
+        listOf("true", "false").forEach { counter("payments.refunds.given_up", "certain", it) }
         jobKinds.forEach { kind -> JobResult.entries.forEach { counter("jobs.runs", "kind", kind, "result", it.label) } }
     }
 
@@ -48,9 +49,17 @@ class AppMetrics(val registry: MeterRegistry) {
         counter("booking.holds", "outcome", outcome.label).increment(count.toDouble())
     }
 
-    /** The payment provider refused or failed a refund (the job retries it). */
+    /** A refund attempt failed at the payment provider (retried while it is unreachable, else handed to the business). */
     fun refundFailed() {
         counter("payments.refunds.failed").increment()
+    }
+
+    /**
+     * A refund was handed to the business for good: [certain] that it wasn't made (the provider declined it), or not
+     * (unreachable to the end; they check their Stripe dashboard first). Someone has to act either way.
+     */
+    fun refundGivenUp(certain: Boolean) {
+        counter("payments.refunds.given_up", "certain", certain.toString()).increment()
     }
 
     /** A job attempt ended: done, failed and to be retried, or failed for good (out of attempts). */
@@ -95,6 +104,7 @@ class AppMetrics(val registry: MeterRegistry) {
             "bookings.created" to "Bookings made, by the status they started in",
             "booking.holds" to "Holds for online payment, by how they ended",
             "payments.refunds.failed" to "Refund attempts the payment provider failed",
+            "payments.refunds.given_up" to "Refunds handed to the business to make or check by hand",
             "jobs.runs" to "Job attempts by kind and result",
         )
         private val METHODS = setOf("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")

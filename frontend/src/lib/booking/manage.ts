@@ -6,6 +6,18 @@ import { seeYouWhen } from "./copy";
 /** How the visitor reached the page: straight after booking, back from checkout, or neither. */
 export type ManageContext = "booked" | "paid" | "payment_cancelled" | null;
 
+/**
+ * How long a page back from Checkout keeps reading a held booking for the payment's confirmation before saying it is
+ * taking longer than usual (the confirmation still comes by email).
+ */
+export const CONFIRM_POLL_LIMIT_MS = 60_000;
+
+/** The Checkout Session the visitor came back from (`session_id`, which Stripe fills in), to confirm it straight away. */
+export function checkoutSessionFrom(params: URLSearchParams): string | null {
+  const id = params.get("session_id");
+  return id?.startsWith("cs_") ? id : null;
+}
+
 export function manageContextFrom(params: URLSearchParams): ManageContext {
   if (params.get("payment") === "succeeded") return "paid";
   if (params.get("payment") === "cancelled") return "payment_cancelled";
@@ -17,15 +29,20 @@ export type ManageHero =
   | { kind: "confirmed"; title: string; tone: "success" }
   | { kind: "pending_approval"; title: string; tone: "info" }
   | { kind: "confirming_payment"; title: string; tone: "info" }
+  | { kind: "still_confirming"; title: string; tone: "info" }
   | { kind: "awaiting_payment"; title: string; tone: "warning" }
   | { kind: "cancelled" | "expired" | "past"; title: string; tone: "neutral" }
   | { kind: "none" };
 
-/** The page's headline (title and tone) for this booking; `none` on a plain revisit of a confirmed booking. */
+/**
+ * The page's headline (title and tone) for this booking; `none` on a plain revisit of a confirmed booking.
+ * `confirmingTooLong`: back from Checkout, the payment hasn't been confirmed within [CONFIRM_POLL_LIMIT_MS].
+ */
 export function manageHero(
   booking: Pick<ManagedBooking, "status">,
   context: ManageContext,
   holdRemainingMs: number | null,
+  confirmingTooLong = false,
 ): ManageHero {
   switch (booking.status) {
     case "confirmed":
@@ -37,7 +54,7 @@ export function manageHero(
         tone: "info",
       };
     case "held":
-      return heldHero(context, holdRemainingMs);
+      return heldHero(context, holdRemainingMs, confirmingTooLong);
     case "cancelled":
       return { kind: "cancelled", title: "Cancelled", tone: "neutral" };
     case "expired":
@@ -54,7 +71,13 @@ function confirmedHero(context: ManageContext): ManageHero {
   return { kind: "none" };
 }
 
-function heldHero(context: ManageContext, holdRemainingMs: number | null): ManageHero {
+function heldHero(
+  context: ManageContext,
+  holdRemainingMs: number | null,
+  confirmingTooLong: boolean,
+): ManageHero {
+  if (context === "paid" && confirmingTooLong)
+    return { kind: "still_confirming", title: "Still confirming your payment", tone: "info" };
   if (context === "paid")
     return { kind: "confirming_payment", title: "Confirming your payment…", tone: "info" };
   if (holdRemainingMs === 0) return { kind: "expired", title: "Your hold has run out", tone: "neutral" };
@@ -90,6 +113,8 @@ export function manageHeroText(
       return `${b.business.name} reviews each request. We'll email ${email ?? "you"} as soon as it's confirmed, and your time is held until then.`;
     case "confirming_payment":
       return "This usually takes a few seconds. You can safely stay on this page.";
+    case "still_confirming":
+      return `This is taking longer than usual. There's no need to pay again: we'll email ${email ?? "you"} as soon as it's confirmed.`;
     case "cancelled":
       return b.amountRefundedCents > 0
         ? `${formatMoney(b.amountRefundedCents, b.currency)} is on its way back to your card. Refunds usually arrive within 5–10 working days.`

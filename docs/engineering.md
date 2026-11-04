@@ -22,13 +22,17 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Mobile (format, lint, design tokens, types, tests + coverage, shared-code boundary) | `npm run mobile:check` | `mobile/` (see `mobile/README.md`) |
 | Repository scripts (pull request checks, release tooling) | `npm run test:scripts` | `node --test`, `scripts/**/*.test.mjs` |
 | Commit messages | `npm run hooks:install` (once; checks each commit) | `scripts/conventional-commits.mjs`, §14 |
+| Simulation package (format, lint, types, tests + coverage) | `npm run simulation:check` | `simulation/` |
 | All of the above but e2e | `npm test` | |
+| Reliability simulation | `npm run simulation:run` (own stack; options in [`simulation.md`](simulation.md)) | scripted bots, invariant checker |
 
-CI (`.github/workflows/ci.yml`) runs five jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
+CI (`.github/workflows/ci.yml`) runs seven jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
 floor), **Frontend** (format, lint, typecheck, unit tests with coverage, the build as a Cloudflare Worker and its
 size: `npm run cf:check`, bundle-size budget), **Mobile**
 (format, lint, design-token lint, typecheck, app config per variant, tests with coverage incl. the shared-code
-boundary; `docs/mobile.md`) and **E2E**
+boundary; `docs/mobile.md`), **Simulation checks** (format, lint, typecheck, unit tests with coverage of
+`simulation/`), **Simulation** (the reliability simulation for 10 minutes against a development stack, failing on any
+invariant violation; [`simulation.md`](simulation.md)) and **E2E**
 (Postgres 16 service, seeded backend with dev auth and the scripted fake model, production frontend build with the
 `/dev` routes, the Playwright suite on desktop and mobile, then the web-vitals budgets on their own, whose report is
 uploaded as the `web-vitals-report` artifact and shown in the job summary). A newer push cancels the older run. Backend tests need Docker and **fail, never skip,**
@@ -351,8 +355,10 @@ exactly one winner; waits poll with a timeout. Frontend tests that depend on "no
 from its own distribution on :8095, production frontend build with the `/dev` routes on :3002), `test` runs Playwright
 against it, `frontend` rebuilds just the frontend, `down` stops it and drops the database. The stack's backend sets
 `RATE_LIMIT_MULTIPLIER` (development only, refused otherwise) so repeated runs through one address are not rate
-limited. Against your own servers: backend on :8080 (`npm run backend:dev`, `AI_FAKE_SCRIPT=demo` for Bo) and
-`npm run test:e2e`; `E2E_BASE_URL` points at an already running frontend.
+limited, and switches Bo on (`ASSISTANT_ENABLED`, off by default) for its specs; `test-assistant-off` restarts the
+backend with Bo off, runs `assistant-off.spec.ts` (`E2E_ASSISTANT=off`) and then switches Bo back on. CI's e2e job
+runs the same spec last, after restarting its backend with Bo off. Against your own servers: backend on :8080 (`npm run backend:dev`, `ASSISTANT_ENABLED=true AI_FAKE_SCRIPT=demo`
+for Bo) and `npm run test:e2e`; `E2E_BASE_URL` points at an already running frontend.
 
 New behaviour comes with a test at the lowest layer that can show it; a bug fix comes with the test that would have
 caught it.
@@ -395,10 +401,7 @@ suppressions are gone, `noUncheckedIndexedAccess` and `no-unnecessary-condition`
 Backend
 - A few files still group classes on purpose (Bo's tools by area) or by leftover (`PlanTransforms.kt`,
   `SiteRuleEditor.kt`, `ai/usage/AiOverage.kt`, `ai/usage/Credits.kt`).
-- An expired hold keeps `payment_status = pending` (a late payment may still revive it); clients hide the badge.
 - A refresh token can't narrow `bookings:write` to `bookings:read` (the scope check ignores write-implies-read).
-- Stripe refunds reported `failed` are recorded and not retried, while the email says the refund "is being processed";
-  a `pending` refund counts as done and a later failure is not handled.
 
 Decisions for the product owner (behaviour the tests pin as it is today):
 - A late cancellation after a partial refund refunds the late percentage of what was paid, capped at what is left

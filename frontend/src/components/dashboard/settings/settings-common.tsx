@@ -1,5 +1,6 @@
 "use client";
 
+import { useCurrentBusiness } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
 import { SETTINGS_NAV, settingsNavText } from "@/components/shells/dashboard-nav";
 import { Button } from "@/components/ui/button";
@@ -63,13 +64,21 @@ export const LOCALES = [
 ];
 
 /**
- * Sticky save bar for settings forms (must be inside <Form>). On phones it rides above the tab bar and Bo's launcher
- * (3.5rem, 0.75rem above the tab bar) and over them, so a tap on Save never lands on a tab link.
+ * Sticky save bar for settings forms (must be inside <Form>). On phones it rides above the tab bar, and Bo's launcher
+ * where Bo is offered (3.5rem, 0.75rem above the tab bar), and over them, so a tap on Save never lands on a tab link.
  */
 export function SaveBar({ dirty, onDiscard }: { dirty: boolean; onDiscard: () => void }) {
+  const { assistantAvailable } = useCurrentBusiness();
   if (!dirty) return null;
   return (
-    <div className="sticky bottom-4 z-10 flex animate-rise items-center justify-end gap-2 rounded-xl border border-border bg-surface-raised/95 p-3 shadow-lg backdrop-blur-sm max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+5rem)] max-sm:z-40">
+    <div
+      className={cn(
+        "sticky bottom-4 z-10 flex animate-rise items-center justify-end gap-2 rounded-xl border border-border bg-surface-raised/95 p-3 shadow-lg backdrop-blur-sm max-sm:z-40",
+        assistantAvailable
+          ? "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+5rem)]"
+          : "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+0.75rem)]",
+      )}
+    >
       <span className="mr-auto pl-1 text-sm text-muted-foreground">You have unsaved changes</span>
       <Button variant="ghost" disabled={!dirty} onClick={onDiscard}>
         Discard

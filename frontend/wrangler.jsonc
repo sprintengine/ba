@@ -5,7 +5,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "bookanything-web",
-  "main": ".open-next/worker.js",
+  // worker.ts: OpenNext's handler (.open-next/worker.js), through Sentry only when there is a DSN. Staging inherits it.
+  "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   // No global_fetch_strictly_public: the /api rewrite to the API hostname must stay a same-zone subrequest, which keeps
   // the visitor's address in CF-Connecting-IP for the API's rate limits (backend/README.md "Behind a proxy").

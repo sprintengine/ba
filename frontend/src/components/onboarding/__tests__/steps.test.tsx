@@ -340,6 +340,30 @@ describe("Success step", () => {
     );
   });
 
+  it("lets the payments page ask which Stripe account to use when an existing one can be connected", async () => {
+    const user = userEvent.setup();
+    const assign = vi.fn();
+    vi.stubGlobal("location", { ...window.location, origin: window.location.origin, assign });
+    api.payments = {
+      isPending: false,
+      data: {
+        provider: "stripe",
+        connected: false,
+        chargesEnabled: false,
+        detailsSubmitted: false,
+        canConnectExisting: true,
+      },
+    };
+    const { onLeave } = renderSuccess();
+    expect(screen.getByText(/Connect the Stripe account you already have/)).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /set up payments/i });
+    expect(link).toHaveAttribute("href", "/dashboard/gleam-car-wash/settings/payments");
+    await user.click(link);
+    expect(api.connect).not.toHaveBeenCalled();
+    expect(onLeave).toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
   it("explains when payments aren't configured on the server", async () => {
     const user = userEvent.setup();
     api.connect.mockRejectedValue(new ApiError(503, "PAYMENTS_NOT_CONFIGURED", "Not configured"));

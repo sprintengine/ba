@@ -126,15 +126,18 @@ function BoLauncher({ hidden }: { hidden: boolean }) {
   );
 }
 
-/** The dashboard frame: sidebar, the rounded main card, Bo's launcher, and whatever floats above (sheets, toasts). */
+/** The dashboard frame: sidebar, the rounded main card, Bo's launcher (`bo`) and what floats above (sheets, toasts). */
 export function DemoShell({
   route,
+  bo,
   boOpen,
   scroll = 0,
   children,
   overlays,
 }: {
   route: Route;
+  /** Draw Bo's launcher (only where the public pages present Bo). */
+  bo: boolean;
   boOpen: boolean;
   scroll?: number;
   children: React.ReactNode;
@@ -153,7 +156,7 @@ export function DemoShell({
           </div>
         </main>
       </div>
-      <BoLauncher hidden={boOpen} />
+      {bo && <BoLauncher hidden={boOpen} />}
       {overlays}
     </div>
   );

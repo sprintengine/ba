@@ -28,7 +28,7 @@ The website is a good responsive site, but wrapping it would ship its weaknesses
 - **The iPad.** A sidebar and real split views (list beside detail) that follow the window as it's resized in Split
   View and Stage Manager; the website's breakpoints were designed for browsers.
 - **Platform features the business side needs**: push notifications, the Keychain for sessions, voice dictation for
-  Bo, the share sheet, calendar and maps, universal links, biometric unlock later. Each is a bridge you build anyway
+  Bo (where offered), the share sheet, calendar and maps, universal links, biometric unlock later. Each is a bridge you build anyway
   in a WebView, without native UI around it.
 - **Accessibility**: VoiceOver/TalkBack semantics, Dynamic Type and Reduce Motion from native controls.
 
@@ -46,7 +46,11 @@ or an authentication session:
   (App Store 3.1.1). It goes through the website's `/sign-in?redirect_url=…` (straight on when the browser is signed
   in), which the app doesn't claim as a universal link, so the link isn't handed back to the app.
 - **Stripe**: Checkout for paying a booking and Connect onboarding (Settings › Payments) are Stripe-hosted pages;
-  the app opens them with `WebBrowser.openAuthSessionAsync` and a return URL back into the app.
+  the app opens them with `WebBrowser.openAuthSessionAsync` and a return URL back into the app. Settings › Payments
+  offers both ways to connect. An existing Stripe account goes through Stripe's OAuth page in an authentication session
+  that returns to the website's payments page (an associated domain): the app takes the code and state from that
+  address and finishes connecting signed in (`/payments/connect/existing/complete`), then says how it went. A new
+  account's onboarding opens in the in-app browser. The status is read again when either closes.
 - **The bookanything plan** (Settings › Billing) is read-only in the app: it shows the plan, its status and dates,
   what it includes and AI usage, but offers no way to subscribe, change plan or open Stripe's billing portal, no
   other plans' prices and no pointer to buying on the website. A plan is a digital subscription, which the App Store
@@ -276,6 +280,11 @@ build numbers, `appVersionSource: remote`). Node 22 on EAS and CI; the app also 
 
 ### 8.1 Bo and voice (`src/features/assistant`)
 
+- **Off unless the deployment offers Bo** (`ASSISTANT_ENABLED` on the backend, architecture §17): the app follows the
+  business's `assistantAvailable`. Without it there is no header button, side panel or "Bo noticed" card on Today, the
+  billing screen only lists AI credits for what uses them, and `/assistant?business=<slug>` goes to the business instead.
+  Owners who want AI connect their own assistant to the business MCP (Connect AI, §8.3). The rest of this section
+  describes Bo switched on.
 - The website's Bo (architecture §17) on top of the same shared state machine and hooks (`@shared/assistant/*`,
   `use-assistant`): home (nudges, quick actions, recent conversations), the chat, memory, credits and the "AI isn't
   configured" state. A modal on phones (`/assistant?business=<slug>`, optional `&ask=`), a side panel beside the

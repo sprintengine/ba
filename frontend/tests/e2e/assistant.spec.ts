@@ -1,15 +1,23 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { authHeader, OWNER, requireLiveBackend, signInAs, STAFF } from "./dashboard-helpers";
+import {
+  authHeader,
+  OWNER,
+  requireAssistant,
+  requireLiveBackend,
+  signInAs,
+  STAFF,
+} from "./dashboard-helpers";
 import { createSiteBusiness, type Identity } from "./site-helpers";
 
 /**
- * Bo against a live stack. The conversation specs need the backend's scripted fake model (`AI_FAKE_SCRIPT=demo`,
- * development only) and skip otherwise; the rest work with any backend. Each spec uses a throwaway business except
- * the staff one (the demo seed's staff member).
+ * Bo against a live stack with Bo switched on (`ASSISTANT_ENABLED=true`; off is `assistant-off.spec.ts`). The
+ * conversation specs need the backend's scripted fake model (`AI_FAKE_SCRIPT=demo`, development only) and skip
+ * otherwise. Each spec uses a throwaway business except the staff one (the demo seed's staff member).
  */
 test.beforeEach(async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   await requireLiveBackend(page, testInfo);
+  await requireAssistant(page, testInfo);
 });
 
 async function usesFakeModel(request: APIRequestContext, businessId: string, owner: Identity) {

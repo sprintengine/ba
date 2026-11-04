@@ -73,8 +73,8 @@ and in the env files on each VM. The GitHub side (every secret and variable the 
    each (`uploads.bookanything.ie`, `uploads-staging.bookanything.ie`), and create an R2 API token per bucket with
    **Object Read & Write** on that bucket only. These are the backend's `STORAGE_S3_*` settings (endpoint
    `https://<account id>.r2.cloudflarestorage.com`, region `auto`).
-5. **Workers** (the website): subscribe to the Workers paid plan (the site's Worker is about 4.5 MiB gzipped; the free
-   plan stops at 3 MiB; CI's `npm run cf:check` watches the 10 MiB limit). Create the R2 buckets
+5. **Workers** (the website): subscribe to the Workers paid plan (the site's Worker is above the free plan's 3 MiB,
+   more so built with a Sentry DSN; CI's `npm run cf:check` prints its size and watches the 10 MiB limit). Create the R2 buckets
    `bookanything-web-cache` and `bookanything-web-cache-staging` (OpenNext's cache of prerendered pages). Create an API
    token for GitHub Actions from the "Edit Cloudflare Workers" template plus **Workers R2 Storage: Edit**, limited to
    this account and zone. The first deploy attaches the custom domains named in `frontend/wrangler.jsonc`.

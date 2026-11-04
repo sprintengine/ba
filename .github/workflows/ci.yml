@@ -178,6 +178,122 @@ jobs:
           path: mobile/coverage/
           if-no-files-found: ignore
 
+  simulation-checks:
+    name: Simulation checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: simulation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: simulation/package-lock.json
+
+      # Only simulation/ is installed: the website's API client it runs (frontend/src/lib) resolves its packages from
+      # simulation/node_modules (tsconfig.json paths), as the mobile app's shared code does.
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit tests with coverage thresholds
+        run: npm run test:coverage
+
+  simulation:
+    name: Simulation (10 minutes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bookanything_sim
+          POSTGRES_USER: bookanything
+          POSTGRES_PASSWORD: bookanything
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookanything -d bookanything_sim"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      # The same development backend as the E2E job: dev auth, the dev payment provider, no external services.
+      APP_ENV: development
+      AUTH_MODE: dev
+      AI_FAKE_SCRIPT: demo
+      # A few hundred bookings come from one address in ten minutes; development only.
+      RATE_LIMIT_MULTIPLIER: "50"
+      DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_sim
+      DATABASE_USERNAME: bookanything
+      DATABASE_PASSWORD: bookanything
+      APP_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: simulation/package-lock.json
+
+      - name: Build backend
+        run: ./gradlew :backend:installDist
+
+      - name: Migrate
+        run: backend/build/install/backend/bin/backend migrate
+
+      - name: Start backend
+        run: |
+          nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend.log; exit 1
+
+      - name: Install simulation dependencies
+        working-directory: simulation
+        run: npm ci
+
+      # Fails on any invariant violation (docs/simulation.md); the report also goes to the job summary. The seed is the
+      # run's: a failure is replayed with `scripts/simulation.sh replay --from-log` on the uploaded log.
+      - name: Run the simulation
+        working-directory: simulation
+        env:
+          SIM_BASE_URL: http://localhost:8080
+          SIM_APP_URL: http://localhost:3000
+          SIM_DATABASE_URL: postgres://bookanything:bookanything@localhost:5432/bookanything_sim
+          SIM_SEED: ci-${{ github.run_id }}-${{ github.run_attempt }}
+          SIM_DURATION: 10m
+          SIM_RATE: "90"
+        run: npm run sim
+
+      - name: Upload the action log, report and backend log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation
+          path: |
+            simulation/out/
+            backend.log
+          if-no-files-found: ignore
+
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
@@ -201,6 +317,9 @@ jobs:
       APP_ENV: development
       AUTH_MODE: dev
       AI_FAKE_SCRIPT: demo
+      # Bo is off by default; the suite runs with it on, then assistant-off.spec.ts against the backend restarted
+      # without it (the last steps). The frontend is built with the default (NEXT_PUBLIC_ASSISTANT_ENABLED unset).
+      ASSISTANT_ENABLED: "true"
       # One suite run books ~20 times through one address (the public limit is 20 per 10 minutes); development only.
       RATE_LIMIT_MULTIPLIER: "50"
       DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_ci
@@ -238,6 +357,7 @@ jobs:
       - name: Start backend
         run: |
           nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          echo $! > backend.pid
           for i in $(seq 1 60); do
             curl -fsS http://localhost:8080/v1/health && exit 0
             sleep 2
@@ -297,6 +417,27 @@ jobs:
           PERF_REPORT: perf-report/web-vitals
         run: npx playwright test --project=performance --workers=1
 
+      # Bo switched off, as in production: the same build against the backend restarted without ASSISTANT_ENABLED.
+      - name: Restart backend with Bo off
+        run: |
+          pid="$(cat backend.pid)"
+          kill "$pid"
+          for i in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+          if kill -0 "$pid" 2>/dev/null; then kill -9 "$pid"; sleep 1; fi
+          ASSISTANT_ENABLED=false nohup backend/build/install/backend/bin/backend > backend-assistant-off.log 2>&1 &
+          echo $! > backend.pid
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend-assistant-off.log; exit 1
+
+      - name: Run Playwright with Bo off
+        working-directory: frontend
+        env:
+          E2E_ASSISTANT: "off"
+        run: npx playwright test assistant-off.spec.ts --project=chromium --project=mobile
+
       - name: Upload web-vitals report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -314,5 +455,6 @@ jobs:
             frontend/playwright-report/
             frontend/test-results/
             backend.log
+            backend-assistant-off.log
             frontend.log
           if-no-files-found: ignore

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    // DOM for the website's API client (fetch, AbortSignal, FormData), which this package runs unchanged on Node.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    // `@shared/*` is the website's platform-agnostic code (frontend/src/lib), as in the mobile app; `@/*` serves its own
+    // imports. tsx resolves both at run time from these paths. A package a shared module imports resolves from this
+    // package's node_modules (zod, for the types the API client re-exports), as in the mobile app: CI installs no
+    // frontend packages for this job.
+    "paths": {
+      "@shared/*": ["../frontend/src/lib/*"],
+      "@/*": ["../frontend/src/*"],
+      "zod": ["./node_modules/zod"],
+      "zod/*": ["./node_modules/zod/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.ts"],
+  "exclude": ["node_modules", "coverage", "out"]
+}

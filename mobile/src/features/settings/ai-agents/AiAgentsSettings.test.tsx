@@ -109,4 +109,16 @@ describe("Settings › AI agents", () => {
     expect(await screen.findByTestId("ai-agents-unavailable")).toBeOnTheScreen();
     expect(screen.queryByTestId("ai-access")).toBeNull();
   });
+
+  it("mentions the assistant in the dashboard only where the deployment offers Bo", async () => {
+    api();
+    const on = render({ business: { assistantAvailable: true } });
+    expect(
+      await screen.findByText("Every agent is stopped. The assistant in the dashboard isn't affected."),
+    ).toBeOnTheScreen();
+    on.unmount();
+    render({ business: { assistantAvailable: false } });
+    expect(await screen.findByText("Every agent is stopped.")).toBeOnTheScreen();
+    expect(screen.queryByText(/The assistant in the dashboard/)).toBeNull();
+  });
 });

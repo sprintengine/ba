@@ -19,14 +19,14 @@ object PaymentRepository {
     /** The provider of payments taken in person by staff: already settled, never sent back online. */
     const val IN_PERSON = "in_person"
 
-    private const val COLS = "id, business_id, booking_id, provider, kind::text AS kind, provider_ref, checkout_url, return_url, " +
-        "amount_cents, currency, status::text AS status, created_at"
+    internal const val COLS = "id, business_id, booking_id, provider, kind::text AS kind, provider_ref, checkout_url, return_url, " +
+        "amount_cents, currency, status::text AS status, created_at, provider_account"
 
-    private fun map(rs: ResultSet) = PaymentRow(
+    internal fun map(rs: ResultSet) = PaymentRow(
         id = rs.uuid("id"), businessId = rs.uuid("business_id"), bookingId = rs.uuid("booking_id"), provider = rs.str("provider"),
         kind = rs.str("kind"), providerRef = rs.strOrNull("provider_ref"), checkoutUrl = rs.strOrNull("checkout_url"),
         returnUrl = rs.strOrNull("return_url"), amountCents = rs.int("amount_cents"), currency = rs.str("currency").trim(),
-        status = rs.str("status"), createdAt = rs.instant("created_at"),
+        status = rs.str("status"), createdAt = rs.instant("created_at"), providerAccount = rs.strOrNull("provider_account"),
     )
 
     fun forBooking(conn: Connection, businessId: UUID, bookingId: UUID): List<PaymentRow> = conn.query(
@@ -70,12 +70,13 @@ object PaymentRepository {
     /** Records a pending charge; its checkout is attached with [setCheckout]. */
     fun insertCharge(
         conn: Connection, businessId: UUID, bookingId: UUID, provider: String, amountCents: Int, currency: String, returnUrl: String?,
+        providerAccount: String? = null,
     ): UUID = conn.queryOne(
         """
-        INSERT INTO payments (business_id, booking_id, provider, kind, amount_cents, currency, status, return_url)
-        VALUES (?, ?, ?, 'charge', ?, ?, 'pending', ?) RETURNING id
+        INSERT INTO payments (business_id, booking_id, provider, kind, amount_cents, currency, status, return_url, provider_account)
+        VALUES (?, ?, ?, 'charge', ?, ?, 'pending', ?, ?) RETURNING id
         """.trimIndent(),
-        businessId, bookingId, provider, amountCents, currency, returnUrl,
+        businessId, bookingId, provider, amountCents, currency, returnUrl, providerAccount,
     ) { it.uuid("id") }!!
 
     fun setCheckout(conn: Connection, paymentId: UUID, providerRef: String, checkoutUrl: String) {
@@ -112,10 +113,10 @@ object PaymentRepository {
     /** Records a pending refund of [charge]; the provider's answer is stored with [setRefundOutcome]. */
     fun insertRefund(conn: Connection, charge: PaymentRow, amountCents: Int): UUID = conn.queryOne(
         """
-        INSERT INTO payments (business_id, booking_id, provider, kind, amount_cents, currency, status)
-        VALUES (?, ?, ?, 'refund', ?, ?, 'pending') RETURNING id
+        INSERT INTO payments (business_id, booking_id, provider, kind, amount_cents, currency, status, provider_account)
+        VALUES (?, ?, ?, 'refund', ?, ?, 'pending', ?) RETURNING id
         """.trimIndent(),
-        charge.businessId, charge.bookingId, charge.provider, amountCents, charge.currency,
+        charge.businessId, charge.bookingId, charge.provider, amountCents, charge.currency, charge.providerAccount,
     ) { it.uuid("id") }!!
 
     fun setRefundOutcome(conn: Connection, refundId: UUID, result: RefundResult) {
@@ -129,10 +130,11 @@ object PaymentRepository {
     fun insertExternalRefund(conn: Connection, charge: PaymentRow, amountCents: Int) {
         conn.update(
             """
-            INSERT INTO payments (business_id, booking_id, provider, kind, provider_ref, amount_cents, currency, status)
-            VALUES (?, ?, ?, 'refund', ?, ?, ?, 'succeeded')
+            INSERT INTO payments (business_id, booking_id, provider, kind, provider_ref, amount_cents, currency, status, provider_account)
+            VALUES (?, ?, ?, 'refund', ?, ?, ?, 'succeeded', ?)
             """.trimIndent(),
             charge.businessId, charge.bookingId, charge.provider, charge.providerRef?.let { "external:$it" }, amountCents, charge.currency,
+            charge.providerAccount,
         )
     }
 
@@ -151,6 +153,8 @@ object PaymentRepository {
             """
             UPDATE bookings b SET amount_refunded_cents = r.total,
                 payment_status = CASE
+                    -- Nothing refunded (any more: a refund that failed is taken off): paid, as before the refund.
+                    WHEN r.total = 0 AND b.payment_status IN ('refunded', 'partially_refunded') THEN 'paid'::payment_status
                     WHEN r.total = 0 THEN b.payment_status
                     WHEN r.total >= b.amount_paid_cents THEN 'refunded'::payment_status
                     ELSE 'partially_refunded'::payment_status END,

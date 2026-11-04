@@ -15,7 +15,7 @@ import java.time.Clock
 class BookingModule(db: Db, clock: Clock, tokens: TokenService, provider: PaymentProvider, urls: AppUrls, inbox: Inbox) {
     val payments = PaymentService(provider)
     val engine = BookingEngine(db, clock, tokens, payments, urls, inbox)
-    val refunds = RefundSettlement(db, payments)
+    val refunds = RefundSettlement(db, payments, inbox)
     val lifecycle = BookingLifecycle(engine, refunds, inbox)
     val availability = BookingAvailability(engine)
     val staff = StaffBookingCommands(engine, lifecycle, availability)

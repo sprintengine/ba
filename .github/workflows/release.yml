@@ -252,8 +252,15 @@ jobs:
       BACKEND_ORIGIN: ${{ vars[format('{0}_API_URL', matrix.prefix)] }}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[format('{0}_CLERK_PUBLISHABLE_KEY', matrix.prefix)] }}
       NEXT_PUBLIC_BUSINESS_MCP_ENABLED: ${{ vars[format('{0}_BUSINESS_MCP_ENABLED', matrix.prefix)] }}
+      NEXT_PUBLIC_ASSISTANT_ENABLED: ${{ vars[format('{0}_ASSISTANT_ENABLED', matrix.prefix)] }}
       WEBMCP_ORIGIN_TRIAL_TOKEN: ${{ vars[format('{0}_WEBMCP_ORIGIN_TRIAL_TOKEN', matrix.prefix)] }}
       WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN: ${{ vars[format('{0}_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN', matrix.prefix)] }}
+      # Error tracking (frontend/README.md "Error tracking (Sentry)"): off while the environment's DSN is unset. The
+      # release is the train's version, as the backend image's APP_VERSION.
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars[format('{0}_WEB_SENTRY_DSN', matrix.prefix)] }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: ${{ matrix.environment }}
+      NEXT_PUBLIC_SENTRY_RELEASE: ${{ needs.resolve.outputs.version }}
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: ${{ vars[format('{0}_WEB_SENTRY_TRACES_SAMPLE_RATE', matrix.prefix)] }}
     steps:
       - id: configured
         name: Is this environment's website set up?
@@ -281,12 +288,31 @@ jobs:
       - if: steps.configured.outputs.ok == 'true'
         working-directory: frontend
         run: npm ci
+      # With a DSN, the build's Sentry settings also go into .env.production.local, which OpenNext compiles into the
+      # Worker (frontend/worker.ts), so server errors report to the same environment and release as the browser's. The
+      # source-map credentials are this step's only (not npm ci's): maps upload only when all three are set.
       - name: next build + OpenNext
         if: steps.configured.outputs.ok == 'true'
         working-directory: frontend
         env:
           WRANGLER_ENV: ${{ matrix.wrangler_env }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_WEB_PROJECT }}
         run: |
+          # Single-quoted, so nothing in a value is expanded or read as a comment; a quote or a newline can't be.
+          sentry=(NEXT_PUBLIC_SENTRY_DSN NEXT_PUBLIC_SENTRY_ENVIRONMENT NEXT_PUBLIC_SENTRY_RELEASE NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE)
+          if [[ -n "$NEXT_PUBLIC_SENTRY_DSN" ]]; then
+            for name in "${sentry[@]}"; do
+              if [[ "${!name}" == *"'"* || "${!name}" == *$'\n'* ]]; then
+                echo "::error::$name holds a quote or a newline"
+                exit 1
+              fi
+            done
+            for name in "${sentry[@]}"; do
+              [[ -z "${!name}" ]] || printf "%s='%s'\n" "$name" "${!name}"
+            done > .env.production.local
+          fi
           npx opennextjs-cloudflare build --env "$WRANGLER_ENV"
           tar -czf "../site-${{ matrix.environment }}.tar.gz" -C .open-next .
       - uses: actions/upload-artifact@v4

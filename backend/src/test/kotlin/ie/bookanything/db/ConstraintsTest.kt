@@ -64,8 +64,11 @@ class ConstraintsTest {
         val env = TestEnv()
         withApp(env) { api ->
             val clinic = Fixtures.clinic(api)
-            val owner = env.access(clinic.owner, clinic.id)
             val businessId = UUID.fromString(clinic.id)
+            // A paid plan: a Free business's invitations also wait on its seat lock (PlanLimitRaceTest), so they never
+            // reach the index at once.
+            Fixtures.sql("UPDATE businesses SET plan = 'pro' WHERE id = ?", businessId)
+            val owner = env.access(clinic.owner, clinic.id)
             val email = "${unique("twice")}@example.test"
             val commands = TeamCommands(env.ctx.tokens)
             val invite = InvitationInput(email, "staff")

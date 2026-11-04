@@ -98,6 +98,10 @@ export const paymentsStatus = {
   connected: true,
   chargesEnabled: true,
   detailsSubmitted: true,
+  connectMethod: "created",
+  canConnectExisting: false,
+  accountId: "acct_123",
+  accountName: "Lumen Physio",
 } satisfies PaymentsStatus;
 
 export const billing = {

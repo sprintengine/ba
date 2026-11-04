@@ -53,7 +53,7 @@ fun sseFrame(event: TurnEvent): String {
  * them to approve or decline while signed in. Only the member who connected the app sees and decides them; an app's
  * access token is not accepted here (it is only valid at the MCP), so an app can't approve its own proposal.
  */
-private fun Route.agentRequestRoutes(ctx: AppContext) {
+fun Route.agentRequestRoutes(ctx: AppContext) {
     val actions = ctx.assistant.actions
 
     get("/agent-requests") {
@@ -95,7 +95,10 @@ private fun Route.agentRequestRoutes(ctx: AppContext) {
     }
 }
 
-/** `/v1/businesses/{businessId}/assistant…`: Bo, for every member (nudges and memory edits for owners and admins). */
+/**
+ * `/v1/businesses/{businessId}/assistant…`: Bo, for every member (nudges and memory edits for owners and admins). Only
+ * mounted while Bo is switched on (`ASSISTANT_ENABLED`); otherwise these answer 404.
+ */
 fun Route.assistantRoutes(ctx: AppContext) {
     val bo = ctx.assistant.service
 
@@ -167,8 +170,6 @@ fun Route.assistantRoutes(ctx: AppContext) {
         val id = call.pathUuid("actionId")
         call.respond(ctx.db.tx(access.businessId) { conn -> ctx.assistant.actions.reject(conn, access, id) })
     }
-
-    agentRequestRoutes(ctx)
 
     post("/assistant/nudges/{nudgeId}/dismiss") {
         val access = call.businessAccess(ctx, Role.ADMIN)

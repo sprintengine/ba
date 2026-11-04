@@ -38,6 +38,11 @@ export function useBusinessContext(): BusinessContextValue {
   return ctx;
 }
 
+/** The business context where there is one (a header shared by business and other screens), else null. */
+export function useOptionalBusinessContext(): BusinessContextValue | null {
+  return useContext(BusinessContext);
+}
+
 /** Shorthand for `useBusinessContext().business`. */
 export function useCurrentBusiness(): Business {
   return useBusinessContext().business;

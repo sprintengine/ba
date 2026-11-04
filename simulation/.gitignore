@@ -1,0 +1,4 @@
+node_modules
+coverage
+# Run output: the JSONL action log and the report (CI uploads them as artifacts).
+out

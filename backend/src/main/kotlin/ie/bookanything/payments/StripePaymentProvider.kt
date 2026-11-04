@@ -14,6 +14,7 @@ import ie.bookanything.http.Errors
 import org.slf4j.LoggerFactory
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
 /**
@@ -39,11 +40,13 @@ class StripePaymentProvider(
 
     override fun chargesEnabled(business: BusinessRow) = business.stripeAccountId != null && business.stripeChargesEnabled
 
+    override fun accountFor(business: BusinessRow) = business.stripeAccountId
+
     override fun connectStatus(business: BusinessRow): ConnectStatus {
         val accountId = business.stripeAccountId ?: return ConnectStatus(false, false, false)
         return try {
             val a = gateway.retrieveAccount(accountId)
-            ConnectStatus(true, a.chargesEnabled, a.detailsSubmitted)
+            ConnectStatus(true, a.chargesEnabled, a.detailsSubmitted, a.displayName)
         } catch (_: ApiException) {
             // Stripe unreachable (the gateway turns StripeException into a provider error): report what the last
             // account.updated webhook told us.
@@ -52,11 +55,15 @@ class StripePaymentProvider(
     }
 
     override fun createConnectLink(business: BusinessRow, returnUrl: String): ConnectLink {
+        // Account Links only onboard accounts we created; an account the owner brought is managed in their own dashboard.
+        if (business.stripeConnectMethod == "oauth") {
+            throw Errors.conflict("This business uses a Stripe account you connected. Manage its details in your Stripe dashboard.")
+        }
         var created: String? = null
         val accountId = business.stripeAccountId ?: gateway.createAccount(
             accountParams(business),
-            // Two concurrent first clicks must not create two accounts.
-            RequestOptions.builder().setIdempotencyKey("bookanything-account-${business.id}").build(),
+            // Two concurrent first clicks must not create two accounts; after a disconnect, the next one is a new account.
+            RequestOptions.builder().setIdempotencyKey(accountIdempotencyKey(business)).build(),
         ).also { created = it }
         val url = gateway.createAccountLink(
             AccountLinkCreateParams.builder()
@@ -67,6 +74,38 @@ class StripePaymentProvider(
                 .build(),
         )
         return ConnectLink(url, created)
+    }
+
+    override val canConnectExisting get() = config.connectClientId?.startsWith("ca_") == true
+
+    /**
+     * Stripe's Connect OAuth page (docs.stripe.com/connect/oauth-reference): the owner signs in and picks the account to
+     * connect (or creates one there). `read_write` is the only scope a platform can ask for; the prefilled fields only
+     * apply to an account created on that page.
+     */
+    override fun existingAccountUrl(business: BusinessRow, state: String, redirectUri: String): String {
+        val clientId = config.connectClientId ?: return super.existingAccountUrl(business, state, redirectUri)
+        val params = listOf(
+            "response_type" to "code", "client_id" to clientId, "scope" to "read_write", "state" to state, "redirect_uri" to redirectUri,
+            "stripe_user[country]" to business.country, "stripe_user[business_name]" to business.name,
+            "stripe_user[email]" to business.contactEmail, "stripe_user[url]" to business.websiteUrl,
+        )
+        return OAUTH_AUTHORIZE_URL + "?" + params.filter { it.second != null }.joinToString("&") { (k, v) -> "${enc(k)}=${enc(v!!)}" }
+    }
+
+    override fun exchangeExistingAccountCode(code: String): String = gateway.exchangeOAuthCode(code).accountId
+
+    override fun existingAccount(accountId: String): LinkedAccount {
+        val a = gateway.retrieveAccount(accountId)
+        return LinkedAccount(accountId, a.chargesEnabled, a.detailsSubmitted, a.defaultCurrency, a.country)
+    }
+
+    override fun disconnectExisting(accountId: String): Boolean {
+        val clientId = config.connectClientId ?: run {
+            log.warn("cannot deauthorize {}: STRIPE_CONNECT_CLIENT_ID is not set; forgetting it only", accountId)
+            return false
+        }
+        return gateway.deauthorizeAccount(clientId, accountId)
     }
 
     fun accountParams(business: BusinessRow): AccountCreateParams = AccountCreateParams.builder()
@@ -131,7 +170,8 @@ class StripePaymentProvider(
             .apply { request.customerEmail?.let { setCustomerEmail(it) } }
             .setClientReferenceId(request.paymentId.toString())
             .setExpiresAt(expiresAt.epochSecond)
-            .setSuccessUrl(request.successUrl)
+            // Stripe fills in the session's id: on their return, the customer's page has it confirmed straight away.
+            .setSuccessUrl(withQuery(request.successUrl, "session_id={CHECKOUT_SESSION_ID}"))
             .setCancelUrl(request.cancelUrl)
             .putAllMetadata(metadata)
             // Direct charge on the connected account: no application_fee_amount, no transfer_data.
@@ -151,34 +191,51 @@ class StripePaymentProvider(
 
     override fun createCheckout(request: CheckoutRequest): CheckoutSession {
         if (!chargesEnabled(request.business)) throw Errors.paymentsNotConfigured()
+        val params = checkoutParams(request)
         val session = gateway.createCheckoutSession(
-            checkoutParams(request), connectedAccountOptions(request.business, "bookanything-checkout-${request.paymentId}"),
+            params, connectedAccountOptions(request.business, "bookanything-checkout-${request.paymentId}"),
         )
         val url = session.url ?: throw Errors.providerError()
-        return CheckoutSession(session.id, url)
+        // Stripe's own answer (the same as asked, unless a replay found an older session).
+        return CheckoutSession(session.id, url, Instant.ofEpochSecond(session.expiresAt ?: params.expiresAt))
     }
 
     /**
      * Expires the Checkout Session on the connected account while it is still open. A session the customer completed
      * meanwhile is left alone: its payment confirms or refunds the booking as any late payment does.
      */
-    override fun expireCheckout(business: BusinessRow, providerRef: String) {
+    override fun expireCheckout(business: BusinessRow, providerRef: String, account: String?): Boolean {
         // Once paid, a charge is known by its PaymentIntent: there is no session to close.
-        if (!providerRef.startsWith("cs_")) return
-        val account = RequestOptions.builder().setStripeAccount(business.stripeAccountId ?: return).build()
-        if (gateway.retrieveCheckoutSession(providerRef, account).status != "open") return
-        gateway.expireCheckoutSession(providerRef, account)
+        if (!providerRef.startsWith("cs_")) return true
+        val options = RequestOptions.builder().setStripeAccount(account ?: business.stripeAccountId ?: return false).build()
+        when (gateway.retrieveCheckoutSession(providerRef, options).status) {
+            "open" -> gateway.expireCheckoutSession(providerRef, options)
+            "complete" -> return true
+        }
+        return false
+    }
+
+    override fun paidCheckout(business: BusinessRow, providerRef: String, account: String?): CompletedCheckout? {
+        if (!providerRef.startsWith("cs_")) return null
+        val options = RequestOptions.builder().setStripeAccount(account ?: business.stripeAccountId ?: return null).build()
+        val s = gateway.retrieveCheckoutSession(providerRef, options)
+        if (s.status != "complete" || s.paymentStatus != "paid") return null
+        return CompletedCheckout(s.id, s.paymentIntentId, s.amountTotal, s.currency)
     }
 
     override fun refund(request: RefundRequest): RefundResult {
-        val ref = request.chargeProviderRef ?: error("Charge has no Stripe reference")
-        val options = connectedAccountOptions(request.business, "bookanything-refund-${request.refundPaymentId}")
+        // Nothing that could change by retrying: refused for good, like Stripe's own refusals.
+        val ref = request.chargeProviderRef ?: throw StripeRefusedException("charge_reference_missing")
+        // On the account the charge was taken on, even if the business has connected another since.
+        val account = request.account ?: request.business.stripeAccountId ?: throw StripeRefusedException("account_missing")
+        val options = RequestOptions.builder()
+            .setStripeAccount(account)
+            .setIdempotencyKey("bookanything-refund-${request.refundPaymentId}")
+            .build()
         // Charges store the Checkout Session id until the payment completes, then the PaymentIntent id.
         val paymentIntent = if (ref.startsWith("cs_")) {
-            gateway.retrieveCheckoutSession(
-                ref, RequestOptions.builder().setStripeAccount(request.business.stripeAccountId).build(),
-            ).paymentIntentId
-                ?: error("Checkout Session $ref has no PaymentIntent")
+            gateway.retrieveCheckoutSession(ref, RequestOptions.builder().setStripeAccount(account).build()).paymentIntentId
+                ?: throw StripeRefusedException("payment_intent_missing")
         } else {
             ref
         }
@@ -191,10 +248,26 @@ class StripePaymentProvider(
                 .build(),
             options,
         )
-        // "pending" refunds are accepted by Stripe and count towards charge.amount_refunded.
-        val ok = refund.status == "succeeded" || refund.status == "pending"
-        if (!ok) log.warn("stripe refund {} for payment {} has status {}", refund.id, request.refundPaymentId, refund.status)
-        return RefundResult(refund.id, ok)
+        val outcome = refundOutcome(refund.status)
+        if (outcome == RefundOutcome.FAILED) {
+            log.warn(
+                "stripe refund {} for payment {} has status {} ({})",
+                refund.id, request.refundPaymentId, refund.status, refund.failureReason,
+            )
+        }
+        return RefundResult(refund.id, outcome, refund.failureReason)
+    }
+
+    override fun refundUnmatched(business: BusinessRow, account: String, paymentRef: String): RefundResult {
+        val refund = gateway.createRefund(
+            RefundCreateParams.builder()
+                .setPaymentIntent(paymentRef)
+                .putMetadata("businessId", business.id.toString())
+                .putMetadata("reason", UnmatchedPayments.REASON)
+                .build(),
+            RequestOptions.builder().setStripeAccount(account).setIdempotencyKey("bookanything-unmatched-$paymentRef").build(),
+        )
+        return RefundResult(refund.id, refundOutcome(refund.status), refund.failureReason)
     }
 
     fun priceFor(plan: Plan): String? = when (plan) {
@@ -251,6 +324,24 @@ class StripePaymentProvider(
 
     companion object {
         const val MIN_HOLD_MINUTES = 31
+
+        /**
+         * A Stripe refund status as an outcome. Only "failed" and "canceled" are failures: "pending", "requires_action" (or a
+         * status Stripe adds) are accepted and count towards the charge's `amount_refunded`, and Stripe reports a later
+         * failure with `refund.updated`.
+         */
+        fun refundOutcome(status: String?): RefundOutcome = when (status) {
+            "succeeded" -> RefundOutcome.SUCCEEDED
+            "failed", "canceled" -> RefundOutcome.FAILED
+            else -> RefundOutcome.PENDING
+        }
+        const val OAUTH_AUTHORIZE_URL = "https://connect.stripe.com/oauth/authorize"
+
+        /** Stripe keeps idempotency keys for 24 hours: the generation makes the key new once the last account was forgotten. */
+        fun accountIdempotencyKey(business: BusinessRow) =
+            "bookanything-account-${business.id}" + if (business.stripeAccountGeneration > 0) "-${business.stripeAccountGeneration}" else ""
+
+        private fun enc(s: String) = java.net.URLEncoder.encode(s, Charsets.UTF_8)
 
         fun withQuery(url: String, query: String): String {
             val (base, fragment) = url.split('#', limit = 2).let { it[0] to it.getOrNull(1) }

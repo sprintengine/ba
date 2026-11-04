@@ -120,6 +120,26 @@ describe("Settings › Billing (read-only)", () => {
     expect(screen.queryByText(/No AI model is connected/)).toBeNull();
   });
 
+  it("says what the credits are for, and leaves them out where nothing uses them", async () => {
+    const description = /^One monthly allowance for (.+)\. Each AI request/;
+    const fetch = api();
+    const bo = renderBusinessScreen(<BillingSettings />, {
+      path: "settings/billing",
+      business: { assistantAvailable: true, sitesEnabled: false },
+    });
+    expect((await screen.findByText(description)).props.children).toMatch(/^One monthly allowance for Bo\./);
+    bo.unmount();
+
+    fetch.mockClear();
+    renderBusinessScreen(<BillingSettings />, {
+      path: "settings/billing",
+      business: { assistantAvailable: false, sitesEnabled: false },
+    });
+    await screen.findByTestId("billing-plan");
+    expect(screen.queryByTestId("ai-usage")).toBeNull();
+    expect(calls(fetch)).not.toContain(`GET ${PATH}/ai/usage`);
+  });
+
   it("says when credits run low or out, with no way to buy more", async () => {
     api({
       usage: { ...aiUsage, credits: { ...aiUsage.credits, runningLow: true, remaining: 50, used: 450 } },

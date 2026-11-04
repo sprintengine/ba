@@ -4,12 +4,16 @@ import ie.bookanything.audit.Actor
 import ie.bookanything.audit.Audit
 import ie.bookanything.booking.BookingLifecycle
 import ie.bookanything.booking.BookingRepository
+import ie.bookanything.booking.RefundSettlement
 import ie.bookanything.business.BusinessRepository
 import ie.bookanything.business.BusinessRow
 import ie.bookanything.config.StripeConfig
 import ie.bookanything.db.Db
+import ie.bookanything.db.afterCommit
+import ie.bookanything.http.parseUuidOrNull
 import ie.bookanything.jobs.Job
 import ie.bookanything.jobs.JobQueue
+import ie.bookanything.notifications.inbox.Inbox
 import ie.bookanything.observability.Telemetry
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -20,6 +24,7 @@ import kotlinx.serialization.json.longOrNull
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.time.Clock
+import java.time.Instant
 import java.util.UUID
 
 /** Stripe event types bookanything acts on. Everything else is stored and marked processed. */
@@ -27,7 +32,8 @@ object StripeEvents {
     const val JOB_KIND = "stripe_event"
     val HANDLED = setOf(
         "checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed",
-        "checkout.session.expired", "charge.refunded", "account.updated",
+        "checkout.session.expired", "charge.refunded", "account.updated", "account.application.deauthorized",
+        "refund.updated", "refund.failed", "charge.refund.updated",
         "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted",
         "invoice.payment_failed",
     )
@@ -43,6 +49,8 @@ class StripeEventProcessor(
     private val clock: Clock,
     private val stripe: StripeConfig,
     private val lifecycle: BookingLifecycle,
+    private val inbox: Inbox,
+    private val refunds: RefundSettlement,
 ) {
     private val log = LoggerFactory.getLogger(StripeEventProcessor::class.java)
     private val json = Json { ignoreUnknownKeys = true }
@@ -86,8 +94,13 @@ class StripeEventProcessor(
                 }
             }
             "checkout.session.expired", "checkout.session.async_payment_failed" ->
-                if (obj.string("mode") != "subscription") paymentAbandoned(conn, obj, account)
-            "charge.refunded" -> chargeRefunded(conn, obj, account)
+                if (obj.string("mode") != "subscription") {
+                    paymentAbandoned(conn, obj, account, failed = type == "checkout.session.async_payment_failed")
+                }
+            "charge.refunded" -> chargeRefunded(conn, obj, account, event.long("created"))
+            // A refund's later news (Stripe has used all three names): only a failure changes anything, as an accepted
+            // refund already counts as made.
+            "refund.updated", "refund.failed", "charge.refund.updated" -> refundUpdated(conn, obj, account)
             // A connected account only reports on itself.
             "account.updated" -> if (account != null && account == obj.string("id")) {
                 accountUpdated(conn, obj)
@@ -96,6 +109,12 @@ class StripeEventProcessor(
                     type,
                     account,
                 )
+            }
+            // The account (connected either way) disconnected from the platform, or the platform from it.
+            "account.application.deauthorized" -> if (account != null) {
+                accountDeauthorized(conn, account, event.string("id"), event.long("created"))
+            } else {
+                ignoredConnect(type, account)
             }
             "customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted" ->
                 if (platform) subscriptionChanged(conn, type, obj) else ignoredConnect(type, account)
@@ -113,11 +132,10 @@ class StripeEventProcessor(
             ?: session.string("id")?.let { PaymentRepository.chargeByProviderRef(conn, "stripe", it) }
             ?: run { log.warn("stripe checkout session {} does not match a payment", session.string("id")); return null }
         val business = BusinessRepository.findById(conn, payment.businessId) ?: return null
-        if (account == null || account != business.stripeAccountId) {
-            log.warn(
-                "stripe event for payment {} came from account {} but the business uses {}: ignored",
-                payment.id, account, business.stripeAccountId,
-            )
+        // The account the charge was taken on, even if the business has connected another since.
+        val owner = payment.providerAccount ?: business.stripeAccountId
+        if (account == null || account != owner) {
+            log.warn("stripe event for payment {} came from account {} but it was taken on {}: ignored", payment.id, account, owner)
             return null
         }
         return business to payment
@@ -125,27 +143,17 @@ class StripeEventProcessor(
 
     private fun paymentCompleted(conn: Connection, session: JsonObject, account: String?) {
         val (business, payment) = paymentFor(conn, session, account) ?: return
-        // Only a session for exactly the amount and currency we asked for pays for the booking.
-        val amount = session.long("amount_total")
-        val currency = session.string("currency")
-        if (amount != payment.amountCents.toLong() || !payment.currency.equals(currency, ignoreCase = true)) {
-            log.warn(
-                "stripe session {} paid {} {} but payment {} is {} {}: not applied", session.string("id"), amount, currency,
-                payment.id, payment.amountCents, payment.currency,
-            )
-            return
-        }
-        // Lock order: the booking, then its payment (as cancellations do), so this cannot deadlock with one.
-        BookingRepository.get(conn, business.id, payment.bookingId, forUpdate = true)
-        // From now on the charge is identified by its PaymentIntent (refunds, charge.refunded).
-        session.string("payment_intent")?.let { PaymentRepository.setProviderRef(conn, payment.id, it) }
-        lifecycle.paymentSucceeded(conn, business, PaymentRepository.get(conn, payment.id)!!, clock.instant())
+        val checkout = CompletedCheckout(
+            session.string("id").orEmpty(), session.string("payment_intent"), session.long("amount_total"), session.string("currency"),
+        )
+        CheckoutCompletion.apply(conn, lifecycle, business, payment, checkout, account!!, clock.instant())
     }
 
-    private fun paymentAbandoned(conn: Connection, session: JsonObject, account: String?) {
+    /** A checkout that ended unpaid: it expired, or its delayed payment (a bank debit) [failed]. */
+    private fun paymentAbandoned(conn: Connection, session: JsonObject, account: String?, failed: Boolean) {
         val (business, payment) = paymentFor(conn, session, account) ?: return
-        if (payment.status != "pending") return
-        lifecycle.paymentCancelled(conn, business, payment, clock.instant())
+        if (payment.status != "pending" && !(failed && payment.status == "cancelled")) return
+        lifecycle.paymentCancelled(conn, business, payment, clock.instant(), failed)
     }
 
     /**
@@ -153,17 +161,21 @@ class StripeEventProcessor(
      * our checkout put in its metadata when the refund is reported before the checkout's completion was processed (the
      * charge is still known by its Checkout Session then): that event waits, retried, until the payment has succeeded.
      */
-    private fun chargeRefunded(conn: Connection, charge: JsonObject, account: String?) {
+    private fun chargeRefunded(conn: Connection, charge: JsonObject, account: String?, created: Long?) {
         val pi = charge.string("payment_intent") ?: return
         val payment = PaymentRepository.chargeByProviderRef(conn, "stripe", pi)
             ?: charge.obj("metadata")?.string("paymentId")?.let { runCatching { UUID.fromString(it) }.getOrNull() }
                 ?.let { PaymentRepository.get(conn, it) }?.takeIf { it.kind == "charge" && it.provider == "stripe" }
             ?: run { log.info("charge.refunded for unknown payment intent {}", pi); return }
         val business = BusinessRepository.findById(conn, payment.businessId) ?: return
-        if (account != business.stripeAccountId) {
-            log.warn(
-                "charge.refunded for payment {} from account {} ignored (business uses {})", payment.id, account, business.stripeAccountId,
-            )
+        val owner = payment.providerAccount ?: business.stripeAccountId
+        if (account != owner) {
+            log.warn("charge.refunded for payment {} from account {} ignored (taken on {})", payment.id, account, owner)
+            return
+        }
+        // A payment that matched no booking: this is the refund we made of it (UnmatchedPayments), nothing to record.
+        if (payment.status == "failed") {
+            log.info("charge.refunded for unmatched payment {}: its own refund", payment.id)
             return
         }
         // Thrown, not dropped: the job retries this event once the checkout's own event has recorded the payment.
@@ -172,7 +184,7 @@ class StripeEventProcessor(
         // Lock order: the booking, then its payments. Our own refund's answer is recorded the same way, often at the
         // moment Stripe sends this event (RefundSettlement), and the two would otherwise deadlock.
         BookingRepository.get(conn, business.id, payment.bookingId, forUpdate = true)
-        val added = lifecycle.payments.reconcileRefunds(conn, payment, total)
+        val added = lifecycle.payments.reconcileRefunds(conn, payment, total, created?.let(Instant::ofEpochSecond))
         if (added > 0) {
             ie.bookanything.notifications.Notify.booking(
                 conn, ie.bookanything.notifications.NotificationKind.PAYMENT_REFUNDED,
@@ -182,6 +194,102 @@ class StripeEventProcessor(
                 conn, business.id, Actor.SYSTEM, "payment.refund_reconciled", "booking", payment.bookingId, mapOf("amountCents" to added),
             )
         }
+    }
+
+    /**
+     * A refund Stripe accepted and now reports failed (or cancelled): taken off the booking, its owners told to refund
+     * the customer another way, and the customer told (in the notice still to go out, or by email). Ours is found by the
+     * refund's id, or the `refundPaymentId` we put in its metadata; one made in the Stripe dashboard by its charge. Each
+     * failure arrives as several events: the first one handles it.
+     */
+    private fun refundUpdated(conn: Connection, refund: JsonObject, account: String?) {
+        val id = refund.string("id") ?: return
+        val failed = StripePaymentProvider.refundOutcome(refund.string("status")) == RefundOutcome.FAILED
+        if (refund.obj("metadata")?.string("reason") == UnmatchedPayments.REASON) {
+            if (failed) unmatchedRefundFailed(conn, refund, account)
+            return
+        }
+        val (business, found) = refundSubject(conn, refund, id, account) ?: return
+        // Lock order: the booking, then its payments. Looked up again under the lock: Stripe sends each failure as
+        // several events, which other workers may be handling at the same moment.
+        BookingRepository.get(conn, business.id, found.bookingId, forUpdate = true)
+        val ours = ourRefund(conn, refund, id)?.let { PaymentRepository.get(conn, it.id, forUpdate = true) }
+        // Only failures change anything: an accepted refund already counts, and one we gave up on that Stripe made
+        // after all is recorded by its own charge.refunded.
+        if (!failed) return
+        // A refund we gave up on (unsure, no answer from Stripe) that Stripe had made: its charge.refunded recorded the
+        // money as a refund made elsewhere, and that record is what fails now.
+        val givenUp = ours?.status == "failed" && ours.providerRef == null
+        val row = if (ours == null || givenUp) dashboardRefund(conn, chargeOf(conn, refund, found), refund, id) ?: return else ours
+        if (row.status == "failed") return
+        if (row.providerRef == null) PaymentRepository.setProviderRef(conn, row.id, id)
+        // The job's notice still to go out says it failed; otherwise the customer was told it was coming.
+        val tell = ours == null || !refunds.noticePending(conn, row.id)
+        Telemetry.metrics.refundFailed()
+        refunds.failed(conn, business, row.copy(providerRef = id), refund.string("failure_reason"), certain = true, tellCustomer = tell)
+    }
+
+    /** The business and the payment (our refund, else the charge refunded) a Stripe refund [id] is about, from [account]. */
+    private fun refundSubject(conn: Connection, refund: JsonObject, id: String, account: String?): Pair<BusinessRow, PaymentRow>? {
+        val found = ourRefund(conn, refund, id)
+            ?: refund.string("payment_intent")?.let { PaymentRepository.chargeByProviderRef(conn, "stripe", it) }
+            ?: run { log.info("refund {} updated: not one of ours", id); return null }
+        return businessTakenOn(conn, found, account, "refund $id")?.let { it to found }
+    }
+
+    /**
+     * The refund recorded for one made in the Stripe dashboard that failed ([refund], of [charge]), by amount (split off
+     * one that covered several). Thrown, not dropped, when none is recorded yet: the event is retried once the refund's
+     * own `charge.refunded` has recorded it.
+     */
+    private fun dashboardRefund(conn: Connection, charge: PaymentRow, refund: JsonObject, id: String): PaymentRow? {
+        // A refund of money that paid for nothing (UnmatchedPayments) is the owners' to make: tell them it failed.
+        if (charge.kind == "charge" && charge.status == "failed") {
+            unmatchedRefundFailed(conn, refund, charge.providerAccount)
+            return null
+        }
+        if (charge.kind != "charge" || charge.status != "succeeded") return null
+        val amount = refund.long("amount")?.toInt() ?: return null
+        RefundRows.claimExternal(conn, charge, amount, id)?.let { return it }
+        // Stripe reports a dashboard refund's failure days later: one this young is just ahead of its charge.refunded.
+        val young = refund.long("created")?.let { Instant.ofEpochSecond(it).isAfter(Instant.now().minus(DASHBOARD_RACE)) } ?: false
+        check(!young) { "refund $id of payment ${charge.id} failed before it was recorded: retrying" }
+        log.warn("refund {} of payment {} failed but matches no refund recorded for it", id, charge.id)
+        return null
+    }
+
+    /** The business of [payment] when [account] is the one it was taken on; null (logged) for any other account. */
+    private fun businessTakenOn(conn: Connection, payment: PaymentRow, account: String?, what: String): BusinessRow? {
+        val business = BusinessRepository.findById(conn, payment.businessId) ?: return null
+        val owner = payment.providerAccount ?: business.stripeAccountId
+        if (account == owner) return business
+        log.warn("{} for payment {} from account {} ignored (taken on {})", what, payment.id, account, owner)
+        return null
+    }
+
+    /** The charge a Stripe refund returns money from: by its PaymentIntent, else the charge [found] itself. */
+    private fun chargeOf(conn: Connection, refund: JsonObject, found: PaymentRow): PaymentRow =
+        refund.string("payment_intent")?.let { PaymentRepository.chargeByProviderRef(conn, "stripe", it) } ?: found
+
+    /** Our refund Stripe reports on: by its id, or the `refundPaymentId` we put in its metadata (a timed-out call). */
+    private fun ourRefund(conn: Connection, refund: JsonObject, id: String): PaymentRow? =
+        RefundRows.byProviderRef(conn, "stripe", id)
+            ?: refund.obj("metadata")?.string("refundPaymentId")?.let(::parseUuidOrNull)?.let { PaymentRepository.get(conn, it) }
+                ?.takeIf { it.kind == "refund" && it.provider == "stripe" }
+
+    /** The refund we made of a payment that matched no booking failed: the owners refund it themselves. */
+    private fun unmatchedRefundFailed(conn: Connection, refund: JsonObject, account: String?) {
+        val pi = refund.string("payment_intent") ?: return
+        val payment = PaymentRepository.chargeByProviderRef(conn, "stripe", pi) ?: return
+        val business = BusinessRepository.findById(conn, payment.businessId) ?: return
+        if (account != (payment.providerAccount ?: business.stripeAccountId)) return
+        conn.afterCommit { Telemetry.metrics.refundGivenUp(certain = true) }
+        inbox.paymentsAlert(
+            conn, business, "A payment needs refunding",
+            "A payment that didn't match its booking couldn't be refunded automatically (Stripe: " +
+                "${refund.string("failure_reason")?.replace('_', ' ') ?: "failed"}). Please refund Stripe payment $pi another way.",
+            "unmatched:$pi:failed-later",
+        )
     }
 
     private fun accountUpdated(conn: Connection, account: JsonObject) {
@@ -194,6 +302,34 @@ class StripeEventProcessor(
             mapOf(
                 "chargesEnabled" to charges, "detailsSubmitted" to details,
             ),
+        )
+    }
+
+    /**
+     * The platform lost access to [account]: the business stops taking online payments (its services that need them are
+     * hidden, as before it connected), the change is audited and its owners are told. A deauthorization from before the
+     * account was (re)linked is about the earlier link and changes nothing.
+     */
+    private fun accountDeauthorized(conn: Connection, account: String, eventId: String?, created: Long?) {
+        val businessId = StripeAccountRepository.businessIdByAccount(conn, account)
+            ?: run { log.info("account.application.deauthorized for {}: no business uses it", account); return }
+        val linkedAt = StripeAccountRepository.connectedAt(conn, businessId)
+        // Stripe's `created` is in whole seconds: one from the second of the link counts as older.
+        if (created != null && linkedAt != null && created <= linkedAt.epochSecond) {
+            log.info("account.application.deauthorized for {} predates its link to business {}: ignored", account, businessId)
+            return
+        }
+        val business = BusinessRepository.findById(conn, businessId) ?: return
+        if (!StripeAccountRepository.unlink(conn, businessId, account)) return
+        Audit.record(
+            conn, businessId, Actor.SYSTEM, "payments.disconnected", "business", businessId,
+            mapOf("account" to account, "method" to business.stripeConnectMethod, "reason" to "deauthorized"),
+        )
+        inbox.paymentsAlert(
+            conn, business, "Stripe was disconnected",
+            "${business.name} can't take online payments until you connect a Stripe account again. Services that need " +
+                "payment are hidden from your booking page meanwhile.",
+            "stripe-deauthorized:${eventId ?: account}",
         )
     }
 
@@ -269,3 +405,6 @@ fun enqueueStripeEvent(conn: Connection, eventId: String) {
 }
 
 private const val MAX_ERROR_LENGTH = 2000
+
+/** How long a dashboard refund's failure may wait for its charge.refunded (retried meanwhile). */
+private val DASHBOARD_RACE: java.time.Duration = java.time.Duration.ofHours(1)

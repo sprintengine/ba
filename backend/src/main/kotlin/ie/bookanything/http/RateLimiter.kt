@@ -25,6 +25,9 @@ class RateLimiter(
         val PUBLIC_BOOKING = Limit("booking", 20, 600)
         val AVAILABILITY = Limit("availability", 120, 60)
         val MANAGE = Limit("manage", 30, 600)
+
+        /** Confirming a payment on return from Checkout, per booking (each asks the payment provider). */
+        val PAYMENT_CONFIRM = Limit("payment-confirm", 5, 600)
         val AI_DRAFT = Limit("ai-draft", 20, 3600)
 
         /** Businesses created, per user. */

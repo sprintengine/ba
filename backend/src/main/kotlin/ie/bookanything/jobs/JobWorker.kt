@@ -16,6 +16,7 @@ import ie.bookanything.payments.CheckoutExpiry
 import ie.bookanything.payments.PaymentService
 import ie.bookanything.payments.StripeEventProcessor
 import ie.bookanything.payments.StripeEvents
+import ie.bookanything.payments.UnmatchedPayments
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,17 +60,19 @@ class JobWorker(
 
     val handlers: Map<String, JobHandler> = mapOf(
         Notify.JOB_KIND to JobHandler(NotificationHandler(ctx.db, ctx.email, ctx.sms, ctx.tokens, ctx.config.urls, ctx.inbox)::handle),
-        StripeEvents.JOB_KIND to JobHandler(StripeEventProcessor(ctx.db, ctx.clock, ctx.config.stripe, lifecycle)::handle),
+        StripeEvents.JOB_KIND to
+            JobHandler(StripeEventProcessor(ctx.db, ctx.clock, ctx.config.stripe, lifecycle, ctx.inbox, ctx.booking.refunds)::handle),
         AiOverage.JOB_KIND to JobHandler { ctx.ai.overageJob.handle(it) },
         GeocodeJobs.KIND to GeocodeJobs.handler(ctx.db, ctx.geocoder, ctx.clock),
         PaymentService.REFUND_RETRY_JOB to JobHandler(ctx.booking.refunds::handle),
         CheckoutExpiry.JOB_KIND to JobHandler(CheckoutExpiry(ctx.db, ctx.payments)::handle),
+        UnmatchedPayments.JOB_KIND to JobHandler(UnmatchedPayments(ctx.db, ctx.payments, ctx.inbox)::handle),
         Inbox.EMAIL_JOB to JobHandler(InboxEmailHandler(ctx.db, ctx.email, ctx.config.urls, ctx.clock)::handle),
         PushHandler.SEND_JOB to JobHandler(push::send),
         PushHandler.RECEIPTS_JOB to JobHandler(push::receipts),
     )
 
-    val periodicTasks: List<PeriodicTask> = listOf(
+    val periodicTasks: List<PeriodicTask> = listOfNotNull(
         PeriodicTask("expire-holds", Duration.ofMinutes(1)) { c -> c.db.txBlocking { lifecycle.expireHolds(it, c.now()) } },
         PeriodicTask("send-reminders", Duration.ofMinutes(5)) { c -> c.db.txBlocking { lifecycle.enqueueReminders(it, c.now()) } },
         PeriodicTask("auto-complete", Duration.ofHours(1)) { c -> c.db.txBlocking { lifecycle.autoComplete(it, c.now()) } },
@@ -79,7 +82,9 @@ class JobWorker(
         PeriodicTask("release-ai-reservations", Duration.ofMinutes(5)) { c ->
             c.db.txBlocking { AiUsageRepository.releaseStale(it, c.now().minus(AiMeter.STALE_RESERVATION), c.now()) }
         },
-        PeriodicTask("assistant-nudges", Duration.ofMinutes(15)) { c -> c.assistant.nudges.refreshAll() },
+        // Bo's nudges are only shown in Bo, so they are only refreshed while it is on (`ASSISTANT_ENABLED`).
+        PeriodicTask("assistant-nudges", Duration.ofMinutes(15)) { c -> c.assistant.nudges.refreshAll() }
+            .takeIf { ctx.config.assistantEnabled },
         PeriodicTask(
             "recover-jobs",
             Duration.ofMinutes(5),

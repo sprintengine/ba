@@ -53,6 +53,7 @@ object EmailPreviews {
         )
         EmailTemplates.PAYMENT_REFUNDED -> EmailTemplates.paymentRefunded(brand, facts, "€65.00")
         EmailTemplates.REFUND_APOLOGY -> EmailTemplates.refundApology(brand, facts, "€65.00")
+        EmailTemplates.REFUND_FAILED -> EmailTemplates.refundFailed(brand, facts, "€65.00")
         EmailTemplates.TEAM_INVITATION -> EmailTemplates.teamInvitation(
             brand, "Avery Morgan", "staff", "http://localhost:3000/invitations/sample-token",
         )

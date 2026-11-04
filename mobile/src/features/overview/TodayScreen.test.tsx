@@ -278,7 +278,16 @@ describe("TodayScreen", () => {
       fireEvent.press(within(card).getByRole("button", { name: "Ask Bo" }));
       expect(await screen.findByText("Assistant page")).toBeOnTheScreen();
       expect(app.getPathname()).toBe("/assistant");
-      expect(app.getSearchParams()).toEqual({ business: "lumen-physio", prompt: nudge.prompt });
+      // The modal starts a conversation with the nudge's prompt (`ask`).
+      expect(app.getSearchParams()).toEqual({ business: "lumen-physio", ask: nudge.prompt });
+    });
+
+    it("shows none, and doesn't ask for them, where the deployment doesn't offer Bo", async () => {
+      const fetch = api();
+      render({ business: { ...business, assistantAvailable: false } });
+      expect(await screen.findByText(/ · 2 appointments today$/)).toBeOnTheScreen();
+      expect(screen.queryByTestId("nudges")).toBeNull();
+      expect(calls(fetch)).not.toContain(`GET ${B}/assistant`);
     });
 
     it("can't ask Bo when it isn't set up, and shows a plain nudge without an action", async () => {

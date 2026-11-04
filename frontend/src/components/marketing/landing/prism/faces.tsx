@@ -1,4 +1,4 @@
-import { Apple, ArrowRight, Bell, Check } from "lucide-react";
+import { Apple, ArrowRight, ArrowUpRight, Bell, Bot, Check } from "lucide-react";
 import { ASSISTANT_NAME } from "@/lib/assistant/constants";
 import { cn } from "@/lib/utils";
 import { SetupFace } from "./face-phone";
@@ -253,6 +253,39 @@ const MOVES = [
   { t: "15:30", what: "Follow-up", who: "Seán Murphy" },
 ];
 
+/** The moves a proposal makes, Sam's Friday clients to Aoife (both assistant faces). */
+function Moves() {
+  return (
+    <Chip className="px-3.5 py-1">
+      {MOVES.map((m, i) => (
+        <div
+          key={m.t}
+          className={cn(
+            "flex items-center gap-2.5 py-2.5 text-[13px]",
+            i > 0 && "border-t border-(--prism-hairline)",
+            i === 2 && "max-[760px]:hidden",
+          )}
+        >
+          <span className="tnum w-10 font-semibold">{m.t}</span>
+          <span className="min-w-0 flex-1 truncate">
+            {m.what} <span className="text-muted-foreground">· {m.who}</span>
+          </span>
+          <span className="inline-flex items-center gap-[5px] text-xs font-semibold [&_svg]:size-3 [&_svg]:text-muted-foreground">
+            <s className="text-subtle-foreground no-underline">Sam</s>
+            <ArrowRight />
+            Aoife
+          </span>
+        </div>
+      ))}
+    </Chip>
+  );
+}
+
+const PROPOSAL_TEXT = cn(
+  "text-[17px] leading-[1.45] font-medium tracking-[-0.012em]",
+  "max-[760px]:text-[15px]",
+);
+
 export function BoFace() {
   return (
     <FaceSlot
@@ -267,39 +300,13 @@ export function BoFace() {
         </span>
         <Pill className="ml-auto">3 changes</Pill>
       </div>
-      <p
-        className={cn(
-          "text-[17px] leading-[1.45] font-medium tracking-[-0.012em]",
-          "max-[760px]:text-[15px]",
-        )}
-      >
+      <p className={PROPOSAL_TEXT}>
         Sam is off on Friday afternoon.{" "}
         <span className="text-muted-foreground">
           I can move his three bookings to Aoife, who’s free, and text each client.
         </span>
       </p>
-      <Chip className="px-3.5 py-1">
-        {MOVES.map((m, i) => (
-          <div
-            key={m.t}
-            className={cn(
-              "flex items-center gap-2.5 py-2.5 text-[13px]",
-              i > 0 && "border-t border-(--prism-hairline)",
-              i === 2 && "max-[760px]:hidden",
-            )}
-          >
-            <span className="tnum w-10 font-semibold">{m.t}</span>
-            <span className="min-w-0 flex-1 truncate">
-              {m.what} <span className="text-muted-foreground">· {m.who}</span>
-            </span>
-            <span className="inline-flex items-center gap-[5px] text-xs font-semibold [&_svg]:size-3 [&_svg]:text-muted-foreground">
-              <s className="text-subtle-foreground no-underline">Sam</s>
-              <ArrowRight />
-              Aoife
-            </span>
-          </div>
-        ))}
-      </Chip>
+      <Moves />
       <div className="flex items-center gap-2">
         <span className="inline-flex h-10 items-center gap-[7px] rounded-xl bg-primary px-[18px] text-sm font-semibold text-primary-foreground shadow-md [&_svg]:size-4">
           <Check />
@@ -310,6 +317,46 @@ export function BoFace() {
         </span>
         <span className={cn("ml-auto text-xs text-muted-foreground", "max-[760px]:hidden")}>
           Nothing changes until you confirm.
+        </span>
+      </div>
+    </FaceSlot>
+  );
+}
+
+/**
+ * Face 5 without Bo: the owner's own AI assistant, connected to the business server. It prepares the change in the chat
+ * and links to bookanything, where the owner approves it.
+ */
+export function OwnAssistantFace() {
+  return (
+    <FaceSlot
+      index={5}
+      className={cn("flex flex-col gap-4 p-[26px_28px]", "max-[760px]:gap-[13px] max-[760px]:p-5")}
+    >
+      <div className="flex items-center gap-[11px] text-sm font-semibold">
+        <Tile className="size-[34px] rounded-full shadow-md [&_svg]:size-[17px]">
+          <Bot />
+        </Tile>
+        <span>
+          Your AI assistant
+          <small className="block text-xs font-medium text-muted-foreground">Connected to bookanything</small>
+        </span>
+        <Pill className="ml-auto">3 changes</Pill>
+      </div>
+      <p className={PROPOSAL_TEXT}>
+        Sam is off on Friday afternoon.{" "}
+        <span className="text-muted-foreground">
+          I’ve prepared three changes: his bookings move to Aoife, who’s free.
+        </span>
+      </p>
+      <Moves />
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-10 items-center gap-[7px] rounded-xl bg-primary px-[18px] text-sm font-semibold text-primary-foreground shadow-md [&_svg]:size-4">
+          Approve on bookanything
+          <ArrowUpRight />
+        </span>
+        <span className={cn("ml-auto text-xs text-muted-foreground", "max-[760px]:hidden")}>
+          Nothing changes until it’s approved.
         </span>
       </div>
     </FaceSlot>

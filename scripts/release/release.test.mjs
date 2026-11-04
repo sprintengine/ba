@@ -194,6 +194,8 @@ test("resolve picks the version, tag and commit for each channel from the reposi
   const head = git("rev-parse", "HEAD");
   const nightly = resolve({ EVENT_NAME: "schedule" });
   assert.deepEqual([nightly.should_build, nightly.tag, nightly.ref], ["true", "v0.2.0-nightly.20261104.7", head]);
+  // The first nightly after a release: its notes start from that release.
+  assert.equal(nightly.previous_tag, "v0.1.0");
   git("tag", nightly.tag);
   // The same head again: the gate is shut.
   assert.equal(resolve({ EVENT_NAME: "schedule" }).should_build, "false");

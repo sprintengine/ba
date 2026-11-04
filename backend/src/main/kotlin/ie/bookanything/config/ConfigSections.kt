@@ -98,6 +98,13 @@ data class StripeConfig(
     val connectWebhookSecret: String?,
     val pricePro: String?,
     val priceBusiness: String?,
+    /**
+     * The platform's Connect OAuth client id (`ca_...`): with it, owners can connect a Stripe account they already have
+     * (OAuth); without it, only "create one for me" (Account Links) is offered.
+     */
+    val connectClientId: String? = null,
+    /** Where Stripe sends the owner back after OAuth; default `${PUBLIC_API_URL}/v1/payments/stripe/callback`. */
+    val connectRedirectUri: String? = null,
 ) {
     companion object {
         fun fromEnvironment(env: EnvReader) = StripeConfig(
@@ -106,6 +113,8 @@ data class StripeConfig(
             connectWebhookSecret = env.str("STRIPE_CONNECT_WEBHOOK_SECRET"),
             pricePro = env.str("STRIPE_PRICE_PRO"),
             priceBusiness = env.str("STRIPE_PRICE_BUSINESS"),
+            connectClientId = env.str("STRIPE_CONNECT_CLIENT_ID"),
+            connectRedirectUri = env.str("STRIPE_CONNECT_REDIRECT_URI"),
         )
     }
 }

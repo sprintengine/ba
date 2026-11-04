@@ -18,12 +18,37 @@ export type DevPaymentInfo = { payment: Payment; booking: ManagedBooking; busine
 
 export type PaymentProviderName = "stripe" | "dev" | "none";
 
+/** How connecting an existing Stripe account ended (`POST /payments/connect/existing/complete`, or Stripe's return). */
+export type ConnectExistingOutcome =
+  | "connected"
+  | "denied"
+  | "expired"
+  | "invalid"
+  | "forbidden"
+  | "already_connected"
+  | "account_in_use"
+  | "currency"
+  | "failed";
+
+/** `POST /payments/connect/existing/complete` */
+export type ConnectExistingInput = { state: string; code: string };
+export type ConnectExistingResult = { outcome: ConnectExistingOutcome; currency: string | null };
+
+/** How a Stripe account was linked: created through our onboarding, or an existing account connected with OAuth. */
+export type StripeConnectMethod = "created" | "oauth";
+
 /** `GET /payments/status` */
 export type PaymentsStatus = {
   provider: PaymentProviderName;
   connected: boolean;
   chargesEnabled: boolean;
   detailsSubmitted: boolean;
+  connectMethod: StripeConnectMethod | null;
+  /** Whether "I already have a Stripe account" is offered (the server has a Connect client id). */
+  canConnectExisting: boolean;
+  accountId: string | null;
+  /** The account's name in Stripe, when Stripe could be asked. */
+  accountName: string | null;
 };
 
 /** Price list entry in `BillingInfo.prices` (§6.8 elides it; mirrors the backend, which includes "free"). */

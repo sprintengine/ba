@@ -7,13 +7,54 @@ import com.stripe.param.CustomerCreateParams
 import com.stripe.param.RefundCreateParams
 import com.stripe.param.billing.MeterEventCreateParams
 import com.stripe.param.checkout.SessionCreateParams
+import ie.bookanything.http.ApiException
+import io.ktor.http.HttpStatusCode
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
-data class StripeAccountState(val id: String, val chargesEnabled: Boolean, val detailsSubmitted: Boolean)
+/** A connected account as Stripe reports it; [country], [defaultCurrency] (lowercase) and [displayName] when known. */
+data class StripeAccountState(
+    val id: String,
+    val chargesEnabled: Boolean,
+    val detailsSubmitted: Boolean,
+    val country: String? = null,
+    val defaultCurrency: String? = null,
+    val displayName: String? = null,
+)
 
-/** A Checkout Session: [status] is "open", "complete" or "expired" (when Stripe said). */
-data class StripeSessionRef(val id: String, val url: String?, val paymentIntentId: String?, val status: String? = null)
-data class StripeRefundRef(val id: String, val status: String?)
+/**
+ * The result of a Connect OAuth code exchange: the account only. Stripe also returns access and refresh tokens; they are
+ * deprecated and never read or kept (we act on the account with the platform key and the `Stripe-Account` header).
+ */
+data class StripeOAuthConnection(val accountId: String, val livemode: Boolean)
+
+/** Stripe refused an OAuth request ([code]: `invalid_grant` for an expired or used code, `invalid_client`, ...). */
+class StripeOAuthError(val code: String?, cause: Throwable? = null) : RuntimeException("Stripe OAuth error: ${code ?: "unknown"}", cause)
+
+/**
+ * A Checkout Session: [status] is "open", "complete" or "expired" and [paymentStatus] "paid", "unpaid" or
+ * "no_payment_required" (when Stripe said), with what it charged.
+ */
+data class StripeSessionRef(
+    val id: String,
+    val url: String?,
+    val paymentIntentId: String?,
+    val status: String? = null,
+    val paymentStatus: String? = null,
+    val amountTotal: Long? = null,
+    val currency: String? = null,
+    /** When Stripe closes the session (epoch seconds). */
+    val expiresAt: Long? = null,
+)
+
+/** A refund as Stripe reports it: [status] "succeeded", "pending", "requires_action", "failed" or "canceled". */
+data class StripeRefundRef(val id: String, val status: String?, val failureReason: String? = null)
+
+/**
+ * Stripe refused a request it will refuse again (a 4xx other than a rate limit, or no access to the account): the
+ * caller gives up instead of retrying. Answered to clients like any provider error.
+ */
+class StripeRefusedException(val stripeCode: String?) :
+    ApiException(HttpStatusCode.BadGateway, "PAYMENT_PROVIDER_ERROR", "The payment provider refused the request.")
 
 /**
  * The only place that talks to the Stripe API. Parameters are the SDK's own builders so tests can
@@ -24,6 +65,15 @@ interface StripeGateway {
     fun createAccount(params: AccountCreateParams, options: RequestOptions): String
     fun retrieveAccount(accountId: String): StripeAccountState
     fun createAccountLink(params: AccountLinkCreateParams): String
+
+    /**
+     * Completes a Connect OAuth connection: exchanges the authorization [code] for the account id. Not idempotent (Stripe
+     * revokes a connection whose code is used twice), so it is never retried. Throws [StripeOAuthError] when refused.
+     */
+    fun exchangeOAuthCode(code: String): StripeOAuthConnection
+
+    /** Disconnects [accountId] from the platform's Connect application [clientId]; false when it was not connected. */
+    fun deauthorizeAccount(clientId: String, accountId: String): Boolean
     fun createCheckoutSession(params: SessionCreateParams, options: RequestOptions): StripeSessionRef
     fun retrieveCheckoutSession(sessionId: String, options: RequestOptions): StripeSessionRef
 

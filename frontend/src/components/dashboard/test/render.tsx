@@ -130,6 +130,9 @@ export function mockApi(route: (method: string, path: string, body: unknown) => 
 /** For the site builder's tests: a deployment with business websites on (`SITES_ENABLED`). */
 export const SITES_ON: Partial<Business> = { sitesEnabled: true };
 
+/** A deployment that offers Bo (`ASSISTANT_ENABLED` and a model); off by default, like production. */
+export const ASSISTANT_ON: Partial<Business> = { assistantAvailable: true };
+
 export function renderDashboard(
   ui: React.ReactElement,
   role: MemberRole = "owner",

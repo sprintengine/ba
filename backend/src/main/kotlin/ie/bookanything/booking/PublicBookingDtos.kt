@@ -39,3 +39,7 @@ data class PublicServiceDto(
     val selectableRequirement: SelectableRequirement?,
     val questions: List<PublicQuestion>,
 )
+
+/** The Checkout Session the customer came back from (`session_id` in the success URL). */
+@Serializable
+data class ConfirmPaymentInput(val sessionId: String = "")

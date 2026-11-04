@@ -347,6 +347,7 @@ include lower).
 | POST | `/v1/public/manage/{token}/reschedule` | P | `{start, resourceId?}` → `ManagedBooking` |
 | GET | `/v1/public/manage/{token}/availability` | P | `from, to, resourceId?, after?` → `Availability` (this booking's service, duration and group; its own allocations ignored; `after` and next available only as the public availability) |
 | POST | `/v1/public/manage/{token}/pay` | P | → `{checkoutUrl}` (payment still pending and hold valid) |
+| POST | `/v1/public/manage/{token}/payment/confirm` | P | `{sessionId}` → `ManagedBooking`: back from Checkout, the payment is read from Stripe and confirmed now (§7) |
 | GET | `/v1/public/dev-payments/{paymentId}` | P (dev only) | → `{payment, booking, business}` |
 | POST | `/v1/public/dev-payments/{paymentId}/complete` | P (dev only) | `{outcome:"succeeded"|"cancelled"}` → `{redirectUrl}` |
 | POST | `/v1/webhooks/stripe` | signature | Stripe events (platform + Connect) → `{received, duplicate}` |
@@ -455,8 +456,11 @@ S* = staff only for resources linked to them; admins for all.
 
 | Method | Path | Auth | → |
 |---|---|---|---|
-| GET | `/payments/status` | A | `{provider:"stripe"|"dev"|"none", connected, chargesEnabled, detailsSubmitted}` (Stripe: read live from the account and stored) |
-| POST | `/payments/connect` | O | `{returnUrl}` → `{url}` (Stripe account onboarding link; creates the connected account on first call). Stripe returns to `returnUrl?stripe=return` (or `?stripe=refresh` when the link expired: call again) |
+| GET | `/payments/status` | A | `{provider:"stripe"|"dev"|"none", connected, chargesEnabled, detailsSubmitted, connectMethod:"created"|"oauth"|null, canConnectExisting, accountId, accountName}` (Stripe: read live from the account and stored) |
+| POST | `/payments/connect` | O | `{returnUrl}` → `{url}` (Stripe account onboarding link; creates the connected account on first call). Stripe returns to `returnUrl?stripe=return` (or `?stripe=refresh` when the link expired: call again). 409 for an account connected with OAuth (managed in its own Stripe dashboard) |
+| POST | `/payments/connect/existing` | O | `{returnUrl}` → `{url}` (Stripe Connect OAuth page with a signed single-use state); 409 when the business has an account, `PAYMENTS_NOT_CONFIGURED` without `STRIPE_CONNECT_CLIENT_ID`. Stripe sends the browser to `GET /v1/payments/stripe/callback` (no session; connects nothing), which redirects to `returnUrl?stripe=complete&code=…&state=…`, or `?stripe=connect_error&reason=denied|expired|invalid|failed` |
+| POST | `/payments/connect/existing/complete` | O | `{state, code}` → `{outcome: "connected"|"expired"|"invalid"|"forbidden"|"already_connected"|"account_in_use"|"currency"|"failed", currency}`; the state must be this business's and the caller's |
+| POST | `/payments/disconnect` | O | → `PaymentsStatus`: forgets the account, then closes its open checkouts and deauthorizes an OAuth account; 409 when none, or (OAuth) while upcoming bookings paid on it could need a refund |
 | GET | `/billing` | O | `{plan, status, usage:{bookingsThisMonth, limit}, prices:[…]}` (each plan's features include its monthly AI credits) |
 | GET | `/ai/usage` | A | `AiUsage`: this month's AI credits, per-feature usage, daily series (§16) |
 | POST | `/billing/checkout` | O | `{plan:"pro"|"business", returnUrl}` → `{url}` (Stripe returns to `returnUrl?billing=success|cancelled`); 409 `CONFLICT` when a subscription already exists (use the portal) |
@@ -648,15 +652,92 @@ type BusinessSetup = {
   (`PAYMENTS_NOT_CONFIGURED` when a paid service is booked, and paid services
   cannot be published: services needing online payment are omitted from
   `GET /v1/public/businesses/{slug}/services` while the business cannot take payments).
-- **Stripe Connect**: connected accounts with Stripe-hosted onboarding
-  (Account Links). The business is merchant of record: charges are created
-  **on the connected account** (`Stripe-Account` header), **no application
-  fee**. `account.updated` updates `stripe_charges_enabled`.
+- **Stripe Connect**: the owner either has us create an account (Stripe-hosted
+  onboarding, Account Links; `stripe_connect_method = 'created'`) or connects
+  one they already have (Connect OAuth, `'oauth'`; offered when
+  `STRIPE_CONNECT_CLIENT_ID` is set). The business is merchant of record:
+  charges are created **on the connected account** (`Stripe-Account` header),
+  **no application fee**. `account.updated` updates `stripe_charges_enabled`.
+  One business per account (unique `stripe_account_id`).
+- **Connecting an existing account** (`ConnectExisting`; Stripe's OAuth for
+  Standard accounts, still the way to link an account a platform didn't create;
+  Accounts v2 has no replacement and Stripe keeps OAuth platforms on v1):
+  1. `POST /payments/connect/existing` (owner): a random nonce is stored hashed
+     in `stripe_connect_states` with the business, the owner and the return
+     URL; the `state` is `base64url(v1.business.owner.nonce.expiry)` + an
+     HMAC (`TOKEN_SECRET`), valid 10 minutes.
+  2. Stripe redirects to `GET /v1/payments/stripe/callback` (through the app's
+     `/api` rewrite). It has no session, so it connects nothing: a state that
+     fails the MAC goes to `/dashboard` (`reason=invalid`); a used or expired
+     one, or Stripe's `access_denied` (which spends it), goes back with
+     `connect_error`; otherwise the code and state are passed to the owner's
+     page (`?stripe=complete&code=&state=`).
+  3. That page, signed in, calls `POST /payments/connect/existing/complete`.
+     The state must be this business's and this caller's: someone who starts
+     the flow and gets a victim to approve it at Stripe can't use the code (the
+     victim isn't them), so a victim's account can't be attached to their
+     business. The state is spent (once, row locked), the caller must still be
+     an owner and the business still without an account (checked before the
+     code is exchanged).
+  4. The code is exchanged once (`stripe.oauth.token`, no network retries:
+     Stripe revokes a connection whose code is used twice) for
+     `stripe_user_id` only; the deprecated access/refresh tokens are never
+     read or stored. The account is read (`charges_enabled`,
+     `details_submitted`, country, default currency) and linked unless another
+     business here has it (`account_in_use`) or it settles in another currency
+     than the business charges in (`currency`). The same account linked a
+     moment ago (a second tab) is success. Whenever Stripe connected an account
+     we then don't link (currency, Stripe failing to describe it, a database
+     error), the connection is deauthorized again, unless a business here uses
+     that account. Audit `payments.connected` / `payments.connect_failed`.
+  - **Each charge remembers its account** (`payments.provider_account`, copied
+    to its refunds): refunds, closing its checkout and Stripe's events about it
+    use that account, whatever the business is connected to now.
+  - **Disconnect** (`POST /payments/disconnect`, owner): the account is
+    forgotten in one transaction (its generation counter,
+    `stripe_account_generation`, goes into the idempotency key that creates an
+    account, so "create one for me" afterwards gets a new one). An account we
+    created stays the owner's, with its full dashboard, and we keep access: its
+    open Checkout Sessions are expired after the commit (one paid meanwhile
+    still confirms its booking) and its charges can still be refunded. For an
+    OAuth account our access ends, so nothing may still need it: its open
+    sessions are expired first (409 when one was just paid), and it is refused
+    (409) while a refund on it waits or an upcoming booking paid on it could be
+    refunded; after the commit it is deauthorized (`stripe.oauth.deauthorize`),
+    so Stripe's event finds no business.
+  - **Deauthorizing is guarded**: an account is never deauthorized (on
+    disconnect, or when undoing a connection) while a business here is linked
+    to it or money on it could still need it, for any business (a pending
+    refund, an open checkout, an upcoming booking paid there).
+  - **The return page** for connecting an existing account is always the
+    business's own payments settings page on `APP_BASE_URL`, never an embed
+    origin, since Stripe's code is passed back there.
+  - **`account.application.deauthorized`** (either way of connecting, from
+    Stripe's side): the business forgets the account (paid services are hidden
+    again), audit `payments.disconnected` (`reason: deauthorized`), and its
+    owners get a `payments_alert` notification. An event from no later than
+    the current link's second (`stripe_connected_at`) is about an earlier link
+    and is ignored.
 - **Checkout**: hosted Stripe Checkout Session per booking payment
   (`mode=payment`, `expires_at = hold expiry`, minimum 30 minutes, so
   the effective hold is `max(hold_minutes, 31)` when Stripe is active).
   `metadata.bookingId/paymentId/businessId` (also on the PaymentIntent),
-  success/cancel URLs `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`.
+  success/cancel URLs `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`
+  (Stripe adds `&session_id=` to the success URL). The session's `expires_at`
+  is clamped to Stripe's window (at least 30 minutes from when it is created):
+  when it is created late (a slow or replayed request), the hold is extended to
+  match it, so a customer can never pay a session whose hold has ended.
+- **Back from Checkout**: the manage page (web and app) sends the `session_id`
+  to `POST /v1/public/manage/{token}/payment/confirm`; the session is read from
+  Stripe and, when paid, applied through the same path as
+  `checkout.session.completed` (`CheckoutCompletion`: exactly the amount and
+  currency, else refunded in full; once, whichever comes first). The page
+  polls for a minute at most, then says it is taking longer and the
+  confirmation will come by email.
+- **What an unpaid hold shows**: an expired or abandoned hold owes nothing
+  (`payment_status = not_required`; a late payment sets it `paid`); a delayed
+  payment that fails (`checkout.session.async_payment_failed`) sets the charge
+  and the booking `failed`.
   `payments.provider_ref` holds the Checkout Session id until the payment
   completes, then the PaymentIntent id (used for refunds and `charge.refunded`).
 - Webhooks (`STRIPE_WEBHOOK_SECRET`, plus `STRIPE_CONNECT_WEBHOOK_SECRET` for
@@ -666,13 +747,20 @@ type BusinessSetup = {
   (or `pending_approval`), send confirmation; if the hold had already expired
   and the slot is gone → automatic full refund + apology email.
   `checkout.session.expired` → payment cancelled, booking `expired`.
-  `charge.refunded` → reconcile refund amounts.
+  `charge.refunded` → reconcile refund amounts. `refund.updated` /
+  `refund.failed` / `charge.refund.updated` → a refund that failed (below).
+  A completed checkout for another amount or currency than its payment pays
+  for nothing: the booking's own charge is left alone, the money gets a failed
+  charge row of its own (by PaymentIntent, in its currency), is refunded in full
+  on its account (`stripe_unmatched_refund` job, idempotent by PaymentIntent)
+  and the owners get a `payments_alert`.
   `customer.subscription.*` → business plan.
   Payment events are only accepted from the connected account that owns the
   business (`event.account`), for exactly the payment's amount and currency.
   Billing events (`customer.subscription.*`, subscription checkouts,
   `invoice.payment_failed`) are only accepted from the platform account (no
   `event.account`); `account.updated` only from the account it describes.
+  `account.application.deauthorized` → the account is disconnected (above).
 - **Refund policy** on cancellation:
   - business cancels → full refund of amount paid.
   - customer cancels ≥ `cancellation_notice_hours` before start → full refund.
@@ -734,12 +822,48 @@ slot was gone) go through `RefundSettlement`:
    the idempotency key), then a short transaction records the answer
    (`applyRefundResult`; a refund `charge.refunded` already settled is left
    alone), audits `payment.refunded`, and queues the notice with the outcome:
-   "a refund of €X is on its way", or "being processed" when the provider
-   failed. The notice is removed from the job's payload in the same
-   transaction, so it is sent once.
-3. Provider failed: the job is retried with backoff (12 attempts); when a retry
-   succeeds the customer gets a `payment_refunded` receipt. Process stopped
-   before step 2: the worker runs the job when the backstop is due.
+   "a refund of €X is on its way" (Stripe `succeeded`, or `pending` /
+   `requires_action`: accepted, counted as refunded), "being processed" when
+   the provider was unreachable, or, when it refused the refund, that the
+   business will arrange it. The notice is removed from the job's payload in
+   the same transaction, so it is sent once.
+3. Provider unreachable: the job is retried with backoff (30 attempts, about a
+   day; never sent again 23 hours after the refund was recorded, as Stripe keeps
+   idempotency keys for 24); when a
+   retry succeeds the customer gets a `payment_refunded` receipt. Process
+   stopped before step 2: the worker runs the job when the backstop is due.
+4. **Failed for good**: never retried. `RefundSettlement.failed` marks the
+   refund `failed`, takes it off the booking's refunded total (the booking is
+   `paid` again when nothing is left refunded), audits `payment.refund_failed`
+   and sends the owners a `payments_alert` linking to the booking. When it is
+   certain (Stripe answered `failed`/`canceled` or refused the request for good:
+   a 4xx such as no access to the account, `balance_insufficient` aside, which
+   is retried; or nothing is left to refund it from), the alert says to refund
+   the customer another way and the customer is told the business will arrange
+   it: in the notice, or with a `payment_refund_failed` email when they had
+   already been told it was coming (its late-payment version for an apology
+   refund). When we can't tell (still unreachable at the end, or Stripe says
+   the charge was refunded already), the alert asks the owners to check the
+   payment in their Stripe dashboard first, and the customer hears the refund
+   is being checked (in the notice, or by email when they were told it was
+   on its way); an unreachable Stripe is reported as an error. If Stripe did
+   make it, its `charge.refunded` records it and the customer gets a receipt.
+   Both are counted (`payments_refunds_given_up_total`, alerted on), as are
+   failed refunds of unmatched payments.
+5. **A refund Stripe accepted and later fails** (`refund.updated`,
+   `refund.failed` or `charge.refund.updated` with status `failed`/`canceled`,
+   from the account the refund was made on): found by the refund's id or the
+   `refundPaymentId` in its metadata (a dashboard refund by its charge and
+   amount, split off a recorded total that covered several, then known by its
+   id; while the Stripe refund is under an hour old the event is retried until
+   its `charge.refunded` has recorded it, then it is logged and dropped; one we
+   gave up on unsure that Stripe had made is found the same way, through the
+   record its `charge.refunded` made; a failed refund of an unmatched payment
+   goes to the owners as a `payments_alert`), and failed as in
+   4 (certain), once: the booking is locked before the refund is looked up, as
+   Stripe sends each failure as several events. The customer hears it in the notice when our job is still to send
+   it, else by email. Other statuses change nothing (an accepted refund
+   already counts).
 
 Responses that report the refund (the cancel and decline routes, the manage
 link, `/me`, the customer MCP) read the booking again after the commit
@@ -765,14 +889,15 @@ hold's end.
   the queue's, so a slow task (refreshing nudges) never delays jobs such as emails and payment events.
 - Notification kinds: booking_confirmed, booking_pending_approval,
   booking_approved, booking_declined, booking_cancelled, booking_rescheduled,
-  booking_reminder, payment_requested, payment_refunded, team_invitation,
-  new_booking_for_business. `payment_requested` carries the checkout link of a
+  booking_reminder, payment_requested, payment_refunded, payment_refund_failed,
+  team_invitation, new_booking_for_business. `payment_requested` carries the checkout link of a
   held booking created by the business (`collect_online`), is queued once the
   link exists (§7) and is only sent while the booking is still held. Emails
   about a refund are queued with the provider's answer (§7, "Refunds").
 - Payment jobs: `payment_refund_retry` (send a recorded refund; run straight
-  after its commit, retried here), `payment_checkout_expire` (close a cancelled
-  booking's checkout).
+  after its commit, retried here for about a day), `payment_checkout_expire`
+  (close a cancelled booking's checkout), `stripe_unmatched_refund` (refund in
+  full a payment that matched no booking).
   Email templates (`email_log.template`) are the same keys plus
   `payment_refunded_apology` (late payment refunded because the slot was gone).
 - `EmailSender`: `ResendEmailSender` when `RESEND_API_KEY` set, else
@@ -826,10 +951,13 @@ DATABASE_POOL_SIZE=10                     RUN_MIGRATIONS_ON_START=true (dev) / f
 AUTH_MODE=clerk|dev                       CLERK_ISSUER, CLERK_AUTHORIZED_PARTIES, CLERK_WEBHOOK_SECRET
 CLERK_ACCEPT_NATIVE_SESSIONS=false (accept tokens with no azp: the mobile app's; §3.1)
 STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET, STRIPE_PRICE_PRO, STRIPE_PRICE_BUSINESS
+STRIPE_CONNECT_CLIENT_ID (ca_…; "connect an existing account")   STRIPE_CONNECT_REDIRECT_URI (default ${PUBLIC_API_URL}/v1/payments/stripe/callback)
 RESEND_API_KEY, EMAIL_FROM                TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
 PUSH_NOTIFICATIONS=expo|log|off (default log in development, off otherwise; §22)   EXPO_ACCESS_TOKEN
 ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default claude-opus-5-5)   UNSPLASH_ACCESS_KEY (stock photos)
 SITES_ENABLED=false (business websites and the site builder, §15; off: /[slug] is the booking portal)
+ASSISTANT_ENABLED=false (Bo, §17; off: the /assistant routes answer 404, no nudges, nothing metered for Bo; owners
+  connect their own AI assistant to the business MCP instead, §20.7)
 AI_CREDIT_MICRO_CENTS (what a credit is worth), AI_CREDITS_FREE, AI_CREDITS_PRO, AI_CREDITS_BUSINESS (monthly
   credits per plan): development placeholders by default, required in production with a model (§16)
 AI_OVERAGE_METER_EVENT (Stripe Billing Meter event name; unset = hard limit), AI_OVERAGE_MAX_CREDITS=10000
@@ -851,7 +979,8 @@ Production: the Next.js `/api` rewrite must forward `X-Forwarded-For`, and
 the API must not be directly reachable, when `TRUST_FORWARDED_FOR=true`.
 
 Frontend env: `BACKEND_ORIGIN`, `NEXT_PUBLIC_APP_URL`,
-`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_ASSISTANT_ENABLED=false` (build time: whether the
+public pages present Bo; set it with the backend's `ASSISTANT_ENABLED`).
 
 ## 11. Frontend routes
 
@@ -989,21 +1118,26 @@ Clarifications made while implementing; the backend follows these.
   job in one transaction that locks the event row and sets `processed_at`
   (exactly-once effects). Handled: `checkout.session.completed|async_payment_succeeded|
   async_payment_failed|expired`, `charge.refunded`, `account.updated`,
+  `account.application.deauthorized`, `refund.updated|failed`, `charge.refund.updated`,
   `customer.subscription.created|updated|deleted`, `invoice.payment_failed`.
   Other types are stored and marked processed.
 - **Refunds**: the booking's refunded total is recomputed from succeeded refund
-  rows. If the provider call fails the cancellation still commits, the refund row
-  stays `pending` and a `payment_refund_retry` job retries it with the same
-  idempotency key, then emails `payment_refunded`. `charge.refunded` settles
-  pending rows and records refunds made in the Stripe dashboard.
+  rows. If the provider is unreachable the cancellation still commits, the refund
+  row stays `pending` and a `payment_refund_retry` job retries it with the same
+  idempotency key, then emails `payment_refunded`; a refund that fails for good
+  is handled as in §7 ("Refunds", steps 4-5). `charge.refunded` settles pending
+  rows and records refunds made in the Stripe dashboard (from a total reported
+  before a refund failed, the failed one's amount is taken off first).
 - **Plans from subscriptions**: `active`/`trialing` → plan of the price
   (`STRIPE_PRICE_*`, falling back to `metadata.plan`); `past_due` keeps the plan
   (dunning); `incomplete` never upgrades; `canceled`/`incomplete_expired`/`unpaid`/
   `paused`/deleted → `free`. Events for an older subscription never override the
   current one. `invoice.payment_failed` sets `plan_status=past_due`.
-- **Emails**: the cancellation email states the refund (or that it is being
-  processed / that no refund applies); the declined email states the refund; a
-  separate `payment_refunded` email is sent only for refunds outside those flows.
+- **Emails**: the cancellation and declined emails state the refund (or that it
+  is being processed, that the business will arrange it when it failed, or that
+  no refund applies); a separate `payment_refunded` email is sent only for
+  refunds outside those flows, and `payment_refund_failed` when a refund the
+  customer was told about fails.
   From is `"<Business name>" <EMAIL_FROM address>` with Reply-To the business
   contact email (business notifications reply to the customer).
 - **Clerk webhook**: `user.created|updated` upsert the user; `user.deleted`
@@ -1297,6 +1431,15 @@ type AiUsage = { plan: "free" | "pro" | "business"; timezone: string; periodStar
 ```
 
 ## 17. Bo, the business assistant
+
+> **Off by default.** We don't offer Bo for now: owners who want AI connect their own assistant (Claude, ChatGPT and
+> others) to the business MCP (§20.7; help page `/help/ai-agents-for-business`), which is on either way. With
+> `ASSISTANT_ENABLED` unset (or `false`, every environment's default) the `/v1/businesses/{id}/assistant…` routes are not
+> mounted (404), the nudges task doesn't run and nothing is metered as `assistant`. The tool registry, the proposals
+> (`assistant_actions`) and `/agent-requests` stay, since the business MCP serves the same tools. `Business.assistantAvailable`
+> (on and a model configured) tells the dashboard and the app whether to show Bo; the public pages follow
+> `NEXT_PUBLIC_ASSISTANT_ENABLED` at build time. Everything below describes Bo switched on; kept behind the switch rather
+> than deleted.
 
 Bo is a persistent assistant for owners, admins and staff, in the dashboard only: a floating character (bottom-left;
 ⌘J, or ⌘K "Ask Bo…") opening a side sheet (a drawer on phones) with nudges, quick actions, recent conversations, the
@@ -1910,7 +2053,8 @@ by `user_id`.
 
 - **Kinds** (`InboxKind`): `agent_approval` (an AI app's change waits for the person's approval, business or customer
   side; emailed by default), and for the team `booking_request`, `new_booking`, `booking_cancelled`, `booking_moved`
-  (in the app only by default: the business's contact email already gets new bookings).
+  (in the app only by default: the business's contact email already gets new bookings), and for owners
+  `payments_alert` (taking payments needs them: Stripe was disconnected; emailed by default).
 - **Who**: approvals go to the person whose app asked. Booking news goes to the business's active owners and admins and
   to staff whose own resource the booking is on (`resources.member_id`), and only for what customers do (online, through
   their AI assistant): new bookings and requests whenever the business is emailed about them (in that job, so the booking

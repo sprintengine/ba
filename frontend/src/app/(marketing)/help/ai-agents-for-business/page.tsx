@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { assistantMarketed } from "@/lib/assistant/flag";
 import {
   AI_HELP_PATH,
   BUSINESS_AI_HELP_PATH,
@@ -115,7 +116,8 @@ const SECTIONS: HelpSection[] = [
         <li>
           Owners and admins can use agents from the start. In <strong>Settings › AI agents</strong> the owner
           decides who may: owners and admins, the whole team, or nobody. Turning them off stops every
-          member&rsquo;s agent at once; the assistant in the dashboard keeps working.
+          member&rsquo;s agent at once
+          <DashboardAssistantNote />.
         </li>
         <li>
           Everything an agent changes is in the business&rsquo;s activity log, marked as done by AI with the
@@ -153,6 +155,11 @@ const SECTIONS: HelpSection[] = [
     ),
   },
 ];
+
+/** Turning agents off leaves Bo running: only worth saying where Bo is offered (read when the page renders). */
+function DashboardAssistantNote() {
+  return assistantMarketed() ? "; the assistant in the dashboard keeps working" : null;
+}
 
 export default function BusinessAgentsHelpPage() {
   return (

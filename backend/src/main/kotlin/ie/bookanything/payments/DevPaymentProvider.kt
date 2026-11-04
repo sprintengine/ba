@@ -17,8 +17,8 @@ class DevPaymentProvider(private val appBaseUrl: String) : PaymentProvider {
         CheckoutSession("dev_cs_${request.paymentId}", "$appBaseUrl/dev/checkout/${request.paymentId}")
 
     // The dev checkout page reads the payment, which is already cancelled: nothing to close.
-    override fun expireCheckout(business: BusinessRow, providerRef: String) = Unit
-    override fun refund(request: RefundRequest) = RefundResult("dev_re_${request.refundPaymentId}", true)
+    override fun expireCheckout(business: BusinessRow, providerRef: String, account: String?) = false
+    override fun refund(request: RefundRequest) = RefundResult("dev_re_${request.refundPaymentId}", RefundOutcome.SUCCEEDED)
     override fun createBillingCheckout(business: BusinessRow, plan: Plan, returnUrl: String, ownerEmail: String?): BillingSession =
         throw Errors.paymentsNotConfigured("Billing needs Stripe (STRIPE_SECRET_KEY).")
     override fun createBillingPortal(business: BusinessRow, returnUrl: String): String =

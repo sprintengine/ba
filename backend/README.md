@@ -78,12 +78,14 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `STRIPE_WEBHOOK_SECRET` | — | Signing secret of the platform ("Your account") webhook endpoint. |
 | `STRIPE_CONNECT_WEBHOOK_SECRET` | — | Signing secret of the Connect ("Connected accounts") endpoint, if it is a separate endpoint. Both may point at the same URL; each event is checked against both secrets. |
 | `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS` | — | Recurring price ids (`price_…`) for the Pro and Business plans. |
+| `STRIPE_CONNECT_CLIENT_ID` | — | The platform's Connect OAuth client id (`ca_…`, test or live to match the key). With it, owners can connect a Stripe account they already have; without it, only "create one for me" is offered. |
+| `STRIPE_CONNECT_REDIRECT_URI` | `${PUBLIC_API_URL}/v1/payments/stripe/callback` | Where Stripe's OAuth page sends the owner back. Must be listed exactly in the Connect OAuth settings. |
 | `RESEND_API_KEY` | — | Sends email through Resend. Without it emails are logged and recorded in `email_log`. |
 | `EMAIL_FROM` | `bookanything <bookings@bookanything.ie>` | The address must be on a domain verified in Resend. Emails show the business name as the sender name with this address, and set Reply-To to the business contact email. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | — | All three enable SMS reminders (Pro/Business plans, customers who gave a phone number). `TWILIO_FROM` is an E.164 number or a Messaging Service SID (`MG…`). |
 | `PUSH_NOTIFICATIONS` | `log` in development, else `off` | Push notifications to the mobile app (see "Push notifications"): `expo` sends them with Expo's push service, `log` logs what would be sent, `off` queues nothing. |
 | `EXPO_ACCESS_TOKEN` | — | Expo access token, sent with every push request when set; required by Expo once the project's "enhanced push security" is on. |
-| `ANTHROPIC_API_KEY` | — | Enables the AI business draft, the AI site builder and Bo. Without it the draft and site builder use the built-in generators and Bo opens in its "AI isn't configured" state. |
+| `ANTHROPIC_API_KEY` | — | Enables the AI business draft, the AI site builder (with `SITES_ENABLED`) and Bo (with `ASSISTANT_ENABLED`). Without it the draft and site builder use the built-in generators and Bo is hidden. |
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | Model for every AI feature. |
 | `AI_CREDIT_MICRO_CENTS` | development placeholder | What one AI credit is worth: model list-price cost per credit, in micro-cents (10⁻⁶ of a price-table cent). Required in production when `ANTHROPIC_API_KEY` is set. |
 | `AI_CREDITS_FREE` / `AI_CREDITS_PRO` / `AI_CREDITS_BUSINESS` | development placeholders | The monthly AI credits for each plan, set in deployment config. Required in production when `ANTHROPIC_API_KEY` is set. |
@@ -92,6 +94,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `AI_PRICES_FILE` | bundled `ai/prices.json` | A replacement price table (versioned USD prices per million tokens per model). |
 | `ASSISTANT_EFFORT` | `low` | Bo's reasoning effort (`low`, `medium`, `high`). |
 | `AI_FAKE_SCRIPT` | — | **Development only** (refused in production): `demo` or a JSON file path selects the scripted fake model for every AI feature (Bo plays the script; the draft and site builder fall back to their built-in generators). For UI work and e2e tests without a key. |
+| `ASSISTANT_ENABLED` | `false` | Bo, the business assistant (architecture §17). Off in every environment unless set: the `/assistant…` routes answer 404, nudges aren't refreshed, nothing is metered for Bo and `Business.assistantAvailable` is false, so the dashboard and the app hide it. Owners who want AI connect their own assistant to the business MCP instead (`BUSINESS_MCP_ENABLED`; help page `/help/ai-agents-for-business`), which works either way. Bo also needs a model (`ANTHROPIC_API_KEY` or `AI_FAKE_SCRIPT`). Build the frontend with `NEXT_PUBLIC_ASSISTANT_ENABLED` to match. |
 | `SITES_ENABLED` | `false` | Business websites and the site builder (architecture §15). Off: the public business has no `site`, `/{slug}` is the booking portal and the site routes answer 404. We don't sell websites, so leave it off. |
 | `UNSPLASH_ACCESS_KEY` | — | Enables stock photo search in the site editor (see "Stock photos"). |
 | `STORAGE_LOCAL_DIR` | development: `.data/uploads` | Directory for uploaded images, served by `GET /v1/public/uploads/…`. Set it explicitly to use local storage in production (single instance, persistent disk). |
@@ -170,9 +173,17 @@ platform takes **no application fee**. Plans are billed on the platform account 
 
 1. **Connect settings** (Dashboard → Connect → Settings): enable Connect, set the platform name,
    icon and brand colour (shown during onboarding), and add your frontend origin to the allowed
-   redirect domains. Accounts are created with `controller` settings equivalent to Standard
-   accounts: Stripe-hosted onboarding (Account Links), Stripe collects requirements, the connected
-   account pays its own Stripe fees and has the full Stripe dashboard.
+   redirect domains. Owners get a Stripe account one of two ways:
+   - **Create one for me**: accounts are created with `controller` settings equivalent to Standard
+     accounts: Stripe-hosted onboarding (Account Links), Stripe collects requirements, the connected
+     account pays its own Stripe fees and has the full Stripe dashboard.
+   - **I already have a Stripe account**: Connect OAuth (Settings → Connect → Onboarding options →
+     OAuth): turn on OAuth for Standard accounts, copy the client id (`ca_…`; test mode has its own)
+     into `STRIPE_CONNECT_CLIENT_ID`, and add the redirect URI
+     `https://<app-host>/api/v1/payments/stripe/callback` (`http://localhost:3000/api/v1/payments/stripe/callback`
+     in test mode for local development; the Next.js `/api` rewrite forwards it to the API). Only the
+     account id is kept: the access and refresh tokens Stripe's token endpoint returns are deprecated
+     and never read or stored; every call uses the platform key with the `Stripe-Account` header.
 2. **Products** (Dashboard → Product catalogue): create the "Pro" and "Business" monthly recurring
    prices and put their ids in `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS`.
    Configure the **customer portal** (Settings → Billing → Customer portal): allow switching
@@ -183,8 +194,9 @@ platform takes **no application fee**. Plans are billed on the platform account 
      `customer.subscription.deleted`, `invoice.payment_failed` → secret in `STRIPE_WEBHOOK_SECRET`.
    - Endpoint listening to **Connected accounts** events: `checkout.session.completed`,
      `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
-     `checkout.session.expired`, `charge.refunded`, `account.updated` →
-     secret in `STRIPE_CONNECT_WEBHOOK_SECRET`.
+     `checkout.session.expired`, `charge.refunded`, `account.updated`,
+     `account.application.deauthorized`, `refund.updated`, `refund.failed`, `charge.refund.updated` → secret in
+     `STRIPE_CONNECT_WEBHOOK_SECRET`.
 
    Events are verified with the Stripe SDK, stored once in `provider_events` and processed by the
    job worker exactly once (retries with backoff; errors are kept in `provider_events.error`).
@@ -199,8 +211,26 @@ account (`expires_at` = hold expiry, `metadata.bookingId/paymentId/businessId`, 
 `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`). A payment that arrives after the slot
 was taken is refunded in full automatically with an apology email. Refunds (policy, staff, declined
 requests) are created on the connected account with an idempotency key; if Stripe is unreachable the
-cancellation still succeeds and the refund is retried by the `payment_refund_retry` job. Refunds made
-in the Stripe dashboard are recorded from `charge.refunded`.
+cancellation still succeeds and the refund is retried by the `payment_refund_retry` job for about a day.
+A refund that fails for good (declined, refused, or still unreachable at the end) is marked failed and taken
+off the booking; the owners get a `payments_alert` (to refund another way, or to check their Stripe dashboard
+when it is unclear) and the customer is told the truth. Refunds made in the Stripe dashboard are recorded from
+`charge.refunded`; failures Stripe reports later (`refund.updated`) are handled the same way.
+
+Connecting an existing account (`ConnectExisting`): `POST /payments/connect/existing` (owner) stores a
+single-use nonce for the business and owner and returns Stripe's OAuth page with a state signed with
+`TOKEN_SECRET` (10 minutes). Stripe redirects the browser to `GET /v1/payments/stripe/callback`, which
+connects nothing (no session there): it checks the state and passes the code back to the owner's page,
+which calls `POST /payments/connect/existing/complete` signed in. That checks the state was issued to
+this business and this caller, spends it, checks they are still an owner and the business still has no
+account, exchanges the code (never retried: a reused code revokes the connection), and links the account
+unless another business here uses it or its default currency isn't the business's (Stripe's connection is
+then undone). Each charge stores the account it was taken on (`payments.provider_account`), so refunds
+and Stripe's events keep using it after a change. Disconnecting (`POST /payments/disconnect`) forgets the
+account and closes its open checkouts; an OAuth account is also deauthorized, and refused while a refund on
+it waits, a checkout on it was just paid or an upcoming booking paid on it could need a refund. No account is
+deauthorized while a business here uses it or any business's money on it could still need it. Stripe's
+`account.application.deauthorized` forgets the account from Stripe's side and tells the owners.
 
 ### Email (Resend)
 
@@ -308,14 +338,16 @@ subscription, then set `AI_OVERAGE_METER_EVENT`.
 
 ### Bo, the business assistant
 
-`/v1/businesses/{id}/assistant…` (architecture §17): per-member conversations streamed over SSE
-(`POST …/threads/{id}/messages`, `text/event-stream`), a tool registry (`assistant/tools`) whose handlers call the same
-commands as the dashboard as the signed-in member, proposals for every change (confirmed with
-`POST …/actions/{id}/confirm`, audited as `ai`), an owner-editable business memory and deterministic nudges (refreshed
-every 15 minutes). The system prompt is constant and the tool list depends only on the role, with a cache breakpoint
-after them; check `cache_read_input_tokens` on the `ai_usage` rows to confirm caching in production.
+Off unless `ASSISTANT_ENABLED=true` (and a model is configured): we don't offer Bo for now, and owners connect their own
+AI assistant to the business MCP instead (below). When on, `/v1/businesses/{id}/assistant…` (architecture §17):
+per-member conversations streamed over SSE (`POST …/threads/{id}/messages`, `text/event-stream`), a tool registry
+(`assistant/tools`) whose handlers call the same commands as the dashboard as the signed-in member, proposals for every
+change (confirmed with `POST …/actions/{id}/confirm`, audited as `ai`), an owner-editable business memory and
+deterministic nudges (refreshed every 15 minutes). The system prompt is constant and the tool list depends only on the
+role, with a cache breakpoint after them; check `cache_read_input_tokens` on the `ai_usage` rows to confirm caching in
+production.
 
-Try it without a key: `AI_FAKE_SCRIPT=demo` (development only) and ask "book someone in tomorrow", "what's on this
+Try it without a key: `ASSISTANT_ENABLED=true AI_FAKE_SCRIPT=demo` (development only) and ask "book someone in tomorrow", "what's on this
 week?" or "use lots of credits".
 
 ### Geocoding (Mapbox)

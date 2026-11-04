@@ -11,23 +11,30 @@ type Words = (key: VocabularyKey) => string;
 export const BUSINESS_MCP_PATH = "/mcp/business";
 export const CONNECTED_APPS_PATH = "/my/connected-apps";
 
-export const ACCESS: { value: AiAgentsAccess; label: string; description: string }[] = [
-  {
-    value: "admins",
-    label: "Owners and admins",
-    description: "Whoever runs the business can use their agent here. Staff can't.",
-  },
-  {
-    value: "team",
-    label: "Everyone on the team",
-    description: "Staff too, with the same access they have here: their own calendar and its customers.",
-  },
-  {
-    value: "off",
-    label: "Nobody",
-    description: "Every agent is stopped. The assistant in the dashboard isn't affected.",
-  },
-];
+/** Who may use agents; "Nobody" says Bo carries on where the deployment offers it (`assistantAvailable`). */
+export function accessOptions(
+  assistantAvailable: boolean,
+): { value: AiAgentsAccess; label: string; description: string }[] {
+  return [
+    {
+      value: "admins",
+      label: "Owners and admins",
+      description: "Whoever runs the business can use their agent here. Staff can't.",
+    },
+    {
+      value: "team",
+      label: "Everyone on the team",
+      description: "Staff too, with the same access they have here: their own calendar and its customers.",
+    },
+    {
+      value: "off",
+      label: "Nobody",
+      description: assistantAvailable
+        ? "Every agent is stopped. The assistant in the dashboard isn't affected."
+        : "Every agent is stopped.",
+    },
+  ];
+}
 
 /** The kinds of change an owner can let agents make without approval here, in the order they're listed. */
 export const KINDS: { value: AgentChangeKind; label: string; description: (v: Words) => string }[] = [

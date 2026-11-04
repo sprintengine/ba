@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
+import { readSentryConfig } from "./src/lib/observability/config";
 
 /**
  * The browser only ever talks to `/api/*` on our own origin. Next rewrites those
@@ -36,8 +38,28 @@ const webmcpOriginTrialTokens = [
  */
 const webmcpPages = "/((?!api/|mcp|_next/|\\.well-known/).*)";
 
+/**
+ * Error tracking (Sentry, README "Error tracking"): on when `NEXT_PUBLIC_SENTRY_DSN` is set at build time. Source maps
+ * are uploaded only when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT` are set too; otherwise none are
+ * generated, so no map is ever published.
+ */
+const sentry = readSentryConfig(process.env);
+const uploadSourceMaps = Boolean(
+  sentry && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT,
+);
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The DSN is always defined (empty without one), so the bundler drops the Sentry code that checks it. The resolved
+  // settings are inlined, so the defaults reach the browser too.
+  env: sentry
+    ? {
+        NEXT_PUBLIC_SENTRY_DSN: sentry.dsn,
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: sentry.environment,
+        NEXT_PUBLIC_SENTRY_RELEASE: sentry.release ?? "",
+        NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: String(sentry.tracesSampleRate),
+      }
+    : { NEXT_PUBLIC_SENTRY_DSN: "" },
   allowedDevOrigins,
   poweredByHeader: false,
   devIndicators: { position: "bottom-right" },
@@ -93,4 +115,32 @@ const nextConfig: NextConfig = {
   // hotlinking), and allowing every https host would turn /_next/image into an open image proxy.
 };
 
-export default nextConfig;
+/**
+ * Applied only with a DSN, so a build without one is exactly as before. Inert extras are off: no telemetry, no build
+ * logs, no build-time instrumentation of server packages. Without tracing the SDK's tracing code is compiled out and
+ * the client gets no route manifest; with it, the manifest names page loads after their route (`/manage/[token]`),
+ * not the raw path.
+ */
+export default sentry
+  ? withSentryConfig(
+      // The browser loader, run before hydration; it fetches the SDK itself once the page is idle.
+      { ...nextConfig, instrumentationClientInject: ["./src/lib/observability/sentry-loader.ts"] },
+      {
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: uploadSourceMaps ? process.env.SENTRY_AUTH_TOKEN : undefined,
+        silent: true,
+        telemetry: false,
+        release: { ...(sentry.release ? { name: sentry.release } : {}), create: uploadSourceMaps },
+        sourcemaps: uploadSourceMaps ? { deleteSourcemapsAfterUpload: true } : { disable: true },
+        widenClientFileUpload: uploadSourceMaps,
+        ...(sentry.tracesSampleRate === 0 ? { routeManifestInjection: false as const } : {}),
+        buildTimeInstrumentation: false,
+        suppressOnRouterTransitionStartWarning: true,
+        bundleSizeOptimizations: {
+          excludeDebugStatements: true,
+          excludeTracing: sentry.tracesSampleRate === 0,
+        },
+      },
+    )
+  : nextConfig;

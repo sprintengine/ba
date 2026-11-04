@@ -29,6 +29,27 @@ export async function requireLiveBackend(page: Page, testInfo: TestInfo) {
   );
 }
 
+/**
+ * Whether this run's backend offers Bo: on unless `E2E_ASSISTANT=off`. The suite runs against a backend with
+ * `ASSISTANT_ENABLED=true` (CI's e2e job and `scripts/e2e-stack.sh`); `assistant-off.spec.ts` runs on its own against
+ * one with it off (`scripts/e2e-stack.sh test-assistant-off`).
+ */
+export const BO_SWITCHED_ON = process.env.E2E_ASSISTANT !== "off";
+
+/**
+ * Bo's specs: skipped in a run with Bo off, and failing loudly (not skipping) when the backend doesn't offer it in a
+ * run that expects it, so a misconfigured stack can't pass them silently.
+ */
+export async function requireAssistant(page: Page, testInfo: TestInfo) {
+  testInfo.skip(!BO_SWITCHED_ON, "Bo is switched off for this run (E2E_ASSISTANT=off).");
+  const res = await page.request.get("/api/v1/businesses/lumen-physio", { headers: authHeader(OWNER) });
+  expect(res.ok(), "needs the demo seed").toBe(true);
+  expect(
+    (await res.json()).assistantAvailable,
+    "the backend doesn't offer Bo: start it with ASSISTANT_ENABLED=true and a model (AI_FAKE_SCRIPT=demo in development)",
+  ).toBe(true);
+}
+
 /** Sign in with dev auth (the token lives in localStorage). */
 export async function signInAs(page: Page, identity: typeof OWNER) {
   await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [

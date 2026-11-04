@@ -1146,3 +1146,43 @@ CREATE INDEX push_devices_user_idx ON push_devices (user_id) WHERE revoked_at IS
 -- soon as one of its successors has been used; reuse_count caps how many pairs one token gives that way.
 ALTER TABLE oauth_tokens ADD COLUMN parent_hash TEXT, ADD COLUMN reuse_count INT NOT NULL DEFAULT 0;
 CREATE INDEX oauth_tokens_parent_idx ON oauth_tokens (parent_hash) WHERE parent_hash IS NOT NULL;
+
+--changeset bookanything:0034-stripe-connect-existing
+-- How a business's Stripe account was linked (architecture section 7): 'created' by us (Account Links onboarding) or
+-- 'oauth', an account the owner already had. Accounts linked before this column existed were all created by us.
+-- stripe_connected_at: when it was linked; a deauthorization Stripe reports from before then is about an earlier link.
+-- stripe_account_generation: how many accounts it has forgotten; part of the idempotency key that creates an account, so
+-- "create one for me" after disconnecting creates a new one rather than replaying the forgotten one.
+ALTER TABLE businesses ADD COLUMN stripe_connect_method TEXT CHECK (stripe_connect_method IN ('created', 'oauth')),
+    ADD COLUMN stripe_connected_at TIMESTAMPTZ,
+    ADD COLUMN stripe_account_generation INT NOT NULL DEFAULT 0;
+UPDATE businesses SET stripe_connect_method = 'created', stripe_connected_at = updated_at WHERE stripe_account_id IS NOT NULL;
+-- The provider account a charge was taken on (Stripe: the connected account), copied to its refunds: refunds, closing a
+-- checkout and the provider's events about it use that account, whatever the business is connected to now.
+ALTER TABLE payments ADD COLUMN provider_account TEXT;
+UPDATE payments p SET provider_account = b.stripe_account_id FROM businesses b
+WHERE p.business_id = b.id AND p.provider = 'stripe' AND b.stripe_account_id IS NOT NULL;
+-- One business per Stripe account: Connect events are matched to the business by account, and disconnecting one
+-- business must never cut off another's payments. Also the lookup index for those events.
+CREATE UNIQUE INDEX businesses_stripe_account_uq ON businesses (stripe_account_id) WHERE stripe_account_id IS NOT NULL;
+
+-- Connect OAuth `state`: single use, short lived, bound to the business and the owner who started it. The signed state
+-- carries the nonce; only its SHA-256 is stored. Purged a day after it expires (Retention).
+CREATE TABLE stripe_connect_states (
+    nonce_hash TEXT PRIMARY KEY,
+    business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    return_url TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX stripe_connect_states_expires_idx ON stripe_connect_states (expires_at);
+ALTER TABLE stripe_connect_states ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stripe_connect_states FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON stripe_connect_states USING (coalesce(current_setting('app.business_id', true), '') = '' OR business_id = nullif(current_setting('app.business_id', true), '')::uuid);
+
+--changeset bookanything:0035-expired-holds-owe-nothing
+-- A hold that expired unpaid owes nothing (architecture section 7): bookings expired before this was recorded said
+-- "pending" still.
+UPDATE bookings SET payment_status = 'not_required' WHERE status = 'expired' AND payment_status = 'pending' AND amount_paid_cents = 0;

@@ -4,6 +4,7 @@ import ie.bookanything.audit.Audit
 import ie.bookanything.auth.BusinessAccess
 import ie.bookanything.auth.Role
 import ie.bookanything.auth.TokenService
+import ie.bookanything.business.BusinessRepository
 import ie.bookanything.db.constraintName
 import ie.bookanything.http.Errors
 import ie.bookanything.http.Patch
@@ -27,6 +28,8 @@ class TeamCommands(private val tokens: TokenService) {
         v.throwIfInvalid()
         TeamPolicy.requireMayInvite(access.role, role!!)
         val b = access.business
+        // Invitations sent at once count one after another: each counting first, they all saw the last seat free.
+        if (b.plan.memberLimit != null) BusinessRepository.lockSeats(conn, b.id)
         if (TeamRepository.hasMemberOrInvitation(conn, b.id, email!!)) throw alreadyInvited(email)
         TeamPolicy.requireFreeSeat(b.plan, TeamRepository.seatCount(conn, b.id))
         val id = UUID.randomUUID()
