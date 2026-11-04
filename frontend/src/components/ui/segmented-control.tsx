@@ -12,6 +12,8 @@ export type SegmentedOption<T extends string> = {
   label: React.ReactNode;
   icon?: React.ReactNode;
   disabled?: boolean;
+  /** A keyboard shortcut, shown in the option's tooltip. */
+  shortcut?: string;
 };
 
 /** Where options with an icon drop their visible label (it stays their accessible name and tooltip). */
@@ -83,8 +85,8 @@ export function SegmentedControl<T extends string>({
               </span>
             </ToggleGroup.Item>
           );
-          return collapse && typeof option.label === "string" ? (
-            <Tooltip key={option.value} content={option.label}>
+          return (collapse || option.shortcut) && typeof option.label === "string" ? (
+            <Tooltip key={option.value} content={option.label} shortcut={option.shortcut}>
               {item}
             </Tooltip>
           ) : (

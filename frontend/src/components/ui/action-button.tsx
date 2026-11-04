@@ -24,6 +24,8 @@ export type ActionButtonProps = Omit<ButtonProps, "children" | "asChild"> & {
   /** Renders a link instead of a button (a Next link; `newTab` for a plain one that opens a new tab, e.g. "View site"). */
   href?: string;
   newTab?: boolean;
+  /** A keyboard shortcut: the tooltip then shows at every size, with the shortcut after the label. */
+  shortcut?: string;
 };
 
 /**
@@ -37,6 +39,7 @@ export function ActionButton({
   collapse = "sm",
   href,
   newTab,
+  shortcut,
   className,
   ...props
 }: ActionButtonProps) {
@@ -48,7 +51,7 @@ export function ActionButton({
     </>
   );
   return (
-    <Tooltip content={label} disabled={!collapsed}>
+    <Tooltip content={label} shortcut={shortcut} disabled={!collapsed && !shortcut}>
       {href ? (
         <Button asChild className={cn(SQUARE[collapse], className)} {...props}>
           {newTab ? (

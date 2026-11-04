@@ -1,159 +1,282 @@
 "use client";
 
-import { useId } from "react";
-import { Copy, Plus, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Users } from "lucide-react";
 import type { CustomerGroup, DayOfWeek } from "@/lib/api/types";
-import { nextRange, validateDay, type TimeRange } from "@/lib/availability/weekly-hours";
-import { cn } from "@/lib/utils";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { IconButton } from "@/components/ui/icon-button";
-import { Switch } from "@/components/ui/switch";
-import { TimeInput } from "@/components/ui/time-input";
-import { AudiencePicker } from "./audience-picker";
+  moveRangeEdge,
+  rangeAt,
+  TIMELINE_STEP,
+  validateDay,
+  type TimeRange,
+} from "@/lib/availability/weekly-hours";
+import { endMinutes } from "@/lib/availability/windows";
+import { timeToMinutes } from "@/lib/format/datetime";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DayEditor } from "./day-editor";
 
-/** One weekday: open or closed, its time ranges (with who can book them) and copy-to-other-days. */
+export type Axis = { start: number; end: number };
+
+/** Day, timeline, times: on phones the times sit beside the day, with the timeline full width below. */
+export const ROW_GRID =
+  "grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-x-3 sm:grid-cols-[3rem_minmax(0,1fr)_10rem]";
+
+const summary = (ranges: readonly TimeRange[]) =>
+  ranges.length === 0 ? "Closed" : ranges.map((r) => `${r.startTime}–${r.endTime}`).join(", ");
+
+/**
+ * One weekday on the shared time axis: a bar per working stretch, its times in words beside it. The times open the
+ * day's editor, which is all you need by keyboard or touch; on the timeline a bar opens it too, its edges drag (or
+ * step with the arrow keys) by a quarter hour, and clicking a free part of the day adds a stretch.
+ */
 export function DayRow({
+  day,
   label,
+  short,
   ranges,
+  axis,
   groups,
   editable,
   onChange,
   onCopy,
 }: {
+  day: DayOfWeek;
   label: string;
+  short: string;
   ranges: TimeRange[];
+  axis: Axis;
   groups: CustomerGroup[];
   editable: boolean;
   onChange: (ranges: TimeRange[]) => void;
   onCopy: (targets: DayOfWeek[]) => void;
 }) {
+  const [open, setOpen] = useState(false);
   const errors = validateDay(ranges);
-  const open = ranges.length > 0;
-  const errorId = useId();
+  const firstError = errors.find(Boolean);
+  const closed = ranges.length === 0;
   return (
-    // Phones: the day and its actions on one line, the hours full width below; from sm, one row.
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 px-4 py-3 sm:flex sm:flex-row">
-      <div className="flex w-36 shrink-0 items-center gap-3 sm:h-9 pointer-coarse:min-h-11 pointer-coarse:sm:h-11">
-        <Switch
-          size="sm"
-          aria-label={`${label} open`}
-          checked={open}
-          disabled={!editable}
-          onCheckedChange={(c) => onChange(c ? [nextRange([])] : [])}
-        />
-        <span className={cn("text-sm font-medium", !open && "text-muted-foreground")}>{label}</span>
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2 max-sm:col-span-2">
-        {!open ? (
-          <span className="text-sm text-subtle-foreground sm:leading-9 pointer-coarse:sm:leading-11">
-            Closed
-          </span>
-        ) : (
-          ranges.map((r, i) => {
-            // Several ranges on a day: number them so each control has its own name.
-            const which = ranges.length > 1 ? ` (${i + 1})` : "";
-            const error = errors[i];
-            const invalid = {
-              "aria-invalid": error ? true : undefined,
-              "aria-describedby": error ? `${errorId}-${i}` : undefined,
-            };
-            return (
-              <div key={i} className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="min-w-24 flex-1 sm:w-28 sm:flex-none">
-                    <TimeInput
-                      size="sm"
-                      value={r.startTime}
-                      disabled={!editable}
-                      aria-label={`${label} start${which}`}
-                      {...invalid}
-                      className="w-full"
-                      onValueChange={(t) =>
-                        t && onChange(ranges.map((x, j) => (j === i ? { ...x, startTime: t } : x)))
-                      }
-                    />
-                  </div>
-                  <span className="text-subtle-foreground">–</span>
-                  <div className="min-w-24 flex-1 sm:w-28 sm:flex-none">
-                    <TimeInput
-                      size="sm"
-                      value={r.endTime}
-                      disabled={!editable}
-                      aria-label={`${label} end${which}`}
-                      {...invalid}
-                      className="w-full"
-                      onValueChange={(t) =>
-                        t && onChange(ranges.map((x, j) => (j === i ? { ...x, endTime: t } : x)))
-                      }
-                    />
-                  </div>
-                  {groups.length > 0 && (
-                    <AudiencePicker
-                      label={`${label} ${r.startTime}–${r.endTime}`}
-                      groups={groups}
-                      value={r.audienceGroupIds}
-                      disabled={!editable}
-                      onChange={(ids) =>
-                        onChange(ranges.map((x, j) => (j === i ? { ...x, audienceGroupIds: ids } : x)))
-                      }
-                    />
-                  )}
-                  {editable && (
-                    <IconButton
-                      size="sm"
-                      label={`Remove ${label} ${r.startTime}–${r.endTime}`}
-                      onClick={() => onChange(ranges.filter((_, j) => j !== i))}
-                    >
-                      <X />
-                    </IconButton>
-                  )}
-                </div>
-                {error && (
-                  <p
-                    id={`${errorId}-${i}`}
-                    role="alert"
-                    className="text-xs font-medium text-danger-soft-foreground"
-                  >
-                    {error}
-                  </p>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-      {editable && (
-        <div className="flex shrink-0 items-center gap-0.5 max-sm:col-start-2 max-sm:row-start-1 sm:h-9 pointer-coarse:sm:h-11">
-          {open && (
-            <IconButton
+    <div role="group" aria-label={label} className={cn(ROW_GRID, "gap-y-1 py-1")} data-day={day}>
+      <span className={cn("text-sm font-medium", closed && "text-muted-foreground")}>
+        <span aria-hidden>{short}</span>
+      </span>
+      <Timeline
+        label={label}
+        ranges={ranges}
+        errors={errors}
+        axis={axis}
+        editable={editable}
+        onChange={onChange}
+        onOpen={() => setOpen(true)}
+      />
+      {editable ? (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
               size="sm"
-              label={`Add hours to ${label}`}
-              onClick={() => onChange([...ranges, nextRange(ranges)])}
+              variant="ghost"
+              aria-label={`Edit ${label}: ${summary(ranges)}`}
+              className={cn(
+                "tnum h-auto min-h-8 justify-start px-2 py-1 text-left font-normal whitespace-normal max-sm:col-start-2 max-sm:row-start-1 sm:justify-end sm:text-right",
+                closed && "text-muted-foreground",
+              )}
             >
-              <Plus />
-            </IconButton>
+              {summary(ranges)}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            aria-label={`${label} hours`}
+            className="w-[22rem] max-w-[calc(100vw-2rem)]"
+          >
+            <DayEditor label={label} ranges={ranges} groups={groups} onChange={onChange} onCopy={onCopy} />
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <span
+          className={cn(
+            "tnum text-sm max-sm:col-start-2 max-sm:row-start-1 sm:text-right",
+            closed && "text-muted-foreground",
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton size="sm" label={`Copy ${label}`}>
-                <Copy />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => onCopy([1, 2, 3, 4, 5, 6, 7])}>
-                Copy to all days
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onCopy([1, 2, 3, 4, 5])}>Copy to weekdays</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onCopy([6, 7])}>Copy to the weekend</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        >
+          {summary(ranges)}
+        </span>
+      )}
+      {firstError && (
+        <p role="alert" className="col-span-full text-xs font-medium text-danger-soft-foreground">
+          {firstError}
+        </p>
       )}
     </div>
+  );
+}
+
+function Timeline({
+  label,
+  ranges,
+  errors,
+  axis,
+  editable,
+  onChange,
+  onOpen,
+}: {
+  label: string;
+  ranges: TimeRange[];
+  errors: (string | null)[];
+  axis: Axis;
+  editable: boolean;
+  onChange: (ranges: TimeRange[]) => void;
+  onOpen: () => void;
+}) {
+  const track = useRef<HTMLDivElement>(null);
+  const span = axis.end - axis.start;
+  const percent = (minute: number) => ((minute - axis.start) / span) * 100;
+  const minuteAt = (clientX: number) => {
+    const rect = track.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return axis.start;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return axis.start + ratio * span;
+  };
+  const hours = Array.from({ length: Math.floor(span / 60) + 1 }, (_, i) => i);
+  return (
+    // A pointer shortcut for what the day's editor does, hence exempt from the touch-size rule: the times beside it
+    // open that editor at full size, and keyboard users have them too.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div
+      ref={track}
+      data-touch-exempt
+      className={cn(
+        "relative h-8 overflow-hidden rounded-md bg-surface-sunken max-sm:col-span-full max-sm:row-start-2",
+        editable && "cursor-copy",
+      )}
+      onClick={(e) => {
+        if (!editable || (e.target as HTMLElement).closest("[data-range]")) return;
+        const added = rangeAt(ranges, minuteAt(e.clientX));
+        if (added) onChange([...ranges, added]);
+      }}
+    >
+      {hours.map((i) => (
+        <span
+          key={i}
+          aria-hidden
+          className="absolute inset-y-0 w-px bg-border-subtle"
+          style={{ left: `${(i * 60 * 100) / span}%` }}
+        />
+      ))}
+      {ranges.map((r, i) => {
+        const start = timeToMinutes(r.startTime);
+        const end = endMinutes(r.endTime);
+        const time = `${r.startTime}–${r.endTime}`;
+        const invalid = !!errors[i] || end <= start;
+        const restricted = r.audienceGroupIds.length > 0;
+        const style = {
+          left: `${Math.max(0, percent(start))}%`,
+          width: `${Math.max(0, percent(Math.max(end, start)) - Math.max(0, percent(start)))}%`,
+        };
+        // The times are in words beside the timeline: the bar is the shape, marked only when it's restricted.
+        const body = restricted ? <Users aria-hidden className="size-3 shrink-0" /> : null;
+        const look = cn(
+          "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border px-2 text-2xs font-medium",
+          invalid
+            ? "border-danger-border bg-danger-soft text-danger-soft-foreground"
+            : "border-brand-border bg-brand-soft text-brand-soft-foreground",
+        );
+        return (
+          <div key={i} data-range="" className="absolute inset-y-0.5 rounded-sm bg-surface" style={style}>
+            {editable ? (
+              <>
+                <button
+                  type="button"
+                  aria-label={`Edit ${label} ${time}`}
+                  onClick={onOpen}
+                  className={cn(
+                    look,
+                    "tnum cursor-pointer transition-colors outline-none hover:border-brand focus-visible:ring-2 focus-visible:ring-ring",
+                  )}
+                >
+                  {body}
+                </button>
+                <EdgeHandle
+                  edge="start"
+                  label={`${label} ${time} start`}
+                  minute={start}
+                  time={r.startTime}
+                  axis={axis}
+                  onMove={(m) => onChange(moveRangeEdge(ranges, i, "start", m))}
+                  minuteAt={minuteAt}
+                />
+                <EdgeHandle
+                  edge="end"
+                  label={`${label} ${time} end`}
+                  minute={end}
+                  time={r.endTime}
+                  axis={axis}
+                  onMove={(m) => onChange(moveRangeEdge(ranges, i, "end", m))}
+                  minuteAt={minuteAt}
+                />
+              </>
+            ) : (
+              <span className={cn(look, "tnum")}>{body}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A bar's start or end: drag it, or step it by a quarter hour with the arrow keys. */
+function EdgeHandle({
+  edge,
+  label,
+  minute,
+  time,
+  axis,
+  onMove,
+  minuteAt,
+}: {
+  edge: "start" | "end";
+  label: string;
+  minute: number;
+  time: string;
+  axis: Axis;
+  onMove: (minute: number) => void;
+  minuteAt: (clientX: number) => number;
+}) {
+  const dragging = useRef(false);
+  return (
+    <div
+      role="slider"
+      tabIndex={0}
+      aria-label={label}
+      aria-orientation="horizontal"
+      aria-valuemin={0}
+      aria-valuemax={1439}
+      aria-valuenow={Math.min(minute, 1439)}
+      aria-valuetext={time}
+      className={cn(
+        "absolute inset-y-0 w-2 cursor-ew-resize rounded-sm outline-none hover:bg-brand/40 focus-visible:bg-brand/60 focus-visible:ring-2 focus-visible:ring-ring",
+        edge === "start" ? "left-0" : "right-0",
+      )}
+      onPointerDown={(e) => {
+        dragging.current = true;
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (!dragging.current) return;
+        // Stays on the axis while dragging, so the day doesn't rescale under the pointer.
+        onMove(Math.min(axis.end, Math.max(axis.start, minuteAt(e.clientX))));
+      }}
+      onPointerUp={() => {
+        dragging.current = false;
+      }}
+      onKeyDown={(e) => {
+        const delta = e.key === "ArrowLeft" ? -TIMELINE_STEP : e.key === "ArrowRight" ? TIMELINE_STEP : 0;
+        if (delta === 0) return;
+        e.preventDefault();
+        onMove(minute + delta);
+      }}
+    />
   );
 }

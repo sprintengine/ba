@@ -110,7 +110,7 @@ describe("ResourcesView", () => {
     expect(items[0]).toHaveAttribute("aria-current", "true");
     expect(items[1]).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { level: 2, name: "Jo Park" })).toBeInTheDocument();
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeChecked();
+    expect(await screen.findByRole("button", { name: /^Edit Monday: / })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Closed days" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
@@ -168,13 +168,15 @@ describe("ResourcesView", () => {
     fakeResourcesApi({ resources: [sam], team });
     const user = userEvent.setup();
     renderDashboard(<ResourcesView />);
+    await user.click(await screen.findByRole("button", { name: "Edit Tuesday: Closed" }));
     await user.click(await screen.findByRole("switch", { name: "Tuesday open" }));
+    await user.keyboard("{Escape}");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Time off and extra hours" }));
-    expect(screen.queryByRole("switch", { name: "Tuesday open" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Edit Tuesday: / })).not.toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Weekly hours" }));
-    expect(screen.getByRole("switch", { name: "Tuesday open" })).toBeChecked();
+    expect(screen.getByRole("button", { name: /^Edit Tuesday: 09:00/ })).toBeInTheDocument();
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
 
@@ -189,7 +191,8 @@ describe("ResourcesView", () => {
     expect(await screen.findByText(/View only/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Closed days" })).not.toBeInTheDocument();
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeDisabled();
+    expect(await screen.findByRole("group", { name: "Monday" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Edit Monday/ })).not.toBeInTheDocument();
   });
 
   it("shows staff their own calendar as editable", async () => {
@@ -198,7 +201,7 @@ describe("ResourcesView", () => {
       team: [member({ id: "m3", userId: "u1", role: "staff" })],
     });
     renderDashboard(<ResourcesView />, "staff");
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: /^Edit Monday: / })).toBeEnabled();
     expect(screen.queryByText(/View only/)).not.toBeInTheDocument();
   });
 

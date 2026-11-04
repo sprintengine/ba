@@ -30,11 +30,11 @@ function setScreen(width: number, pointer: "fine" | "coarse" = "fine") {
   vi.stubGlobal("matchMedia", (media: string) => {
     const min = /min-width:\s*(\d+)px/.exec(media);
     const max = /max-width:\s*(\d+)px/.exec(media);
-    const matches = min
-      ? width >= Number(min[1])
-      : max
-        ? width <= Number(max[1])
-        : media.includes(`pointer: ${pointer}`);
+    const asked = /pointer:\s*(fine|coarse)/.exec(media);
+    const matches =
+      (!min || width >= Number(min[1])) &&
+      (!max || width <= Number(max[1])) &&
+      (!asked || asked[1] === pointer);
     return { matches, media, addEventListener: () => {}, removeEventListener: () => {} };
   });
 }
@@ -164,6 +164,23 @@ describe("DashboardShell", () => {
     window.localStorage.setItem("bookanything.sidebarCollapsed", "1");
     renderShell();
     expect(await screen.findByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+  });
+
+  it("starts collapsed in a small window with a mouse, and keeps a saved choice", async () => {
+    setScreen(1100);
+    const first = renderShell();
+    expect(await screen.findByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    first.unmount();
+
+    setScreen(1100, "coarse");
+    const touch = renderShell();
+    expect(await screen.findByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
+    touch.unmount();
+
+    setScreen(1100);
+    window.localStorage.setItem("bookanything.sidebarCollapsed", "0");
+    renderShell();
+    expect(await screen.findByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
   });
 
   it("opens the full navigation from the phone tab bar's More, and closes it on navigation", async () => {

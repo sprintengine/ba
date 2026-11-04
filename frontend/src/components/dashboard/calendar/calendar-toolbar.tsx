@@ -88,10 +88,14 @@ export function CalendarToolbar({
           </Button>
         </Tooltip>
         <div className="flex items-center max-sm:order-2">
-          <IconButton label={view === "day" ? "Previous day" : "Previous week"} onClick={() => go(-1)}>
+          <IconButton
+            label={view === "day" ? "Previous day" : "Previous week"}
+            shortcut="←"
+            onClick={() => go(-1)}
+          >
             <ChevronLeft />
           </IconButton>
-          <IconButton label={view === "day" ? "Next day" : "Next week"} onClick={() => go(1)}>
+          <IconButton label={view === "day" ? "Next day" : "Next week"} shortcut="→" onClick={() => go(1)}>
             <ChevronRight />
           </IconButton>
         </div>
@@ -150,8 +154,8 @@ export function CalendarToolbar({
           value={view}
           onValueChange={(val) => setParams({ view: val === "day" ? null : val })}
           options={[
-            { value: "day", label: "Day", icon: <Columns3 aria-hidden /> },
-            { value: "week", label: "Week", icon: <CalendarRange aria-hidden /> },
+            { value: "day", label: "Day", icon: <Columns3 aria-hidden />, shortcut: "D" },
+            { value: "week", label: "Week", icon: <CalendarRange aria-hidden />, shortcut: "W" },
           ]}
         />
       </div>
@@ -161,6 +165,7 @@ export function CalendarToolbar({
         onClick={onNew}
         icon={<CalendarPlus />}
         label={`New ${v("booking")}`}
+        shortcut="N"
         className="order-2 xl:order-3"
       />
     </div>
@@ -195,7 +200,7 @@ function DatePopover({
   date,
   view,
   today,
-  range: { days, from, to },
+  range: { from, to },
   setParams,
 }: {
   date: PlainDate;
@@ -210,7 +215,6 @@ function DatePopover({
     view === "day" ? fmt.date(date, "long") : `${fmt.date(from, "short")} – ${fmt.date(to, "medium")}`;
   const shortTitle =
     view === "day" ? fmt.date(date, "dayMonth") : `${fmt.date(from, "short")} – ${fmt.date(to, "short")}`;
-  const showToday = !(days.includes(today) && view === "week") && date === today;
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -220,9 +224,6 @@ function DatePopover({
         >
           <span className="hidden sm:inline">{title}</span>
           <span className="sm:hidden">{shortTitle}</span>
-          {showToday ? (
-            <span className="ml-2 text-sm font-normal text-muted-foreground max-sm:hidden">Today</span>
-          ) : null}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-3">

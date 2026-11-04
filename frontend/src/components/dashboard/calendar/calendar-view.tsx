@@ -9,7 +9,6 @@ import { useNow } from "@/lib/hooks/use-now";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Kbd } from "@/components/ui/kbd";
 import { PageContainer } from "@/components/ui/page-container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingActions } from "../booking/booking-actions-provider";
@@ -119,7 +118,12 @@ export function CalendarView() {
                   aria-busy={data.updating || undefined}
                 >
                   <div className="sticky left-0 z-20 bg-surface">
-                    <TimeGutter startHour={startHour} endHour={endHour} formatHour={formatHour} />
+                    <TimeGutter
+                      startHour={startHour}
+                      endHour={endHour}
+                      formatHour={formatHour}
+                      nowMinute={days.includes(today) ? nowMinute : null}
+                    />
                   </div>
                   {loading
                     ? Array.from({ length: Math.max(columns.length, 3) }, (_, i) => (
@@ -166,7 +170,7 @@ export function CalendarView() {
   );
 }
 
-/** Below the grid: how many bookings are shown, the timezone and the keyboard shortcuts. */
+/** Below the grid: how many bookings are shown and the timezone (the shortcuts are in the toolbar's tooltips). */
 function CalendarFooter({ count, updating }: { count: number; updating: boolean }) {
   const business = useCurrentBusiness();
   const { v } = useVocabulary();
@@ -183,11 +187,7 @@ function CalendarFooter({ count, updating }: { count: number; updating: boolean 
         {business.timezone.replace(/_/g, " ")}
       </span>
       <span className="hidden pointer-coarse:inline">Tap a free time to book</span>
-      <span className="hidden items-center gap-1.5 sm:flex pointer-coarse:hidden">
-        <Kbd>←</Kbd>
-        <Kbd>→</Kbd> move · <Kbd>T</Kbd> today · <Kbd>D</Kbd>/<Kbd>W</Kbd> view · <Kbd>N</Kbd> new · click an
-        empty slot to book
-      </span>
+      <span className="hidden sm:inline pointer-coarse:hidden">Click a free time to book</span>
     </div>
   );
 }

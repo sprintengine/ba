@@ -15,7 +15,6 @@ import {
   validatePeriod,
   validateWeek,
   weeklyMinutes,
-  WEEKDAYS,
   type Schedule,
   type Schedules,
   type TimeRange,
@@ -30,9 +29,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { withToast } from "@/components/common/with-toast";
 import { useFmt } from "../../common";
 import { AddPeriodDialog } from "./add-period-dialog";
-import { DayRow } from "./day-row";
+import { WeekTimeline } from "./week-timeline";
 
-/** The weekly-hours editor: regular and seasonal schedules, a row per weekday, save and discard. */
+/** The weekly-hours editor: regular and seasonal schedules, a timeline of the week, save and discard. */
 export function WeeklyHoursEditor({
   resourceId,
   initial,
@@ -137,19 +136,13 @@ export function WeeklyHoursEditor({
         </div>
       ) : null}
 
-      <div className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface dark:bg-surface-raised">
-        {WEEKDAYS.map(({ day, long }) => (
-          <DayRow
-            key={day}
-            label={long}
-            ranges={active.days[day]}
-            groups={activeGroups}
-            editable={editable}
-            onChange={(r) => setDay(day, r)}
-            onCopy={(targets) => setDays(copyDay(active.days, day, targets))}
-          />
-        ))}
-      </div>
+      <WeekTimeline
+        week={active.days}
+        groups={activeGroups}
+        editable={editable}
+        onChangeDay={setDay}
+        onCopyDay={(day, targets) => setDays(copyDay(active.days, day, targets))}
+      />
 
       {editable && (
         <div className="flex items-center justify-end gap-2">
