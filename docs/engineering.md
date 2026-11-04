@@ -24,7 +24,7 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Commit messages | `npm run hooks:install` (once; checks each commit) | `scripts/conventional-commits.mjs`, §14 |
 | All of the above but e2e | `npm test` | |
 
-CI (`.github/workflows/ci.yml`) runs five jobs on every push and PR: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
+CI (`.github/workflows/ci.yml`) runs five jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
 floor), **Frontend** (format, lint, typecheck, unit tests with coverage, build, bundle-size budget), **Mobile**
 (format, lint, design-token lint, typecheck, app config per variant, tests with coverage incl. the shared-code
 boundary; `docs/mobile.md`) and **E2E**

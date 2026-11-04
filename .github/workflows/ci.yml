@@ -1,7 +1,9 @@
 name: CI
 
+# Pull requests, and pushes to main. A branch's push needs no run of its own: its pull request runs the same jobs.
 on:
   push:
+    branches: [main]
   pull_request:
 
 # A newer push to the same branch or PR cancels the run in progress.
