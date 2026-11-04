@@ -160,7 +160,7 @@ Add **`tnum`** (tabular numerals) to times, prices, counts in tables.
 SIL Open Font License 1.1, which permits bundling and redistribution: Figtree (`app/fonts/`,
 `components/marketing/fonts/`) and the site themes' IBM Plex Sans, Fraunces, DM Sans, Archivo, Fredoka, Nunito,
 Instrument Serif, Instrument Sans and Geist (`lib/site/font-files/<family>/OFL.txt`; the files are Google Fonts'
-own latin and latin-ext subsets, unmodified).
+own subset files, every subset it serves for the family, unmodified).
 
 **Radii.** `rounded-md` (10px) small controls · `rounded-lg` (12px) inputs · `rounded-xl` (14px)
 cards, tables · `rounded-2xl` dialogs/sheets. Buttons use `rounded-button(-sm/-lg)` and site images `rounded-image`
@@ -396,8 +396,9 @@ const { isLoaded, isSignedIn, user, getToken, signOut, mode } = useAuth();
   (including the booking flow at `/[slug]/book`) follows the theme. The palette's primary and accent colours are
   computed against the theme's own surfaces for contrast (`themes.test.ts` checks every theme against awkward colours).
 - **Fonts** come from a small allowlist committed to the repository (`lib/site/fonts.ts` and `fonts.module.css`, files
-  in `lib/site/font-files/`; latin and latin-ext only, not preloaded, so only the theme's files load). A build never
-  downloads fonts: `next/font/google` is banned by lint because it fetches from Google while building.
+  in `lib/site/font-files/`; every subset Google Fonts serves, not preloaded, so a page loads only its theme's files for
+  the scripts its text uses). A build never downloads fonts: `next/font/google` is banned by lint because it fetches
+  from Google while building.
   Use `site-heading` (theme font, weight, tracking, case) for site headings and `font-heading`/`font-body` elsewhere.
 - **Sections** are a registry in three typed parts: `lib/site/section-meta.ts` (label, defaults, "has content"; no
   zod, so the public site ships without it) extended by `lib/site/sections.ts` (the zod schema mirroring the backend,
