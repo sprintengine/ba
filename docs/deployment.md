@@ -48,6 +48,7 @@ Two environments, the same shape:
 | Postgres | its own project | its own project |
 | Uploads bucket | `bookanything-uploads` | `bookanything-uploads-staging` |
 | Clerk, Stripe | production instance, live keys | development instance, test keys |
+| Simulation sign-in (`SIMULATION_AUTH_SECRET`) | refused: the API won't start with it | optional, for the reliability simulation (2.4) |
 | Gets a release | by promote, after staging | by release, from a nightly |
 
 Hostnames sit one level under the zone (`api-staging`, not `api.staging`): Cloudflare's free certificate covers
@@ -119,6 +120,27 @@ and in the env files on each VM. The GitHub side (every secret and variable the 
    `migrate.env`: the owner role and its password.
 5. Set the point-in-time restore window to the longest the plan allows. The job worker polls the database, so the
    compute never scales to zero: pick the smallest fixed size.
+
+### 2.4 The reliability simulation on staging (optional)
+
+The simulation ([`simulation.md`](simulation.md), "On staging") runs against staging nightly from GitHub Actions
+(`.github/workflows/simulation-staging.yml`), signing its bots in with staging-only simulation tokens.
+
+| Where | Setting | Value |
+|---|---|---|
+| Staging VM, `backend.env` | `SIMULATION_AUTH_SECRET` | `openssl rand -base64 48`; not `TOKEN_SECRET`. **Never in production's `backend.env`**: the API refuses to start with it. |
+| Staging VM, `backend.env` | `SIMULATION_RATE_LIMIT_MULTIPLIER` | optional, default `50`: the simulation's rate-limit allowance |
+| GitHub, Actions secret | `STAGING_SIMULATION_AUTH_SECRET` | the same value as `SIMULATION_AUTH_SECRET` |
+| GitHub, Actions variables | `STAGING_API_URL`, `STAGING_APP_URL` | `https://api-staging.bookanything.ie`, `https://staging.bookanything.ie` |
+| GitHub, Actions secret | `STAGING_SIM_DATABASE_URL` | optional: a read-only `postgres://` URL to the staging database, for the SQL checks |
+| Staging VM, crontab of `deploy` | `purge-simulation` | weekly, e.g. `0 4 * * 0 cd /opt/bookanything && docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` |
+
+After setting the secret, `sudo -u deploy ./deploy.sh` restarts the API with it (its startup line then says
+`simulation=on`); check it with a short run
+(`workflow_dispatch` with `duration: 10m`). Paid bookings need Stripe on staging (test keys and both webhooks) and a
+Connect account with charges enabled on each simulated business (simulation.md, "Payments on staging"). To switch the
+simulation off, remove the secret from `backend.env` and redeploy: its tokens stop working at once, and the nightly
+run skips itself once the Actions secret is gone too.
 
 ## 3. On the VM
 
