@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Business, UpdateBusiness } from "@/lib/api/types";
 import { expectNoAxeViolations } from "@/test/axe";
-import { business, json, renderDashboard } from "../../test/render";
+import { ASSISTANT_ON, business, json, renderDashboard } from "../../test/render";
 import { GeneralSettings } from "../general-settings";
 import { apiError, invalidRequest } from "./settings-fixtures";
 
@@ -230,7 +230,7 @@ describe("GeneralSettings", () => {
   it("keeps the save bar above the phone tab bar and Bo's launcher, over them", async () => {
     api();
     const user = userEvent.setup();
-    renderDashboard(<GeneralSettings />);
+    renderDashboard(<GeneralSettings />, "owner", ASSISTANT_ON);
     await user.type(textbox(/about/i), "Sports injuries");
     // jsdom has no layout, so the placement is checked by its classes (end to end covers the real thing).
     const bar = screen.getByText("You have unsaved changes").parentElement!;
@@ -238,6 +238,19 @@ describe("GeneralSettings", () => {
     expect(bar.className).toContain(
       "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+5rem)]",
     );
+  });
+
+  it("keeps the save bar just above the phone tab bar where there's no Bo launcher", async () => {
+    api();
+    const user = userEvent.setup();
+    renderDashboard(<GeneralSettings />);
+    await user.type(textbox(/about/i), "Sports injuries");
+    const bar = screen.getByText("You have unsaved changes").parentElement!;
+    expect(bar).toHaveClass("sticky", "max-sm:z-40");
+    expect(bar.className).toContain(
+      "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+0.75rem)]",
+    );
+    expect(bar.className).not.toContain("+5rem)]");
   });
 
   it("picks a currency with the keyboard", async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AiCredits } from "@/lib/api/types";
-import { canUseCredits, creditsPercent, creditsTone, formatCredits } from "./credits";
+import { aiCreditUses, canUseCredits, creditsPercent, creditsTone, formatCredits } from "./credits";
 
 const credits = (patch: Partial<AiCredits> = {}): AiCredits => ({
   limit: 100,
@@ -30,5 +30,14 @@ describe("AI credits", () => {
     expect(creditsPercent(credits({ used: 130 }))).toBe(100);
     expect(creditsPercent(credits({ limit: 0 }))).toBe(100);
     expect(canUseCredits(credits({ limitReached: true }))).toBe(false);
+  });
+});
+
+describe("aiCreditUses", () => {
+  it("names what draws on the credits here, or nothing", () => {
+    expect(aiCreditUses({ assistantAvailable: true, sitesEnabled: true })).toBe("Bo and the AI site builder");
+    expect(aiCreditUses({ assistantAvailable: true })).toBe("Bo");
+    expect(aiCreditUses({ sitesEnabled: true, assistantAvailable: false })).toBe("the AI site builder");
+    expect(aiCreditUses({})).toBeNull();
   });
 });

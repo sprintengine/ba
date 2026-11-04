@@ -18,23 +18,30 @@ import { toast } from "@/components/ui/toast";
 import { ServerUrlField } from "@/components/oauth/server-url-field";
 import { SettingsCard, SettingsHeader } from "./settings-common";
 
-const ACCESS: { value: AiAgentsAccess; label: string; description: string }[] = [
-  {
-    value: "admins",
-    label: "Owners and admins",
-    description: "Whoever runs the business can use their agent here. Staff can't.",
-  },
-  {
-    value: "team",
-    label: "Everyone on the team",
-    description: "Staff too, with the same access they have here: their own calendar and its customers.",
-  },
-  {
-    value: "off",
-    label: "Nobody",
-    description: "Every agent is stopped. The assistant in the dashboard isn't affected.",
-  },
-];
+/** Who may use agents; "Nobody" says Bo carries on where the deployment offers it. */
+function accessOptions(
+  assistantAvailable: boolean,
+): { value: AiAgentsAccess; label: string; description: string }[] {
+  return [
+    {
+      value: "admins",
+      label: "Owners and admins",
+      description: "Whoever runs the business can use their agent here. Staff can't.",
+    },
+    {
+      value: "team",
+      label: "Everyone on the team",
+      description: "Staff too, with the same access they have here: their own calendar and its customers.",
+    },
+    {
+      value: "off",
+      label: "Nobody",
+      description: assistantAvailable
+        ? "Every agent is stopped. The assistant in the dashboard isn't affected."
+        : "Every agent is stopped.",
+    },
+  ];
+}
 
 /** The kinds of change an owner can let agents make without approval here, in the order they're listed. */
 const KINDS: {
@@ -91,7 +98,11 @@ export function AiAgentsSettings() {
           <EmptyState
             icon={<Bot />}
             title="Not available yet"
-            description="Connecting your own AI agents isn't switched on for bookanything yet. The assistant in the dashboard works as usual."
+            description={
+              business.assistantAvailable
+                ? "Connecting your own AI agents isn't switched on for bookanything yet. The assistant in the dashboard works as usual."
+                : "Connecting your own AI agents isn't switched on for bookanything yet."
+            }
           />
         </Card>
       </>
@@ -136,7 +147,7 @@ export function AiAgentsSettings() {
             }
             className="flex flex-col gap-3"
           >
-            {ACCESS.map((a) => (
+            {accessOptions(!!business.assistantAvailable).map((a) => (
               <RadioItem
                 key={a.value}
                 id={`ai-access-${a.value}`}

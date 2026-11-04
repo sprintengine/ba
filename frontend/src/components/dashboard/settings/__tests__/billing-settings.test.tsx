@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BillingInfo } from "@/lib/api/types";
 import { expectNoAxeViolations } from "@/test/axe";
 import { must } from "@/test/must";
-import { mockApi, renderDashboard } from "../../test/render";
+import { ASSISTANT_ON, mockApi, renderDashboard } from "../../test/render";
 import { BillingSettings } from "../billing-settings";
 import { apiError } from "./settings-fixtures";
 
@@ -104,7 +104,8 @@ describe("BillingSettings", () => {
 
   it("on Free: the usage meter, the plans in order and upgrade buttons; axe-clean", async () => {
     api();
-    const { container } = renderDashboard(<BillingSettings />);
+    // With Bo, so the AI credits card is there (it isn't where nothing uses the credits).
+    const { container } = renderDashboard(<BillingSettings />, "owner", ASSISTANT_ON);
     const meter = await screen.findByRole("meter", { name: "Appointments this month" });
     expect(meter).toHaveAttribute("aria-valuenow", "40");
     expect(meter).toHaveAttribute("aria-valuemax", "100");

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { AiUsage } from "@/lib/api/types";
 import { expectNoAxeViolations } from "@/test/axe";
-import { json, mockApi, renderDashboard } from "../test/render";
+import { ASSISTANT_ON, json, mockApi, renderDashboard, SITES_ON } from "../test/render";
 import { AiUsageCard } from "./ai-usage-card";
 
 vi.mock("next/navigation", () => ({
@@ -45,7 +45,7 @@ describe("AI usage card", () => {
   it("shows the meter, what used the credits and a per-day table", async () => {
     mockApi((_m, path) => (path.endsWith("/ai/usage") ? usage() : {}));
     const user = userEvent.setup();
-    const { container } = renderDashboard(<AiUsageCard />);
+    const { container } = renderDashboard(<AiUsageCard />, "owner", ASSISTANT_ON);
     const meter = await screen.findByRole("meter", { name: "AI credits this month" });
     expect(meter).toHaveAttribute("aria-valuenow", "152.4");
     expect(meter).toHaveAttribute("aria-valuetext", "27 credits left");
@@ -86,10 +86,28 @@ describe("AI usage card", () => {
         },
       }),
     );
-    renderDashboard(<AiUsageCard />);
+    renderDashboard(<AiUsageCard />, "owner", ASSISTANT_ON);
     expect(await screen.findByText("No AI used yet this month.")).toBeInTheDocument();
     expect(screen.getByText(/No AI model is connected on this server/)).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("says what the credits are for: Bo and the site builder where they're offered", () => {
+    mockApi(() => usage());
+    const description = /^One monthly allowance for (.+)\. Each AI request/;
+    const uses = () => description.exec(screen.getByText(description).textContent)?.[1];
+    const { unmount } = renderDashboard(<AiUsageCard />, "owner", { ...ASSISTANT_ON, ...SITES_ON });
+    expect(uses()).toBe("Bo and the AI site builder");
+    unmount();
+    renderDashboard(<AiUsageCard />, "owner", SITES_ON);
+    expect(uses()).toBe("the AI site builder");
+  });
+
+  it("isn't shown, nor asked for, where nothing uses the credits (no Bo, no site builder)", () => {
+    const fetch = mockApi(() => usage());
+    const { container } = renderDashboard(<AiUsageCard />);
+    expect(container).toBeEmptyDOMElement();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("shows a failure with a retry", async () => {
@@ -103,7 +121,7 @@ describe("AI usage card", () => {
         : usage(),
     );
     const user = userEvent.setup();
-    renderDashboard(<AiUsageCard />);
+    renderDashboard(<AiUsageCard />, "owner", ASSISTANT_ON);
     expect(await screen.findByText("AI usage is unavailable.")).toBeInTheDocument();
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));

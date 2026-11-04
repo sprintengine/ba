@@ -79,6 +79,7 @@ export const business = {
   aiAgentsAccess: "team",
   aiAgentsAutoApprove: ["records", "time_off"],
   aiAgentsAvailable: true,
+  assistantAvailable: true,
 } satisfies Business;
 
 export const businessSparse = { ...businessFields, ...sparsePublicFields } satisfies Business;

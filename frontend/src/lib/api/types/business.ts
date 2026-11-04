@@ -92,6 +92,11 @@ export type Business = PublicBusiness & {
   aiAgentsAutoApprove?: AgentChangeKind[];
   /** This deployment serves the business MCP (`BUSINESS_MCP_ENABLED`); the AI agents settings are hidden when it doesn't. */
   aiAgentsAvailable?: boolean;
+  /**
+   * This deployment offers Bo (`ASSISTANT_ENABLED`, off by default, and an AI model). When false the dashboard and the
+   * app show no trace of Bo: no launcher, panel, ⌘J or "Ask Bo", and no nudges.
+   */
+  assistantAvailable?: boolean;
 };
 
 export type UpdateBusiness = Partial<{

@@ -1,5 +1,6 @@
 /** Pure helpers for AI credits (architecture §16). */
-import type { AiCredits } from "@/lib/api/types";
+import type { AiCredits, Business } from "@/lib/api/types";
+import { ASSISTANT_NAME } from "@/lib/assistant/constants";
 import { DEFAULT_LOCALE } from "@/lib/format/locale";
 
 export type CreditsTone = "ok" | "low" | "out";
@@ -23,4 +24,17 @@ export function creditsPercent(c: AiCredits): number {
 /** Whether an AI request can start (the server enforces this too). */
 export function canUseCredits(c: AiCredits): boolean {
   return !c.limitReached;
+}
+
+/**
+ * What a business's monthly AI credits pay for on this deployment: Bo (`assistantAvailable`) and the AI site builder
+ * (`sitesEnabled`), the same as the plans in Billing say. Null when neither is offered: AI setup runs before the
+ * business exists and doesn't draw on them, so there is nothing to show.
+ */
+export function aiCreditUses(business: Pick<Business, "assistantAvailable" | "sitesEnabled">): string | null {
+  const uses = [
+    business.assistantAvailable && ASSISTANT_NAME,
+    business.sitesEnabled && "the AI site builder",
+  ].filter(Boolean);
+  return uses.length ? uses.join(" and ") : null;
 }

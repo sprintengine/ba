@@ -104,4 +104,25 @@ describe("AiAgentsSettings", () => {
     expect(segments({ aiAgentsAvailable: false }, "owner")).not.toContain("ai-agents");
     expect(segments({ aiAgentsAvailable: true }, "staff")).toEqual([]);
   });
+
+  it("mentions the assistant in the dashboard only where the deployment offers Bo", () => {
+    mockApi(() => ({}));
+    const kept = /The assistant in the dashboard (isn't affected|works as usual)/;
+    const { unmount } = renderDashboard(<AiAgentsSettings />, "owner", {
+      ...available,
+      assistantAvailable: true,
+    });
+    expect(
+      screen.getByText(/Every agent is stopped\. The assistant in the dashboard isn't affected\./),
+    ).toBeInTheDocument();
+    unmount();
+    const off = renderDashboard(<AiAgentsSettings />, "owner", { ...available, assistantAvailable: false });
+    expect(screen.getByText("Every agent is stopped.")).toBeInTheDocument();
+    expect(screen.queryByText(kept)).not.toBeInTheDocument();
+    off.unmount();
+    renderDashboard(<AiAgentsSettings />, "owner", { aiAgentsAvailable: false, assistantAvailable: false });
+    expect(
+      screen.getByText("Connecting your own AI agents isn't switched on for bookanything yet."),
+    ).toBeInTheDocument();
+  });
 });

@@ -4,7 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useAiUsage } from "@/lib/api/hooks";
 import type { AiUsage } from "@/lib/api/types";
-import { formatCredits } from "@/lib/ai/credits";
+import { aiCreditUses, formatCredits } from "@/lib/ai/credits";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { CreditsMeter, CreditsNotice } from "@/components/ai/credits";
 import { ErrorState } from "@/components/common/feedback";
@@ -20,8 +20,17 @@ const DailyChart = dynamic(() => import("./ai-usage-chart").then((m) => m.DailyC
   loading: () => <Skeleton className="h-48 rounded-lg" />,
 });
 
-/** Settings → Billing: this month's AI credits, what used them and a daily series (with a table view). */
+/**
+ * Settings → Billing: this month's AI credits, what used them and a daily series (with a table view). Not shown where
+ * nothing on this deployment draws on them (`aiCreditUses`).
+ */
 export function AiUsageCard() {
+  const business = useCurrentBusiness();
+  const uses = aiCreditUses(business);
+  return uses ? <AiUsageDetails uses={uses} /> : null;
+}
+
+function AiUsageDetails({ uses }: { uses: string }) {
   const business = useCurrentBusiness();
   const usage = useAiUsage(business.id);
   const [asTable, setAsTable] = useState(false);
@@ -29,7 +38,7 @@ export function AiUsageCard() {
   return (
     <SettingsCard
       title="AI credits"
-      description={`One monthly allowance for ${business.sitesEnabled ? "Bo and the AI site builder" : "Bo and AI setup"}. Each AI request uses credits in line with the model work it takes; unused credits don't roll over.`}
+      description={`One monthly allowance for ${uses}. Each AI request uses credits in line with the model work it takes; unused credits don't roll over.`}
     >
       {usage.isError ? (
         <ErrorState error={usage.error} onRetry={() => usage.refetch()} />
