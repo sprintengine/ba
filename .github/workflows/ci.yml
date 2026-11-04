@@ -133,7 +133,7 @@ jobs:
       - name: Script tests
         run: npm run test:scripts
       - name: Shell scripts
-        run: shellcheck deploy/server/*.sh scripts/release/*.sh
+        run: shellcheck deploy/server/*.sh deploy/backup/*.sh scripts/release/*.sh
 
   mobile:
     name: Mobile

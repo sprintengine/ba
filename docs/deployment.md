@@ -30,7 +30,8 @@ mobile app ────▶  api.bookanything.ie    ◀────┘
 - **Deploys are pulled**: the VM follows its environment's image tag (`:staging` or `:production`). The release train
   moves the tag; a timer on the VM notices within a minute, migrates and swaps containers (section 3). CI holds no SSH
   key and the VM accepts no deploy connections.
-- **Database**: managed Postgres 16 in the VM's region (Frankfurt). Point-in-time restore is the provider's.
+- **Database**: managed Postgres 16 in the VM's region (Frankfurt). Point-in-time restore is the provider's; a nightly
+  `pg_dump` to R2, restored and checked every night, is the second copy (section 4).
 - **Files**: uploaded images in an R2 bucket served from its own hostname (the backend's S3 storage).
 
 The API is stateless (sessions are Clerk tokens, jobs and rate limits live in Postgres), so a second instance is a
@@ -175,3 +176,62 @@ curl localhost:8080/v1/health
 
 (On Linux without Docker Desktop, add `--add-host=host.docker.internal:host-gateway`.) `scripts/release/backend-smoke.sh
 <image>` runs an image the way a VM does, against a throwaway Postgres, as the release train's acceptance does.
+
+## 4. Backups and restore
+
+Two layers:
+
+1. **The provider's point-in-time restore** is the first thing to reach for: it restores to any second in its window
+   (2.3) into a new branch or database in minutes, without losing the day's bookings since the last dump.
+2. **A nightly dump outside the provider.** `.github/workflows/db-backup.yml` runs at 02:17 UTC for each environment
+   whose database secret is set. It dumps the database with `pg_dump` (custom format, Postgres 16 tools in the
+   `deploy/backup` image; move them with the provider's major version) and uploads
+   `<environment>/YYYY/MM/DD/bookanything-<environment>-<time>.dump` to the backups bucket, pointing
+   `<environment>/LATEST` at it. Then it **restores that dump into an empty Postgres 16 on the runner and checks it**
+   (`deploy/backup/verify.sql`: migrations recorded, `btree_gist` and the double-booking exclusion constraint present,
+   row-level security forced, row counts printed). A failed dump, upload or restore fails the run, and GitHub notifies
+   the person who last changed the workflow's schedule. The bucket's lifecycle rule keeps 35 days. Run it by hand from
+   Actions › "Database backup" › Run workflow.
+
+The dump runs as the owner role: the tables force row-level security, and `pg_dump` can only read them as a role that
+bypasses it (a managed provider's owner role does; `backup.sh` checks first and says so if not).
+
+The dumps hold personal data: the bucket stays private, its token is used only here, and an erased customer can
+remain in a dump until it expires (35 days).
+
+**Setup**: in Cloudflare, one private R2 bucket `bookanything-backups` (both environments, a folder each), a lifecycle
+rule deleting objects after 35 days, and an R2 API token with **Object Read & Write** on this bucket only. In GitHub,
+repository secrets `STAGING_BACKUP_DATABASE_URL` and `PRODUCTION_BACKUP_DATABASE_URL`
+(`postgres://<owner>:<password>@<direct host>/bookanything?sslmode=require`), `BACKUP_S3_ACCESS_KEY_ID` and
+`BACKUP_S3_SECRET_ACCESS_KEY` (the token), and repository variables `BACKUP_S3_ENDPOINT`
+(`https://<account id>.r2.cloudflarestorage.com`) and `BACKUP_S3_BUCKET` (`bookanything-backups`). No GitHub
+environment: a reviewer on `production` must not hold up a backup.
+
+### Restoring a dump
+
+Into a **new, empty** database (never over the live one), from any machine with Docker:
+
+```sh
+docker build -t bookanything-backup deploy/backup
+docker run --rm \
+  -e TARGET_DATABASE_URL='postgres://<owner>:<password>@<host>/<empty database>?sslmode=require' \
+  -e BACKUP_S3_ENDPOINT=https://<account id>.r2.cloudflarestorage.com -e BACKUP_S3_BUCKET=bookanything-backups \
+  -e AWS_ACCESS_KEY_ID=<token id> -e AWS_SECRET_ACCESS_KEY=<token secret> -e BACKUP_PREFIX=production \
+  bookanything-backup restore.sh latest        # or a key: production/2026/11/03/bookanything-production-....dump
+```
+
+`restore.sh` refuses a database that already has tables, restores in one transaction (all or nothing), then runs
+`verify.sql`. Ownership and grants are not restored, so afterwards:
+
+1. run `deploy/sql/app-role.sql` against the restored database as its owner, and set the application role's password
+   again (`\password bookanything_app`) if the role is new there;
+2. point `DATABASE_URL` in the VM's `backend.env` (and the backup secret in GitHub) at it;
+3. swap in a backend on the restored database: `sudo -u deploy ./deploy.sh` on the VM.
+
+### Testing a restore by hand
+
+The nightly run already restores every dump. To rehearse the whole path once a quarter (and after changing provider
+or Postgres version): create an empty database at the provider, run the restore above into it, run `app-role.sql`,
+run the image against it locally (section 3, "Running the image locally", with the restored database's URL and
+credentials) and check `/v1/health` and a business's public page (`/v1/public/businesses/<slug>`), then delete the
+database.
