@@ -1,0 +1,218 @@
+[
+    {
+        "id": "0001-extensions",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:77821484ec896e47d7acf387026da427"
+    },
+    {
+        "id": "0002-enums",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:16373f700356b00c8d2b590161cc81b1"
+    },
+    {
+        "id": "0003-users-businesses",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:f27e958ba5eefd489d9106862b28f459"
+    },
+    {
+        "id": "0004-resources-availability",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:b388ea6276414a61c8a66c654b7ad1a0"
+    },
+    {
+        "id": "0005-services",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:f64354944eb727569c586df046c9bed2"
+    },
+    {
+        "id": "0006-customers-bookings",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:3aaf7d8af1f050e436aba7c09ded4fc0"
+    },
+    {
+        "id": "0007-payments-platform",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:57184bdf3121627748d120361341dff9"
+    },
+    {
+        "id": "0008-row-level-security",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:2a0681b6d81b080e8564a27fdcecea8d"
+    },
+    {
+        "id": "0009-sites",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:cb2b6a1a5ddb0b2ea3c94905a480d83d"
+    },
+    {
+        "id": "0010a-ai-usage-ledger",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:bf53477c165d602fadbe98093398168d"
+    },
+    {
+        "id": "0010b-assistant",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:4679d200f4062986e44e24a1543538b0"
+    },
+    {
+        "id": "0011-marketplace-geo",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:e51b2c8fd2f06c39ef04a45ac5c57299"
+    },
+    {
+        "id": "0012-offers",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:0a97c13f150719eb55c2709bf8cff3ee"
+    },
+    {
+        "id": "0013-oauth",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:020c5748c61813dcd70bdb82c342f761"
+    },
+    {
+        "id": "0014-email-log-rls",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:672853823ca7c7fb40e159c0ec03dc9f"
+    },
+    {
+        "id": "0015-next-available-only",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:f5135d2f837400ca57dd6578dd5e569e"
+    },
+    {
+        "id": "0016-list-indexes",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:a697e01b5b784f0f1379f3652f1949f2"
+    },
+    {
+        "id": "0017-allow-pay-at-venue",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:b1e141ef74b7211543912c6afd65e839"
+    },
+    {
+        "id": "0018-paid-in-person",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:baf0fbebda0f5e7fa01b9844c4f46e7a"
+    },
+    {
+        "id": "0019-tenant-policy-unset-setting",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:5a9ad3f53654abca2c64ed7d7badf297"
+    },
+    {
+        "id": "0020-pending-charges-index",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:b83ece2f150dd0cad92f1008c8e57730"
+    },
+    {
+        "id": "0021-active-allocations-by-resource",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:f2de55266986b65c49451815df33506f"
+    },
+    {
+        "id": "0022-email-text-indexes",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:249ced4539e6bc529da60ed33c5c3f2f"
+    },
+    {
+        "id": "0023-retention-indexes",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:a4559973ce7540c7cccc8d9ae0994587"
+    },
+    {
+        "id": "0024-paid-in-person-and-pending-invitation-rules",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:3ac2651f5a9c6b4b5044044a359825cb"
+    },
+    {
+        "id": "0025-customer-sort-name",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:36d99e4aaa12e175b25420f6dfa843ce"
+    },
+    {
+        "id": "0026-portal-style",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:b0e3191aaa8bbeee502b2470269f3eac"
+    },
+    {
+        "id": "0027-release-schedules",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:f5b5b6141907dda6dcd20d2f30bb8570"
+    },
+    {
+        "id": "0028-business-mcp",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:1d89026deda7a2e77e2761b03f3ca272"
+    },
+    {
+        "id": "0029-agent-approvals",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:7672f482ea6c01a9f2b3603ecd842be6"
+    },
+    {
+        "id": "0030-notifications",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:a82a44eae63bebdfe7ed36791e85f8a0"
+    },
+    {
+        "id": "0031-customer-agent-approvals",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:01126005801f454353b91cfe4bf025fb"
+    },
+    {
+        "id": "0032-push-devices",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:b7e6f4af1bea5686c03b6202abeaeebb"
+    },
+    {
+        "id": "0033-oauth-refresh-reuse",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:2f109a934e11b62549173b119246b609"
+    },
+    {
+        "id": "0034-stripe-connect-existing",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:9890a43d6d2975861c761180b4f078a2"
+    },
+    {
+        "id": "0035-expired-holds-owe-nothing",
+        "author": "bookanything",
+        "filename": "db/changelog/db.changelog-master.sql",
+        "md5sum": "9:49a5e5f53768ed6df8048693da602c41"
+    }
+]

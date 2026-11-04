@@ -12,15 +12,26 @@ updates:
       include: scope
     open-pull-requests-limit: 10
     groups:
+      # The runner and its coverage provider require each other at the same version, majors included.
+      vitest:
+        patterns: ["vitest", "@vitest/*"]
       frontend-minor-and-patch:
         update-types: [minor, patch]
     ignore:
       # The OpenNext adapter supports a range of Next.js releases (its peer dependency): Next moves by hand, with the
-      # adapter, after `npm run cf:build` and `npm run cf:preview` (frontend/README.md "Deploying").
+      # adapter, after `npm run cf:build` and `npm run cf:preview` (frontend/README.md "Deploying"). An adapter patch
+      # can need a newer Next (1.20.16 needed 16.4.5): then both move by hand.
       - dependency-name: next
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: eslint-config-next
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # TypeScript 7 (the native compiler) has no JavaScript API, which typescript-eslint needs for its type-aware
+      # rules: revisit when typescript-eslint supports TypeScript 7 (its peer range includes 7).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Node's types follow the Node major the site is built and tested on (.nvmrc, CI): they move with it, by hand.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # Expo pins React Native and the expo-* packages to one SDK release, so their minor and major versions move with an
   # SDK upgrade, by hand (`npx expo install --check`); patches still come here.
@@ -59,6 +70,28 @@ updates:
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "@react-native-community/*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # React Native's own packages (its Jest preset among them) are released with it and match its version.
+      - dependency-name: "@react-native/*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # The SDK pins these native modules to an exact version (`npx expo install --check`): even a patch waits for it.
+      - dependency-name: "@shopify/flash-list"
+      - dependency-name: react-native-svg
+      - dependency-name: "@react-native-community/datetimepicker"
+      # jest-expo 57 is built on Jest 29, and Testing Library 14 (async render) needs the test renderer of React 19.3:
+      # revisit all three when jest-expo is on Jest 30 and the app on React 19.3 (expected with Expo SDK 58).
+      - dependency-name: jest
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/jest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@testing-library/react-native"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 has no JavaScript API, which eslint-config-expo's typescript-eslint needs: revisit when
+      # typescript-eslint supports TypeScript 7 and Expo's template moves to it.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # eslint-config-expo's import plugin fails on ESLint 10: revisit when eslint-config-expo supports ESLint 10.
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: gradle
     directory: /
@@ -71,6 +104,18 @@ updates:
     groups:
       backend-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # Liquibase 5 is source-available (FSL-1.1-ALv2), no longer Apache-2.0, and nothing it adds is needed here:
+      # revisit when the 5.x to take is Apache-2.0 (5.0.x converts on 2027-09-30), if the owner accepts FSL, or if a
+      # security issue affects 4.33 as used here (embedded, migrations only).
+      # ChangelogChecksumTest's golden file proves an upgrade keeps every released changeset's checksum.
+      - dependency-name: org.liquibase:liquibase-core
+        update-types: ["version-update:semver-major"]
+      # stripe-java 34 pins Stripe's new major API version (endive) for every request. Nothing this code sends or reads
+      # changes on paper, but the contract tests against Stripe's test mode cannot run here yet: revisit once
+      # STRIPE_TEST_SECRET_KEY is set and stripe-contract.yml passes on the upgrade (backend/README.md).
+      - dependency-name: com.stripe:stripe-java
+        update-types: ["version-update:semver-major"]
 
   # Base images: the backend's build and runtime (the cloudflared pin in deploy/server/compose.yml moves by hand).
   - package-ecosystem: docker
@@ -80,6 +125,11 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    ignore:
+      # Java moves as one, by hand: the Gradle toolchain (jvmToolchain), CI's setup-java and both Dockerfile stages,
+      # tested together. Images moved alone would build and run on a JVM that CI's tests (Java 21) never ran on.
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
 
   # The backup tools image: Postgres stays on the database's major version (16), so only its patches come here.
   - package-ecosystem: docker
@@ -103,3 +153,9 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+    ignore:
+      # gradle/actions 6 moves its caching into a closed-source library under Gradle's terms of use, and its open-source
+      # alternative keeps one cache entry for all jobs with no fallback: 5 stays. Revisit if the open-source provider
+      # caches per job again, or with the owner's decision on the terms.
+      - dependency-name: gradle/actions
+        update-types: ["version-update:semver-major"]
