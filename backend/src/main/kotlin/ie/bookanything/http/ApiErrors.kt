@@ -2,6 +2,8 @@ package ie.bookanything.http
 
 import ie.bookanything.db.PgState
 import ie.bookanything.db.sqlState
+import ie.bookanything.observability.Telemetry
+import ie.bookanything.observability.errorTags
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -108,6 +110,10 @@ suspend fun io.ktor.server.application.ApplicationCall.respondError(status: Http
 fun Application.configureErrors() {
     install(StatusPages) {
         exception<ApiException> { call, cause ->
+            // A provider or store failing is ours to see; a feature that isn't set up on this server is not a failure.
+            if (cause.status.value >= 500 && !cause.code.endsWith("_NOT_CONFIGURED")) {
+                Telemetry.errors.message("${cause.status.value} ${cause.code}", call.errorTags())
+            }
             call.respondError(cause.status, ApiError(cause.code, cause.message, cause.fields))
         }
         exception<BadRequestException> { call, cause ->
@@ -124,6 +130,7 @@ fun Application.configureErrors() {
         }
         exception<SQLTransientConnectionException> { call, cause ->
             log.error("Database unavailable: {}", cause.message)
+            Telemetry.errors.capture(cause, call.errorTags())
             call.respondError(
                 HttpStatusCode.ServiceUnavailable,
                 ApiError("DATABASE_UNAVAILABLE", "The service is temporarily unavailable. Please try again shortly."),
@@ -143,12 +150,14 @@ fun Application.configureErrors() {
                 else -> {
                     if (cause is SQLException && cause.sqlState?.startsWith("08") == true) {
                         log.error("Database connection failure", cause)
+                        Telemetry.errors.capture(cause, call.errorTags())
                         call.respondError(
                             HttpStatusCode.ServiceUnavailable,
                             ApiError("DATABASE_UNAVAILABLE", "The service is temporarily unavailable. Please try again shortly."),
                         )
                     } else {
                         log.error("Unhandled error", cause)
+                        Telemetry.errors.capture(cause, call.errorTags())
                         call.respondError(
                             HttpStatusCode.InternalServerError,
                             ApiError("INTERNAL_SERVER_ERROR", "Something went wrong. Please try again."),

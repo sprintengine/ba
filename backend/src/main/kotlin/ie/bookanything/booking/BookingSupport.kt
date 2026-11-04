@@ -3,8 +3,11 @@ package ie.bookanything.booking
 import ie.bookanything.business.BusinessRepository
 import ie.bookanything.business.BusinessRow
 import ie.bookanything.db.Db
+import ie.bookanything.db.afterCommit
 import ie.bookanything.http.Errors
 import ie.bookanything.http.startIn
+import ie.bookanything.observability.AppMetrics
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.payments.PaymentRepository
 import java.security.SecureRandom
 import java.sql.Connection
@@ -41,6 +44,7 @@ object BookingSupport {
             val ids = expired.map { it.first }
             AllocationRepository.release(conn, ids)
             PaymentRepository.cancelPendingCharges(conn, ids)
+            conn.afterCommit { Telemetry.metrics.holds(AppMetrics.HoldOutcome.EXPIRED, expired.size) }
         }
         return expired
     }

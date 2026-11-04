@@ -52,5 +52,25 @@ services:
     mem_limit: 256m
     logging: *logging
 
+  # Optional: ships the backend's logs to Grafana Cloud Loki (docs/observability.md, "Logs"). Off unless started with
+  # `docker compose --profile logs up -d alloy`; reads config.alloy (from ops/alloy/) and alloy.env in this directory.
+  alloy:
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.21.3}
+    command: ["run", "/etc/alloy/config.alloy", "--storage.path=/var/lib/alloy/data"]
+    env_file:
+      - path: alloy.env
+        required: false
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    profiles: [logs]
+    restart: unless-stopped
+    mem_limit: 256m
+    logging: *logging
+
 networks:
   app: {}
+
+volumes:
+  alloy-data: {}

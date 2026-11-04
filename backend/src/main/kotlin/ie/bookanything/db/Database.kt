@@ -2,7 +2,9 @@ package ie.bookanything.db
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import ie.bookanything.config.DatabaseConfig
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import liquibase.Scope
@@ -20,8 +22,13 @@ import java.util.IdentityHashMap
 import java.util.UUID
 import javax.sql.DataSource
 
-fun createDataSource(config: DatabaseConfig): HikariDataSource {
+/** A pool for [config]; with [metrics], its connections in use, idle and awaited are measured (`hikaricp_*`). */
+fun createDataSource(config: DatabaseConfig, metrics: MeterRegistry? = null): HikariDataSource {
     val hikari = HikariConfig().apply {
+        metrics?.let { metricsTrackerFactory = MicrometerMetricsTrackerFactory(it) }
+        // Postgres errors quote the conflicting key or the whole failing row (names, emails): keep them out of the
+        // exception messages that reach logs and error reports. The fields stay readable on the server error message.
+        addDataSourceProperty("logServerErrorDetail", "false")
         jdbcUrl = config.jdbcUrl
         config.username?.let { username = it }
         config.password?.let { password = it }

@@ -10,6 +10,8 @@ dashboard, and customers book, pay and manage their bookings.
 - Frontend handbook: [`frontend/README.md`](frontend/README.md) (Next.js 16, Tailwind v4 design system)
 - Mobile app: [`docs/mobile.md`](docs/mobile.md) (architecture) and [`mobile/README.md`](mobile/README.md) (Expo,
   iPhone/iPad/Android; shares `frontend/src/lib`)
+- Observability: [`docs/observability.md`](docs/observability.md) (Sentry errors, Grafana Cloud metrics, logs and
+  uptime; settings, cardinality rules, dashboard and alerts in `ops/grafana/`)
 - Engineering guide: [`docs/engineering.md`](docs/engineering.md) (module layout, layering, errors, testing, how to add
   a feature, lint/format/coverage checks)
 - Deployment: [`docs/deployment.md`](docs/deployment.md) (Cloudflare in front, the API on one EU VM behind a Cloudflare

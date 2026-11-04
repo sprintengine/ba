@@ -4,12 +4,15 @@ import ie.bookanything.audit.Actor
 import ie.bookanything.audit.Audit
 import ie.bookanything.availability.AvailabilityMode
 import ie.bookanything.business.BusinessRow
+import ie.bookanything.db.afterCommit
 import ie.bookanything.db.savepoint
 import ie.bookanything.http.ApiException
 import ie.bookanything.http.Errors
 import ie.bookanything.notifications.NotificationKind
 import ie.bookanything.notifications.Notify
 import ie.bookanything.notifications.inbox.Inbox
+import ie.bookanything.observability.AppMetrics
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.payments.CancelActor
 import ie.bookanything.payments.CheckoutExpiry
 import ie.bookanything.payments.PaymentRepository
@@ -158,6 +161,8 @@ class BookingLifecycle(private val engine: BookingEngine, private val refunds: R
             // The business made its own bookings, so it only hears about the customer's.
             if (b.source.byCustomer) Notify.booking(conn, NotificationKind.NEW_BOOKING_FOR_BUSINESS, business.id, b.id)
             Audit.record(conn, business.id, Actor.SYSTEM, "booking.${nextStatus.wire}", "booking", b.id)
+            val outcome = if (stillHeld) AppMetrics.HoldOutcome.PAID else AppMetrics.HoldOutcome.PAID_AFTER_EXPIRY
+            conn.afterCommit { Telemetry.metrics.holds(outcome) }
         } else {
             // Paid too late: the slot is gone (or the booking was cancelled). Refund in full.
             if (b.status == BookingStatus.EXPIRED) {
@@ -165,6 +170,7 @@ class BookingLifecycle(private val engine: BookingEngine, private val refunds: R
                     conn, business.id, b.id, CancelActor.SYSTEM,
                     "Payment arrived after the hold expired and the time was no longer available.", now, clearHold = false,
                 )
+                conn.afterCommit { Telemetry.metrics.holds(AppMetrics.HoldOutcome.PAID_TOO_LATE) }
             }
             // The apology goes with the refund, once the provider has made it.
             val due = refunds.request(
@@ -184,6 +190,7 @@ class BookingLifecycle(private val engine: BookingEngine, private val refunds: R
             BookingRepository.setStatus(conn, business.id, b.id, BookingStatus.EXPIRED, now, clearHold = true)
             AllocationRepository.release(conn, business.id, b.id)
             Audit.record(conn, business.id, Actor.SYSTEM, "booking.expired", "booking", b.id, mapOf("reason" to "checkout_cancelled"))
+            conn.afterCommit { Telemetry.metrics.holds(AppMetrics.HoldOutcome.ABANDONED) }
         }
         return BookingRepository.get(conn, business.id, b.id)!!
     }

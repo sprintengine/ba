@@ -14,12 +14,15 @@ import ie.bookanything.customers.CustomerRepository
 import ie.bookanything.db.Db
 import ie.bookanything.db.PgState
 import ie.bookanything.db.TstzRange
+import ie.bookanything.db.afterCommit
 import ie.bookanything.db.constraintName
 import ie.bookanything.db.sqlState
 import ie.bookanything.http.Errors
 import ie.bookanything.notifications.NotificationKind
 import ie.bookanything.notifications.Notify
 import ie.bookanything.notifications.inbox.Inbox
+import ie.bookanything.observability.AppMetrics
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.offers.OfferGuard
 import ie.bookanything.offers.OfferPricing
 import ie.bookanything.payments.ChargeRequest
@@ -142,6 +145,7 @@ class BookingEngine(
         BookingRepository.releaseIdempotencyKey(conn, business.id, b.id)
         AllocationRepository.release(conn, business.id, b.id)
         Audit.record(conn, business.id, Actor.SYSTEM, "booking.expired", "booking", b.id, mapOf("reason" to "checkout_failed"))
+        conn.afterCommit { Telemetry.metrics.holds(AppMetrics.HoldOutcome.ABANDONED) }
     }
 
     /**
@@ -229,6 +233,7 @@ class BookingEngine(
         )
         BookingRepository.insert(conn, booking)
         insertAllocations(conn, business.id, bookingId, service, slot)
+        conn.afterCommit { Telemetry.metrics.bookingCreated(status.wire) }
 
         val checkout = onlineAmount?.let { prepareCheckout(conn, business, service.name, cmd, booking, it) }
         val notifications = NewBookingRules.notifications(status, public, cmd.notifyCustomer)

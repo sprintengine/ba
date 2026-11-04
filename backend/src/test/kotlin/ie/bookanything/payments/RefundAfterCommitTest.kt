@@ -10,12 +10,14 @@ import ie.bookanything.support.Fixtures
 import ie.bookanything.support.Money
 import ie.bookanything.support.StripeWorld
 import ie.bookanything.support.assertStatus
+import ie.bookanything.support.count
 import ie.bookanything.support.i
 import ie.bookanything.support.jsonOf
 import ie.bookanything.support.obj
 import ie.bookanything.support.s
 import ie.bookanything.support.unique
 import ie.bookanything.support.withApp
+import ie.bookanything.support.withTelemetry
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -132,7 +134,7 @@ class RefundAfterCommitTest {
     }
 
     @Test
-    fun `when Stripe fails the email says the refund is being processed, and the retry sends one receipt`() {
+    fun `when Stripe fails the email says the refund is being processed, and the retry sends one receipt`() = withTelemetry { registry, _ ->
         val s = StripeWorld()
         withApp(s.env) { api ->
             val clinic = Fixtures.clinic(api)
@@ -156,6 +158,8 @@ class RefundAfterCommitTest {
             val mails = s.env.email.sent.filter { it.to == email && it.template in setOf("booking_cancelled", "payment_refunded") }
             assertEquals(listOf("booking_cancelled", "payment_refunded"), mails.map { it.template })
             assertTrue(mails.first().text.contains("being processed"), mails.first().text)
+            assertEquals(1.0, registry.count("payments.refunds.failed"))
+            assertEquals(1.0, registry.count("jobs.runs", "kind", "payment_refund_retry", "result", "retry"))
         }
     }
 }

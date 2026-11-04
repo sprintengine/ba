@@ -3,6 +3,7 @@ package ie.bookanything.config
 import ie.bookanything.geo.GeoConfig
 import ie.bookanything.http.Cidr
 import ie.bookanything.oauth.OAuthConfig
+import ie.bookanything.observability.ObservabilityConfig
 
 /**
  * Backend configuration, read from environment variables (docs/architecture.md section 10).
@@ -101,6 +102,8 @@ data class AppConfig(
      * it, so a deploy and the monitor can tell which build answers.
      */
     val version: String = DEV_VERSION,
+    /** Error reporting and metrics (docs/observability.md); both off until configured. */
+    val observability: ObservabilityConfig = ObservabilityConfig(environment = env.name.lowercase()),
 ) {
     val isDevelopment: Boolean get() = env == AppEnv.DEVELOPMENT || env == AppEnv.TEST
 
@@ -181,6 +184,7 @@ data class AppConfig(
                 geo = GeoConfig.fromEnvironment(env::str),
                 oauth = OAuthConfig.fromEnvironment(env::str, appBaseUrl),
                 version = env.str("APP_VERSION") ?: DEV_VERSION,
+                observability = ObservabilityConfig.fromEnvironment(env, appEnv.name.lowercase()),
             )
         }
 
