@@ -1,0 +1,56 @@
+# The API on one VM (docs/deployment.md): the backend and a Cloudflare Tunnel connector, nothing published.
+#
+# Lives in the deploy directory on the VM (/opt/bookanything) next to:
+#   .env          the updater's and compose's settings: TRACK, CLOUDFLARE_TUNNEL_TOKEN, ... (compose.env.example)
+#   backend.env   the API's settings and secrets (backend.env.example)
+#   migrate.env   the database owner's credentials, for migrations only (migrate.env.example)
+# This file, deploy.sh and update.sh ship inside the backend image: update.sh installs the ones of the release it
+# deploys, and deploy.sh runs the migrations and swaps the running backend for the new one.
+name: bookanything
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?set BACKEND_IMAGE in .env}
+    env_file: backend.env
+    # No `ports:`. The API is reachable only from this network: cloudflared reaches it as http://backend:8080, and
+    # the internet reaches cloudflared only through Cloudflare (the rate limiter relies on that).
+    expose:
+      - "8080"
+    networks: [app]
+    restart: unless-stopped
+    # Two run side by side for a few seconds during a deploy (deploy.sh), so leave room for both on the VM.
+    mem_limit: ${BACKEND_MEMORY:-1g}
+    # On SIGTERM Ktor finishes requests in flight for up to 15 s (Application.kt); the kill comes after this.
+    stop_grace_period: 20s
+    logging: *logging
+
+  # One-off: `docker compose run --rm migrate`. The same image with the owner's credentials layered over the app's.
+  migrate:
+    image: ${BACKEND_IMAGE:?set BACKEND_IMAGE in .env}
+    command: ["migrate"]
+    env_file: [backend.env, migrate.env]
+    networks: [app]
+    restart: "no"
+    profiles: [tools]
+    logging: *logging
+
+  cloudflared:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:2026.10.7}
+    # A remotely managed tunnel: its public hostname (api.example.com -> http://backend:8080) is set up in the
+    # Cloudflare dashboard, the token is all this side needs.
+    command: ["tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
+    networks: [app]
+    restart: unless-stopped
+    mem_limit: 256m
+    logging: *logging
+
+networks:
+  app: {}

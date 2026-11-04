@@ -58,6 +58,21 @@ class ClientIpTest {
     }
 
     @Test
+    fun `behind Cloudflare the edge's client address header names the client`() {
+        val r = ClientIpResolver(false, defaults, clientIpHeader = "CF-Connecting-IP")
+        // cloudflared on the Docker network is the peer; the edge overwrites CF-Connecting-IP on every request.
+        assertEquals("198.51.100.20", r.resolve("172.18.0.3", listOf("192.0.2.66, 198.51.100.20"), "198.51.100.20"))
+        assertEquals("2001:db8:0:0:0:0:0:1", r.resolve("172.18.0.3", emptyList(), "2001:db8::1"))
+        // From an untrusted peer (the API reached around the tunnel) the header is the client's own claim: ignored.
+        assertEquals("203.0.113.50", r.resolve("203.0.113.50", emptyList(), "198.51.100.20"))
+        // Missing or malformed: fall back to the peer (or X-Forwarded-For when that is trusted).
+        assertEquals("172.18.0.3", r.resolve("172.18.0.3", emptyList(), null))
+        assertEquals("172.18.0.3", r.resolve("172.18.0.3", emptyList(), "192.0.2.1, 192.0.2.2"))
+        val both = ClientIpResolver(true, defaults, clientIpHeader = "CF-Connecting-IP")
+        assertEquals("198.51.100.20", both.resolve("172.18.0.3", listOf("192.0.2.66, 198.51.100.20"), "not-an-ip"))
+    }
+
+    @Test
     fun `cidr matching and literal parsing never resolve names`() {
         assertTrue(Cidr.parse("10.0.0.0/8")!!.contains(InetAddress.getByName("10.200.1.1")))
         assertFalse(Cidr.parse("10.0.0.0/8")!!.contains(InetAddress.getByName("11.0.0.1")))
@@ -82,5 +97,8 @@ class ClientIpTest {
         assertEquals(defaults, AppConfig.fromEnvironment(base).trustedProxies)
         assertFailsWith<ConfigException> { AppConfig.fromEnvironment(base + mapOf("TRUSTED_PROXIES" to "nope")) }
         assertFailsWith<ConfigException> { AppConfig.fromEnvironment(base + mapOf("TRUSTED_PROXY_HOPS" to "0")) }
+        assertEquals("CF-Connecting-IP", AppConfig.fromEnvironment(base + ("CLIENT_IP_HEADER" to " CF-Connecting-IP ")).clientIpHeader)
+        assertNull(AppConfig.fromEnvironment(base).clientIpHeader)
+        assertFailsWith<ConfigException> { AppConfig.fromEnvironment(base + ("CLIENT_IP_HEADER" to "X Forwarded: For")) }
     }
 }

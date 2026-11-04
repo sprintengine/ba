@@ -18,6 +18,6 @@
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test": "npm run backend:check && npm run frontend:check && npm run mobile:check",
     "hooks:install": "git config core.hooksPath scripts/hooks",
-    "test:scripts": "node --test 'scripts/**/*.test.mjs'"
+    "test:scripts": "node --test 'scripts/**/*.test.mjs' 'deploy/**/*.test.mjs'"
   }
 }

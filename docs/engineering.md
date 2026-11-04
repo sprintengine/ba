@@ -25,7 +25,8 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | All of the above but e2e | `npm test` | |
 
 CI (`.github/workflows/ci.yml`) runs five jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
-floor), **Frontend** (format, lint, typecheck, unit tests with coverage, build, bundle-size budget), **Mobile**
+floor), **Frontend** (format, lint, typecheck, unit tests with coverage, the build as a Cloudflare Worker and its
+size: `npm run cf:check`, bundle-size budget), **Mobile**
 (format, lint, design-token lint, typecheck, app config per variant, tests with coverage incl. the shared-code
 boundary; `docs/mobile.md`) and **E2E**
 (Postgres 16 service, seeded backend with dev auth and the scripted fake model, production frontend build with the
@@ -462,7 +463,8 @@ lists the id). The repository allows merge commits only, and deletes a branch on
 **Versions** are [SemVer](https://semver.org), derived from these commits: the next version is the last stable
 release's, bumped by the strongest change among the non-merge commits since it (`feat` minor, `!` or
 `BREAKING CHANGE` major, anything else patch). Until 1.0 a breaking change bumps the minor version instead, and 1.0.0
-is chosen by hand, never derived. With no release yet the first is 0.1.0.
+is chosen by hand, never derived. With no release yet the first is 0.1.0. The release train that cuts them (nightly,
+staging, production) is [`releases.md`](releases.md).
 
 Dependabot (`.github/dependabot.yml`) opens weekly grouped updates as `build(deps): …` and `ci(deps): …`, so they pass
 the same checks.

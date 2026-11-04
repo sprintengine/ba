@@ -6,6 +6,9 @@ node_modules/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/.open-next/
+frontend/.wrangler/
+frontend/.dev.vars*
 frontend/tsconfig.tsbuildinfo
 *.tsbuildinfo
 npm-debug.log*

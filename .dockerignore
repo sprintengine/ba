@@ -1,0 +1,13 @@
+# Docker build context for backend/Dockerfile (built from the repository root). Allow-list: only what the Gradle
+# build of the backend reads, so frontend/mobile node_modules and build output never reach the daemon.
+*
+!gradlew
+!gradle/
+!settings.gradle.kts
+!build.gradle.kts
+!gradle.properties
+!backend/build.gradle.kts
+!backend/src/main/
+!deploy/server/compose.yml
+!deploy/server/deploy.sh
+!deploy/server/update.sh

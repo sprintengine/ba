@@ -1,15 +1,28 @@
 name: CI
 
-# Pull requests, and pushes to main. A branch's push needs no run of its own: its pull request runs the same jobs.
+# Pull requests, and pushes to main (a branch's push needs no run of its own: its pull request runs the same jobs);
+# and the release train's quality gate (release.yml calls it with release_gate on the commit a nightly builds).
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to check
+        required: true
+        type: string
+      release_gate:
+        description: Called by release.yml
+        required: true
+        type: boolean
 
-# A newer push to the same branch or PR cancels the run in progress.
+# A newer push to the same branch or PR cancels the run in progress; a release gate has a group of its own, so nothing
+# cancels it.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ inputs.release_gate && format('ci-release-{0}', github.run_id) || format('ci-{0}', github.event.pull_request.number || github.ref) }}
+  cancel-in-progress: ${{ !inputs.release_gate }}
 
 permissions:
   contents: read
@@ -21,6 +34,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-java@v4
         with:
@@ -72,6 +87,8 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -85,7 +102,10 @@ jobs:
       - run: npm run typecheck
       - name: Unit tests with coverage thresholds
         run: npm run test:coverage
-      - run: npm run build
+      # The production build as Cloudflare deploys it: `next build` (with its standalone output) through OpenNext, then
+      # the Worker, checked against Workers' size limit.
+      - name: Build (next build + Cloudflare Worker)
+        run: npm run cf:check
       # First-load JS/CSS per key route (gzip) against perf/bundle-baseline.json; prints the table either way.
       - name: Bundle-size budget
         run: npm run perf:bundle
@@ -105,11 +125,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
       - name: Script tests
         run: npm run test:scripts
+      - name: Shell scripts
+        run: shellcheck deploy/server/*.sh scripts/release/*.sh
 
   mobile:
     name: Mobile
@@ -120,6 +144,8 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -187,6 +213,8 @@ jobs:
       E2E_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - uses: actions/setup-java@v4
         with:

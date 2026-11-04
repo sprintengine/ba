@@ -1,0 +1,59 @@
+name: Production monitor
+
+# Every two hours: is production up and whole? scripts/release/monitor.mjs checks the API's health (database
+# included), that it runs a release and the headers its answers carry, and, once PRODUCTION_APP_URL is set, the
+# website, the API through it and OAuth discovery on its origin.
+#
+# A problem fails the run and opens (or, when the problems change, comments on) the one "Production monitor: problem"
+# issue, labelled `monitor`; the first clean run closes it. Skipped with a notice until PRODUCTION_API_URL exists.
+# docs/releases.md, "The production monitor".
+on:
+  schedule:
+    - cron: "11 */2 * * *"
+  workflow_dispatch:
+
+# A dispatched run and a scheduled one queue rather than both touch the issue.
+concurrency:
+  group: production-monitor
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  monitor:
+    name: Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
+    env:
+      API_URL: ${{ vars.PRODUCTION_API_URL }}
+      SITE_URL: ${{ vars.PRODUCTION_APP_URL }}
+    steps:
+      - name: Not configured yet
+        if: env.API_URL == ''
+        run: echo "::notice::PRODUCTION_API_URL is not set, so there is nothing to monitor yet (docs/releases.md)."
+      # Only what the monitor reads: itself (it imports nothing from the repository).
+      - uses: actions/checkout@v4
+        if: env.API_URL != ''
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            .nvmrc
+            scripts/release/monitor.mjs
+      - uses: actions/setup-node@v4
+        if: env.API_URL != ''
+        with:
+          node-version-file: .nvmrc
+      - name: Check production
+        if: env.API_URL != ''
+        run: node scripts/release/monitor.mjs check --api "$API_URL" --site "$SITE_URL" --json "$RUNNER_TEMP/monitor.json"
+      # Also after a failed check: that is when there is something to say. With no result at all (the check crashed)
+      # it reports that instead.
+      - name: Open, update or close the issue
+        if: always() && env.API_URL != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release/monitor.mjs issue "$RUNNER_TEMP/monitor.json"
