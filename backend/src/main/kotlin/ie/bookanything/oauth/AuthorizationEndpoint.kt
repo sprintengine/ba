@@ -125,9 +125,10 @@ class AuthorizationEndpoint(
             )
         }
         val target = target(req)
-        val scopes = target?.let { ScopeRequest.parse(req.scope, it) }
-        return when (val refusal = refusal(req, target, scopes)) {
-            null -> Validation.Ok(Checked(client, redirect, (scopes as ScopeRequest.Valid).scopes, req.codeChallenge!!, target))
+        return when (val refusal = refusal(req, target)) {
+            // No refusal means a target and a challenge. Scopes are never refused: ones we don't have or of the other
+            // server are dropped (ScopeRequest).
+            null -> Validation.Ok(Checked(client, redirect, ScopeRequest.parse(req.scope, target!!), req.codeChallenge!!, target))
             else -> Validation.Failed(errorRedirect(redirect, req.state, refusal.error, refusal.description))
         }
     }
@@ -143,14 +144,11 @@ class AuthorizationEndpoint(
     }
 
     /** The first problem with a request from a known client to one of its redirect URIs, or null. */
-    private fun refusal(req: AuthorizeRequest, target: McpResource?, scopes: ScopeRequest?): Refusal? = when {
+    private fun refusal(req: AuthorizeRequest, target: McpResource?): Refusal? = when {
         req.responseType != "code" -> Refusal("unsupported_response_type", "Only response_type=code is supported")
         !Pkce.isValidChallenge(req.codeChallenge) -> Refusal("invalid_request", "PKCE is required: send a S256 code_challenge")
         req.codeChallengeMethod != Pkce.METHOD -> Refusal("invalid_request", "code_challenge_method must be S256")
-        target == null || scopes == null -> Refusal("invalid_target", "Unknown resource")
-        scopes is ScopeRequest.Unknown -> Refusal("invalid_scope", "Unknown scope: ${scopes.values.joinToString(" ")}")
-        scopes is ScopeRequest.OtherResource ->
-            Refusal("invalid_scope", "Not a scope of ${config.url(target)}: ${scopes.values.joinToString(" ")}")
+        target == null -> Refusal("invalid_target", "Unknown resource")
         req.state != null && req.state.length > 1000 -> Refusal("invalid_request", "state is too long")
         else -> null
     }

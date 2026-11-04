@@ -1,6 +1,7 @@
 package ie.bookanything.oauth
 
 import ie.bookanything.support.DEFAULT_NOW
+import ie.bookanything.support.LogCapture
 import ie.bookanything.support.MutableClock
 import ie.bookanything.support.OAuthClientSim
 import ie.bookanything.support.TestConfig
@@ -21,9 +22,12 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
 import io.ktor.client.request.options
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -65,6 +69,15 @@ class OAuthFlowTest {
             assertEquals("*", res.headers[HttpHeaders.AccessControlAllowOrigin], path)
         }
         assertEquals(HttpStatusCode.OK, preflight("/v1/mcp/customer", "authorization,content-type,mcp-protocol-version").status)
+        // 2026-07-28 clients send Mcp-Method and Mcp-Name on every request: a refused preflight would fail before they can
+        // fall back to an older protocol version.
+        listOf("/v1/mcp", "/v1/mcp/customer", "/v1/mcp/business").forEach { path ->
+            val res = preflight(path, "authorization,content-type,mcp-protocol-version,mcp-method,mcp-name")
+            assertEquals(HttpStatusCode.OK, res.status, path)
+            assertEquals("*", res.headers[HttpHeaders.AccessControlAllowOrigin], path)
+            val allowed = res.headers[HttpHeaders.AccessControlAllowHeaders].orEmpty().lowercase()
+            assertTrue("mcp-method" in allowed && "mcp-name" in allowed, "$path: $allowed")
+        }
         val cross = api.client.post("/v1/mcp/customer") { header(HttpHeaders.Origin, "https://inspector.example") }
         assertTrue(cross.headers[HttpHeaders.AccessControlExposeHeaders]!!.contains(HttpHeaders.WWWAuthenticate, ignoreCase = true))
         // The consent API (our own page, the user's session) is not opened up.
@@ -89,7 +102,12 @@ class OAuthFlowTest {
     }
 
     @Test
-    fun `register, consent, exchange the code with PKCE and refresh with rotation`() = withApp { api ->
+    fun `register, consent, exchange the code with PKCE and refresh with rotation`() {
+        val env = TestEnv()
+        withApp(env) { api -> registerConsentExchangeRefresh(api, env) }
+    }
+
+    private suspend fun registerConsentExchangeRefresh(api: ie.bookanything.support.Api, env: TestEnv) {
         val user = TestUser.create("customer", "Riley Customer")
         val sim = OAuthClientSim(api).register("Helpful Assistant")
         assertTrue(sim.clientId.startsWith("dyn_"))
@@ -142,6 +160,7 @@ class OAuthFlowTest {
         val r = rotated.obj()
         assertTrue(r.s("refresh_token") != second.s("refresh_token"))
         assertEquals(HttpStatusCode.OK, sim.mcp(r.s("access_token"), "tools/list").status)
+        env.clock.instant = env.clock.instant.plus(TokenPolicy.REFRESH_REUSE_GRACE).plusSeconds(1)
         assertEquals("invalid_grant", sim.refresh(second.s("refresh_token")).obj().s("error"))
         assertEquals(HttpStatusCode.Unauthorized, sim.mcp(r.s("access_token"), "tools/list").status)
         assertEquals("invalid_grant", sim.refresh(r.s("refresh_token")).obj().s("error"))
@@ -173,7 +192,6 @@ class OAuthFlowTest {
         }
         expectRedirectError(sim.check(user, sim.authorizeParams(withChallenge = false)).obj(), "invalid_request")
         expectRedirectError(sim.check(user, sim.authorizeParams(method = "plain")).obj(), "invalid_request")
-        expectRedirectError(sim.check(user, sim.authorizeParams(scope = "bookings:read admin")).obj(), "invalid_scope")
         expectRedirectError(sim.check(user, sim.authorizeParams(resource = "https://other.example/mcp")).obj(), "invalid_target")
         expectRedirectError(sim.check(user, sim.authorizeParams() + ("responseType" to "token")).obj(), "unsupported_response_type")
         assertEquals("access_denied", sim.query(sim.decide(user, sim.authorizeParams(), approve = false))["error"])
@@ -252,6 +270,175 @@ class OAuthFlowTest {
         }
     }
 
+    @Test
+    fun `scopes we don't have, or of the other server, are dropped instead of failing the connection`() = withApp { api ->
+        val user = TestUser.create("customer")
+        val sim = OAuthClientSim(api).register()
+        fun scopeKeys(consent: kotlinx.serialization.json.JsonObject) = consent["scopes"]!!.a.map { it.s("key") }
+        // OpenID scopes alone: the customer server's defaults.
+        val oidc = sim.check(user, sim.authorizeParams(scope = "openid profile email offline_access")).obj()
+        assertEquals("consent", oidc.s("type"))
+        assertEquals(listOf("bookings:read", "bookings:write", "marketplace:read"), scopeKeys(oidc))
+        // Every scope of the authorization server metadata: the customer ones are kept, the business ones dropped.
+        val everything = "bookings:read bookings:write marketplace:read business:read business:write offline_access"
+        assertEquals(
+            listOf("bookings:read", "bookings:write", "marketplace:read"),
+            scopeKeys(sim.check(user, sim.authorizeParams(scope = everything)).obj()),
+        )
+        // The token response says what was granted.
+        assertEquals("bookings:read", sim.connect(user, scope = "openid bookings:read admin").s("scope"))
+        assertEquals(
+            "bookings:read bookings:write marketplace:read", sim.connect(user, scope = "openid business:read").s("scope"),
+        )
+        // The business server keeps only business scopes.
+        val business = OAuthClientSim.business(api).register()
+        val owner = ie.bookanything.support.Fixtures.clinic(api).owner
+        assertEquals("business:read", business.connect(owner, scope = "openid business:read bookings:write").s("scope"))
+    }
+
+    @Test
+    fun `a refresh token presented again within a minute of rotation gets a new pair, not a revoked grant`() {
+        val env = TestEnv()
+        withApp(env) { api ->
+            val user = TestUser.create("customer")
+            val sim = OAuthClientSim(api).register()
+            val first = sim.connect(user).s("refresh_token")
+
+            // Parallel refreshes with the same token (several requests of one client found the access token expired).
+            val outcomes = ie.bookanything.support.race(3) { sim.refresh(first) }
+            outcomes.forEach { assertEquals(HttpStatusCode.OK, it.status, it.body) }
+            val pairs = outcomes.map { ie.bookanything.support.parse(it.body).o }
+            assertEquals(3, pairs.map { it.s("refresh_token") }.toSet().size, "each gets a pair of its own")
+            pairs.forEach { assertEquals(HttpStatusCode.OK, sim.mcp(it.s("access_token"), "tools/list").status) }
+
+            // A retry after the response was lost on the network, 50 seconds later.
+            env.clock.instant = env.clock.instant.plusSeconds(50)
+            val retried = sim.refresh(first)
+            assertStatus(HttpStatusCode.OK, retried)
+            // Every successor works: the client may have kept any of them.
+            val next = pairs.map { sim.refresh(it.s("refresh_token")).also { r -> assertStatus(HttpStatusCode.OK, r) }.obj() }
+            // Once one of them was used the client has moved on: the old token again, even within the minute, is a replay.
+            assertEquals("invalid_grant", sim.refresh(first).obj().s("error"))
+            assertEquals(HttpStatusCode.Unauthorized, sim.mcp(next.last().s("access_token"), "tools/list").status)
+            assertEquals("invalid_grant", sim.refresh(retried.obj().s("refresh_token")).obj().s("error"))
+
+            // After the minute it is a replay too.
+            val late = OAuthClientSim(api).register()
+            val lateFirst = late.connect(user).s("refresh_token")
+            val lateNext = late.refresh(lateFirst).obj()
+            env.clock.instant = env.clock.instant.plus(TokenPolicy.REFRESH_REUSE_GRACE).plusSeconds(1)
+            assertEquals("invalid_grant", late.refresh(lateFirst).obj().s("error"))
+            assertEquals(HttpStatusCode.Unauthorized, late.mcp(lateNext.s("access_token"), "tools/list").status)
+
+            // One rotated token gives at most a few extra pairs; past that it is a replay.
+            val busy = OAuthClientSim(api).register()
+            val busyFirst = busy.connect(user).s("refresh_token")
+            repeat(1 + TokenPolicy.MAX_REFRESH_REUSES) { assertStatus(HttpStatusCode.OK, busy.refresh(busyFirst)) }
+            assertEquals("invalid_grant", busy.refresh(busyFirst).obj().s("error"))
+
+            // Within the minute, another client presenting it is theft all the same.
+            val own = OAuthClientSim(api).register()
+            val ownFirst = own.connect(user).s("refresh_token")
+            assertStatus(HttpStatusCode.OK, own.refresh(ownFirst))
+            val other = OAuthClientSim(api).register()
+            val stolen = other.token("grant_type" to "refresh_token", "refresh_token" to ownFirst, "client_id" to other.clientId)
+            assertEquals("invalid_grant", stolen.obj().s("error"))
+            assertEquals("invalid_grant", own.refresh(ownFirst).obj().s("error"))
+        }
+    }
+
+    @Test
+    fun `the token and revocation endpoints also take client_id from HTTP Basic`() = withApp { api ->
+        val user = TestUser.create("basic")
+        val sim = OAuthClientSim(api).register()
+        fun basic(id: String, secret: String = "") =
+            "Basic " +
+                java.util.Base64.getEncoder().encodeToString("${java.net.URLEncoder.encode(id, Charsets.UTF_8)}:$secret".toByteArray())
+        suspend fun form(path: String, auth: String?, vararg fields: Pair<String, String?>) = api.client.submitForm(
+            path, io.ktor.http.parameters { fields.forEach { (k, v) -> if (v != null) append(k, v) } },
+        ) { if (auth != null) header(HttpHeaders.Authorization, auth) }
+
+        // A code exchanged with the client named only in the header (a password, never issued, is ignored).
+        val code = sim.code(user)
+        val exchanged = form(
+            "/v1/oauth/token", basic(sim.clientId, "ignored"), "grant_type" to "authorization_code", "code" to code,
+            "redirect_uri" to sim.redirectUri, "code_verifier" to sim.verifier,
+        )
+        assertStatus(HttpStatusCode.OK, exchanged)
+        val t = exchanged.obj()
+        val refreshed = form(
+            "/v1/oauth/token", basic(sim.clientId), "grant_type" to "refresh_token",
+            "refresh_token" to t.s("refresh_token"),
+        )
+        assertStatus(HttpStatusCode.OK, refreshed)
+        val r = refreshed.obj()
+
+        // A client_id in the body wins over the header; with none there, a malformed header is invalid_client, with the
+        // scheme to use (and nothing is spent).
+        val other = OAuthClientSim(api).register()
+        val bodyWins = form(
+            "/v1/oauth/token", basic(other.clientId), "grant_type" to "refresh_token", "refresh_token" to r.s("refresh_token"),
+            "client_id" to sim.clientId,
+        )
+        assertStatus(HttpStatusCode.OK, bodyWins)
+        val r2 = bodyWins.obj()
+        val malformed = form("/v1/oauth/token", "Basic !!!", "grant_type" to "refresh_token", "refresh_token" to r2.s("refresh_token"))
+        assertEquals(HttpStatusCode.Unauthorized, malformed.status)
+        assertEquals("invalid_client", malformed.obj().s("error"))
+        assertTrue(malformed.headers[HttpHeaders.WWWAuthenticate].orEmpty().startsWith("Basic"))
+        val viaHeader = form(
+            "/v1/oauth/token", basic(sim.clientId), "grant_type" to "refresh_token", "refresh_token" to r2.s("refresh_token"),
+        )
+        assertStatus(HttpStatusCode.OK, viaHeader)
+        val current = viaHeader.obj()
+
+        // Revocation: another client named in the header can't revoke; this one can.
+        assertStatus(HttpStatusCode.OK, form("/v1/oauth/revoke", basic(other.clientId), "token" to current.s("access_token")))
+        assertEquals(HttpStatusCode.OK, sim.mcp(current.s("access_token"), "tools/list").status)
+        assertStatus(HttpStatusCode.OK, form("/v1/oauth/revoke", basic(sim.clientId), "token" to current.s("access_token")))
+        assertEquals(HttpStatusCode.Unauthorized, sim.mcp(current.s("access_token"), "tools/list").status)
+
+        // Browser-based clients may send the header cross-origin.
+        val preflight = api.client.options("/v1/oauth/token") {
+            header(HttpHeaders.Origin, "https://inspector.example")
+            header(HttpHeaders.AccessControlRequestMethod, "POST")
+            header(HttpHeaders.AccessControlRequestHeaders, "authorization,content-type")
+        }
+        assertEquals(HttpStatusCode.OK, preflight.status)
+    }
+
+    @Test
+    fun `the MCP servers refuse a null or malformed Origin and allow real ones`() = withApp { api ->
+        suspend fun list(path: String, origin: String?) = api.client.post(path) {
+            if (origin != null) header(HttpHeaders.Origin, origin)
+            header(HttpHeaders.Accept, "application/json, text/event-stream")
+            header("MCP-Protocol-Version", "2025-11-25")
+            contentType(ContentType.Application.Json)
+            setBody("""{"jsonrpc":"2.0","id":1,"method":"tools/list"}""")
+        }
+        listOf(
+            null, "https://inspector.example", "http://localhost:6274", "http://[::1]:6274", "chrome-extension://abcdefghijklmnop",
+            "http://build_box.local:3000",
+        )
+            .forEach { assertEquals(HttpStatusCode.OK, list("/v1/mcp", it).status, "$it") }
+        listOf(
+            "null", "https://inspector.example/path", "inspector.example", "https://user@inspector.example", "https://a.example?x",
+            "https://a.example:",
+        )
+            .forEach { origin ->
+                val res = list("/v1/mcp", origin)
+                assertEquals(HttpStatusCode.Forbidden, res.status, origin)
+                assertEquals(-32600, res.obj()["error"]!!.o.i("code"), origin)
+            }
+        // Before authentication and CORS: the signed-in servers and preflights too.
+        assertEquals(HttpStatusCode.Forbidden, list("/v1/mcp/customer", "null").status)
+        val preflight = api.client.options("/v1/mcp") {
+            header(HttpHeaders.Origin, "null")
+            header(HttpHeaders.AccessControlRequestMethod, "POST")
+        }
+        assertEquals(HttpStatusCode.Forbidden, preflight.status)
+    }
+
     private suspend fun io.ktor.client.HttpClient.submitFormRevoke(token: String) =
         submitForm("/v1/oauth/revoke", io.ktor.http.parameters { append("token", token) })
 
@@ -287,6 +474,9 @@ class OAuthFlowTest {
                 "token_endpoint_auth_method":"none"}""",
             "https://liar.example/client.json" to
                 """{"client_id":"https://honest.example/client.json","client_name":"Liar","redirect_uris":["https://liar.example/cb"]}""",
+            "https://secret.example/client.json" to
+                """{"client_id":"https://secret.example/client.json","client_name":"Secretive","redirect_uris":["https://secret.example/cb"],
+                "token_endpoint_auth_method":"client_secret_basic"}""",
         )
         val fetched = mutableListOf<String>()
         val env = TestEnv(
@@ -303,9 +493,25 @@ class OAuthFlowTest {
             val tokens = sim.connect(user)
             assertTrue(tokens.s("access_token").startsWith("bat_"))
             assertEquals(1, fetched.count { it == docUrl }, "cached for the document's max-age")
-            // A document that names another client_id is rejected.
-            val liar = OAuthClientSim(api, "https://liar.example/cb").also { it.clientId = "https://liar.example/client.json" }
-            assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", liar.check(user, liar.authorizeParams()))
+            // A document that names another client_id, or wants client authentication, is rejected, and the log says why
+            // (the user only sees that the app can't be connected).
+            val logs = LogCapture.of(ClientRegistry::class.java)
+            try {
+                val liar = OAuthClientSim(api, "https://liar.example/cb").also { it.clientId = "https://liar.example/client.json" }
+                assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", liar.check(user, liar.authorizeParams()))
+                val secretive = OAuthClientSim(api, "https://secret.example/cb").also { it.clientId = "https://secret.example/client.json" }
+                assertError(HttpStatusCode.BadRequest, "INVALID_REQUEST", secretive.check(user, secretive.authorizeParams()))
+                assertTrue(
+                    logs.messages().any { "https://liar.example/client.json rejected: its client_id is not the URL" in it },
+                    logs.messages().toString(),
+                )
+                assertTrue(
+                    logs.messages().any { "https://secret.example/client.json" in it && "client_secret_basic" in it },
+                    logs.messages().toString(),
+                )
+            } finally {
+                logs.close()
+            }
         }
     }
 

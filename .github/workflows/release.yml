@@ -253,6 +253,7 @@ jobs:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars[format('{0}_CLERK_PUBLISHABLE_KEY', matrix.prefix)] }}
       NEXT_PUBLIC_BUSINESS_MCP_ENABLED: ${{ vars[format('{0}_BUSINESS_MCP_ENABLED', matrix.prefix)] }}
       WEBMCP_ORIGIN_TRIAL_TOKEN: ${{ vars[format('{0}_WEBMCP_ORIGIN_TRIAL_TOKEN', matrix.prefix)] }}
+      WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN: ${{ vars[format('{0}_WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN', matrix.prefix)] }}
     steps:
       - id: configured
         name: Is this environment's website set up?

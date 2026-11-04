@@ -1,17 +1,25 @@
 package ie.bookanything.mcp.customer
 
+import ie.bookanything.availability.AvailabilityDto
+import ie.bookanything.booking.PublicServiceDto
+import ie.bookanything.business.PublicBusiness
+import ie.bookanything.mcp.CARRY_OUT
 import ie.bookanything.mcp.MarketplaceTools
 import ie.bookanything.mcp.McpTool
+import ie.bookanything.mcp.OutputSchemas
 import ie.bookanything.mcp.READ_ONLY
 import ie.bookanything.mcp.toolSchema
 import ie.bookanything.oauth.Scope
+import ie.bookanything.offers.PublicOfferDto
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolAnnotations
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.serializer
 
 /** The signed-in customer's tools. Adding a tool is one entry here (definition, scope, handler). */
 object CustomerTools {
+    /** Prepares a change (a request); nothing reaches the business until it is confirmed or approved. */
     private val WRITE = ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false, openWorldHint = false)
-    private val DESTRUCTIVE = ToolAnnotations(readOnlyHint = false, destructiveHint = true, idempotentHint = true, openWorldHint = false)
     private val UNDO = ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true, openWorldHint = false)
 
     val ALL: List<McpTool<CustomerToolContext>> = listOf(
@@ -24,6 +32,14 @@ object CustomerTools {
                     "services with prices in cents, durations, options, add-ons, the selectable resource (e.g. a therapist), the " +
                     "booking questions each service needs answered, and active deals. Get the slug from search_marketplace.",
                 inputSchema = toolSchema(listOf("slug")) { string("slug", MarketplaceTools.SLUG) },
+                outputSchema = OutputSchemas.objectOf(
+                    listOf(
+                        "business" to OutputSchemas.schema(serializer<PublicBusiness>()),
+                        "bookingUrl" to OutputSchemas.string(),
+                        "services" to OutputSchemas.schema(ListSerializer(serializer<PublicServiceDto>())),
+                        "deals" to OutputSchemas.schema(ListSerializer(serializer<PublicOfferDto>())),
+                    ),
+                ),
                 annotations = READ_ONLY,
             ),
             Scope.MARKETPLACE_READ,
@@ -57,6 +73,7 @@ object CustomerTools {
                         enum = listOf("online", "at_venue"),
                     )
                 },
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalResult>()),
                 annotations = WRITE,
             ),
             Scope.BOOKINGS_WRITE,
@@ -72,6 +89,7 @@ object CustomerTools {
                     string("status", "Which bookings (default upcoming)", enum = listOf("upcoming", "past", "all"))
                     integer("limit", "At most this many (1-50, default 10)", 1, 50)
                 },
+                outputSchema = OutputSchemas.of(serializer<BookingListResult>()),
                 annotations = READ_ONLY,
             ),
             Scope.BOOKINGS_READ,
@@ -82,6 +100,7 @@ object CustomerTools {
                 title = "Get next appointment",
                 description = "The signed-in user's next upcoming booking, or null when there is none.",
                 inputSchema = toolSchema(),
+                outputSchema = OutputSchemas.of(serializer<NextAppointmentResult>()),
                 annotations = READ_ONLY,
             ),
             Scope.BOOKINGS_READ,
@@ -100,6 +119,7 @@ object CustomerTools {
                     string("resourceId", "Selectable resource id, to see e.g. another therapist's times")
                     string("after", "Only times starting after this (ISO-8601 with offset)", format = "date-time")
                 },
+                outputSchema = OutputSchemas.of(serializer<AvailabilityDto>()),
                 annotations = READ_ONLY,
             ),
             Scope.BOOKINGS_READ,
@@ -112,6 +132,7 @@ object CustomerTools {
                     "awaiting payment), e.g. when the link from book was lost. Give it to the user: they pay on bookanything " +
                     "themselves before the hold ends. Refused once the hold has ended or nothing is due.",
                 inputSchema = toolSchema(listOf("bookingId")) { string("bookingId", "Booking id from list_my_bookings") },
+                outputSchema = OutputSchemas.of(serializer<PaymentLinkResult>()),
                 annotations = READ_ONLY,
             ),
             Scope.BOOKINGS_READ,
@@ -128,6 +149,7 @@ object CustomerTools {
                     string("start", "New start time exactly as returned by check_availability", format = "date-time")
                     string("resourceId", "Selectable resource id, to change e.g. the therapist")
                 },
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalResult>()),
                 annotations = WRITE,
             ),
             Scope.BOOKINGS_WRITE,
@@ -142,6 +164,7 @@ object CustomerTools {
                     string("bookingId", "Booking id from list_my_bookings")
                     string("reason", "Optional reason, shared with the business")
                 },
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalResult>()),
                 annotations = WRITE,
             ),
             Scope.BOOKINGS_WRITE,
@@ -154,7 +177,8 @@ object CustomerTools {
                     "awaiting_confirmation, after the user clearly agreed. One awaiting_approval doesn't go ahead this way: the user " +
                     "approves it on bookanything at its approvalUrl. Confirming twice returns the first result.",
                 inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
-                annotations = DESTRUCTIVE,
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalOutcome>()),
+                annotations = CARRY_OUT,
             ),
             Scope.BOOKINGS_WRITE,
         ) { a -> CustomerBookingTools.confirm(this, a) },
@@ -164,6 +188,7 @@ object CustomerTools {
                 title = "Drop a request",
                 description = "Drops a request the user doesn't want, so it can't go ahead later. Nothing changes.",
                 inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalOutcome>()),
                 annotations = UNDO,
             ),
             Scope.BOOKINGS_WRITE,
@@ -176,6 +201,7 @@ object CustomerTools {
                     "awaiting_confirmation, confirmed (with what happened, the booking, and e.g. a payment link), rejected, expired or " +
                     "failed. Use it after the user says they've approved or declined it.",
                 inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
+                outputSchema = OutputSchemas.of(serializer<CustomerProposalOutcome>()),
                 annotations = READ_ONLY,
             ),
             Scope.BOOKINGS_READ,

@@ -97,20 +97,24 @@ class PgTokenStore(private val db: Db) : TokenStore {
 
     override fun issueTokens(
         grantId: UUID, scopes: Set<Scope>, resource: String, accessExpiresAt: Instant, refreshExpiresAt: Instant, now: Instant,
-    ): IssuedTokens =
-        db.txBlocking { conn -> insertPair(conn, grantId, scopes, resource, accessExpiresAt, refreshExpiresAt, now) }
-
-    private fun insertPair(
-        conn: Connection, grantId: UUID, scopes: Set<Scope>, resource: String, accessExpiresAt: Instant, refreshExpiresAt: Instant,
-        now: Instant,
-    ): IssuedTokens {
+        rotatedFrom: String?,
+    ): IssuedTokens? = db.txBlocking { conn ->
+        // FOR SHARE: a consent changing the grant meanwhile waits for this pair, then revokes it if it holds too much;
+        // one that went first is seen here. Either way no pair outlives a narrowed consent.
+        val granted = conn.queryOne("SELECT scopes FROM oauth_grants WHERE id = ? AND revoked_at IS NULL FOR SHARE", grantId) {
+            scopes(it)
+        } ?: return@txBlocking null
+        val held = Scope.within(scopes, granted).takeIf { it.isNotEmpty() } ?: return@txBlocking null
         val access = SecretKind.ACCESS.generate()
         val refresh = SecretKind.REFRESH.generate()
-        val insert = "INSERT INTO oauth_tokens (token_hash, grant_id, kind, scopes, resource, expires_at, created_at) VALUES (?, ?, ?, " +
-            "?, ?, ?, ?)"
-        conn.update(insert, TokenPolicy.hash(access), grantId, "access", values(scopes), resource, accessExpiresAt, now)
-        conn.update(insert, TokenPolicy.hash(refresh), grantId, "refresh", values(scopes), resource, refreshExpiresAt, now)
-        return IssuedTokens(access, refresh, scopes, Duration.between(now, accessExpiresAt).seconds)
+        val insert = "INSERT INTO oauth_tokens (token_hash, grant_id, kind, scopes, resource, expires_at, created_at, parent_hash) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        conn.update(insert, TokenPolicy.hash(access), grantId, "access", values(held), resource, accessExpiresAt, now, null)
+        conn.update(
+            insert, TokenPolicy.hash(refresh), grantId, "refresh", values(held), resource, refreshExpiresAt, now,
+            rotatedFrom?.let(TokenPolicy::hash),
+        )
+        IssuedTokens(access, refresh, held, Duration.between(now, accessExpiresAt).seconds)
     }
 
     private val tokenSelect = """
@@ -128,11 +132,25 @@ class PgTokenStore(private val db: Db) : TokenStore {
     override fun redeemRefresh(refreshToken: String, now: Instant): Redemption<TokenRecord> = db.txBlocking { conn ->
         val hash = TokenPolicy.hash(refreshToken)
         val record = conn.queryOne("$tokenSelect FOR UPDATE OF t", hash, map = ::mapToken)
-        val outcome = TokenPolicy.classifyRefresh(record, now)
-        if (outcome is Redemption.Valid) conn.update("UPDATE oauth_tokens SET used_at = ? WHERE token_hash = ?", now, hash)
-        if (outcome is Redemption.Replayed) revokeGrant(conn, outcome.grantId, now)
+        val outcome = when (val classified = TokenPolicy.classifyRefresh(record, now)) {
+            // The grace ends once the client moved on to a successor, or after a few reuses: a replay then.
+            is Redemption.Reused -> if (reusable(conn, hash)) classified else Redemption.Replayed(classified.record.grantId)
+            else -> classified
+        }
+        when (outcome) {
+            is Redemption.Valid -> conn.update("UPDATE oauth_tokens SET used_at = ? WHERE token_hash = ?", now, hash)
+            is Redemption.Reused -> conn.update("UPDATE oauth_tokens SET reuse_count = reuse_count + 1 WHERE token_hash = ?", hash)
+            is Redemption.Replayed -> revokeGrant(conn, outcome.grantId, now)
+            Redemption.Invalid -> Unit
+        }
         outcome
     }
+
+    /** Whether the used refresh token [hash] (locked) may give another pair: reuses left and no successor used yet. */
+    private fun reusable(conn: Connection, hash: String): Boolean =
+        conn.queryOne("SELECT reuse_count FROM oauth_tokens WHERE token_hash = ?", hash) { it.getInt(1) }!! <
+            TokenPolicy.MAX_REFRESH_REUSES &&
+            !conn.exists("SELECT 1 FROM oauth_tokens WHERE parent_hash = ? AND kind = 'refresh' AND used_at IS NOT NULL", hash)
 
     override fun findToken(token: String): TokenRecord? =
         db.txBlocking(readOnly = true) { it.queryOne(tokenSelect, TokenPolicy.hash(token), map = ::mapToken) }

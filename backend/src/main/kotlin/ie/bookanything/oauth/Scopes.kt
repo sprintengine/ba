@@ -56,43 +56,54 @@ enum class Scope(val value: String, val resource: McpResource, val label: String
         /** Every scope [granted] satisfies, the implied ones included. */
         fun covered(granted: Set<Scope>): Set<Scope> = entries.filter { satisfies(granted, it) }.toSet()
 
+        /** [scopes] without those another of them implies ({bookings:read, bookings:write} is {bookings:write}). */
+        fun minimal(scopes: Set<Scope>): Set<Scope> = scopes.filterNot { satisfies(scopes - it, it) }.toSet()
+
+        /**
+         * What [requested] still holds of [granted]: never more than either, implied scopes counted. The requested scopes
+         * [granted] covers are kept as they are; one it doesn't is cut down to what it implies that [granted] covers
+         * (bookings:write against a grant of bookings:read is bookings:read).
+         */
+        fun within(requested: Set<Scope>, granted: Set<Scope>): Set<Scope> {
+            val kept = requested.filter { satisfies(granted, it) }.toSet()
+            val implied = covered(requested).intersect(covered(granted)).filterNot { satisfies(kept, it) }.toSet()
+            return kept + minimal(implied)
+        }
+
         fun format(scopes: Collection<Scope>): String = scopes.sortedBy { it.ordinal }.joinToString(" ") { it.value }
     }
 }
 
-/** Result of parsing a space-delimited `scope` parameter. */
-sealed interface ScopeRequest {
-    data class Valid(val scopes: Set<Scope>) : ScopeRequest
-    data class Unknown(val values: List<String>) : ScopeRequest
+/**
+ * Parsing a space-delimited `scope` parameter, leniently: MCP clients routinely add scopes we don't have (`openid`,
+ * `profile`, `email`) or copy every scope of the authorization server metadata, the other server's included. Refusing
+ * those with `invalid_scope` would make the connection fail outright, so values that aren't scopes of the resource asked
+ * for are dropped, and the token response's `scope` says what was granted (RFC 6749 3.3 lets the server grant less).
+ */
+object ScopeRequest {
+    /** The scope values asked for, without `offline_access`. */
+    fun values(raw: String?): List<String> =
+        raw?.split(' ')?.map { it.trim() }?.filter { it.isNotEmpty() && it != Scope.OFFLINE_ACCESS }.orEmpty()
 
-    /** Known scopes of a resource other than the one the request is for. */
-    data class OtherResource(val values: List<String>) : ScopeRequest
+    /** The scopes of [resource] that [raw] names: unknown values and other resources' scopes are dropped. Empty when none remain. */
+    fun requested(raw: String?, resource: McpResource): Set<Scope> =
+        values(raw).mapNotNull(Scope::byValue).filter { it.resource == resource }.toSet()
 
-    companion object {
-        /** The scope values asked for, without `offline_access`. */
-        fun values(raw: String?): List<String> =
-            raw?.split(' ')?.map { it.trim() }?.filter { it.isNotEmpty() && it != Scope.OFFLINE_ACCESS }.orEmpty()
+    /**
+     * The scopes to authorize: those of [resource] that [raw] names, or every scope of [resource] when none remain (absent,
+     * empty, or only values we drop: the RFC 6749 3.3 default).
+     */
+    fun parse(raw: String?, resource: McpResource = McpResource.CUSTOMER): Set<Scope> =
+        requested(raw, resource).ifEmpty { Scope.of(resource) }
 
-        /** An absent or empty scope means every scope of [resource] (RFC 6749 3.3 default). */
-        fun parse(raw: String?, resource: McpResource = McpResource.CUSTOMER): ScopeRequest {
-            val values = values(raw)
-            if (values.isEmpty()) return Valid(Scope.of(resource))
-            val unknown = values.filter { Scope.byValue(it) == null }
-            if (unknown.isNotEmpty()) return Unknown(unknown)
-            val scopes = values.mapNotNull(Scope::byValue).toSet()
-            val foreign = scopes.filter { it.resource != resource }
-            return if (foreign.isNotEmpty()) OtherResource(foreign.map { it.value }) else Valid(scopes)
-        }
-
-        /**
-         * The resource a request that names none is for: the business one when every scope asked for is a business
-         * scope (a client that leaves out `resource` but asks for `business:*`), otherwise the customer one.
-         */
-        fun impliedResource(raw: String?): McpResource {
-            val scopes = values(raw).mapNotNull(Scope::byValue)
-            val business = scopes.isNotEmpty() && scopes.all { it.resource == McpResource.BUSINESS }
-            return if (business) McpResource.BUSINESS else McpResource.CUSTOMER
-        }
+    /**
+     * The resource a request that names none is for: the business one when every scope asked for is a business
+     * scope (a client that leaves out `resource` but asks for `business:*`), otherwise the customer one.
+     */
+    fun impliedResource(raw: String?): McpResource {
+        val scopes = values(raw).mapNotNull(Scope::byValue)
+        val business = scopes.isNotEmpty() && scopes.all { it.resource == McpResource.BUSINESS }
+        return if (business) McpResource.BUSINESS else McpResource.CUSTOMER
     }
 }
 

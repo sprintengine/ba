@@ -17,8 +17,10 @@ import ie.bookanything.http.Errors
 import ie.bookanything.http.RateLimiter
 import ie.bookanything.http.formatInstant
 import ie.bookanything.http.parseUuid
+import ie.bookanything.mcp.CARRY_OUT
 import ie.bookanything.mcp.McpResults
 import ie.bookanything.mcp.McpTool
+import ie.bookanything.mcp.OutputSchemas
 import ie.bookanything.mcp.READ_ONLY
 import ie.bookanything.mcp.StrictArgs
 import ie.bookanything.mcp.toolSchema
@@ -56,7 +58,6 @@ object BusinessTools {
     const val LIST_BUSINESSES = "list_my_businesses"
 
     private val PROPOSE = ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = false, openWorldHint = false)
-    private val DESTRUCTIVE = ToolAnnotations(readOnlyHint = false, destructiveHint = true, idempotentHint = true, openWorldHint = false)
     private val UNDO = ToolAnnotations(readOnlyHint = false, destructiveHint = false, idempotentHint = true, openWorldHint = false)
 
     private const val PROPOSAL_NOTE =
@@ -67,6 +68,13 @@ object BusinessTools {
         "Nothing has changed yet, and you can't make it happen yourself: the member must approve it on bookanything. Show them " +
             "this proposal (title, summary, changes, items and warnings) and give them approvalUrl to open; they sign in and " +
             "approve or decline it there. Then call get_proposal with the proposalId to see what happened. It expires at expiresAt."
+
+    /** What a read tool returns: the business, a summary and the tool's own data (its shape varies by tool). */
+    private val READ = OutputSchemas.objectOf(
+        listOf(BUSINESS_ARG to OutputSchemas.string(), "summary" to OutputSchemas.string(), "data" to OutputSchemas.ANY),
+    )
+    private val PROPOSAL = OutputSchemas.of(serializer<ProposalResult>())
+    private val OUTCOME = OutputSchemas.of(serializer<ProposalOutcome>())
 
     private val businessProperty = JsonSchema.string(
         "The business: its slug or id from list_my_businesses. May be left out when you belong to just one business.",
@@ -170,6 +178,7 @@ object BusinessTools {
                 properties = JsonObject(linkedMapOf<String, JsonElement>(BUSINESS_ARG to businessProperty) + properties),
                 required = required,
             ),
+            outputSchema = if (tool is WriteTool<*>) PROPOSAL else READ,
             annotations = annotations,
         )
     }
@@ -187,6 +196,7 @@ object BusinessTools {
                 "today's date there, and whether its owner lets you use AI apps there. Pass the slug as `business` to the other tools " +
                 "(it may be left out when there is only one).",
             inputSchema = toolSchema(),
+            outputSchema = OutputSchemas.of(serializer<MyBusinesses>()),
             annotations = READ_ONLY,
         ),
         Scope.BUSINESS_READ,
@@ -215,7 +225,8 @@ object BusinessTools {
                 "approvalUrl. Confirming twice returns the first result. A proposal can't be confirmed after it expires or if the " +
                 "time was taken meanwhile.",
             inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
-            annotations = DESTRUCTIVE,
+            outputSchema = OUTCOME,
+            annotations = CARRY_OUT,
         ),
         Scope.BUSINESS_WRITE,
     ) { args ->
@@ -230,6 +241,7 @@ object BusinessTools {
             title = "Drop a proposal",
             description = "Drops a proposal the member doesn't want, so it can't be confirmed later. Nothing changes.",
             inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
+            outputSchema = OUTCOME,
             annotations = UNDO,
         ),
         Scope.BUSINESS_WRITE,
@@ -246,6 +258,7 @@ object BusinessTools {
                 "approvalUrl is the link to give them), awaiting_confirmation, confirmed (with what was done), rejected, expired or " +
                 "failed. Use it after the member says they've approved or declined it.",
             inputSchema = toolSchema(listOf("proposalId")) { string("proposalId", "The proposalId a tool returned") },
+            outputSchema = OUTCOME,
             annotations = READ_ONLY,
         ),
         Scope.BUSINESS_READ,

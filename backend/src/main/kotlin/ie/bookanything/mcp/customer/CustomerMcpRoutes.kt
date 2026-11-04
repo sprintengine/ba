@@ -2,6 +2,7 @@ package ie.bookanything.mcp.customer
 
 import ie.bookanything.AppContext
 import ie.bookanything.http.RateLimiter
+import ie.bookanything.mcp.McpIcons
 import ie.bookanything.mcp.addTools
 import ie.bookanything.mcp.oauthMcpRoutes
 import ie.bookanything.oauth.McpPrincipal
@@ -20,7 +21,10 @@ val CUSTOMER_MCP_IP_LIMIT = RateLimiter.Limit("mcp-customer-ip", 3000, 60)
 val CUSTOMER_MCP_PROPOSALS = RateLimiter.Limit("mcp-customer-proposals", 60, 600)
 
 private fun customerServer(ctx: AppContext, call: ApplicationCall, principal: McpPrincipal): Server = Server(
-    Implementation(name = "bookanything", version = "1.2.0", title = "bookanything (your account)", websiteUrl = ctx.config.appBaseUrl),
+    Implementation(
+        name = "bookanything", version = "1.2.0", title = "bookanything (your account)", websiteUrl = ctx.config.appBaseUrl,
+        icons = McpIcons.of(ctx.config.appBaseUrl),
+    ),
     ServerOptions(capabilities = ServerCapabilities(tools = ServerCapabilities.Tools(listChanged = false))),
     "You are acting for a signed-in bookanything customer. Find businesses with search_marketplace, read services and questions " +
         "with get_business, find free times with check_availability, then book. book, reschedule_booking and cancel_booking only " +
