@@ -110,10 +110,13 @@ internal object AnthropicMapping {
         return builder.build()
     }
 
-    fun message(m: ChatMessage): MessageParam = MessageParam.builder()
-        .role(if (m.role == ChatRole.USER) MessageParam.Role.USER else MessageParam.Role.ASSISTANT)
-        .contentOfBlockParams(m.blocks.map(::block))
-        .build()
+    fun message(m: ChatMessage): MessageParam {
+        val blocks = m.blocks.map(::block)
+        return when (m.role) {
+            ChatRole.USER -> MessageParam.ofUserOfContentBlockParams(blocks)
+            ChatRole.ASSISTANT -> MessageParam.ofAssistantOfContentBlockParams(blocks)
+        }
+    }
 
     private fun block(b: ChatBlock): ContentBlockParam = when (b) {
         is ChatBlock.Text -> ContentBlockParam.ofText(TextBlockParam.builder().text(b.text).build())

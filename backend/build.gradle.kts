@@ -40,7 +40,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.6.6")
     // Phase B2 integrations. Each is optional at runtime and only used when its env keys are set.
     implementation("com.stripe:stripe-java:33.4.2")
-    implementation("com.anthropic:anthropic-java:2.67.0")
+    implementation("com.anthropic:anthropic-java:3.3.0")
     // Used directly for the SSRF-guarded website fetch (custom DNS filtering); also the Anthropic SDK transport.
     implementation("com.squareup.okhttp3:okhttp:5.5.1")
     // Public MCP endpoint (stateless Streamable HTTP).
