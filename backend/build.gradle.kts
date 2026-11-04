@@ -32,8 +32,6 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm")
     implementation("io.ktor:ktor-server-cors-jvm")
     implementation("io.ktor:ktor-server-compression-jvm")
-    // The customer MCP reads the JSON-RPC body for its scope check before the MCP transport reads it.
-    implementation("io.ktor:ktor-server-double-receive-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.11.0")
     implementation("com.zaxxer:HikariCP:6.3.3")
     implementation("org.postgresql:postgresql:42.7.13")
