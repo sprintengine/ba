@@ -495,8 +495,9 @@ titles and descriptions, issues and comments. Edits keep a history anyone can re
 
 The **Nothing personal, no competitors** check (`scripts/publication-check.mjs`) reads a pull request's title,
 description, commit messages and added lines for the patterns it can know (tailnets, Tailscale addresses, home and
-volume paths, email addresses outside example and the product's own domains) and for the repository secret
-`PUBLICATION_DENYLIST`: one regular expression per line, case-insensitive unless the line starts with `=`, holding the
-competitors' names and the owner's machine names, which no file may spell out. A match is reported without its text.
+volume paths, email addresses outside example and the product's own domains, no-reply senders and Dependabot's
+sign-off) and for the repository secret `PUBLICATION_DENYLIST`: one regular expression per line, case-insensitive
+unless the line starts with `=`, holding the competitors' names and the owner's machine names, which no file may spell
+out. A match is reported without its text.
 The secret is required for pull requests from this repository: add it under both Actions and Dependabot secrets. A
 fork's pull request gets no secrets, so it is checked without the list, with a warning to read it for names.

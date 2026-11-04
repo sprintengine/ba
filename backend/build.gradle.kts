@@ -32,14 +32,12 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm")
     implementation("io.ktor:ktor-server-cors-jvm")
     implementation("io.ktor:ktor-server-compression-jvm")
-    // The customer MCP reads the JSON-RPC body for its scope check before the MCP transport reads it.
-    implementation("io.ktor:ktor-server-double-receive-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.11.0")
     implementation("com.zaxxer:HikariCP:6.3.3")
-    implementation("org.postgresql:postgresql:42.7.13")
+    implementation("org.postgresql:postgresql:42.7.14")
     implementation("org.liquibase:liquibase-core:4.33.0")
     implementation("com.nimbusds:nimbus-jose-jwt:10.10")
-    implementation("ch.qos.logback:logback-classic:1.5.38")
+    implementation("ch.qos.logback:logback-classic:1.6.6")
     // Phase B2 integrations. Each is optional at runtime and only used when its env keys are set.
     implementation("com.stripe:stripe-java:33.4.2")
     implementation("com.anthropic:anthropic-java:2.67.0")
