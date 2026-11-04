@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CircleAlert, Lock, RotateCw } from "lucide-react";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { signInUrl } from "@/lib/auth/components";
+import { cn } from "@/lib/utils";
 import { LogoMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -93,16 +94,25 @@ export function NoAccess({
   description = "It may not exist, or your account isn't a member. Check the address or switch account.",
   backHref = "/dashboard",
   backLabel = "Go to dashboard",
+  inShell = false,
 }: {
   title?: string;
   description?: string;
   backHref?: string;
   backLabel?: string;
+  /** Inside the dashboard's shell: fills the page, not the whole screen. */
+  inShell?: boolean;
 }) {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background px-6">
+    <div
+      className={cn(
+        "flex items-center justify-center bg-background px-6",
+        inShell ? "min-h-[60dvh]" : "min-h-dvh",
+      )}
+    >
       <EmptyState
         size="lg"
+        headingLevel={1}
         icon={<Lock />}
         title={title}
         description={description}
