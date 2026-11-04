@@ -53,9 +53,10 @@ class RateLimiter(
     fun clientIp(call: ApplicationCall): String {
         val peer = call.request.local.remoteAddress
         val forwarded = call.request.headers.getAll("X-Forwarded-For").orEmpty()
-        val ip = ipResolver.resolve(peer, forwarded)
-        // LOG_LEVEL=DEBUG shows what the proxy chain delivers (to verify TRUST_FORWARDED_FOR in staging).
-        if (log.isDebugEnabled) log.debug("client ip={} peer={} x-forwarded-for={}", ip, peer, forwarded)
+        val fromEdge = ipResolver.clientIpHeader?.let { call.request.headers[it] }
+        val ip = ipResolver.resolve(peer, forwarded, fromEdge)
+        // LOG_LEVEL=DEBUG shows what the proxy chain delivers (to verify CLIENT_IP_HEADER / TRUST_FORWARDED_FOR in staging).
+        if (log.isDebugEnabled) log.debug("client ip={} peer={} x-forwarded-for={} client-ip-header={}", ip, peer, forwarded, fromEdge)
         return ip
     }
 

@@ -1,0 +1,13 @@
+# Deploys the backend when the environment's image tag moves (update.sh). Installed by bootstrap.sh.
+[Unit]
+Description=bookanything: deploy the backend image the environment's tag names
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/opt/bookanything
+ExecStart=/opt/bookanything/update.sh
+# A deploy waits up to HEALTH_TIMEOUT (180 s) for the new container, after pulling and migrating.
+TimeoutStartSec=15min

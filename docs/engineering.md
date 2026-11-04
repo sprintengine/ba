@@ -20,10 +20,13 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Bundle-size budget | `npm --prefix frontend run perf:bundle` (after `build`) | `frontend/perf/bundle-baseline.json`, see below |
 | Web-vitals budgets | `npm --prefix frontend run perf:vitals` (stack running) | Playwright `performance` project, `frontend/perf/web-vitals-budget.json` |
 | Mobile (format, lint, design tokens, types, tests + coverage, shared-code boundary) | `npm run mobile:check` | `mobile/` (see `mobile/README.md`) |
+| Repository scripts (pull request checks, release tooling) | `npm run test:scripts` | `node --test`, `scripts/**/*.test.mjs` |
+| Commit messages | `npm run hooks:install` (once; checks each commit) | `scripts/conventional-commits.mjs`, §14 |
 | All of the above but e2e | `npm test` | |
 
-CI (`.github/workflows/ci.yml`) runs four jobs on every push and PR: **Backend** (ktlint, detekt, tests, Kover
-floor), **Frontend** (format, lint, typecheck, unit tests with coverage, build, bundle-size budget), **Mobile**
+CI (`.github/workflows/ci.yml`) runs five jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
+floor), **Frontend** (format, lint, typecheck, unit tests with coverage, the build as a Cloudflare Worker and its
+size: `npm run cf:check`, bundle-size budget), **Mobile**
 (format, lint, design-token lint, typecheck, app config per variant, tests with coverage incl. the shared-code
 boundary; `docs/mobile.md`) and **E2E**
 (Postgres 16 service, seeded backend with dev auth and the scripted fake model, production frontend build with the
@@ -419,10 +422,71 @@ Frontend
 - Code splitting made the total of static chunks larger (4.4 MB → 4.7 MB raw) while every dashboard route's first
   load got 30-200 KB gzip smaller; keep an eye on chunk counts.
 
-## 14. Commits
+## 14. Commits, pull requests and versions
 
-- One logical change per commit, in the imperative, prefixed by area when it helps: `Backend: ...`, `Frontend: ...`,
-  `Bo: ...`, `Docs: ...`, `CI: ...`. The body says why, and what a reviewer should check.
-- Mechanical changes (formatting, renames, generated files) go in their own commit, separate from behaviour.
+Every commit is a [Conventional Commit](https://www.conventionalcommits.org): `type(scope): summary`, at most 100
+characters, no full stop.
+
+| Type | For | Version bump |
+|---|---|---|
+| `feat` | something a user, a business or an API client can do that they could not | minor |
+| `fix` | a bug fixed | patch |
+| `perf` | faster or lighter, same behaviour | patch |
+| `refactor` | code reshaped, same behaviour | patch |
+| `docs`, `test` | documentation; tests only | patch |
+| `build` | the build, dependencies (`build(deps): …`), images | patch |
+| `ci` | workflows and the release train | patch |
+| `chore` | anything else that ships nothing | patch |
+| `revert` | `revert: <the reverted subject>` | patch |
+
+- **Scopes** name the area: `backend`, `web`, `mobile`, `payments`, `mcp`, `ai`, `deploy`, `observability`, `sim`,
+  `deps`, `db`. Optional, lower case.
+- **Breaking changes** add `!` after the type or scope (`feat(mcp)!: drop the v1 tool names`) or a `BREAKING CHANGE:`
+  footer saying what breaks and what to do. Breaking means a client or an operator has to act: an API field removed or
+  changed, an MCP tool renamed, an environment variable that must now be set.
+- The body says why, and what a reviewer should check. One logical change per commit; mechanical changes (formatting,
+  renames, generated files) go in their own commit, separate from behaviour.
 - Lint, types and tests pass at every commit you push; update docs (`architecture.md`, OpenAPI, the READMEs) in the
   same change as the behaviour.
+- `npm run hooks:install` turns on a local `commit-msg` hook that runs the same check (`scripts/hooks/commit-msg`).
+
+**Pull requests** have a Conventional Commit title too, and the **Pull request** workflow
+(`.github/workflows/pull-request.yml`) checks it and every commit in the pull request (merge commits excepted:
+`scripts/conventional-commits.mjs`), and that nothing in it must not be published (below). Pull requests are merged
+with a **merge commit**, never squashed or rebased: every commit lands on `main` as written, and the merge commit keeps
+GitHub's own message ("Merge pull request #12 from …"), which the checks and the versioning skip. So the commits, not
+the title, are what versions and release notes are made of; the title names the merge for a reader of the history.
+`main` is protected by the ruleset in `.github/main-ruleset.json`: changes arrive through pull requests merged with a
+merge commit, the checks above and CI's jobs must pass on a branch up to date with `main`, and nobody force-pushes or
+deletes it, and nobody bypasses it. The file is the ruleset as applied: change it in a pull request, then
+`gh api -X PUT repos/<owner>/<repo>/rulesets/<id> --input .github/main-ruleset.json` (`gh api repos/<owner>/<repo>/rulesets`
+lists the id). The repository allows merge commits only, and deletes a branch once its pull request is merged.
+
+**Versions** are [SemVer](https://semver.org), derived from these commits: the next version is the last stable
+release's, bumped by the strongest change among the non-merge commits since it (`feat` minor, `!` or
+`BREAKING CHANGE` major, anything else patch). Until 1.0 a breaking change bumps the minor version instead, and 1.0.0
+is chosen by hand, never derived. With no release yet the first is 0.1.0. The release train that cuts them (nightly,
+staging, production) is [`releases.md`](releases.md).
+
+Dependabot (`.github/dependabot.yml`) opens weekly grouped updates as `build(deps): …` and `ci(deps): …`, so they pass
+the same checks.
+
+### What may be published
+
+The repository is public, and so is everything sent to GitHub: files, commit messages, branch names, pull request
+titles and descriptions, issues and comments. Edits keep a history anyone can read.
+
+- No personal information: no real machine or host names, tailnet names or addresses, LAN addresses, local URLs,
+  home-directory or volume paths, email addresses, phone numbers or account handles other than the repository's own.
+  Use placeholders: `build-box`, `tail1234.ts.net`, `/Users/dev/…`, `dev@example.com`, `198.51.100.0/24`.
+- No names of products or services that compete with bookanything: describe the idea instead. Tools, libraries,
+  infrastructure vendors and data sources the project uses are fine.
+- No private backlog or ticket numbers.
+
+The **Nothing personal, no competitors** check (`scripts/publication-check.mjs`) reads a pull request's title,
+description, commit messages and added lines for the patterns it can know (tailnets, Tailscale addresses, home and
+volume paths, email addresses outside example and the product's own domains) and for the repository secret
+`PUBLICATION_DENYLIST`: one regular expression per line, case-insensitive unless the line starts with `=`, holding the
+competitors' names and the owner's machine names, which no file may spell out. A match is reported without its text.
+The secret is required for pull requests from this repository: add it under both Actions and Dependabot secrets. A
+fork's pull request gets no secrets, so it is checked without the list, with a warning to read it for names.

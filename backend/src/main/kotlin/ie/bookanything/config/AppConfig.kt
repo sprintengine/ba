@@ -8,7 +8,18 @@ import ie.bookanything.oauth.OAuthConfig
  * Backend configuration, read from environment variables (docs/architecture.md section 10).
  * Construction validates combinations that must never reach production (dev auth, dev payments).
  */
-enum class AppEnv { DEVELOPMENT, PRODUCTION, TEST;
+enum class AppEnv { DEVELOPMENT, STAGING, PRODUCTION, TEST;
+
+    /**
+     * Production rules apply: no dev auth, dev payments, demo seed, fake model or rate-limit multiplier, and the
+     * production settings are required. Staging is production in every check; it only has its own name, for logs,
+     * error tracking and staging-only test features that may key off it later.
+     */
+    val isProductionLike: Boolean get() = this == PRODUCTION || this == STAGING
+
+    /** The name logs and error tracking tag events with (`development`, `staging`, `production`, `test`). */
+    val wire: String get() = name.lowercase()
+
     companion object {
         /**
          * Reads APP_ENV. A missing value means production (fail closed): development turns on dev auth, the dev
@@ -17,8 +28,9 @@ enum class AppEnv { DEVELOPMENT, PRODUCTION, TEST;
          */
         fun parse(raw: String?): AppEnv = when (raw?.trim()?.lowercase()) {
             null, "", "production", "prod" -> PRODUCTION
+            "staging" -> STAGING
             "development", "dev" -> DEVELOPMENT
-            else -> throw ConfigException("APP_ENV must be development or production (got '$raw').")
+            else -> throw ConfigException("APP_ENV must be development, staging or production (got '$raw').")
         }
     }
 }
@@ -58,6 +70,11 @@ data class AppConfig(
      * + Next.js"). Takes precedence over [trustedProxies] for picking the client address.
      */
     val trustedProxyHops: Int? = null,
+    /**
+     * A header a trusted proxy sets to the client address, one address, overwritten on every request (`CF-Connecting-IP`
+     * behind Cloudflare). Takes precedence over `X-Forwarded-For` when present on a request from a trusted proxy.
+     */
+    val clientIpHeader: String? = null,
     /** Unsplash API access key for stock photos in the site editor; null = stock photos off. */
     val unsplashAccessKey: String? = null,
     /**
@@ -84,9 +101,17 @@ data class AppConfig(
      * business MCP on.
      */
     val oauth: OAuthConfig = OAuthConfig.fromEnvironment({ null }, appBaseUrl),
+    /**
+     * The build running (`APP_VERSION`): the release train names the image for the nightly that built it, e.g.
+     * `0.4.0-nightly.20261104.17`, and never rebuilds it to stage or release it; `dev` otherwise. `/v1/health` reports
+     * it, so a deploy and the monitor can tell which build answers.
+     */
+    val version: String = DEV_VERSION,
 ) {
     val isDevelopment: Boolean get() = env == AppEnv.DEVELOPMENT || env == AppEnv.TEST
-    val isProduction: Boolean get() = env == AppEnv.PRODUCTION
+
+    /** Production or staging: every production rule applies (see [AppEnv.isProductionLike]). */
+    val isProduction: Boolean get() = env.isProductionLike
 
     /** The frontend URLs we hand out and the origins we may redirect to. */
     val urls: AppUrls get() = AppUrls(appBaseUrl, corsAllowedOrigins)
@@ -120,13 +145,15 @@ data class AppConfig(
 
     companion object {
         const val DEV_TOKEN_SECRET = "dev-only-token-secret-change-me"
+        const val DEV_VERSION = "dev"
         const val MAX_RATE_LIMIT_MULTIPLIER = 1000
         val DEFAULT_TRUSTED_PROXIES = listOf("127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7")
 
         fun fromEnvironment(environment: Map<String, String> = System.getenv()): AppConfig {
             val env = EnvReader(environment)
             val appEnv = AppEnv.parse(env.str("APP_ENV"))
-            val dev = appEnv != AppEnv.PRODUCTION
+            // Only an explicit development environment gets development defaults (TEST is never read from the environment).
+            val dev = appEnv == AppEnv.DEVELOPMENT
             val authMode = authMode(env, dev)
             val database = DatabaseConfig.fromEnvironment(env, dev)
             val appBaseUrl = (env.str("APP_BASE_URL") ?: "http://localhost:3000").trimEnd('/')
@@ -149,6 +176,7 @@ data class AppConfig(
                 rateLimitMultiplier = env.int("RATE_LIMIT_MULTIPLIER", 1),
                 trustedProxies = trustedProxies(env),
                 trustedProxyHops = trustedProxyHops(env),
+                clientIpHeader = clientIpHeader(env),
                 unsplashAccessKey = env.str("UNSPLASH_ACCESS_KEY"),
                 sitesEnabled = env.bool("SITES_ENABLED", false),
                 assistantEnabled = env.bool("ASSISTANT_ENABLED", false),
@@ -159,6 +187,7 @@ data class AppConfig(
                 ai = AiConfig.fromEnvironment(env, production = !dev),
                 geo = GeoConfig.fromEnvironment(env::str),
                 oauth = OAuthConfig.fromEnvironment(env::str, appBaseUrl),
+                version = env.str("APP_VERSION") ?: DEV_VERSION,
             )
         }
 
@@ -176,6 +205,13 @@ data class AppConfig(
             val proxies = env.list("TRUSTED_PROXIES") ?: return DEFAULT_TRUSTED_PROXIES
             proxies.firstOrNull { Cidr.parse(it) == null }?.let { throw ConfigException("TRUSTED_PROXIES has an invalid entry '$it'.") }
             return proxies
+        }
+
+        private val HEADER_NAME = Regex("^[A-Za-z0-9-]{1,64}$")
+
+        private fun clientIpHeader(env: EnvReader): String? = env.str("CLIENT_IP_HEADER")?.let { name ->
+            name.takeIf { HEADER_NAME.matches(it) }
+                ?: throw ConfigException("CLIENT_IP_HEADER must be a header name, e.g. CF-Connecting-IP.")
         }
 
         private fun trustedProxyHops(env: EnvReader): Int? = env.str("TRUSTED_PROXY_HOPS")?.let { raw ->

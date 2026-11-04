@@ -49,6 +49,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `backend serve` (default) | Runs the API. Runs migrations first when `RUN_MIGRATIONS_ON_START=true`. |
 | `backend migrate` | Applies Liquibase migrations and exits (production deploy step). |
 | `backend seed-demo` | Development only: migrates, then seeds demo data. Safe to rerun. |
+| `docker build -f backend/Dockerfile .` (repo root) | The deployable image: `docker run <image>` serves, `docker run <image> migrate` migrates. Non-root, health-checked on `/v1/health`, heap sized from the container's memory limit (`JAVA_OPTS`). See [`docs/deployment.md`](../docs/deployment.md). |
 | `backend email-preview [dir]` | Writes every email template (HTML + text, sample data) to `dir` (default `build/email-previews`). |
 | `./gradlew :backend:test` | Unit + integration tests (needs Docker for Testcontainers; tests fail, never skip, without it). |
 | `./gradlew :backend:check` | Tests plus ktlint, detekt and the Kover coverage floor (what CI runs). `ktlintFormat` fixes formatting; `koverHtmlReport` writes `build/reports/kover/html`. See [`docs/engineering.md`](../docs/engineering.md). |
@@ -57,7 +58,7 @@ by `market@bookanything.test` (`dev_marketplace`).
 
 | Variable | Default | Notes |
 |---|---|---|
-| `APP_ENV` | `production` | `development` or `production`. Unset means production (fail closed): set `APP_ENV=development` for local runs. |
+| `APP_ENV` | `production` | `development`, `staging` or `production`. Unset means production (fail closed): set `APP_ENV=development` for local runs. `staging` is production in every check (dev auth, dev payments, `seed-demo`, `AI_FAKE_SCRIPT` and `RATE_LIMIT_MULTIPLIER` are refused, the same settings are required); only its name differs, for logs and error tracking. |
 | `APP_HOST` / `PORT` | `0.0.0.0` / `8080` | |
 | `APP_BASE_URL` | `http://localhost:3000` | Frontend origin; used in emails, manage links and dev checkout URLs. |
 | `DATABASE_URL` | dev: `jdbc:postgresql://localhost:5432/bookanything_dev` | JDBC or `postgres://user:pass@host/db`. Required in production. |
@@ -101,11 +102,13 @@ by `market@bookanything.test` (`dev_marketplace`).
 | `TRUST_FORWARDED_FOR` | `false` | Read the client address from `X-Forwarded-For` for rate limiting (see "Behind a proxy"). |
 | `TRUSTED_PROXIES` | loopback + private ranges | Comma-separated IPs/CIDRs of proxies whose `X-Forwarded-For` entries are trusted. |
 | `TRUSTED_PROXY_HOPS` | — | Number of proxies in front of the API (e.g. `2` for load balancer + Next.js). When set, takes precedence over `TRUSTED_PROXIES`. |
+| `CLIENT_IP_HEADER` | — | A header the edge proxy sets to the client's address on every request, e.g. `CF-Connecting-IP` behind Cloudflare. Honoured only from a trusted peer (`TRUSTED_PROXIES`), and before `X-Forwarded-For`. |
 | `RATE_LIMITS_ENABLED` | `true` | Postgres-backed per-IP limits on public endpoints. |
 | `RATE_LIMIT_MULTIPLIER` | `1` | Development only (refused otherwise): every limit allows this many times its requests, so the e2e suite can book repeatedly through one address with the limiter still on. |
 | `JOBS_ENABLED` | `true` | Runs the in-process job worker (notifications, hold expiry, reminders, auto-complete). |
 | `CORS_ALLOWED_ORIGINS` | none | Comma-separated origins allowed to call `/v1/public/*` from the browser (embeds). |
 | `LOG_LEVEL` | `INFO` | Root log level. |
+| `APP_VERSION` | `dev` | The build running, reported by `/v1/health` and the startup log. The release train's image sets it to the nightly that built it (`0.4.0-nightly.20261104.17`); leave it unset elsewhere. |
 | `MAPBOX_ACCESS_TOKEN` | — | Geocodes business addresses for the marketplace with Mapbox (see "Geocoding"). Without it, the built-in table of Irish places is used. |
 | `OAUTH_ISSUER` | `APP_BASE_URL` | Issuer of our OAuth authorization server (section 20). The consent page is `${OAUTH_ISSUER}/oauth/authorize`. |
 | `PUBLIC_API_URL` | `${APP_BASE_URL}/api` | Public base URL of this API, used for the token, registration and revocation endpoints in the OAuth metadata. |
@@ -378,7 +381,16 @@ to this API, so the API's TCP peer is the Next.js server (or a platform load bal
   their own rate-limit bucket.
 
 The client is the first untrusted hop from the right; client-supplied entries on the left are never
-used. Verify on the deployed stack with `LOG_LEVEL=DEBUG` (logs `client ip=… peer=… x-forwarded-for=…`).
+used. Verify on the deployed stack with `LOG_LEVEL=DEBUG` (logs `client ip=… peer=… x-forwarded-for=… client-ip-header=…`).
+
+**Behind Cloudflare** (how we deploy, [`docs/deployment.md`](../docs/deployment.md)) the API has no public port: the
+only way in is a Cloudflare Tunnel whose connector (cloudflared) runs next to it on a private Docker network. The
+mobile app calls the API hostname directly and the website's Worker calls it as a same-zone subrequest; on both paths
+Cloudflare's edge sets `CF-Connecting-IP` to the visitor's address, overwriting anything the client sent. So set
+`CLIENT_IP_HEADER=CF-Connecting-IP` and leave `TRUST_FORWARDED_FOR` off: cloudflared's private address is a trusted
+peer under the default `TRUSTED_PROXIES`, and the header from any other peer is ignored. The website must be on a
+hostname in the same Cloudflare zone as the API (a Worker's subrequest to another zone carries a fixed Cloudflare
+address instead of the visitor's).
 
 ## Layout
 

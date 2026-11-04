@@ -500,7 +500,7 @@ export function CustomersList() {
 
 | Var | Where | Purpose |
 |---|---|---|
-| `BACKEND_ORIGIN` | server | target of the `/api/*` rewrite (default `http://localhost:8080`) |
+| `BACKEND_ORIGIN` | build + server | target of the `/api/*` rewrite, read when `next.config.ts` is built (default `http://localhost:8080`), and of server-side reads (`lib/api/server.ts`), read per request |
 | `NEXT_PUBLIC_APP_URL` | both | public origin (metadata, `returnUrl`s) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | both / server | enable Clerk; unset = dev auth |
 | `NEXT_PUBLIC_ENABLE_DEV_ROUTES` | build | `true` to expose `/dev/*` in a production build |
@@ -510,6 +510,42 @@ export function CustomersList() {
 | `APPLE_APP_IDS` | server (runtime) | iOS app IDs whose universal links and sign-in this domain vouches for, comma-separated `TEAMID.bundle.id` (`V266333BR2.ie.bookanything.app`; staging `V266333BR2.ie.bookanything.app.preview`). Served at `/.well-known/apple-app-site-association`; unset = 404 |
 | `ANDROID_PACKAGE_NAME` | server (runtime) | Android package for App Links (`ie.bookanything.app`; staging `ie.bookanything.app.preview`). Served at `/.well-known/assetlinks.json` with the fingerprints below; either unset = 404 |
 | `ANDROID_SHA256_FINGERPRINTS` | server (runtime) | Comma-separated SHA-256 signing certificate fingerprints (`AA:BB:…`, 32 hex bytes, any case): the upload key's (`eas credentials`) and Play App Signing's (Play Console › App integrity). Malformed entries are dropped |
+
+### Deploying: Cloudflare Workers
+
+The site runs as a Cloudflare Worker built by the OpenNext adapter (`@opennextjs/cloudflare`). The release train builds
+it once per environment in each nightly and deploys exactly that build to staging and then production
+([`docs/releases.md`](../docs/releases.md)); the accounts and hostnames are [`docs/deployment.md`](../docs/deployment.md).
+`npm run build` stays the plain Next.js build (`npm start`, the end-to-end tests).
+
+```bash
+npm run cf:build     # next build + the Worker bundle in .open-next/ (reads the env above)
+npm run cf:check     # cf:build, then the Worker's size against Workers' limit (CI's Frontend job)
+npm run cf:preview   # the bundle in the local Workers runtime on :8787, cache populated like a deploy
+```
+
+`wrangler.jsonc` names the Workers, their domains and cache buckets (production at the top level, `--env staging`);
+settings are not in it: the train passes `NEXT_PUBLIC_*` and `BACKEND_ORIGIN` to the build, and `BACKEND_ORIGIN`, the
+app-link settings and `CLERK_SECRET_KEY` to the Worker (`scripts/release/deploy-site.sh`). For `cf:preview`, put runtime
+values in `.dev.vars` (git-ignored), e.g. `BACKEND_ORIGIN=http://localhost:8080`. `playwright.deployed.config.ts` runs
+the read-only smoke tests in `tests/deployed/` against a deployed site (`E2E_BASE_URL`), as the train does after each
+deploy.
+
+How the app's server features behave on Workers (checked with `cf:preview` against a local backend):
+
+- **`/api/*`, `/mcp`, `/mcp/business` and `/.well-known/oauth-*`** are external rewrites: the Worker fetches the API
+  hostname, streaming the response (Bo's server-sent events arrive as they are written). The API hostname must be in the
+  same Cloudflare zone, so the API sees the visitor's address in `CF-Connecting-IP` (backend/README.md "Behind a proxy").
+- **`proxy.ts`** (Clerk) runs as OpenNext's Node.js middleware, which OpenNext still marks experimental: watch for it
+  when upgrading either package.
+- **Prerendered pages and the social cards** (`opengraph-image`) are built once and served from the incremental cache, an
+  R2 bucket per environment that the deploy fills. The cards read their fonts from disk at build time, which a Worker
+  cannot do, so they must stay static (no dynamic params, no request data).
+- **`/.well-known/apple-app-site-association` and `assetlinks.json`** read their settings per request from the Worker's
+  vars.
+- **Images**: `next/image` is not used, so there is no image optimization to configure.
+- **Size**: the Worker is about 4.5 MiB gzipped, above the free plan's 3 MiB limit: deploying needs the Workers paid
+  plan, whose limit is 10 MiB (`npm run cf:check` fails above it and warns within 1 MiB of it).
 
 ---
 

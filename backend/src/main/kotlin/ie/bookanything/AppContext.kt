@@ -98,7 +98,7 @@ class AppContext(
     val inbox = Inbox(push = push.enabled)
     val rateLimiter = RateLimiter(
         db, config.rateLimitsEnabled,
-        ClientIpResolver(config.trustForwardedFor, config.trustedProxies, config.trustedProxyHops),
+        ClientIpResolver(config.trustForwardedFor, config.trustedProxies, config.trustedProxyHops, config.clientIpHeader),
         multiplier = config.rateLimitMultiplier,
     )
 

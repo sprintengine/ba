@@ -208,7 +208,8 @@ class AppConfigTest {
 
     @Test
     fun `invalid values are configuration errors`() {
-        assertFailsWith<ConfigException> { AppConfig.fromEnvironment(mapOf("APP_ENV" to "staging")) }
+        val env = assertFailsWith<ConfigException> { AppConfig.fromEnvironment(mapOf("APP_ENV" to "stage")) }
+        assertTrue(env.message!!.startsWith("APP_ENV must be development, staging or production"), env.message)
         assertFailsWith<ConfigException> { AppConfig.fromEnvironment(mapOf("PORT" to "eighty")) }
         assertFailsWith<ConfigException> { AppConfig.fromEnvironment(mapOf("JOBS_ENABLED" to "maybe")) }
     }
