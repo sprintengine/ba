@@ -341,8 +341,10 @@ exactly one winner; waits poll with a timeout. Frontend tests that depend on "no
 from its own distribution on :8095, production frontend build with the `/dev` routes on :3002), `test` runs Playwright
 against it, `frontend` rebuilds just the frontend, `down` stops it and drops the database. The stack's backend sets
 `RATE_LIMIT_MULTIPLIER` (development only, refused otherwise) so repeated runs through one address are not rate
-limited. Against your own servers: backend on :8080 (`npm run backend:dev`, `AI_FAKE_SCRIPT=demo` for Bo) and
-`npm run test:e2e`; `E2E_BASE_URL` points at an already running frontend.
+limited, and switches Bo on (`ASSISTANT_ENABLED`, off by default) for its specs; `test-assistant-off` restarts the
+backend with Bo off, runs `assistant-off.spec.ts` (`E2E_ASSISTANT=off`) and then switches Bo back on. CI's e2e job
+runs the same spec last, after restarting its backend with Bo off. Against your own servers: backend on :8080 (`npm run backend:dev`, `ASSISTANT_ENABLED=true AI_FAKE_SCRIPT=demo`
+for Bo) and `npm run test:e2e`; `E2E_BASE_URL` points at an already running frontend.
 
 New behaviour comes with a test at the lowest layer that can show it; a bug fix comes with the test that would have
 caught it.

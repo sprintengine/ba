@@ -403,6 +403,11 @@ const { isLoaded, isSignedIn, user, getToken, signOut, mode } = useAuth();
 
 ### 7b. Bo, the assistant (architecture §17)
 
+- **Off by default.** Only where the business says the deployment offers it (`Business.assistantAvailable`: the
+  backend's `ASSISTANT_ENABLED` and a model); otherwise the layout mounts none of it (no launcher, panel, ⌘J, ⌘K "Ask
+  Bo…", nudges, or Bo in Billing's AI credits, which are hidden when nothing else uses them either). The public pages
+  follow `NEXT_PUBLIC_ASSISTANT_ENABLED` (`assistantMarketed()`, `lib/assistant/flag.ts`) and, off, tell owners to
+  connect their own AI assistant to the business MCP instead.
 - **Dashboard only.** `AssistantProvider` wraps the dashboard layout; `DashboardShell` places the `floating` launcher
   bottom-left of the content and adds ⌘K "Ask Bo…" (`onAskAssistant`). ⌘J toggles the panel. The name is
   `ASSISTANT_NAME` (`lib/assistant/constants.ts`); never write "Bo" in copy.
@@ -499,6 +504,7 @@ export function CustomersList() {
 | `NEXT_PUBLIC_APP_URL` | both | public origin (metadata, `returnUrl`s) |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | both / server | enable Clerk; unset = dev auth |
 | `NEXT_PUBLIC_ENABLE_DEV_ROUTES` | build | `true` to expose `/dev/*` in a production build |
+| `NEXT_PUBLIC_ASSISTANT_ENABLED` | build | `true` to present Bo on the public pages (set with the backend's `ASSISTANT_ENABLED`; both off by default). Off, they offer connecting your own AI assistant to the business MCP |
 | `NEXT_PUBLIC_BUSINESS_MCP_ENABLED` | build | On unless `false` (set with the backend's `BUSINESS_MCP_ENABLED` kill switch): indexes and links the business agents guide |
 | `WEBMCP_ORIGIN_TRIAL_TOKEN` | build | Chrome's WebMCP origin-trial token for this origin, sent on `/[slug]/book`; unset = only browsers with WebMCP switched on |
 | `APPLE_APP_IDS` | server (runtime) | iOS app IDs whose universal links and sign-in this domain vouches for, comma-separated `TEAMID.bundle.id` (`V266333BR2.ie.bookanything.app`; staging `V266333BR2.ie.bookanything.app.preview`). Served at `/.well-known/apple-app-site-association`; unset = 404 |
@@ -558,7 +564,9 @@ Checks: `npm run format:check`, `lint`, `typecheck`, `test:coverage` (thresholds
   (`journey-helpers.ts`); page-wide checks (`accessibility.spec.ts`, `layout-and-theme.spec.ts`) cover `main-pages.ts`.
 - Bo's component tests drive the panel against a stateful fake (`components/assistant/__tests__/fake-assistant-api.ts`)
   whose `Turn` pushes real server-sent events at the test's pace. `assistant.spec.ts` (e2e) needs a backend started with
-  `AI_FAKE_SCRIPT=demo` (development only) for the conversation specs and skips them otherwise; for e2e run a second
+  `ASSISTANT_ENABLED=true`, a model (`AI_FAKE_SCRIPT=demo`, development only, or a key) and the demo seed; it fails
+  without them, so a misconfigured stack can't skip it, and the conversation specs skip unless the model is the fake; `assistant-off.spec.ts` runs only with
+  `E2E_ASSISTANT=off` against a backend with Bo off (`scripts/e2e-stack.sh test-assistant-off`); for e2e run a second
   backend with it (e.g. `PORT=8091`) and build the frontend with `BACKEND_ORIGIN` pointing at it.
 - Site specs (`site.spec.ts`, `branding-upload.spec.ts`) create a throwaway business per test (owned by a fresh
   dev user, so the demo businesses are untouched) and expect a backend without `ANTHROPIC_API_KEY` (the deterministic

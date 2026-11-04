@@ -160,6 +160,9 @@ jobs:
       APP_ENV: development
       AUTH_MODE: dev
       AI_FAKE_SCRIPT: demo
+      # Bo is off by default; the suite runs with it on, then assistant-off.spec.ts against the backend restarted
+      # without it (the last steps). The frontend is built with the default (NEXT_PUBLIC_ASSISTANT_ENABLED unset).
+      ASSISTANT_ENABLED: "true"
       # One suite run books ~20 times through one address (the public limit is 20 per 10 minutes); development only.
       RATE_LIMIT_MULTIPLIER: "50"
       DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_ci
@@ -195,6 +198,7 @@ jobs:
       - name: Start backend
         run: |
           nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          echo $! > backend.pid
           for i in $(seq 1 60); do
             curl -fsS http://localhost:8080/v1/health && exit 0
             sleep 2
@@ -254,6 +258,27 @@ jobs:
           PERF_REPORT: perf-report/web-vitals
         run: npx playwright test --project=performance --workers=1
 
+      # Bo switched off, as in production: the same build against the backend restarted without ASSISTANT_ENABLED.
+      - name: Restart backend with Bo off
+        run: |
+          pid="$(cat backend.pid)"
+          kill "$pid"
+          for i in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+          if kill -0 "$pid" 2>/dev/null; then kill -9 "$pid"; sleep 1; fi
+          ASSISTANT_ENABLED=false nohup backend/build/install/backend/bin/backend > backend-assistant-off.log 2>&1 &
+          echo $! > backend.pid
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend-assistant-off.log; exit 1
+
+      - name: Run Playwright with Bo off
+        working-directory: frontend
+        env:
+          E2E_ASSISTANT: "off"
+        run: npx playwright test assistant-off.spec.ts --project=chromium --project=mobile
+
       - name: Upload web-vitals report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -271,5 +296,6 @@ jobs:
             frontend/playwright-report/
             frontend/test-results/
             backend.log
+            backend-assistant-off.log
             frontend.log
           if-no-files-found: ignore
