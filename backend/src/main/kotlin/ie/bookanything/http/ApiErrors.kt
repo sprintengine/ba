@@ -27,7 +27,7 @@ data class ApiErrorResponse(val error: ApiError)
 data class ApiError(val code: String, val message: String, val fields: Map<String, String> = emptyMap())
 
 /** A client-visible failure. Message and fields are safe to show to end users. */
-class ApiException(
+open class ApiException(
     val status: HttpStatusCode,
     val code: String,
     override val message: String,

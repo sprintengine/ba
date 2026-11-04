@@ -195,7 +195,8 @@ platform takes **no application fee**. Plans are billed on the platform account 
    - Endpoint listening to **Connected accounts** events: `checkout.session.completed`,
      `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
      `checkout.session.expired`, `charge.refunded`, `account.updated`,
-     `account.application.deauthorized` → secret in `STRIPE_CONNECT_WEBHOOK_SECRET`.
+     `account.application.deauthorized`, `refund.updated`, `refund.failed`, `charge.refund.updated` → secret in
+     `STRIPE_CONNECT_WEBHOOK_SECRET`.
 
    Events are verified with the Stripe SDK, stored once in `provider_events` and processed by the
    job worker exactly once (retries with backoff; errors are kept in `provider_events.error`).
@@ -210,8 +211,11 @@ account (`expires_at` = hold expiry, `metadata.bookingId/paymentId/businessId`, 
 `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`). A payment that arrives after the slot
 was taken is refunded in full automatically with an apology email. Refunds (policy, staff, declined
 requests) are created on the connected account with an idempotency key; if Stripe is unreachable the
-cancellation still succeeds and the refund is retried by the `payment_refund_retry` job. Refunds made
-in the Stripe dashboard are recorded from `charge.refunded`.
+cancellation still succeeds and the refund is retried by the `payment_refund_retry` job for about a day.
+A refund that fails for good (declined, refused, or still unreachable at the end) is marked failed and taken
+off the booking; the owners get a `payments_alert` (to refund another way, or to check their Stripe dashboard
+when it is unclear) and the customer is told the truth. Refunds made in the Stripe dashboard are recorded from
+`charge.refunded`; failures Stripe reports later (`refund.updated`) are handled the same way.
 
 Connecting an existing account (`ConnectExisting`): `POST /payments/connect/existing` (owner) stores a
 single-use nonce for the business and owner and returns Stripe's OAuth page with a state signed with

@@ -8,6 +8,7 @@ import ie.bookanything.support.Clinic
 import ie.bookanything.support.DEFAULT_NOW
 import ie.bookanything.support.FakeStripeGateway
 import ie.bookanything.support.Fixtures
+import ie.bookanything.support.Money
 import ie.bookanything.support.MutableClock
 import ie.bookanything.support.StripeTest
 import ie.bookanything.support.TestConfig
@@ -637,7 +638,9 @@ class StripePaymentsTest {
             val view = api.get("/v1/public/manage/${held.s("manageToken")}").obj()
             assertEquals("held", view.s("status"))
             assertEquals(0, view.i("amountPaidCents"))
-            assertEquals("pending", paymentRow(bookingId).third)
+            // Each is recorded on its own and refunded in full (UnmatchedPayments); the booking's charge is still payable.
+            assertEquals(listOf("charge pending 5000", "charge failed 100", "charge failed 5000"), Money.ledger(bookingId))
+            assertEquals(listOf("pi_cheap", "pi_usd"), s.gateway.refunds.map { it.params.paymentIntent })
         }
     }
 }

@@ -72,7 +72,8 @@ Cloud stores them as Prometheus series under these names (OTLP names with dots b
 | `http_server_duration_seconds` | `area` | Latency histogram (buckets 50 ms, 100 ms, 250 ms, 500 ms, 1 s, 2.5 s, 10 s). `area`: `public`, `dashboard`, `account`, `ai`, `mcp`, `oauth`, `webhooks`, `health`, `unmatched`. |
 | `bookings_created_total` | `outcome` | Bookings made, by the status they started in: `confirmed`, `held` (waiting for online payment), `pending_approval`. Counted once the booking commits. |
 | `booking_holds_total` | `outcome` | How holds for online payment ended: `paid`, `expired`, `abandoned` (the checkout was left or failed). A payment that arrives after the hold ended is counted again: `paid_after_expiry` (the time was still free, the booking is revived) or `paid_too_late` (refunded in full). |
-| `payments_refunds_failed_total` | — | Refund attempts the payment provider failed (each is retried). |
+| `payments_refunds_failed_total` | — | Refund attempts that failed: the provider unreachable (retried), declining or refusing, or a refund it accepted failing later (docs/architecture.md §7, "Refunds"). |
+| `payments_refunds_given_up_total` | `certain` | Refunds handed to the business for good (booking refunds and refunds of unmatched payments). `true`: certainly not made (declined or refused for good, nothing to refund from, or failing later at Stripe, dashboard refunds included): refund another way. `false`: unclear (Stripe unreachable to the end, past its 23 hours of idempotency, or saying the charge was refunded already): check the Stripe dashboard first. |
 | `stripe_webhook_lag_seconds` | — | Histogram (1 s, 5 s, 30 s, 2 min, 10 min) of the time from receiving a Stripe event to applying it. |
 | `jobs_runs_total` | `kind`, `result` | Job attempts: `done`, `retry` (failed, will run again) or `failed` (out of attempts). |
 | `jobs_queue_depth` | `kind` | Due jobs waiting to run, sampled every 30 s. |
@@ -141,7 +142,7 @@ with `| requestId="<X-Request-Id>"`.
   answering 5xx, bookings and holds by outcome, Stripe webhook lag, the job queue, JVM and pool, and the series count.
 - **Alert rules:** `ops/grafana/alerts.yaml` (Prometheus rule format, for production): health check failing, no
   metrics for 15 minutes, 5xx share over 2%, p95 latency over 1 s, a due job waiting over 10 minutes, Stripe webhook
-  lag, failed refunds, a refund out of retries, and jobs out of attempts. Load them with
+  lag, failed refunds, a refund handed to the business (`payments_refunds_given_up_total`), and jobs out of attempts. Load them with
   `mimirtool rules load ops/grafana/alerts.yaml` (address and credentials of the stack), or import them under
   Alerting > Alert rules. Send them to a contact point (email to start with).
 - **Uptime check:** in Grafana Cloud, Testing & synthetics > Synthetics > Add check > HTTP. Job name

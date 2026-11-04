@@ -481,8 +481,9 @@ paths:
         Handled types: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
         `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `account.updated`,
         `account.application.deauthorized` (the business's account is forgotten, so it stops taking online payments, and
-        its owners are told), `customer.subscription.created|updated|deleted`, `invoice.payment_failed`. Other types are
-        acknowledged and ignored.
+        its owners are told), `refund.updated` / `refund.failed` / `charge.refund.updated` (a refund that failed is taken off
+        the booking, its owners and the customer are told), `customer.subscription.created|updated|deleted`,
+        `invoice.payment_failed`. Other types are acknowledged and ignored.
       security: []
       parameters:
         - in: header
@@ -644,7 +645,7 @@ paths:
             type: string
             enum: [booking_confirmed, booking_pending_approval, booking_approved, booking_declined, booking_cancelled,
               booking_rescheduled, booking_reminder, payment_requested, payment_refunded, payment_refunded_apology,
-              team_invitation, new_booking_for_business]
+              payment_refund_failed, team_invitation, new_booking_for_business]
         - in: query
           name: format
           required: false

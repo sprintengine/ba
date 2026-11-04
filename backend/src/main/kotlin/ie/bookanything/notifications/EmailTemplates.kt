@@ -64,6 +64,7 @@ object EmailTemplates {
     const val PAYMENT_REFUNDED = NotificationKind.PAYMENT_REFUNDED
     const val PAYMENT_REQUESTED = NotificationKind.PAYMENT_REQUESTED
     const val REFUND_APOLOGY = "payment_refunded_apology"
+    const val REFUND_FAILED = NotificationKind.PAYMENT_REFUND_FAILED
     const val TEAM_INVITATION = NotificationKind.TEAM_INVITATION
     const val NEW_BOOKING_FOR_BUSINESS = NotificationKind.NEW_BOOKING_FOR_BUSINESS
 
@@ -72,7 +73,7 @@ object EmailTemplates {
 
     val ALL = listOf(
         BOOKING_CONFIRMED, PENDING_APPROVAL, APPROVED, DECLINED, CANCELLED, RESCHEDULED, REMINDER,
-        PAYMENT_REQUESTED, PAYMENT_REFUNDED, REFUND_APOLOGY, TEAM_INVITATION, NEW_BOOKING_FOR_BUSINESS, NOTIFICATION,
+        PAYMENT_REQUESTED, PAYMENT_REFUNDED, REFUND_APOLOGY, REFUND_FAILED, TEAM_INVITATION, NEW_BOOKING_FOR_BUSINESS, NOTIFICATION,
     )
 
     /** bookanything's own look, for notifications that aren't from one business (they may be about several). */
@@ -168,7 +169,24 @@ object EmailTemplates {
         footerNote = customerFooter(brand, f),
     )
 
-    fun declined(brand: EmailBrand, f: BookingFacts, reason: String?, refundText: String?) = Content(
+    /** What a customer is told when the refund they are due could not be made automatically: the business arranges it. */
+    private fun refundFailedText(brand: EmailBrand) =
+        "We couldn't return your payment to your original payment method automatically. ${brand.businessName} has been told " +
+            "and will arrange your refund with you."
+
+    /** What a customer is told when we can't tell whether their refund was made: the business looks into it. */
+    private fun refundCheckingText(brand: EmailBrand) =
+        "We're checking your refund with the payment provider. ${brand.businessName} has been told and will make sure you " +
+            "get it."
+
+    /**
+     * [refundPending]: the refund waits for the payment provider; [refundFailed]: it couldn't be made (see
+     * [refundFailedText]); [refundChecking]: we can't tell whether it was (see [refundCheckingText]).
+     */
+    fun declined(
+        brand: EmailBrand, f: BookingFacts, reason: String?, refundText: String?, refundPending: Boolean = false,
+        refundFailed: Boolean = false, refundChecking: Boolean = false,
+    ) = Content(
         template = DECLINED,
         subject = "Update on your request with ${brand.businessName}",
         preheader = "${brand.businessName} couldn't accept your request for ${f.whenText}.",
@@ -181,8 +199,13 @@ object EmailTemplates {
             reason?.let { add("Their note: “$it”") }
         },
         details = details(f, includePayment = false),
-        callout = refundText?.let {
-            "We've refunded $it to your original payment method. Refunds usually arrive within 5 to 10 business days."
+        callout = when {
+            refundText != null ->
+                "We've refunded $refundText to your original payment method. Refunds usually arrive within 5 to 10 business days."
+            refundFailed -> refundFailedText(brand)
+            refundChecking -> refundCheckingText(brand)
+            refundPending -> "Your refund is being processed. We'll email you as soon as it has been issued."
+            else -> null
         },
         button = brand.bookingPageUrl?.let { "Choose another time" to it },
         footerNote = customerFooter(brand, f),
@@ -190,7 +213,7 @@ object EmailTemplates {
 
     fun cancelled(
         brand: EmailBrand, f: BookingFacts, cancelledBy: CancelActor?, reason: String?, refundText: String?, refundPending: Boolean,
-        paidOnline: Boolean,
+        paidOnline: Boolean, refundFailed: Boolean = false, refundChecking: Boolean = false,
     ) = Content(
         template = CANCELLED,
         subject = "Cancelled: ${f.serviceLabel}, ${f.whenText}",
@@ -211,6 +234,8 @@ object EmailTemplates {
             refundText != null ->
                 "A refund of $refundText is on its way to your original payment method. It usually arrives within 5 to " +
                     "10 business days."
+            refundFailed -> refundFailedText(brand)
+            refundChecking -> refundCheckingText(brand)
             refundPending -> "Your refund is being processed. We'll email you as soon as it has been issued."
             paidOnline -> "Under ${brand.businessName}'s cancellation policy, no refund applies to this cancellation."
             else -> null
@@ -297,6 +322,52 @@ object EmailTemplates {
         details = details(f, includePayment = false),
         callout = "Refunds go back to your original payment method and usually arrive within 5 to 10 business days.",
         button = brand.bookingPageUrl?.let { "Choose another time" to it },
+        footerNote = customerFooter(brand, f),
+    )
+
+    /**
+     * A refund of [refundText] the customer was due failed for good: the business will arrange it. [lateRelease]: it was
+     * the refund of a payment that arrived after the time was released, so there is no booking to look at.
+     */
+    fun refundFailed(brand: EmailBrand, f: BookingFacts, refundText: String, lateRelease: Boolean = false, checking: Boolean = false) =
+        if (checking) refundChecking(brand, f, refundText) else refundFailedContent(brand, f, refundText, lateRelease)
+
+    /** We couldn't tell whether a refund of [refundText] was made: it is being checked, and the business sees to it. */
+    private fun refundChecking(brand: EmailBrand, f: BookingFacts, refundText: String) = Content(
+        template = REFUND_FAILED,
+        subject = "About your refund from ${brand.businessName}",
+        preheader = "Your refund of $refundText is being checked. ${brand.businessName} will make sure you get it.",
+        headline = "Your refund is being checked",
+        paragraphs = listOf(
+            "Hi ${firstName(f.customerName)}, we couldn't confirm your refund of $refundText for your ${f.bookingNoun} " +
+                "(${f.reference}) with the payment provider.",
+            refundCheckingText(brand),
+        ),
+        details = details(f, includePayment = false),
+        callout = brand.contactLine?.let { "Questions? You can reach ${brand.businessName} at $it." },
+        button = f.manageUrl?.let { "View ${f.bookingNoun}" to it },
+        footerNote = customerFooter(brand, f),
+    )
+
+    private fun refundFailedContent(brand: EmailBrand, f: BookingFacts, refundText: String, lateRelease: Boolean) = Content(
+        template = REFUND_FAILED,
+        subject = "About your refund from ${brand.businessName}",
+        preheader = "Your refund of $refundText couldn't be sent automatically. ${brand.businessName} will arrange it.",
+        headline = "Your refund needs a different route",
+        paragraphs = listOf(
+            if (lateRelease) {
+                "Hi ${firstName(f.customerName)}, your payment for ${f.serviceLabel} on ${f.whenText} reached us after the time " +
+                    "we were holding for you had been released, so we tried to refund the full $refundText. The payment " +
+                    "provider couldn't return it to your original payment method."
+            } else {
+                "Hi ${firstName(f.customerName)}, we tried to refund $refundText for your ${f.bookingNoun} (${f.reference}), " +
+                    "but the payment provider couldn't return it to your original payment method."
+            },
+            "${brand.businessName} has been told and will contact you to arrange your refund another way. Sorry for the trouble.",
+        ),
+        details = details(f, includePayment = false),
+        callout = brand.contactLine?.let { "Questions? You can reach ${brand.businessName} at $it." },
+        button = if (lateRelease) null else f.manageUrl?.let { "View ${f.bookingNoun}" to it },
         footerNote = customerFooter(brand, f),
     )
 

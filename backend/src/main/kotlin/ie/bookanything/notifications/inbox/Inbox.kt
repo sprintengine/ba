@@ -64,11 +64,11 @@ enum class InboxKind(
         emailByDefault = false, forMembers = true, forCustomers = false, pushText = "A booking was moved",
     ),
 
-    /** Owners only: taking payments needs them (their Stripe account was disconnected). */
+    /** Owners only: taking payments needs them (Stripe disconnected, a refund that failed, a payment that didn't fit). */
     @SerialName("payments_alert")
     PAYMENTS_ALERT(
         "payments_alert", "Payment problems",
-        "For owners: your Stripe account was disconnected, so online payments stopped.",
+        "For owners: your Stripe account was disconnected, or a refund or payment needs you.",
         emailByDefault = true, forMembers = true, forCustomers = false, pushText = "Online payments need your attention",
     ),
     ;
@@ -141,15 +141,12 @@ class Inbox(private val push: Boolean) {
     }
 
     /** Tells the business's owners about a problem with taking payments ([InboxKind.PAYMENTS_ALERT]), once per [dedupeKey]. */
-    fun paymentsAlert(conn: Connection, business: BusinessRow, title: String, body: String, dedupeKey: String) {
+    fun paymentsAlert(
+        conn: Connection, business: BusinessRow, title: String, body: String, dedupeKey: String,
+        link: String = "/dashboard/${business.slug}/settings/payments",
+    ) {
         InboxRepository.ownersOf(conn, business.id).forEach { userId ->
-            notify(
-                conn,
-                NewNotification(
-                    userId, InboxKind.PAYMENTS_ALERT, title, body, "/dashboard/${business.slug}/settings/payments", business.id,
-                    business.id, dedupeKey,
-                ),
-            )
+            notify(conn, NewNotification(userId, InboxKind.PAYMENTS_ALERT, title, body, link, business.id, business.id, dedupeKey))
         }
     }
 

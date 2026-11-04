@@ -7,6 +7,8 @@ import com.stripe.param.CustomerCreateParams
 import com.stripe.param.RefundCreateParams
 import com.stripe.param.billing.MeterEventCreateParams
 import com.stripe.param.checkout.SessionCreateParams
+import ie.bookanything.http.ApiException
+import io.ktor.http.HttpStatusCode
 import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
 
 /** A connected account as Stripe reports it; [country], [defaultCurrency] (lowercase) and [displayName] when known. */
@@ -30,7 +32,16 @@ class StripeOAuthError(val code: String?, cause: Throwable? = null) : RuntimeExc
 
 /** A Checkout Session: [status] is "open", "complete" or "expired" (when Stripe said). */
 data class StripeSessionRef(val id: String, val url: String?, val paymentIntentId: String?, val status: String? = null)
-data class StripeRefundRef(val id: String, val status: String?)
+
+/** A refund as Stripe reports it: [status] "succeeded", "pending", "requires_action", "failed" or "canceled". */
+data class StripeRefundRef(val id: String, val status: String?, val failureReason: String? = null)
+
+/**
+ * Stripe refused a request it will refuse again (a 4xx other than a rate limit, or no access to the account): the
+ * caller gives up instead of retrying. Answered to clients like any provider error.
+ */
+class StripeRefusedException(val stripeCode: String?) :
+    ApiException(HttpStatusCode.BadGateway, "PAYMENT_PROVIDER_ERROR", "The payment provider refused the request.")
 
 /**
  * The only place that talks to the Stripe API. Parameters are the SDK's own builders so tests can

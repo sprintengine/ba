@@ -78,8 +78,8 @@ groups:
           description: Customers are waiting for money back. Look at the Stripe dashboard and the backend logs.
 
       - alert: RefundOutOfRetries
-        # A refund job used all its attempts: someone has to refund by hand.
-        expr: sum(increase(jobs_runs_total{env="production", kind="payment_refund_retry", result="failed"}[1h])) > 0
+        # A refund was handed to the business (declined, or Stripe unreachable for a day): someone has to act by hand.
+        expr: sum(increase(payments_refunds_given_up_total{env="production"}[1h])) > 0
         labels:
           severity: critical
         annotations:

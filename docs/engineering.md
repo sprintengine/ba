@@ -403,8 +403,6 @@ Backend
   `SiteRuleEditor.kt`, `ai/usage/AiOverage.kt`, `ai/usage/Credits.kt`).
 - An expired hold keeps `payment_status = pending` (a late payment may still revive it); clients hide the badge.
 - A refresh token can't narrow `bookings:write` to `bookings:read` (the scope check ignores write-implies-read).
-- Stripe refunds reported `failed` are recorded and not retried, while the email says the refund "is being processed";
-  a `pending` refund counts as done and a later failure is not handled.
 
 Decisions for the product owner (behaviour the tests pin as it is today):
 - A late cancellation after a partial refund refunds the late percentage of what was paid, capped at what is left

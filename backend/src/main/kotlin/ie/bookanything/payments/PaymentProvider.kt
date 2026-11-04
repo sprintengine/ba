@@ -33,7 +33,16 @@ data class RefundRequest(
     val account: String? = null,
 )
 
-data class RefundResult(val providerRef: String?, val succeeded: Boolean)
+/**
+ * What the provider did with a refund: made it, accepted it (on its way, as good as made unless it fails later, when the
+ * provider tells us: `refund.updated`) or refused it ([failureReason] says why, when known).
+ */
+enum class RefundOutcome { SUCCEEDED, PENDING, FAILED }
+
+data class RefundResult(val providerRef: String?, val outcome: RefundOutcome, val failureReason: String? = null) {
+    /** Counted as refunded: made, or accepted and on its way. */
+    val succeeded: Boolean get() = outcome != RefundOutcome.FAILED
+}
 
 data class ConnectStatus(
     val connected: Boolean,
@@ -112,6 +121,12 @@ interface PaymentProvider {
     fun expireCheckout(business: BusinessRow, providerRef: String, account: String? = null): Boolean
 
     fun refund(request: RefundRequest): RefundResult
+
+    /**
+     * Refunds in full a payment that matched no booking ([UnmatchedPayments]): [paymentRef] on [account], once (the
+     * reference is the idempotency key).
+     */
+    fun refundUnmatched(business: BusinessRow, account: String, paymentRef: String): RefundResult = throw Errors.paymentsNotConfigured()
 
     /** Subscription checkout for a platform plan; creates the business's billing customer when needed. */
     fun createBillingCheckout(business: BusinessRow, plan: Plan, returnUrl: String, ownerEmail: String?): BillingSession
