@@ -57,8 +57,11 @@ if (typeof window !== "undefined") {
       matches: false,
       media: query,
       onchange: null,
+      // The stand-in implements the whole interface, so a library still on the old listener API finds it too.
+      /* eslint-disable @typescript-eslint/no-deprecated */
       addListener: () => {},
       removeListener: () => {},
+      /* eslint-enable @typescript-eslint/no-deprecated */
       addEventListener: () => {},
       removeEventListener: () => {},
       dispatchEvent: () => false,
