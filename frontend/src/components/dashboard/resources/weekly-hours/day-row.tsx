@@ -174,12 +174,8 @@ function Timeline({
           left: `${Math.max(0, percent(start))}%`,
           width: `${Math.max(0, percent(Math.max(end, start)) - Math.max(0, percent(start)))}%`,
         };
-        const body = (
-          <>
-            {restricted && <Users aria-hidden className="size-3 shrink-0" />}
-            <span className="truncate">{time}</span>
-          </>
-        );
+        // The times are in words beside the timeline: the bar is the shape, marked only when it's restricted.
+        const body = restricted ? <Users aria-hidden className="size-3 shrink-0" /> : null;
         const look = cn(
           "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border px-2 text-2xs font-medium",
           invalid
@@ -187,7 +183,7 @@ function Timeline({
             : "border-brand-border bg-brand-soft text-brand-soft-foreground",
         );
         return (
-          <div key={i} data-range="" className="@container absolute inset-y-0.5 rounded-sm" style={style}>
+          <div key={i} data-range="" className="absolute inset-y-0.5 rounded-sm bg-surface" style={style}>
             {editable ? (
               <>
                 <button
