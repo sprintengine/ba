@@ -1,5 +1,4 @@
-import { Compass } from "lucide-react";
-import { Container, Eyebrow } from "@/components/marketing/section";
+import { Container } from "@/components/marketing/section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListingCardSkeleton } from "./listing-card";
 
@@ -8,9 +7,6 @@ export function ExploreHero({ title, description }: { title: string; description
   return (
     <section className="relative overflow-hidden border-b border-border-subtle">
       <Container className="relative flex flex-col gap-3 pt-10 pb-8 sm:pt-14 sm:pb-10">
-        <Eyebrow>
-          <Compass /> Explore
-        </Eyebrow>
         <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{title}</h1>
         <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">{description}</p>
       </Container>

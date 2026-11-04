@@ -43,17 +43,19 @@ export function ReviewStep({
   return (
     <div className="flex flex-col gap-5">
       {alert && <AlertBanner alert={alert} />}
-      <WhenSection business={business} selection={selection} quote={quote} onEdit={() => onEdit("time")} />
-      <Section title="What" onEdit={() => onEdit("service")}>
-        <WhatSummary business={business} service={service} selection={selection} />
-      </Section>
-      <Section title="Your details" onEdit={() => onEdit("details")}>
-        <DetailsSummary details={details} questions={questions} />
-      </Section>
-      <Section title="Payment">
-        {payment.offered && <HowToPay payment={payment} />}
-        <PaymentSummary business={business} service={service} quote={quote} />
-      </Section>
+      <div className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-4 shadow-xs sm:px-5 dark:bg-surface-raised">
+        <WhenSection business={business} selection={selection} quote={quote} onEdit={() => onEdit("time")} />
+        <Section title="What" onEdit={() => onEdit("service")}>
+          <WhatSummary business={business} service={service} selection={selection} />
+        </Section>
+        <Section title="Your details" onEdit={() => onEdit("details")}>
+          <DetailsSummary details={details} questions={questions} />
+        </Section>
+        <Section title="Payment">
+          {payment.offered && <HowToPay payment={payment} />}
+          <PaymentSummary business={business} service={service} quote={quote} />
+        </Section>
+      </div>
       <p className="text-xs text-muted-foreground">
         Your details are shared with {business.name} to manage your {v("booking")}. See our{" "}
         <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-foreground">
@@ -102,7 +104,7 @@ function WhenSection({
   return (
     <Section title="When" onEdit={onEdit}>
       <p className="text-base font-semibold tracking-tight">
-        {formatDate(selection.date, tz, "full", business.locale)}
+        {formatDate(selection.date, tz, "long", business.locale)}
       </p>
       <p className="tnum text-sm text-muted-foreground">
         {formatTimeRange(start, bookingEnd(start, quote.durationMinutes), tz, business.locale)} ·{" "}
@@ -255,7 +257,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-5 dark:bg-surface-raised">
+    <section className="py-4 sm:py-5">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h3 className="text-xs font-medium text-subtle-foreground">{title}</h3>
         {onEdit && (

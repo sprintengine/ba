@@ -53,7 +53,7 @@ export function BusinessSwitcher({
           // Collapsed, only the (decorative) tile shows: name the menu button.
           aria-label={collapsed ? `${business.name}, switch business` : undefined}
           className={cn(
-            "flex h-11 w-full items-center gap-2.5 rounded-lg px-1.5 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:bg-accent",
+            "flex min-h-11 w-full items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none data-[state=open]:bg-accent",
             collapsed && "justify-center px-0",
           )}
         >
@@ -65,7 +65,10 @@ export function BusinessSwitcher({
           {!collapsed && (
             <>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm leading-5 font-semibold" title={business.name}>
+                <span
+                  className="line-clamp-2 text-sm leading-5 font-semibold break-words"
+                  title={business.name}
+                >
                   {business.name}
                 </span>
                 <span className="truncate text-xs text-subtle-foreground capitalize">

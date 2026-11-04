@@ -112,7 +112,7 @@ export function AssistantHome({ onNavigate }: { onNavigate: () => void }) {
 
       {nudges.length > 0 && (
         <section aria-labelledby="bo-nudges" className="flex flex-col gap-2.5">
-          <h3 id="bo-nudges" className="text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+          <h3 id="bo-nudges" className="text-sm font-medium text-muted-foreground">
             Needs attention
           </h3>
           <ul className="flex flex-col gap-2.5">
@@ -124,7 +124,7 @@ export function AssistantHome({ onNavigate }: { onNavigate: () => void }) {
       )}
 
       <section aria-labelledby="bo-quick" className="flex flex-col gap-2.5">
-        <h3 id="bo-quick" className="text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+        <h3 id="bo-quick" className="text-sm font-medium text-muted-foreground">
           Quick actions
         </h3>
         <QuickActions onNavigate={onNavigate} />
@@ -132,7 +132,7 @@ export function AssistantHome({ onNavigate }: { onNavigate: () => void }) {
 
       {!!state?.threads.length && (
         <section aria-labelledby="bo-recent" className="flex flex-col gap-1.5">
-          <h3 id="bo-recent" className="text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+          <h3 id="bo-recent" className="text-sm font-medium text-muted-foreground">
             Recent conversations
           </h3>
           <ul className="flex flex-col">

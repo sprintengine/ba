@@ -69,14 +69,7 @@ function ChecklistItem({ step, done }: { step: ChecklistStep; done: boolean }) {
         {done && <Check className="size-3" strokeWidth={3} />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span
-          className={cn(
-            "text-sm font-medium",
-            done && "text-muted-foreground line-through decoration-border-strong",
-          )}
-        >
-          {step.label}
-        </span>
+        <span className={cn("text-sm font-medium", done && "text-muted-foreground")}>{step.label}</span>
         {!done && (
           <span className="text-xs text-muted-foreground">
             {locked ? "Ask the owner to do this." : step.hint}
