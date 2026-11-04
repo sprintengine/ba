@@ -16,6 +16,7 @@ const ICONS: Record<ShownHero["kind"], React.ReactNode> = {
   confirmed: <Check strokeWidth={2.5} />,
   pending_approval: <Hourglass />,
   confirming_payment: <Clock />,
+  still_confirming: <Hourglass />,
   awaiting_payment: <CreditCard />,
   cancelled: <CalendarX2 />,
   expired: <Clock />,
@@ -133,6 +134,7 @@ function HeroAction({
     case "confirmed":
     case "pending_approval":
     case "confirming_payment":
+    case "still_confirming":
       return null;
   }
   return <div className="mt-3 flex flex-wrap gap-2">{action}</div>;
