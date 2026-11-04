@@ -51,7 +51,8 @@ export function NotificationBell({
   const [open, setOpen] = useState(false);
   const list = useNotifications();
   const unread = list.data?.unreadCount ?? 0;
-  const label = unread > 0 ? `Notifications, ${unread} unread` : "Notifications";
+  // The badge's own text ("9+" past nine) is in the name, as a control's visible text must be (WCAG 2.5.3).
+  const label = unread > 0 ? `Notifications, ${countLabel(unread)} unread` : "Notifications";
 
   const badge = unread > 0 && (
     <span
@@ -71,8 +72,7 @@ export function NotificationBell({
         {variant === "row" ? (
           <button type="button" aria-label={label} className={cn("relative", className)}>
             <Bell className="size-4 shrink-0 text-subtle-foreground" />
-            {!collapsed && <span>Notifications</span>}
-            {badge}
+            {!collapsed && <span>Notifications</span>} {badge}
           </button>
         ) : (
           <IconButton label={label} tooltip={false} size="md" className={cn("relative", className)}>
