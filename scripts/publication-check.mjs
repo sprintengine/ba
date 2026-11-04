@@ -7,7 +7,8 @@
 // - a Tailscale address (100.64.0.0/10);
 // - a home directory (`/Users/…`, `/home/<user>`) or a mounted volume (`/Volumes/…`) other than the placeholders
 //   `/Users/dev`, `/Users/me`, `/home/runner`, `/home/dev`, `/home/user`, `/Volumes/dev`;
-// - an email address other than example domains, the product's own domains and no-reply senders;
+// - an email address other than example domains, the product's own domains, no-reply senders and Dependabot's
+//   sign-off;
 // - anything matching PUBLICATION_DENYLIST, one regular expression per line (case-insensitive unless it starts with
 //   `=`), kept as a repository secret: the competitors' names and the owner's own machine names and addresses, which
 //   this file must not spell out either.
@@ -28,10 +29,11 @@ const EXEMPT = new Set(["scripts/publication-check.mjs", "scripts/publication-ch
 const GENERATED = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/;
 
 const PLACEHOLDER_PATHS = /^\/(Users\/(dev|me)|home\/(runner|dev|user)|Volumes\/dev)\b/;
-// Example and test domains, the product's own (its sender address and the dev accounts), GitHub's no-reply senders
-// and the co-author trailer's.
+// Example and test domains, the product's own (its sender address and the dev accounts), GitHub's no-reply senders,
+// the co-author trailer's, and Dependabot's sign-off (`Signed-off-by: dependabot[bot] <support@github.com>`, on every
+// commit it makes).
 const ALLOWED_EMAIL =
-  /@(example\.(com|org|net)|[a-z0-9-]+\.(example|test|invalid)|bookanything\.(ie|test)|users\.noreply\.github\.com|anthropic\.com)$/i;
+  /(@(example\.(com|org|net)|[a-z0-9-]+\.(example|test|invalid)|bookanything\.(ie|test)|users\.noreply\.github\.com|anthropic\.com)|^support@github\.com)$/i;
 
 const RULES = [
   { why: "a real tailnet name", find: /\b[a-z0-9-]*\.?tail[0-9a-f]{4,}\.ts\.net\b/gi, allow: /\btail1234\.ts\.net$/i },
