@@ -11,6 +11,9 @@ object NotificationKind {
     const val BOOKING_REMINDER = "booking_reminder"
     const val PAYMENT_REFUNDED = "payment_refunded"
 
+    /** A refund the customer was promised failed for good: the business will arrange it. */
+    const val PAYMENT_REFUND_FAILED = "payment_refund_failed"
+
     /** Payment link for a held booking created by the business (collect online). */
     const val PAYMENT_REQUESTED = "payment_requested"
     const val TEAM_INVITATION = "team_invitation"

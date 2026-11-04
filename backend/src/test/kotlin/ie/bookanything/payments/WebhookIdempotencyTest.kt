@@ -214,9 +214,11 @@ class WebhookIdempotencyTest {
                 val case = "$amount $currency"
                 assertEquals(if (applied) "confirmed" else "held", view.s("status"), case)
                 assertEquals(if (applied) 5000 else 0, view.i("amountPaidCents"), case)
-                val charge = if (applied) "charge succeeded 5000" else "charge pending 5000"
-                assertEquals(listOf(charge), Money.ledger(Money.bookingId(held)), case)
+                // A payment that doesn't fit pays for nothing: recorded on its own and refunded in full (UnmatchedPayments).
+                val ledger = if (applied) listOf("charge succeeded 5000") else listOf("charge pending 5000", "charge failed $amount")
+                assertEquals(ledger, Money.ledger(Money.bookingId(held)), case)
             }
+            assertEquals(listOf("pi_case_0", "pi_case_1", "pi_case_2"), s.gateway.refunds.map { it.params.paymentIntent })
 
             // An event for a checkout bookanything never created is stored, ignored and marked processed.
             val other = Fixtures.book(api, clinic, "Paid consult", "2026-10-09T10:00:00+01:00")

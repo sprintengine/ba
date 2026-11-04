@@ -3,6 +3,7 @@ package ie.bookanything.payments
 import ie.bookanything.business.BusinessRow
 import ie.bookanything.http.Errors
 import java.sql.Connection
+import java.time.Instant
 import java.util.UUID
 
 /** Charges and refunds: calls the [provider] and keeps the ledger ([PaymentRepository]) in step with it. */
@@ -37,17 +38,15 @@ class PaymentService(val provider: PaymentProvider) {
     }
 
     /**
-     * The refund [refundId] and its charge while it still waits for the provider's answer; null once settled (or when
-     * its charge is gone, which fails it).
+     * The refund [refundId] and its charge while it still waits for the provider's answer; null once settled. Its
+     * [RefundToSend.charge] is null when nothing paid online is left to return it from (the caller fails it).
      */
     fun refundToSend(conn: Connection, business: BusinessRow, refundId: UUID): RefundToSend? {
         val refund = PaymentRepository.get(conn, refundId) ?: return null
         if (refund.kind != "refund" || refund.status != "pending" || refund.providerRef != null) return null
-        val charge = PaymentRepository.succeededCharge(conn, business.id, refund.bookingId) ?: run {
-            PaymentRepository.setStatus(conn, refundId, "failed")
-            return null
-        }
-        return RefundToSend(refund, charge)
+        return RefundToSend(
+            refund, PaymentRepository.succeededCharge(conn, business.id, refund.bookingId), RefundRows.outlivedIdempotency(conn, refundId),
+        )
     }
 
     /**
@@ -55,10 +54,11 @@ class PaymentService(val provider: PaymentProvider) {
      * refund's id, so sending it again (a retry after a timeout) never refunds twice.
      */
     fun sendRefund(business: BusinessRow, send: RefundToSend): RefundResult {
-        val (refund, charge) = send
+        val refund = send.refund
+        val charge = send.charge ?: error("refund ${refund.id} has no charge to send it from")
         return if (charge.provider == "dev" && provider.name != "dev") {
             // Development money recorded before Stripe was configured: nothing to send back.
-            RefundResult("dev_re_${refund.id}", true)
+            RefundResult("dev_re_${refund.id}", RefundOutcome.SUCCEEDED)
         } else {
             provider.refund(
                 RefundRequest(refund.id, business, charge.providerRef, refund.amountCents, charge.currency, charge.providerAccount),
@@ -81,25 +81,29 @@ class PaymentService(val provider: PaymentProvider) {
 
     /**
      * Reconciles the ledger with the provider's refunded total for a charge (Stripe
-     * `charge.refunded`): pending refunds are settled and refunds made outside bookanything (for
-     * example in the Stripe dashboard) are recorded. Returns the newly recognised amount.
+     * `charge.refunded`, reported at [reportedAt]): pending refunds are settled and refunds made outside bookanything
+     * (for example in the Stripe dashboard) are recorded. Returns the newly recognised amount. A total reported before a
+     * refund of the charge failed (a late delivery) still counts that refund, so it records nothing made elsewhere.
      *
      * Pending refunds whose provider call failed (no provider reference, waiting for `payment_refund_retry`) are settled
      * too: a call that timed out may still have made the refund, and the retry would replay it with the same
      * idempotency key. Recording the provider's total as an outside refund instead counted that money twice.
      */
-    fun reconcileRefunds(conn: Connection, charge: PaymentRow, providerRefundedTotal: Int): Int {
+    fun reconcileRefunds(conn: Connection, charge: PaymentRow, providerRefundedTotal: Int, reportedAt: Instant? = null): Int {
         val refunds = PaymentRepository.forBooking(conn, charge.businessId, charge.bookingId).filter { it.kind == "refund" }
+        // A total reported before a refund of this charge failed still counts it: that is no refund made elsewhere.
+        val stillCounted = reportedAt?.let { RefundRows.failedAmountSince(conn, charge, it) } ?: 0
+        val total = (providerRefundedTotal - stillCounted).coerceAtLeast(0)
         var recognised = refunds.filter { it.status == "succeeded" }.sumOf { it.amountCents }
         val before = recognised
         for (r in refunds.filter { it.status == "pending" }) {
-            if (recognised + r.amountCents > providerRefundedTotal) break
+            if (recognised + r.amountCents > total) break
             PaymentRepository.setStatus(conn, r.id, "succeeded")
             recognised += r.amountCents
         }
-        if (providerRefundedTotal > recognised) {
-            PaymentRepository.insertExternalRefund(conn, charge, providerRefundedTotal - recognised)
-            recognised = providerRefundedTotal
+        if (total > recognised) {
+            PaymentRepository.insertExternalRefund(conn, charge, total - recognised)
+            recognised = total
         }
         PaymentRepository.recomputeRefunded(conn, charge.businessId, charge.bookingId)
         return recognised - before
@@ -114,5 +118,8 @@ class PaymentService(val provider: PaymentProvider) {
     }
 }
 
-/** A recorded refund waiting for the provider, and the charge it returns money from. */
-data class RefundToSend(val refund: PaymentRow, val charge: PaymentRow)
+/**
+ * A recorded refund waiting for the provider, and the charge it returns money from. [tooOld]: recorded so long ago that a
+ * retry could outlive the provider's idempotency (Stripe keeps keys for 24 hours) and refund twice.
+ */
+data class RefundToSend(val refund: PaymentRow, val charge: PaymentRow?, val tooOld: Boolean = false)

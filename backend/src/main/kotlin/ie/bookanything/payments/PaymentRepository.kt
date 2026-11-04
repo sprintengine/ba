@@ -153,6 +153,8 @@ object PaymentRepository {
             """
             UPDATE bookings b SET amount_refunded_cents = r.total,
                 payment_status = CASE
+                    -- Nothing refunded (any more: a refund that failed is taken off): paid, as before the refund.
+                    WHEN r.total = 0 AND b.payment_status IN ('refunded', 'partially_refunded') THEN 'paid'::payment_status
                     WHEN r.total = 0 THEN b.payment_status
                     WHEN r.total >= b.amount_paid_cents THEN 'refunded'::payment_status
                     ELSE 'partially_refunded'::payment_status END,

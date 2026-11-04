@@ -731,7 +731,13 @@ type BusinessSetup = {
   (or `pending_approval`), send confirmation; if the hold had already expired
   and the slot is gone → automatic full refund + apology email.
   `checkout.session.expired` → payment cancelled, booking `expired`.
-  `charge.refunded` → reconcile refund amounts.
+  `charge.refunded` → reconcile refund amounts. `refund.updated` /
+  `refund.failed` / `charge.refund.updated` → a refund that failed (below).
+  A completed checkout for another amount or currency than its payment pays
+  for nothing: the booking's own charge is left alone, the money gets a failed
+  charge row of its own (by PaymentIntent, in its currency), is refunded in full
+  on its account (`stripe_unmatched_refund` job, idempotent by PaymentIntent)
+  and the owners get a `payments_alert`.
   `customer.subscription.*` → business plan.
   Payment events are only accepted from the connected account that owns the
   business (`event.account`), for exactly the payment's amount and currency.
@@ -800,12 +806,48 @@ slot was gone) go through `RefundSettlement`:
    the idempotency key), then a short transaction records the answer
    (`applyRefundResult`; a refund `charge.refunded` already settled is left
    alone), audits `payment.refunded`, and queues the notice with the outcome:
-   "a refund of €X is on its way", or "being processed" when the provider
-   failed. The notice is removed from the job's payload in the same
-   transaction, so it is sent once.
-3. Provider failed: the job is retried with backoff (12 attempts); when a retry
-   succeeds the customer gets a `payment_refunded` receipt. Process stopped
-   before step 2: the worker runs the job when the backstop is due.
+   "a refund of €X is on its way" (Stripe `succeeded`, or `pending` /
+   `requires_action`: accepted, counted as refunded), "being processed" when
+   the provider was unreachable, or, when it refused the refund, that the
+   business will arrange it. The notice is removed from the job's payload in
+   the same transaction, so it is sent once.
+3. Provider unreachable: the job is retried with backoff (30 attempts, about a
+   day; never sent again 23 hours after the refund was recorded, as Stripe keeps
+   idempotency keys for 24); when a
+   retry succeeds the customer gets a `payment_refunded` receipt. Process
+   stopped before step 2: the worker runs the job when the backstop is due.
+4. **Failed for good**: never retried. `RefundSettlement.failed` marks the
+   refund `failed`, takes it off the booking's refunded total (the booking is
+   `paid` again when nothing is left refunded), audits `payment.refund_failed`
+   and sends the owners a `payments_alert` linking to the booking. When it is
+   certain (Stripe answered `failed`/`canceled` or refused the request for good:
+   a 4xx such as no access to the account, `balance_insufficient` aside, which
+   is retried; or nothing is left to refund it from), the alert says to refund
+   the customer another way and the customer is told the business will arrange
+   it: in the notice, or with a `payment_refund_failed` email when they had
+   already been told it was coming (its late-payment version for an apology
+   refund). When we can't tell (still unreachable at the end, or Stripe says
+   the charge was refunded already), the alert asks the owners to check the
+   payment in their Stripe dashboard first, and the customer hears the refund
+   is being checked (in the notice, or by email when they were told it was
+   on its way); an unreachable Stripe is reported as an error. If Stripe did
+   make it, its `charge.refunded` records it and the customer gets a receipt.
+   Both are counted (`payments_refunds_given_up_total`, alerted on), as are
+   failed refunds of unmatched payments.
+5. **A refund Stripe accepted and later fails** (`refund.updated`,
+   `refund.failed` or `charge.refund.updated` with status `failed`/`canceled`,
+   from the account the refund was made on): found by the refund's id or the
+   `refundPaymentId` in its metadata (a dashboard refund by its charge and
+   amount, split off a recorded total that covered several, then known by its
+   id; while the Stripe refund is under an hour old the event is retried until
+   its `charge.refunded` has recorded it, then it is logged and dropped; one we
+   gave up on unsure that Stripe had made is found the same way, through the
+   record its `charge.refunded` made; a failed refund of an unmatched payment
+   goes to the owners as a `payments_alert`), and failed as in
+   4 (certain), once: the booking is locked before the refund is looked up, as
+   Stripe sends each failure as several events. The customer hears it in the notice when our job is still to send
+   it, else by email. Other statuses change nothing (an accepted refund
+   already counts).
 
 Responses that report the refund (the cancel and decline routes, the manage
 link, `/me`, the customer MCP) read the booking again after the commit
@@ -831,14 +873,15 @@ hold's end.
   the queue's, so a slow task (refreshing nudges) never delays jobs such as emails and payment events.
 - Notification kinds: booking_confirmed, booking_pending_approval,
   booking_approved, booking_declined, booking_cancelled, booking_rescheduled,
-  booking_reminder, payment_requested, payment_refunded, team_invitation,
-  new_booking_for_business. `payment_requested` carries the checkout link of a
+  booking_reminder, payment_requested, payment_refunded, payment_refund_failed,
+  team_invitation, new_booking_for_business. `payment_requested` carries the checkout link of a
   held booking created by the business (`collect_online`), is queued once the
   link exists (§7) and is only sent while the booking is still held. Emails
   about a refund are queued with the provider's answer (§7, "Refunds").
 - Payment jobs: `payment_refund_retry` (send a recorded refund; run straight
-  after its commit, retried here), `payment_checkout_expire` (close a cancelled
-  booking's checkout).
+  after its commit, retried here for about a day), `payment_checkout_expire`
+  (close a cancelled booking's checkout), `stripe_unmatched_refund` (refund in
+  full a payment that matched no booking).
   Email templates (`email_log.template`) are the same keys plus
   `payment_refunded_apology` (late payment refunded because the slot was gone).
 - `EmailSender`: `ResendEmailSender` when `RESEND_API_KEY` set, else
@@ -1059,21 +1102,26 @@ Clarifications made while implementing; the backend follows these.
   job in one transaction that locks the event row and sets `processed_at`
   (exactly-once effects). Handled: `checkout.session.completed|async_payment_succeeded|
   async_payment_failed|expired`, `charge.refunded`, `account.updated`,
+  `account.application.deauthorized`, `refund.updated|failed`, `charge.refund.updated`,
   `customer.subscription.created|updated|deleted`, `invoice.payment_failed`.
   Other types are stored and marked processed.
 - **Refunds**: the booking's refunded total is recomputed from succeeded refund
-  rows. If the provider call fails the cancellation still commits, the refund row
-  stays `pending` and a `payment_refund_retry` job retries it with the same
-  idempotency key, then emails `payment_refunded`. `charge.refunded` settles
-  pending rows and records refunds made in the Stripe dashboard.
+  rows. If the provider is unreachable the cancellation still commits, the refund
+  row stays `pending` and a `payment_refund_retry` job retries it with the same
+  idempotency key, then emails `payment_refunded`; a refund that fails for good
+  is handled as in §7 ("Refunds", steps 4-5). `charge.refunded` settles pending
+  rows and records refunds made in the Stripe dashboard (from a total reported
+  before a refund failed, the failed one's amount is taken off first).
 - **Plans from subscriptions**: `active`/`trialing` → plan of the price
   (`STRIPE_PRICE_*`, falling back to `metadata.plan`); `past_due` keeps the plan
   (dunning); `incomplete` never upgrades; `canceled`/`incomplete_expired`/`unpaid`/
   `paused`/deleted → `free`. Events for an older subscription never override the
   current one. `invoice.payment_failed` sets `plan_status=past_due`.
-- **Emails**: the cancellation email states the refund (or that it is being
-  processed / that no refund applies); the declined email states the refund; a
-  separate `payment_refunded` email is sent only for refunds outside those flows.
+- **Emails**: the cancellation and declined emails state the refund (or that it
+  is being processed, that the business will arrange it when it failed, or that
+  no refund applies); a separate `payment_refunded` email is sent only for
+  refunds outside those flows, and `payment_refund_failed` when a refund the
+  customer was told about fails.
   From is `"<Business name>" <EMAIL_FROM address>` with Reply-To the business
   contact email (business notifications reply to the customer).
 - **Clerk webhook**: `user.created|updated` upsert the user; `user.deleted`

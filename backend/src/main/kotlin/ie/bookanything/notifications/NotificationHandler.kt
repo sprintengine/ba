@@ -10,6 +10,7 @@ import ie.bookanything.config.AppUrls
 import ie.bookanything.db.Db
 import ie.bookanything.jobs.Job
 import ie.bookanything.notifications.inbox.Inbox
+import ie.bookanything.payments.CancelActor
 import ie.bookanything.payments.Money
 import ie.bookanything.payments.PaymentStatus
 import kotlinx.serialization.json.JsonObject
@@ -183,10 +184,15 @@ class NotificationHandler(
             NotificationKind.BOOKING_CONFIRMED -> EmailTemplates.bookingConfirmed(brand, f)
             NotificationKind.BOOKING_PENDING_APPROVAL -> EmailTemplates.pendingApproval(brand, f, paid = b.amountPaidOnlineCents > 0)
             NotificationKind.BOOKING_APPROVED -> EmailTemplates.approved(brand, f)
-            NotificationKind.BOOKING_DECLINED -> EmailTemplates.declined(brand, f, b.cancellationReason, refundText)
+            NotificationKind.BOOKING_DECLINED -> EmailTemplates.declined(
+                brand, f, b.cancellationReason, refundText,
+                refundPending = p["refundPending"] != null, refundFailed = p["refundFailed"] != null,
+                refundChecking = p["refundChecking"] != null,
+            )
             NotificationKind.BOOKING_CANCELLED -> EmailTemplates.cancelled(
                 brand, f, b.cancelledBy, b.cancellationReason, refundText,
                 refundPending = p["refundPending"] != null, paidOnline = b.amountPaidOnlineCents > 0,
+                refundFailed = p["refundFailed"] != null, refundChecking = p["refundChecking"] != null,
             )
             NotificationKind.BOOKING_RESCHEDULED -> EmailTemplates.rescheduled(
                 brand, f,
@@ -206,6 +212,10 @@ class NotificationHandler(
                 )
                 EmailTemplates.paymentRequested(brand, f, due, until, checkout)
             }
+            NotificationKind.PAYMENT_REFUND_FAILED -> EmailTemplates.refundFailed(
+                brand, f, refundText ?: return emptyList(), lateRelease = b.cancelledBy == CancelActor.SYSTEM,
+                checking = p["refundChecking"] != null,
+            )
             NotificationKind.PAYMENT_REFUNDED -> {
                 val text = refundText ?: return emptyList()
                 if (p["apology"] != null) EmailTemplates.refundApology(brand, f, text) else EmailTemplates.paymentRefunded(brand, f, text)

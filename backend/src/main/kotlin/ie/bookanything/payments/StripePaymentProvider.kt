@@ -212,9 +212,10 @@ class StripePaymentProvider(
     }
 
     override fun refund(request: RefundRequest): RefundResult {
-        val ref = request.chargeProviderRef ?: error("Charge has no Stripe reference")
+        // Nothing that could change by retrying: refused for good, like Stripe's own refusals.
+        val ref = request.chargeProviderRef ?: throw StripeRefusedException("charge_reference_missing")
         // On the account the charge was taken on, even if the business has connected another since.
-        val account = request.account ?: request.business.stripeAccountId ?: throw Errors.paymentsNotConfigured()
+        val account = request.account ?: request.business.stripeAccountId ?: throw StripeRefusedException("account_missing")
         val options = RequestOptions.builder()
             .setStripeAccount(account)
             .setIdempotencyKey("bookanything-refund-${request.refundPaymentId}")
@@ -222,7 +223,7 @@ class StripePaymentProvider(
         // Charges store the Checkout Session id until the payment completes, then the PaymentIntent id.
         val paymentIntent = if (ref.startsWith("cs_")) {
             gateway.retrieveCheckoutSession(ref, RequestOptions.builder().setStripeAccount(account).build()).paymentIntentId
-                ?: error("Checkout Session $ref has no PaymentIntent")
+                ?: throw StripeRefusedException("payment_intent_missing")
         } else {
             ref
         }
@@ -235,10 +236,26 @@ class StripePaymentProvider(
                 .build(),
             options,
         )
-        // "pending" refunds are accepted by Stripe and count towards charge.amount_refunded.
-        val ok = refund.status == "succeeded" || refund.status == "pending"
-        if (!ok) log.warn("stripe refund {} for payment {} has status {}", refund.id, request.refundPaymentId, refund.status)
-        return RefundResult(refund.id, ok)
+        val outcome = refundOutcome(refund.status)
+        if (outcome == RefundOutcome.FAILED) {
+            log.warn(
+                "stripe refund {} for payment {} has status {} ({})",
+                refund.id, request.refundPaymentId, refund.status, refund.failureReason,
+            )
+        }
+        return RefundResult(refund.id, outcome, refund.failureReason)
+    }
+
+    override fun refundUnmatched(business: BusinessRow, account: String, paymentRef: String): RefundResult {
+        val refund = gateway.createRefund(
+            RefundCreateParams.builder()
+                .setPaymentIntent(paymentRef)
+                .putMetadata("businessId", business.id.toString())
+                .putMetadata("reason", UnmatchedPayments.REASON)
+                .build(),
+            RequestOptions.builder().setStripeAccount(account).setIdempotencyKey("bookanything-unmatched-$paymentRef").build(),
+        )
+        return RefundResult(refund.id, refundOutcome(refund.status), refund.failureReason)
     }
 
     fun priceFor(plan: Plan): String? = when (plan) {
@@ -295,6 +312,17 @@ class StripePaymentProvider(
 
     companion object {
         const val MIN_HOLD_MINUTES = 31
+
+        /**
+         * A Stripe refund status as an outcome. Only "failed" and "canceled" are failures: "pending", "requires_action" (or a
+         * status Stripe adds) are accepted and count towards the charge's `amount_refunded`, and Stripe reports a later
+         * failure with `refund.updated`.
+         */
+        fun refundOutcome(status: String?): RefundOutcome = when (status) {
+            "succeeded" -> RefundOutcome.SUCCEEDED
+            "failed", "canceled" -> RefundOutcome.FAILED
+            else -> RefundOutcome.PENDING
+        }
         const val OAUTH_AUTHORIZE_URL = "https://connect.stripe.com/oauth/authorize"
 
         /** Stripe keeps idempotency keys for 24 hours: the generation makes the key new once the last account was forgotten. */
