@@ -182,12 +182,15 @@ included); staging, development and the tests may set it. Design and checks: [`d
 - Rate limits: a simulation request (signed in, or anonymous with a valid `X-Simulation-Token: simg.…` header) gets a
   bucket of its own with `SIMULATION_RATE_LIMIT_MULTIPLIER` times each limit. Limits are never switched off.
 - Metrics carry `simulation="true"` and log lines `simulation=true` for those requests.
+- Whoever holds the secret can mint any number of identities, so signed-in simulation traffic is in effect unlimited
+  on staging, and can sign in as any account with a `sim.bookanything.test` address: never use one for a real person.
 
 Clean up after long runs with `backend purge-simulation` (on the VM: `sudo -u deploy docker compose run --rm --no-deps
 backend purge-simulation --older-than-days 7`; `--dry-run` counts first). It deletes only businesses with a `sim-`
 slug whose owner and every member are simulation users, created before the cutoff (with their bookings, customers and
-emails), then simulation users created before it who belong to no business and are no business's customer. Pick a
-cutoff longer than any run still going: a run reads every business it opened until it ends.
+emails, and a real tester's booking there too), then simulation users created before it who belong to no business and
+are no business's customer. Each business is re-checked under a row lock before it is deleted. Pick a cutoff longer
+than any run still going: a run reads every business it opened until it ends.
 
 ## Integrations (all optional; each is off until its keys are set)
 

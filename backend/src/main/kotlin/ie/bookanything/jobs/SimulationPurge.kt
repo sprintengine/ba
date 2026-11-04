@@ -42,17 +42,25 @@ object SimulationPurge {
          AND lower(split_part(u.email::text, '@', 2)) = '${SimulationIdentity.EMAIL_DOMAIN}')
     """.trimIndent()
 
-    private val BUSINESSES = """
-        SELECT b.id FROM businesses b
-        WHERE b.created_at < ? AND left(b.slug, 4) = 'sim-'
+    /** A simulation business, `b` in the query, created before the cutoff (the first parameter). */
+    private val SIM_BUSINESS = """
+        b.created_at < ? AND left(b.slug, 4) = 'sim-'
           AND EXISTS (
             SELECT 1 FROM business_members m JOIN users u ON u.id = m.user_id
             WHERE m.business_id = b.id AND m.role = 'owner' AND $SIM_USER)
           AND NOT EXISTS (
             SELECT 1 FROM business_members m JOIN users u ON u.id = m.user_id
             WHERE m.business_id = b.id AND NOT $SIM_USER)
-        ORDER BY b.created_at
     """.trimIndent()
+
+    private val BUSINESSES = "SELECT b.id FROM businesses b WHERE $SIM_BUSINESS ORDER BY b.created_at"
+
+    /**
+     * The same check again, in the deleting transaction, after locking the rows: adding a member takes a key-share lock
+     * on the business, so from the lock on none can be added, and this statement's fresh snapshot sees any added before.
+     */
+    private const val LOCK_BUSINESSES = "SELECT id FROM businesses WHERE id = ANY(?) ORDER BY id FOR UPDATE"
+    private val STILL_SIM_BUSINESSES = "SELECT b.id FROM businesses b WHERE b.id = ANY(?) AND $SIM_BUSINESS"
 
     private val USERS_WHERE = """
         u.created_at < ? AND $SIM_USER
@@ -68,15 +76,17 @@ object SimulationPurge {
             val users = db.txBlocking(readOnly = true) { conn -> countUsersAfter(conn, before, businesses) }
             return Result(businesses.size, users)
         }
-        businesses.chunked(BATCH).forEach { chunk ->
+        val deleted = businesses.chunked(BATCH).sumOf { chunk ->
             db.txBlocking { conn ->
+                conn.query(LOCK_BUSINESSES, UuidArray(chunk)) { it.uuid("id") }
+                val still = UuidArray(conn.query(STILL_SIM_BUSINESSES, UuidArray(chunk), before) { it.uuid("id") })
                 // email_log keeps its rows when a business goes (business_id is set null): these are the simulation's.
-                conn.update("DELETE FROM email_log WHERE business_id = ANY(?)", UuidArray(chunk))
-                conn.update("DELETE FROM businesses WHERE id = ANY(?)", UuidArray(chunk))
+                conn.update("DELETE FROM email_log WHERE business_id = ANY(?)", still)
+                conn.update("DELETE FROM businesses WHERE id = ANY(?)", still)
             }
         }
         val users = db.txBlocking { conn -> conn.update("DELETE FROM users u WHERE $USERS_WHERE", before) }
-        return Result(businesses.size, users)
+        return Result(deleted, users)
     }
 
     private fun countUsersAfter(conn: Connection, before: Instant, businesses: List<UUID>): Int = conn.count(

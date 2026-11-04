@@ -77,7 +77,7 @@ class SimulationTokens(secret: String, private val clock: Clock, env: AppEnv) {
         val sub = claims.sub?.takeIf(SimulationIdentity::isSubject) ?: return null
         val email = claims.email?.lowercase()?.takeIf(SimulationIdentity::isEmail) ?: return null
         val name = claims.name?.trim()?.takeIf { it.isNotEmpty() }
-        if (name != null && (name.length > MAX_NAME || name.any(Char::isISOControl))) return null
+        if (name != null && (name.length > MAX_NAME || name.any(::unprintable))) return null
         return VerifiedIdentity(sub, email, emailVerified = true, name = name)
     }
 
@@ -133,6 +133,9 @@ class SimulationTokens(secret: String, private val clock: Clock, env: AppEnv) {
         return if (MessageDigest.isEqual(mac(kind, parts[1]), given)) decode(parts[1]) else null
     }
 
+    /** Control characters and invisible format characters (bidirectional overrides, zero-width), which a name never needs. */
+    private fun unprintable(c: Char): Boolean = c.isISOControl() || Character.getType(c) == Character.FORMAT.toInt()
+
     private fun current(claims: Claims): Boolean {
         val now = clock.instant().epochSecond
         // In this order nothing overflows: iat is bounded first, then exp by it.
@@ -140,8 +143,9 @@ class SimulationTokens(secret: String, private val clock: Clock, env: AppEnv) {
             now < claims.exp + CLOCK_SKEW_SECONDS
     }
 
+    /** The bytes of [part], only in its one canonical encoding (no stray trailing bits), so a token has one spelling. */
     private fun decode(part: String): ByteArray? = try {
-        Base64.getUrlDecoder().decode(part)
+        Base64.getUrlDecoder().decode(part).takeIf { b64.encodeToString(it) == part }
     } catch (_: IllegalArgumentException) {
         null
     }

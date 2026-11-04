@@ -3,8 +3,9 @@ name: Simulation (staging)
 # The reliability simulation against the staging deploy (docs/simulation.md, "On staging"): bots sign in with the
 # staging-only simulation tokens, minted here from the STAGING_SIMULATION_AUTH_SECRET secret (the same value as the
 # staging backend's SIMULATION_AUTH_SECRET). Nightly for 5 hours, or by hand. Needs that secret and the STAGING_API_URL
-# and STAGING_APP_URL variables; without them the run is skipped with a notice, not failed. Never runs for pull
-# requests: it holds a staging secret and writes to staging.
+# and STAGING_APP_URL variables in the `staging` environment; without them the run is skipped with a notice, not
+# failed. Never runs for pull requests, and the `staging` environment only deploys from main, so a run dispatched on
+# any other branch is refused before it can read the secrets: they sign bots in on staging and write to it.
 #
 # A GitHub-hosted job stops after 6 hours, so one run here is at most 5h30m. For runs of days, run the simulation from a
 # small machine of your own (docs/simulation.md, "Long runs"), or chain these nightly runs.
@@ -49,6 +50,8 @@ jobs:
   gate:
     name: Staging configured?
     runs-on: ubuntu-latest
+    # The secrets live in the environment, whose deployment branches are main only.
+    environment: staging
     outputs:
       enabled: ${{ steps.check.outputs.enabled }}
     steps:
@@ -64,7 +67,7 @@ jobs:
           [ -n "$APP_URL" ] || missing="$missing STAGING_APP_URL (variable)"
           if [ -z "$missing" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::The staging simulation is skipped: set$missing (docs/simulation.md, \"On staging\")."
+            echo "::notice::The staging simulation is skipped: set$missing in the staging environment (docs/simulation.md, \"On staging\")."
           fi
 
   simulation:
@@ -72,6 +75,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
+    environment: staging
     # The run, the settling pause and the final check, with room for setup; under the 6-hour job limit.
     timeout-minutes: 345
     defaults:
@@ -79,6 +83,8 @@ jobs:
         working-directory: simulation
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -86,11 +92,12 @@ jobs:
           cache: npm
           cache-dependency-path: simulation/package-lock.json
 
+      # Playwright comes pinned from the lockfile; only its browser is downloaded here.
       - run: npm ci
 
-      - name: Install Playwright for Stripe Checkout
+      - name: Install Chromium for Stripe Checkout
         if: ${{ (inputs.payments || 'stripe-checkout') == 'stripe-checkout' }}
-        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       # Fails on any invariant violation; the report also goes to the job summary. Replay a failure with
       # `scripts/simulation.sh replay --from-log` on the uploaded log.

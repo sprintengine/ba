@@ -25,6 +25,7 @@ class SimulationTokensTest {
     private val sub = "sim_abc12_customer1"
     private val email = "sim-abc12-customer1@sim.bookanything.test"
     private val b64 = Base64.getUrlEncoder().withoutPadding()
+    private val base64UrlAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
     /** A token signed with [key] over [payloadJson] exactly as [SimulationTokens] signs, for forging variations. */
     private fun forge(payloadJson: String, kind: String = "sim", key: String = secret): String {
@@ -82,9 +83,11 @@ class SimulationTokensTest {
         assertNull(tokens.verifyBearer(forge("""{"sub":"$sub","iat":$now,"exp":${now + 60}}""")), "no email")
         assertNull(tokens.verifyBearer(forge(claims().replace("Customer 1", "x".repeat(201)))), "name too long")
         assertNull(tokens.verifyBearer(forge(claims().replace("Customer 1", "Cust\\u0007omer"))), "control character in name")
+        assertNull(tokens.verifyBearer(forge(claims().replace("Customer 1", "Cust\\u202Eomer"))), "bidirectional override in name")
+        assertNull(tokens.verifyBearer(forge(claims().replace("Customer 1", "Cust\\u200Bomer"))), "zero-width space in name")
         // Nor will it mint one.
         assertFailsWith<IllegalArgumentException> { tokens.bearer("user_2abc", email, null) }
-        assertFailsWith<IllegalArgumentException> { tokens.bearer(sub, "real.person@example.ie", null) }
+        assertFailsWith<IllegalArgumentException> { tokens.bearer(sub, "real.person@example.com", null) }
     }
 
     @Test
@@ -119,6 +122,9 @@ class SimulationTokensTest {
         assertNull(tokens.verifyBearer("$kind.$payload.$flipped"), "signature changed")
         assertNull(tokens.verifyBearer(forge(claims(), key = "another-secret-entirely-0123456789ab")), "another secret")
         assertNull(tokens.verifyBearer("$kind.$payload.${signature.dropLast(2)}"), "truncated signature")
+        // The signature's last character carries two unused bits: another character with the same bytes is not ours.
+        val alias = signature.dropLast(1) + base64UrlAlphabet[(base64UrlAlphabet.indexOf(signature.last()) xor 1)]
+        assertNull(tokens.verifyBearer("$kind.$payload.$alias"), "non-canonical signature encoding")
         assertNull(tokens.verifyBearer("$kind.$payload.$signature="), "padding")
         assertNull(tokens.verifyBearer("$kind.$payload=.$signature"), "padding on the payload")
         assertNull(tokens.verifyBearer("$kind.$payload"), "no signature")
@@ -183,7 +189,7 @@ class SimulationTokensTest {
         assertEquals(listOf("eyJhbGciOiJSUzI1NiJ9.e30.sig"), seen)
         assertTrue(SimulationIdentity.isUser(sub, email))
         assertFalse(SimulationIdentity.isUser("user_2abc", email))
-        assertFalse(SimulationIdentity.isUser(sub, "real@example.ie"))
+        assertFalse(SimulationIdentity.isUser(sub, "real@example.com"))
         assertFalse(SimulationIdentity.isUser(sub, null))
     }
 }

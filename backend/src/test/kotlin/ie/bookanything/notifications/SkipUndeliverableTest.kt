@@ -14,7 +14,7 @@ class SkipUndeliverableTest {
     fun `addresses on special-use domains are skipped and everything else is sent`() {
         listOf("a@sim.bookanything.test", "guest@example.test", "x@foo.EXAMPLE", "x@nowhere.invalid", "x@localhost", "x@a.test.")
             .forEach { assertTrue(SkipUndeliverable.undeliverable(it), it) }
-        listOf("owner@bookanything.ie", "a@example.com", "a@test.ie", "a@testing.dev", "a@sim.bookanything.ie", "test@gmail.com")
+        listOf("owner@bookanything.ie", "a@example.com", "a@test.example.com", "a@testing.example.net", "a@sim.bookanything.ie")
             .forEach { assertFalse(SkipUndeliverable.undeliverable(it), it) }
 
         val provider = RecordingEmailSender()
