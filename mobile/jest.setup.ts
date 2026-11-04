@@ -91,6 +91,13 @@ jest.mock("expo-notifications", () => ({
   clearLastNotificationResponse: jest.fn(),
 }));
 
+// Sentry's SDK talks to its native module; tests only see what the app hands it (src/lib/error-reporting.test.ts).
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  captureException: jest.fn(() => "event-id"),
+  setUser: jest.fn(),
+}));
+
 jest.mock("expo-web-browser", () => ({
   openBrowserAsync: jest.fn(() => Promise.resolve({ type: "opened" })),
   // Stripe Checkout and other authentication sessions: closed by the person unless a test says otherwise.
