@@ -8,7 +8,7 @@ import type { SiteThemeKey } from "@/lib/api/types";
 import fonts from "./fonts.module.css";
 
 /** Class names that define each theme's font variables (apply on the `data-theme` scope). */
-export const THEME_FONT_CLASSES: Record<SiteThemeKey, string | undefined> = {
+export const THEME_FONT_CLASSES: Record<SiteThemeKey, string> = {
   clinical: fonts.clinical,
   calm: fonts.calm,
   bold: fonts.bold,

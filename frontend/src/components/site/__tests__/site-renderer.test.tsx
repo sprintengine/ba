@@ -49,7 +49,7 @@ describe("SiteRenderer", () => {
     const scope = container.querySelector("[data-theme]") as HTMLElement;
     expect(scope).toHaveAttribute("data-theme", "editorial");
     expect(scope.className).toContain("@container/site");
-    expect(scope.className.split(" ")).toContain(must(THEME_FONT_CLASSES.editorial));
+    expect(scope.className.split(" ")).toContain(THEME_FONT_CLASSES.editorial);
     expect(scope.style.getPropertyValue("--radius-button")).toBe("0");
     expect(scope.style.getPropertyValue("--tl-brand")).toMatch(/^#/);
     expect(scope.style.getPropertyValue("--td-brand")).toMatch(/^#/);
