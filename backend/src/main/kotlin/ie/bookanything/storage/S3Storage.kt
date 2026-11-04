@@ -61,7 +61,7 @@ class S3Storage(
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw StorageException(
-                        "S3 PUT failed with ${response.code}: ${response.body?.string()?.take(300).orEmpty()}",
+                        "S3 PUT failed with ${response.code}: ${response.body.string().take(300)}",
                     )
                 }
             }

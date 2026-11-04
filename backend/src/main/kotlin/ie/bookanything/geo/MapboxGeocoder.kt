@@ -38,7 +38,7 @@ class MapboxGeocoder(
             .build()
         client.newCall(Request.Builder().url(url).header("Accept", "application/json").build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Mapbox geocoding failed with HTTP ${response.code}")
-            val body = response.body?.string() ?: throw IOException("Mapbox geocoding returned no body")
+            val body = response.body.string().ifEmpty { throw IOException("Mapbox geocoding returned no body") }
             return parse(body)
         }
     }
