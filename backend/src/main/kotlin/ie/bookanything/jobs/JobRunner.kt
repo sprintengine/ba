@@ -1,6 +1,9 @@
 package ie.bookanything.jobs
 
 import ie.bookanything.db.Db
+import ie.bookanything.observability.AppMetrics
+import ie.bookanything.observability.Telemetry
+import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
@@ -8,15 +11,29 @@ import java.util.UUID
 object JobRunner {
     private val log = LoggerFactory.getLogger(JobRunner::class.java)
 
-    /** Runs [job] with [handler]: done when it returns, failed (retried with backoff, see [JobQueue.fail]) when it throws. */
+    /**
+     * Runs [job] with [handler]: done when it returns, failed (retried with backoff, see [JobQueue.fail]) when it throws.
+     * A job that fails its last attempt is reported as an error: nothing will retry it.
+     */
     fun run(db: Db, job: Job, handler: JobHandler) {
         try {
             handler.handle(job)
             db.txBlocking { JobQueue.complete(it, job.id) }
+            Telemetry.metrics.jobRun(job.kind, AppMetrics.JobResult.DONE)
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // Job boundary: record the failure for retry.
             log.warn("job failed id={} kind={} attempt={} error={}", job.id, job.kind, job.attempts, e.message)
-            db.txBlocking { JobQueue.fail(it, job, e.message ?: e.javaClass.simpleName) }
+            val exhausted = db.txBlocking { JobQueue.fail(it, job, e.message ?: e.javaClass.simpleName) }
+            Telemetry.metrics.jobRun(job.kind, if (exhausted) AppMetrics.JobResult.FAILED else AppMetrics.JobResult.RETRY)
+            if (exhausted) Telemetry.errors.capture(e, errorTags(job))
         }
+    }
+
+    /** The job's kind, id and attempts, and its business when the payload names one. */
+    private fun errorTags(job: Job): Map<String, String> = buildMap {
+        put("job.kind", job.kind)
+        put("job.id", job.id.toString())
+        put("job.attempts", job.attempts.toString())
+        (job.payload["businessId"] as? JsonPrimitive)?.content?.let { put("businessId", it) }
     }
 
     /**

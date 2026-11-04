@@ -163,6 +163,10 @@ last failure),
 deploy, make a booking through the site and check the `client ip=… client-ip-header=…` line shows your address, not a
 Cloudflare one.
 
+**Errors, metrics and logs off the VM** ([`observability.md`](observability.md)): `SENTRY_DSN` and the
+`OTEL_EXPORTER_OTLP_*` settings in `backend.env` send errors to Sentry and metrics to Grafana Cloud; the optional
+`alloy` service (`docker compose --profile logs up -d alloy`) ships the logs to Grafana Cloud Loki.
+
 ### Running the image locally
 
 ```sh

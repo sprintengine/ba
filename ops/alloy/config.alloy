@@ -1,0 +1,85 @@
+// Grafana Alloy on the API's VM: ships the API container's logs to Grafana Cloud Loki (docs/observability.md, "Logs").
+// A template: the endpoint and credentials come from the environment, never from this file. Run the API with
+// LOG_FORMAT=json so each line is one JSON object.
+//
+//   GRAFANA_LOKI_URL       https://logs-prod-<region>.grafana.net/loki/api/v1/push (Grafana Cloud > Loki > Details)
+//   GRAFANA_LOKI_USER      the Loki instance's user id (a number)
+//   GRAFANA_CLOUD_TOKEN    an access policy token with the logs:write scope
+//   APP_ENV                production or staging: the `env` label, as on the metrics (required)
+//   API_SERVICE            the API's compose service (default: backend)
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Only the API's containers (both, for the few seconds a deploy runs two), labelled by service and environment. Two labels with a handful of values each: request and
+// business ids are structured metadata below, never labels (each label value is a new stream).
+discovery.relabel "api" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = coalesce(sys.env("API_SERVICE"), "backend")
+    action        = "keep"
+  }
+
+  rule {
+    target_label = "service"
+    replacement  = "bookanything-api"
+  }
+
+  rule {
+    target_label = "env"
+    replacement  = sys.env("APP_ENV")
+  }
+}
+
+loki.source.docker "api" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.api.output
+  forward_to = [loki.process.api.receiver]
+}
+
+loki.process "api" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+
+  stage.json {
+    expressions = {
+      level      = "level",
+      timestamp  = "timestamp",
+      requestId  = "mdc.requestId",
+      businessId = "mdc.businessId",
+    }
+  }
+
+  // The API's own time (epoch milliseconds), not the moment Alloy read the line.
+  stage.timestamp {
+    source = "timestamp"
+    format = "UnixMs"
+  }
+
+  stage.labels {
+    values = { level = "" }
+  }
+
+  stage.structured_metadata {
+    values = { requestId = "", businessId = "" }
+  }
+
+  // DEBUG and TRACE lines (LOG_LEVEL lowered while investigating) stay on the VM: they would use up the log volume.
+  stage.drop {
+    source     = "level"
+    expression = "DEBUG|TRACE"
+  }
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_LOKI_URL")
+
+    basic_auth {
+      username = sys.env("GRAFANA_LOKI_USER")
+      password = sys.env("GRAFANA_CLOUD_TOKEN")
+    }
+  }
+}

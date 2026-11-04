@@ -7,6 +7,9 @@ package ie.bookanything.config
 class EnvReader(private val env: Map<String, String>) {
     fun str(key: String): String? = env[key]?.trim()?.takeIf { it.isNotEmpty() }
 
+    /** The value exactly as set, for a reader that sees it untrimmed (logback reads `LOG_FORMAT` itself). */
+    fun raw(key: String): String? = env[key]
+
     fun bool(key: String, default: Boolean): Boolean = when (str(key)?.lowercase()) {
         null -> default
         "true", "1", "yes" -> true
