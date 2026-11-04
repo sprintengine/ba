@@ -814,7 +814,8 @@ hold's end.
   checkout link. Rate limits: 120 MCP requests/min per IP, plus the public booking
   limit and 10 MCP bookings/10 min per IP. Tool errors are returned as
   `isError` results with the API error code.
-- **Bo**, the owner/staff assistant in the dashboard: §17. Later: customer booking assistant.
+- **Bo**, the owner/staff assistant in the dashboard: §17. Customers bring their own AI instead of a chat of ours: the
+  customer MCP (§20) and WebMCP on our pages (§20.10).
 
 ## 10. Configuration (backend env)
 
@@ -1762,6 +1763,76 @@ asked (or the customer) can see or decide one. Carrying one out claims it first 
 runs the command, so approving twice books once (the booking's idempotency key is the request id); any failure after the
 claim is recorded (`failed`, the customer told to check their bookings), so a request never hangs. Requests are kept 90
 days and deleted with the account.
+
+### 20.10 WebMCP (agents in the visitor's browser)
+
+Customers bring their own AI: besides connecting an assistant to the customer MCP (§20), an agent built into their browser
+can use our pages directly through WebMCP (W3C Web Machine Learning Community Group draft; Chrome and Edge origin trials).
+A page registers tools on `document.modelContext`; the agent calls them in the visitor's own tab, with their session, while
+they watch. There is no OAuth and no server side: the tools drive the page and call the API exactly as the page does.
+
+| Page | Tools (`components/…`) |
+|---|---|
+| Booking flow `/[slug]/book` | `get_booking_options`, `check_availability`, `select_appointment`, `fill_booking_details`, `get_booking_status`, `confirm_booking` (`booking/booking-agent-tools.ts`) |
+| Marketplace `/explore` | `search_businesses` (sets the page's own filters, so the visitor sees the results the agent reads), `open_business` (its page or booking flow, whose tools take over) (`explore/explore-agent-tools.ts`) |
+| My bookings `/my/bookings` (signed in) | `list_my_bookings`, `cancel_booking`, `reschedule_booking` (`booking/my-bookings-agent-tools.ts`) |
+
+- **Loading**: `lib/webmcp/use-model-context-tools.ts` registers a page's tools with an `AbortSignal` for as long as the
+  page is shown, and imports them only where `document.modelContext` exists (Chrome before 150: `navigator.modelContext`), so
+  other browsers download nothing. The tools read the page's state as last rendered. Explore's are registered by its layout,
+  so a search that moves to a city's page doesn't unregister them mid-call; `search_businesses` fetches through the page's
+  own query (same key, page size and cache).
+- **Input and output**: input is checked like form input (`lib/booking/agent.ts`); results are in words (dates and times in
+  the business's zone, formatted prices) and never repeat sensitive answers (`lib/booking/agent-views.ts`). A failure is
+  returned as `{ error }` rather than thrown (a thrown error reaches the agent only as "tool rejected"). Every tool declares
+  an `outputSchema`: its result with the keys always present required, or `{ error }` (`toolOutput`); the unit tests check
+  each result against it (ajv, `src/test/model-context.ts`).
+- **One change at a time on My bookings**: while a cancellation or move the agent opened is showing, another is refused,
+  and it lapses once the booking is no longer upcoming.
+- **Nothing consequential happens silently**: `confirm_booking`, `cancel_booking` and `reschedule_booking` are
+  `consequentialHint` (browsers may ask the user first). `confirm_booking` works only on the review step, after the customer
+  has seen the summary and price, and payment stays on the payment provider's page. `cancel_booking` and `reschedule_booking`
+  only open the booking card's own dialog (the refund, or the free times): the customer confirms there or dismisses it.
+  Reads that return what a business wrote are `untrustedContentHint`.
+- **Origin trials**: `WEBMCP_ORIGIN_TRIAL_TOKEN` (Chrome) and `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` (Edge) are sent together in
+  one `Origin-Trial` header on every page (`next.config.ts`: a trial is per document, and visitors reach the pages with
+  tools by client-side navigation); each browser uses the token it signed.
+- **Tests**: Vitest drives each page's tools through a fake `document.modelContext`; the Playwright `webmcp.spec.ts`
+  installs a stand-in before the page loads and runs explore → booking page and a cancellation that only opens the dialog.
+
+### 20.11 Client compatibility notes
+
+What the MCP clients we've seen expect of the servers and the authorization server, and what we do about it.
+
+- **Claude** (claude.ai, the desktop app, Claude Code): redirects to `https://claude.ai/api/mcp/auth_callback` (Claude Code:
+  a loopback port). It identifies itself with a client ID metadata document only when `token_endpoint_auth_methods_supported`
+  includes `none` (ours is exactly `["none"]`), otherwise it registers (DCR). It checks that the protected resource metadata's
+  `resource` is exactly the URL the user typed, so the help page (`/help/ai-assistant`) shows the canonical
+  `${NEXT_PUBLIC_APP_URL}/mcp`: no trailing slash, the configured host. Next answers `/mcp/` with a 308 to `/mcp`, and the
+  metadata keeps saying `/mcp`, so a URL typed with a trailing slash, or on a host the deployment redirects (`www.` to the
+  apex), fails that check; users should paste the URL as shown. (Our own RFC 8707 comparison ignores a trailing slash and
+  host case.)
+- **ChatGPT**: redirects to `https://chatgpt.com/connector_platform_oauth_redirect` (its stable URI, used because we send
+  RFC 9207 `iss`), sends `resource` on both the authorization and token requests, asks for the advertised scopes, and reads
+  `_meta.securitySchemes` (§20.5) to know which tools need the account.
+- **Cursor**: registers with DCR as a public client, with `https://www.cursor.com/agents/mcp/oauth/callback` (web and its
+  agents) and `http://localhost:8787/callback` (desktop). Unless the user configures scopes, it asks for every
+  `scopes_supported` of the authorization server metadata, the business server's included: those are dropped (§20.4, scopes)
+  rather than failing with `invalid_scope` as they used to.
+- **2026-07-28 clients** send `Mcp-Method` and `Mcp-Name` on every request (allowed by CORS, §20.4) and try a request without
+  `initialize` first; our 400 isn't one of the new protocol errors, so they fall back to `initialize` and 2025-11-25 (§20.1).
+- **Clients refreshing in parallel** (several requests find the access token expired at once) or retrying a lost response get
+  a new pair within the reuse grace minute (§20.3) instead of being disconnected.
+- **Browser-based clients** (MCP inspectors, web apps) call the metadata, token endpoint and MCP servers cross-origin with
+  bearer tokens; an `Origin` of `null` is refused (§20.4).
+- **MCP conformance suite** (`npx @modelcontextprotocol/conformance server --url …/v1/mcp`, 0.1.16, active suite, run against
+  the anonymous server): initialize, ping, `tools/list`, a text tool call and a tool error pass. The other scenarios exercise
+  what we don't offer and fail as expected (`-32601` for prompts, resources, logging and completion; no sampling,
+  elicitation or progress; the reference server's fixture tools such as image or audio content), and its DNS-rebinding check
+  expects a localhost server to refuse a foreign `Host`/`Origin`, while ours are public servers that allow every real origin
+  (§20.4, Origin). Re-run it after SDK upgrades; anything else failing is real.
+- Needs a live deployment to confirm: the `www.`/apex redirect and trailing-slash behaviour on the real host, the
+  `Origin-Trial` header, and each client's connection end to end.
 
 ## 21. Release schedules (when days open for online booking)
 
