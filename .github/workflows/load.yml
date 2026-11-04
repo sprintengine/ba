@@ -1,0 +1,88 @@
+name: Load test
+
+# Manual only: a load test measures capacity, so it is run on purpose (docs/simulation.md, "Load tests"), never on
+# every push. It builds the same development stack as CI's E2E job and runs load/booking.js against it with k6.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "k6 profile: smoke (1 minute), ramp (8 minutes) or soak (30 minutes)"
+        required: true
+        default: ramp
+        type: choice
+        options: [smoke, ramp, soak]
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    name: Load test (k6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bookanything_load
+          POSTGRES_USER: bookanything
+          POSTGRES_PASSWORD: bookanything
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookanything -d bookanything_load"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      APP_ENV: development
+      AUTH_MODE: dev
+      AI_FAKE_SCRIPT: demo
+      # The highest the backend allows: load comes from one address, which the public limits would otherwise throttle.
+      RATE_LIMIT_MULTIPLIER: "1000"
+      DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_load
+      DATABASE_USERNAME: bookanything
+      DATABASE_PASSWORD: bookanything
+      APP_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: grafana/setup-k6-action@v1
+
+      - name: Build backend
+        run: ./gradlew :backend:installDist
+
+      - name: Migrate
+        run: backend/build/install/backend/bin/backend migrate
+
+      - name: Start backend
+        run: |
+          nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend.log; exit 1
+
+      - name: k6 (${{ inputs.profile }})
+        env:
+          BASE_URL: http://localhost:8080
+          PROFILE: ${{ inputs.profile }}
+        run: k6 run --summary-export load-summary.json load/booking.js
+
+      - name: Upload summary and backend log
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test
+          path: |
+            load-summary.json
+            backend.log
+          if-no-files-found: ignore

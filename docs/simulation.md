@@ -11,7 +11,8 @@ The bots are scripted, not AI: every decision comes from a seeded random stream,
 `simulation/` (TypeScript, Node 22). It drives the API through the website's own client (`frontend/src/lib/api`, the
 module the mobile app shares too), so the client is exercised as well.
 
-This is not a load test: it runs at a modest, steady rate and judges correctness.
+This is not a load test: it runs at a modest, steady rate and judges correctness. For capacity, see
+[Load tests](#load-tests-k6) below.
 
 ## What the bots do
 
@@ -178,3 +179,35 @@ written with the backend's race helpers (`backend/src/test/kotlin/ie/bookanythin
 
 `npm --prefix simulation run check-world -- --from-log out/sim.jsonl` runs the invariant checks once over the
 businesses a log names, without bots (against a stack left up with `SIM_KEEP_STACK=1`).
+
+## Load tests (k6)
+
+`load/` holds [k6](https://k6.io) scripts: a different kind of test. The simulation runs a steady, modest rate and asks
+"is every answer right?"; a load test injects as much traffic as it takes and asks "how much can it take before it gets
+slow or fails?". It checks only status codes, latency and error rates, against thresholds, and knows nothing about
+invariants. Run it on purpose, against a stack nobody else is using: it is not part of CI (the **Load test** workflow
+runs it by hand, `workflow_dispatch`, against a fresh development stack, and uploads k6's summary).
+
+`load/booking.js` has three scenarios that ramp up side by side: **browse** (a business, its services, a week of
+availability), **book** (a time from availability, booked with an Idempotency-Key; a 409 for a time another customer
+took is an expected answer) and **manage** (book, then look at it through the manage link, find another time, move it
+and cancel it). Profiles: `smoke` (a minute at a few users), `ramp` (default: 8 minutes up to 100, 20 and 15 users) and
+`soak` (30 minutes at a steady load). Thresholds, which fail the run: fewer than 1% failed requests, 99% of checks
+passing, p95 under 500 ms for browsing, 600 ms for availability, 1 s for booking and 800 ms for managing, and no
+booking refused for a business's monthly limit (the test would then measure refusals; raise `BUSINESSES`).
+
+```sh
+# A development backend of its own, with the highest rate-limit multiplier (load comes from one address):
+E2E_DB=bookanything_load E2E_BACKEND_PORT=8098 E2E_STACK_DIR=/tmp/bookanything-load E2E_RATE_LIMIT_MULTIPLIER=1000 \
+  scripts/e2e-stack.sh backend
+k6 run load/booking.js                      # BASE_URL defaults to http://localhost:8098
+PROFILE=smoke k6 run load/booking.js
+E2E_DB=bookanything_load E2E_BACKEND_PORT=8098 E2E_STACK_DIR=/tmp/bookanything-load scripts/e2e-stack.sh down
+```
+
+Against a development backend the script creates its own businesses (`BUSINESSES`, 40 by default: a Free business takes
+100 bookings a month, after which bookings are refused with 409). On staging, where dev sign-in doesn't exist, create
+the businesses beforehand and pass their slugs (`SLUGS=a,b,c`, each with a service bookable without paying online), and
+set `BASE_URL` to the staging API. Staging's public rate limits (20 bookings per 10 minutes per address) will throttle
+a load test from one machine: raise them for the test or run k6 from several addresses (k6 cloud or distributed
+runners), and agree the window with whoever else uses staging.

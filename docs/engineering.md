@@ -25,6 +25,7 @@ The design and API contract are in [`architecture.md`](architecture.md); the han
 | Simulation package (format, lint, types, tests + coverage) | `npm run simulation:check` | `simulation/` |
 | All of the above but e2e | `npm test` | |
 | Reliability simulation | `npm run simulation:run` (own stack; options in [`simulation.md`](simulation.md)) | scripted bots, invariant checker |
+| Load test (by hand, not in CI) | `k6 run load/booking.js` (own stack; see [`simulation.md`](simulation.md#load-tests-k6)) | k6 thresholds on latency and errors |
 
 CI (`.github/workflows/ci.yml`) runs seven jobs on every pull request and push to `main`: **Scripts** (`npm run test:scripts`), **Backend** (ktlint, detekt, tests, Kover
 floor), **Frontend** (format, lint, typecheck, unit tests with coverage, the build as a Cloudflare Worker and its
