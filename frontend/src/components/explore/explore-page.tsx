@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryChips } from "./category-chips";
 import { ExploreResults, type EmptySuggestion } from "./explore-results";
 import { FiltersPanel } from "./filters-panel";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { LocationPicker } from "./location-picker";
 import { MobileFilters } from "./mobile-filters";
 import { SearchBox } from "./search-box";
@@ -40,8 +41,12 @@ const PANEL_DEFAULTS = {
  */
 export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
   const { filters: fromUrl, navigate } = useExploreFilters(preset);
-  const meta = useMarketplaceMeta();
-  const filters = sanitizeFilters(fromUrl, meta.data);
+  const metaQuery = useMarketplaceMeta();
+  // The agent tools host can fill this query before this Suspense boundary hydrates: the first render has to match
+  // the server's, which never has it.
+  const mounted = useMounted();
+  const metaData = mounted ? metaQuery.data : undefined;
+  const filters = sanitizeFilters(fromUrl, metaData);
   const search = useMarketplaceSearch(toMarketplaceQuery(filters));
 
   const change = useCallback(
@@ -58,7 +63,7 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
   // The infinite-query options type pages as `Page<Listing>`; the search endpoint returns the wider result.
   const pages = search.data?.pages as MarketplaceSearchResult[] | undefined;
   const centerLabel = searchCenter(pages)?.label ?? null;
-  const scope = describeScope(filters, meta.data, centerLabel);
+  const scope = describeScope(filters, metaData, centerLabel);
   const radius = effectiveRadiusKm(filters);
   const wider = radius !== null ? widerRadiusKm(radius) : null;
   const panelCount = panelFilterCount(filters);
@@ -80,7 +85,7 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
       <div className="flex flex-col gap-3 md:flex-row md:items-start">
         <SearchBox className="md:flex-1" value={filters.q} onCommit={(q) => change({ q })} />
         <LocationPicker
-          cities={meta.data?.cities}
+          cities={metaData?.cities}
           location={filters.location}
           onCityChange={(slug) => {
             geo.dismiss();
@@ -93,8 +98,8 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
       </div>
 
       <CategoryChips
-        categories={meta.data?.categories}
-        loading={meta.isPending}
+        categories={metaData?.categories}
+        loading={!mounted || metaQuery.isPending}
         value={filters.category}
         onValueChange={(category) => change({ category })}
       />
@@ -130,7 +135,7 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
           </div>
           <ExploreResults
             search={search}
-            emptyDescription={emptyDescription(filters, meta.data, centerLabel)}
+            emptyDescription={emptyDescription(filters, metaData, centerLabel)}
             suggestions={suggestions}
             onReset={() => navigate(DEFAULT_FILTERS)}
           />
