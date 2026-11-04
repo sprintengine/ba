@@ -11,6 +11,7 @@ import ie.bookanything.notifications.Notify
 import ie.bookanything.notifications.inbox.Inbox
 import ie.bookanything.notifications.inbox.InboxEmailHandler
 import ie.bookanything.notifications.push.PushHandler
+import ie.bookanything.observability.Telemetry
 import ie.bookanything.payments.CheckoutExpiry
 import ie.bookanything.payments.PaymentService
 import ie.bookanything.payments.StripeEventProcessor
@@ -119,6 +120,7 @@ class JobWorker(
         throw e
     } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
         log.warn("{} error: {}", what, e.message)
+        Telemetry.errors.capture(e, mapOf("worker" to what))
         delay(ERROR_BACKOFF.toMillis())
         null
     }
@@ -170,6 +172,7 @@ class JobWorker(
             if (n > 0) log.info("periodic task {} affected {} rows", task.name, n)
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) { // One failing task must not stop the others.
             log.warn("periodic task {} failed: {}", task.name, e.message)
+            Telemetry.errors.capture(e, mapOf("task" to task.name))
         }
     }
 
