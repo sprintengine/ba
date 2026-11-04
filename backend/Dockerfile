@@ -5,7 +5,7 @@
 # RUN_MIGRATIONS_ON_START is off outside development).
 
 # Build on the builder's own platform: the output is JVM bytecode, so one Gradle run serves amd64 and arm64 images.
-FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk AS build
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk AS build
 WORKDIR /src
 # Wrapper and build scripts first, so a code-only change reuses the dependency download.
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.gradle \
       -Pkotlin.compiler.execution.strategy=in-process \
       :backend:installDist
 
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 RUN addgroup -S -g 10001 app && adduser -S -u 10001 -G app -h /app app
 WORKDIR /app
 COPY --from=build --chown=root:root /src/backend/build/install/backend /app
