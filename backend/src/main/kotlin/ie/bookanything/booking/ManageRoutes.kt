@@ -20,7 +20,12 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.serializer
+
+/** Longer than any Checkout Session id Stripe issues. */
+private const val MAX_SESSION_ID = 255
 
 /** The booking a manage link points to (by the hash of its token), with its business. */
 private suspend fun loadManaged(ctx: AppContext, call: ApplicationCall): OwnBooking {
@@ -74,6 +79,21 @@ fun Route.manageRoutes(ctx: AppContext) {
             customer.availability(conn, m.business, m.booking, range, resourceId, after, ctx.now())
         }
         call.respond(body)
+    }
+
+    // Back from Checkout: confirm the payment now instead of waiting for Stripe's webhook (the same path, once).
+    post("/manage/{token}/payment/confirm") {
+        ctx.rateLimiter.check(call, RateLimiter.MANAGE, ctx.now())
+        val m = loadManaged(ctx, call)
+        // Each confirmation asks Stripe: a few per booking are plenty (the page asks once, the app once).
+        ctx.rateLimiter.checkKey("payment-confirm:${m.booking.id}", RateLimiter.PAYMENT_CONFIRM, ctx.now())
+        val input = call.receiveBody<ConfirmPaymentInput>()
+        if (!input.sessionId.startsWith("cs_") || input.sessionId.length > MAX_SESSION_ID) {
+            throw Errors.field("sessionId", "Must be a Checkout Session id")
+        }
+        withContext(Dispatchers.IO) { ctx.checkoutReturn.confirm(m.business, m.booking, input.sessionId) }
+        val booking = ctx.db.read(m.business.id) { BookingRepository.get(it, m.business.id, m.booking.id)!! }
+        call.respond(BookingViews.managedView(ctx.db.current(booking), m.business, ctx.now()))
     }
 
     post("/manage/{token}/pay") {

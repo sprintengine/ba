@@ -65,6 +65,10 @@ export const publicApi = {
   ): Promise<Availability> =>
     api.get<Availability>(`/v1/public/manage/${seg(token)}/availability`, range, options),
 
+  /** Back from Checkout: confirm the payment of `sessionId` now instead of waiting for Stripe's webhook. */
+  confirmManagedPayment: (token: string, body: { sessionId: string }): Promise<ManagedBooking> =>
+    api.post<ManagedBooking>(`/v1/public/manage/${seg(token)}/payment/confirm`, body),
+
   /** Resume payment for a still-held booking. */
   payManaged: (token: string): Promise<CheckoutUrl> =>
     api.post<CheckoutUrl>(`/v1/public/manage/${seg(token)}/pay`),

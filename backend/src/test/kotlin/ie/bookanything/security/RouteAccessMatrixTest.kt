@@ -149,6 +149,7 @@ class RouteAccessMatrixTest {
             post("/v1/public/manage/{token}/reschedule", Open(BadRequest)),
             get("/v1/public/manage/{token}/availability", Open(OK), query = RANGE),
             post("/v1/public/manage/{token}/pay", Open(Conflict), body = null),
+            post("/v1/public/manage/{token}/payment/confirm", Open(BadRequest)),
             get("/v1/public/dev-payments/{paymentId}", Open(OK)),
             post("/v1/public/dev-payments/{paymentId}/complete", Open(BadRequest)),
             get("/v1/public/uploads/{businessId}/{file}", Open(NotFound)),

@@ -46,6 +46,7 @@ import ie.bookanything.notifications.push.PushSender
 import ie.bookanything.oauth.ClientMetadataFetcher
 import ie.bookanything.oauth.HttpClientMetadataFetcher
 import ie.bookanything.oauth.OAuthServer
+import ie.bookanything.payments.CheckoutReturn
 import ie.bookanything.payments.ConnectExisting
 import ie.bookanything.payments.PaymentProvider
 import ie.bookanything.payments.PaymentProviders
@@ -110,6 +111,7 @@ class AppContext(
     val draftGenerator: BusinessDraftGenerator = ai.model?.let { AnthropicDraftGenerator(it, websiteFetcher) } ?: TemplateDraftGenerator()
     val marketplace = MarketplaceSearch(payments)
     val oauth = OAuthServer(config.oauth, db, clientMetadataFetcher, clock)
+    val checkoutReturn = CheckoutReturn(db, clock, payments, booking.lifecycle)
     val connectExisting = ConnectExisting(
         db, clock, tokens, payments, config.urls,
         config.stripe.connectRedirectUri ?: (config.oauth.apiBaseUrl + ConnectExisting.CALLBACK_PATH),

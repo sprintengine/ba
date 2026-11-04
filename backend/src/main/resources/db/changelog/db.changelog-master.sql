@@ -1181,3 +1181,8 @@ CREATE INDEX stripe_connect_states_expires_idx ON stripe_connect_states (expires
 ALTER TABLE stripe_connect_states ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stripe_connect_states FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON stripe_connect_states USING (coalesce(current_setting('app.business_id', true), '') = '' OR business_id = nullif(current_setting('app.business_id', true), '')::uuid);
+
+--changeset bookanything:0035-expired-holds-owe-nothing
+-- A hold that expired unpaid owes nothing (architecture section 7): bookings expired before this was recorded said
+-- "pending" still.
+UPDATE bookings SET payment_status = 'not_required' WHERE status = 'expired' AND payment_status = 'pending' AND amount_paid_cents = 0;

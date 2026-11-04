@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { afterEach, beforeEach, vi } from "vitest";
 import { managedBooking } from "./__tests__/fixtures";
-import { manageContextFrom, manageHero, manageHeroText } from "./manage";
+import { manageContextFrom, manageHero, manageHeroText, checkoutSessionFrom } from "./manage";
 
 describe("manage page states", () => {
   it("celebrates a fresh or paid booking, stays quiet on a revisit", () => {
@@ -79,5 +79,27 @@ describe("manage hero text", () => {
     expect(manageHeroText("past", managedBooking(), { ...opts, knowsBusiness: false })).toBeNull();
     expect(manageHeroText("expired", managedBooking(), opts)).toMatch(/Nothing was charged/);
     expect(manageHeroText("confirming_payment", managedBooking(), opts)).toMatch(/few seconds/);
+  });
+});
+
+describe("back from Checkout", () => {
+  it("reads the session Stripe sent back, and only a Checkout Session", () => {
+    expect(checkoutSessionFrom(new URLSearchParams("payment=succeeded&session_id=cs_test_1"))).toBe(
+      "cs_test_1",
+    );
+    expect(checkoutSessionFrom(new URLSearchParams("session_id={CHECKOUT_SESSION_ID}"))).toBeNull();
+    expect(checkoutSessionFrom(new URLSearchParams(""))).toBeNull();
+  });
+
+  it("says it is taking longer once the wait is over", () => {
+    const held = { status: "held" as const };
+    expect(manageHero(held, "paid", 60_000).kind).toBe("confirming_payment");
+    expect(manageHero(held, "paid", 60_000, true)).toEqual({
+      kind: "still_confirming",
+      title: "Still confirming your payment",
+      tone: "info",
+    });
+    // Only for a payment being confirmed.
+    expect(manageHero(held, null, 60_000, true).kind).toBe("awaiting_payment");
   });
 });

@@ -227,6 +227,48 @@ describe("ManageBookingPage headline", () => {
     expect(screen.getByRole("heading", { name: "You're booked and paid" })).toBeInTheDocument();
   });
 
+  it("confirms the payment it came back from at once", async () => {
+    nav.search = "payment=succeeded&session_id=cs_test_1";
+    const held = managedBooking({ status: "held", paymentStatus: "pending", amountPaidCents: 0 });
+    const confirms: unknown[] = [];
+    renderPage(held, (req) => {
+      if (req.path === "/v1/public/manage/tok/payment/confirm") {
+        confirms.push(req.body);
+        return managedBooking();
+      }
+      return undefined;
+    });
+    expect(await screen.findByRole("heading", { name: "You're booked and paid" })).toBeInTheDocument();
+    expect(confirms).toEqual([{ sessionId: "cs_test_1" }]);
+  });
+
+  it("stops checking after a minute and says the confirmation will come by email", async () => {
+    nav.search = "payment=succeeded";
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(NOW));
+    const held = managedBooking({
+      status: "held",
+      paymentStatus: "pending",
+      amountPaidCents: 0,
+      holdExpiresAt: "2026-10-01T09:20:00Z",
+    });
+    let reads = 0;
+    renderPage(held, (req) => {
+      if (req.path === "/v1/public/manage/tok") reads++;
+      return req.path === "/v1/public/manage/tok" ? held : undefined;
+    });
+    await act(() => vi.advanceTimersByTimeAsync(10));
+    expect(screen.getByRole("heading", { name: "Confirming your payment…" })).toBeInTheDocument();
+    await act(() => vi.advanceTimersByTimeAsync(65_000));
+    expect(screen.getByRole("heading", { name: "Still confirming your payment" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/There's no need to pay again: we'll email alex.morgan@example.com/),
+    ).toBeInTheDocument();
+    const after = reads;
+    await act(() => vi.advanceTimersByTimeAsync(20_000));
+    expect(reads).toBe(after);
+  });
+
   it("explains a request waiting for approval", async () => {
     renderPage(managedBooking({ status: "pending_approval", paymentStatus: "not_required" }));
     expect(await screen.findByRole("heading", { name: "Request received" })).toBeInTheDocument();

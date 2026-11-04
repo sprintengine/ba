@@ -20,7 +20,8 @@ data class CheckoutRequest(
     val cancelUrl: String,
 )
 
-data class CheckoutSession(val providerRef: String, val url: String)
+/** A hosted checkout; [expiresAt]: when the provider closes it, when it said (the held booking is kept as long). */
+data class CheckoutSession(val providerRef: String, val url: String, val expiresAt: Instant? = null)
 
 data class RefundRequest(
     val refundPaymentId: UUID,
@@ -119,6 +120,12 @@ interface PaymentProvider {
      * way). Used when its charge was cancelled ([CheckoutExpiry]) and before an account is disconnected.
      */
     fun expireCheckout(business: BusinessRow, providerRef: String, account: String? = null): Boolean
+
+    /**
+     * The hosted checkout [providerRef] (taken on [account]) if the customer paid it, read from the provider (their
+     * return to us, [CheckoutReturn]); null while unpaid, or for a provider that tells us otherwise.
+     */
+    fun paidCheckout(business: BusinessRow, providerRef: String, account: String?): CompletedCheckout? = null
 
     fun refund(request: RefundRequest): RefundResult
 

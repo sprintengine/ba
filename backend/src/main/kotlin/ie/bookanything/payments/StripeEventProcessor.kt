@@ -94,7 +94,9 @@ class StripeEventProcessor(
                 }
             }
             "checkout.session.expired", "checkout.session.async_payment_failed" ->
-                if (obj.string("mode") != "subscription") paymentAbandoned(conn, obj, account)
+                if (obj.string("mode") != "subscription") {
+                    paymentAbandoned(conn, obj, account, failed = type == "checkout.session.async_payment_failed")
+                }
             "charge.refunded" -> chargeRefunded(conn, obj, account, event.long("created"))
             // A refund's later news (Stripe has used all three names): only a failure changes anything, as an accepted
             // refund already counts as made.
@@ -141,37 +143,17 @@ class StripeEventProcessor(
 
     private fun paymentCompleted(conn: Connection, session: JsonObject, account: String?) {
         val (business, payment) = paymentFor(conn, session, account) ?: return
-        // Only a session for exactly the amount and currency we asked for pays for the booking.
-        val amount = session.long("amount_total")
-        val currency = session.string("currency")
-        if (amount != payment.amountCents.toLong() || !payment.currency.equals(currency, ignoreCase = true)) {
-            log.error(
-                "stripe session {} paid {} {} but payment {} is {} {}: not applied, refunding it", session.string("id"), amount, currency,
-                payment.id, payment.amountCents, payment.currency,
-            )
-            // Money taken for nothing. The booking's own charge is left as it is (still payable, or already paid); the money
-            // gets a ledger row of its own (a failed charge known by its PaymentIntent, so that refund's own events are
-            // ours), is refunded in full on the account it was paid to, once, and the owners are told.
-            val pi = session.string("payment_intent") ?: return
-            if (amount == null || amount <= 0 || currency == null) return
-            BookingRepository.get(conn, business.id, payment.bookingId, forUpdate = true)
-            // Already handled: Stripe redelivers.
-            if (PaymentRepository.chargeByProviderRef(conn, "stripe", pi) != null) return
-            UnmatchedPayments.record(conn, payment, pi, amount, currency, account!!)
-            UnmatchedPayments.enqueue(conn, business.id, payment.id, account, pi, amount, currency)
-            return
-        }
-        // Lock order: the booking, then its payment (as cancellations do), so this cannot deadlock with one.
-        BookingRepository.get(conn, business.id, payment.bookingId, forUpdate = true)
-        // From now on the charge is identified by its PaymentIntent (refunds, charge.refunded).
-        session.string("payment_intent")?.let { PaymentRepository.setProviderRef(conn, payment.id, it) }
-        lifecycle.paymentSucceeded(conn, business, PaymentRepository.get(conn, payment.id)!!, clock.instant())
+        val checkout = CompletedCheckout(
+            session.string("id").orEmpty(), session.string("payment_intent"), session.long("amount_total"), session.string("currency"),
+        )
+        CheckoutCompletion.apply(conn, lifecycle, business, payment, checkout, account!!, clock.instant())
     }
 
-    private fun paymentAbandoned(conn: Connection, session: JsonObject, account: String?) {
+    /** A checkout that ended unpaid: it expired, or its delayed payment (a bank debit) [failed]. */
+    private fun paymentAbandoned(conn: Connection, session: JsonObject, account: String?, failed: Boolean) {
         val (business, payment) = paymentFor(conn, session, account) ?: return
-        if (payment.status != "pending") return
-        lifecycle.paymentCancelled(conn, business, payment, clock.instant())
+        if (payment.status != "pending" && !(failed && payment.status == "cancelled")) return
+        lifecycle.paymentCancelled(conn, business, payment, clock.instant(), failed)
     }
 
     /**

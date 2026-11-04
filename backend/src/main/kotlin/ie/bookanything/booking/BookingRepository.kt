@@ -244,7 +244,10 @@ object BookingRepository {
             params += UuidArray(resourceIds.toSet())
         }
         return conn.query(
-            "UPDATE bookings SET status = 'expired', updated_at = now() WHERE $filter RETURNING id, business_id", *params.toTypedArray(),
+            // An expired hold owes nothing any more (a late payment, if one comes, sets it paid again).
+            "UPDATE bookings SET status = 'expired', payment_status = CASE WHEN payment_status = 'pending' AND amount_paid_cents = 0 " +
+                "THEN 'not_required'::payment_status ELSE payment_status END, updated_at = now() WHERE $filter RETURNING id, business_id",
+            *params.toTypedArray(),
         ) { it.uuid("id") to it.uuid("business_id") }
     }
 

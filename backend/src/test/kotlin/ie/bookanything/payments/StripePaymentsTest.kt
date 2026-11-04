@@ -110,7 +110,8 @@ class StripePaymentsTest {
         assertEquals(5000L, p.lineItems.single().priceData.unitAmount)
         assertEquals("eur", p.lineItems.single().priceData.currency)
         assertEquals("guest@example.test", p.customerEmail)
-        assertEquals("http://localhost:3000/manage/t?payment=succeeded", p.successUrl)
+        // Stripe fills in the session id, so the customer's return can confirm it at once.
+        assertEquals("http://localhost:3000/manage/t?payment=succeeded&session_id={CHECKOUT_SESSION_ID}", p.successUrl)
 
         // Expiry is clamped into Stripe's accepted window (≥ 30 minutes, ≤ 24 hours).
         val short = provider.checkoutParams(

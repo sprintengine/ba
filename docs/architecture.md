@@ -347,6 +347,7 @@ include lower).
 | POST | `/v1/public/manage/{token}/reschedule` | P | `{start, resourceId?}` → `ManagedBooking` |
 | GET | `/v1/public/manage/{token}/availability` | P | `from, to, resourceId?, after?` → `Availability` (this booking's service, duration and group; its own allocations ignored; `after` and next available only as the public availability) |
 | POST | `/v1/public/manage/{token}/pay` | P | → `{checkoutUrl}` (payment still pending and hold valid) |
+| POST | `/v1/public/manage/{token}/payment/confirm` | P | `{sessionId}` → `ManagedBooking`: back from Checkout, the payment is read from Stripe and confirmed now (§7) |
 | GET | `/v1/public/dev-payments/{paymentId}` | P (dev only) | → `{payment, booking, business}` |
 | POST | `/v1/public/dev-payments/{paymentId}/complete` | P (dev only) | `{outcome:"succeeded"|"cancelled"}` → `{redirectUrl}` |
 | POST | `/v1/webhooks/stripe` | signature | Stripe events (platform + Connect) → `{received, duplicate}` |
@@ -721,7 +722,22 @@ type BusinessSetup = {
   (`mode=payment`, `expires_at = hold expiry`, minimum 30 minutes, so
   the effective hold is `max(hold_minutes, 31)` when Stripe is active).
   `metadata.bookingId/paymentId/businessId` (also on the PaymentIntent),
-  success/cancel URLs `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`.
+  success/cancel URLs `${APP_BASE_URL}/manage/{token}?payment=succeeded|cancelled`
+  (Stripe adds `&session_id=` to the success URL). The session's `expires_at`
+  is clamped to Stripe's window (at least 30 minutes from when it is created):
+  when it is created late (a slow or replayed request), the hold is extended to
+  match it, so a customer can never pay a session whose hold has ended.
+- **Back from Checkout**: the manage page (web and app) sends the `session_id`
+  to `POST /v1/public/manage/{token}/payment/confirm`; the session is read from
+  Stripe and, when paid, applied through the same path as
+  `checkout.session.completed` (`CheckoutCompletion`: exactly the amount and
+  currency, else refunded in full; once, whichever comes first). The page
+  polls for a minute at most, then says it is taking longer and the
+  confirmation will come by email.
+- **What an unpaid hold shows**: an expired or abandoned hold owes nothing
+  (`payment_status = not_required`; a late payment sets it `paid`); a delayed
+  payment that fails (`checkout.session.async_payment_failed`) sets the charge
+  and the booking `failed`.
   `payments.provider_ref` holds the Checkout Session id until the payment
   completes, then the PaymentIntent id (used for refunds and `charge.refunded`).
 - Webhooks (`STRIPE_WEBHOOK_SECRET`, plus `STRIPE_CONNECT_WEBHOOK_SECRET` for

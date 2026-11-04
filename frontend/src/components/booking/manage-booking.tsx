@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, LinkIcon } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
 import {
   useCancelManagedBooking,
+  useConfirmManagedPayment,
   useManagedAvailabilityWindows,
   useManagedNextSlot,
   useManagedBooking,
@@ -17,7 +18,13 @@ import {
 import type { ManagedBooking, PublicBusiness } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/context";
 import { bookingMinutes, hasEnded } from "@/lib/booking/booking";
-import { manageContextFrom, manageHero, type ManageContext } from "@/lib/booking/manage";
+import {
+  checkoutSessionFrom,
+  CONFIRM_POLL_LIMIT_MS,
+  manageContextFrom,
+  manageHero,
+  type ManageContext,
+} from "@/lib/booking/manage";
 import { formatDuration } from "@/lib/format";
 import { useCountdown, useNow } from "@/lib/hooks/use-now";
 import { isBlockingStatus } from "@/lib/status";
@@ -38,10 +45,20 @@ import { ReschedulePanel, useRescheduleState, type RescheduleState } from "./res
 export function ManageBookingPage({ token }: { token: string }) {
   const params = useSearchParams();
   const context = manageContextFrom(new URLSearchParams(params.toString()));
+  const [held, setHeld] = useState(context === "paid");
+  const confirming = useConfirmOnReturn(
+    token,
+    context,
+    checkoutSessionFrom(new URLSearchParams(params.toString())),
+    held,
+  );
   const booking = useManagedBooking(token, {
-    // After a payment redirect, poll briefly until the webhook confirms it.
-    refetchInterval: (q) => (context === "paid" && q.state.data?.status === "held" ? 2000 : false),
+    // After a payment redirect, read it again for a while until the payment is confirmed (then the page says it is
+    // taking longer, and the email follows).
+    refetchInterval: (q) => (confirming.polling() && q.state.data?.status === "held" ? 2000 : false),
   });
+  const stillHeld = booking.data ? booking.data.status === "held" : context === "paid";
+  if (stillHeld !== held) setHeld(stillHeld);
   const slug = booking.data?.business.slug ?? "";
   const business = usePublicBusiness(slug, { retry: false, staleTime: 5 * 60_000 });
 
@@ -99,9 +116,35 @@ export function ManageBookingPage({ token }: { token: string }) {
         </Button>
       }
     >
-      <ManageBookingView token={token} booking={b} business={pb} context={context} />
+      <ManageBookingView
+        token={token}
+        booking={b}
+        business={pb}
+        context={context}
+        confirmingTooLong={confirming.tooLong}
+      />
     </PublicBookingShell>
   );
+}
+
+/**
+ * Back from Checkout: asks the server to confirm the payment of [sessionId] at once (it reads it from Stripe), and keeps
+ * polling for [CONFIRM_POLL_LIMIT_MS] at most. `tooLong` once that has passed without a confirmation.
+ */
+function useConfirmOnReturn(token: string, context: ManageContext, sessionId: string | null, held: boolean) {
+  const confirm = useConfirmManagedPayment(token);
+  const { mutate } = confirm;
+  const asked = useRef(false);
+  const [since] = useState(() => Date.now());
+  // Ticks only while there is something to wait for.
+  const now = useNow(context === "paid" && held ? 5_000 : null);
+  useEffect(() => {
+    if (asked.current || context !== "paid" || !sessionId) return;
+    asked.current = true;
+    mutate(sessionId);
+  }, [context, sessionId, mutate]);
+  const tooLong = context === "paid" && now.getTime() - since >= CONFIRM_POLL_LIMIT_MS;
+  return { polling: () => context === "paid" && Date.now() - since < CONFIRM_POLL_LIMIT_MS, tooLong };
 }
 
 function ManageBookingView({
@@ -109,11 +152,13 @@ function ManageBookingView({
   booking: b,
   business,
   context,
+  confirmingTooLong,
 }: {
   token: string;
   booking: ManagedBooking;
   business: PublicBusiness | null;
   context: ManageContext;
+  confirmingTooLong: boolean;
 }) {
   const noun = vocab(business?.vocabulary, "booking");
   const remaining = useCountdown(b.status === "held" ? b.holdExpiresAt : null);
@@ -143,7 +188,7 @@ function ManageBookingView({
     );
   }
 
-  const hero = manageHero(b, context, remaining);
+  const hero = manageHero(b, context, remaining, confirmingTooLong);
   return (
     <div className="flex flex-col gap-6">
       {/* The page's heading when there is no headline to show (a plain revisit). */}

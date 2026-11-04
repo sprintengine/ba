@@ -129,7 +129,9 @@ export function useManagedBooking(token: string, options?: QueryOptions<ManagedB
 }
 
 function onManagedChange(token: string) {
-  return (qc: QueryClient, booking: ManagedBooking) => {
+  return async (qc: QueryClient, booking: ManagedBooking) => {
+    // A read sent before the change (a poll) must not land after it and put the old booking back.
+    await qc.cancelQueries({ queryKey: qk.public.manage(token) });
     qc.setQueryData(qk.public.manage(token), booking);
     return invalidateAll(qc, [
       qk.public.manageAvailabilityAll(token),
@@ -158,6 +160,15 @@ export function useRescheduleManagedBooking(
 ) {
   return useApiMutation(
     (input: RescheduleInput) => publicApi.rescheduleManaged(token, input),
+    onManagedChange(token),
+    options,
+  );
+}
+
+/** Back from Checkout: confirms the payment straight away (the same path as Stripe's webhook, once). */
+export function useConfirmManagedPayment(token: string, options?: MutationOptions<ManagedBooking, string>) {
+  return useApiMutation(
+    (sessionId: string) => publicApi.confirmManagedPayment(token, { sessionId }),
     onManagedChange(token),
     options,
   );
