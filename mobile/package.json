@@ -86,7 +86,7 @@
     "jest-expo": "^57.0.6",
     "prettier": "^3.9.10",
     "react-test-renderer": "^19.2.3",
-    "typescript": "~6.0.3"
+    "typescript": "~7.0.2"
   },
   "expo": {
     "doctor": {
