@@ -39,12 +39,7 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
               disabled={unpriced}
               className="p-3"
             />
-            <RadioCard
-              value="none"
-              title="No charge"
-              description="Nothing to pay"
-              className="p-3"
-            />
+            <RadioCard value="none" title="No charge" description="Nothing to pay" className="p-3" />
           </RadioCards>
         )}
       </FormField>
