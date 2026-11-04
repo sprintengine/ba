@@ -23,6 +23,7 @@ import ie.bookanything.booking.BookingModule
 import ie.bookanything.business.BusinessRepository
 import ie.bookanything.business.ReservedSlugs
 import ie.bookanything.config.AppConfig
+import ie.bookanything.config.AppEnv
 import ie.bookanything.config.AuthMode
 import ie.bookanything.config.PushMode
 import ie.bookanything.db.Db
@@ -54,6 +55,8 @@ import ie.bookanything.payments.ConnectExisting
 import ie.bookanything.payments.PaymentProvider
 import ie.bookanything.payments.PaymentProviders
 import ie.bookanything.payments.SdkStripeGateway
+import ie.bookanything.payments.SimulationStripeAccounts
+import ie.bookanything.payments.StripePaymentProvider
 import ie.bookanything.site.SiteModule
 import ie.bookanything.site.stock.DisabledStockImages
 import ie.bookanything.site.stock.StockImageProvider
@@ -104,6 +107,13 @@ class AppContext(
      * (and [SimulationTokens] refuses to be built there). Null everywhere else, and then nothing below knows of them.
      */
     val simulation: SimulationTokens? = config.simulationAuth?.let { SimulationTokens(it.secret, clock, config.env) }
+
+    /**
+     * Stripe test accounts for the simulation's businesses (`POST .../payments/simulation-account`): only on staging
+     * with the simulation sign-in and Stripe on a test key. Null everywhere else (production refuses the sign-in).
+     */
+    val simulationStripe: SimulationStripeAccounts? =
+        if (simulation != null && config.env == AppEnv.STAGING) (payments as? StripePaymentProvider)?.simulationAccounts() else null
     val auth = Authenticator(simulation?.let { SimulationAwareVerifier(verifier, it) } ?: verifier, db)
     val inbox = Inbox(push = push.enabled)
     val rateLimiter = RateLimiter(

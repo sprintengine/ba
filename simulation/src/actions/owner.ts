@@ -171,7 +171,11 @@ export async function staffBook(
   if (!availability.ok) return "no_slots";
   const slot = pickSlot(a.rng, slotsOf(availability.value));
   if (!slot) return "no_slot";
-  const paymentMode = opts.paymentMode ?? a.rng.pick(["none", "at_venue", "collect_online"] as const);
+  const paymentMode =
+    opts.paymentMode ??
+    a.rng.pick(
+      b.onlinePayments ? (["none", "at_venue", "collect_online"] as const) : (["none", "at_venue"] as const),
+    );
   const n = a.seq;
   const body: CreateStaffBooking = {
     serviceId: service.id,

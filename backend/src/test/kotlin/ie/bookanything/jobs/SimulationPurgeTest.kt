@@ -1,10 +1,13 @@
 package ie.bookanything.jobs
 
+import ie.bookanything.business.BusinessRepository
 import ie.bookanything.config.AppConfig
 import ie.bookanything.config.SimulationAuthConfig
+import ie.bookanything.payments.SimulationStripeAccounts
 import ie.bookanything.support.Api
 import ie.bookanything.support.Clinic
 import ie.bookanything.support.CountingDataSource
+import ie.bookanything.support.FakeStripeGateway
 import ie.bookanything.support.Fixtures
 import ie.bookanything.support.SecurityFixtures
 import ie.bookanything.support.SecurityFixtures.dublin
@@ -93,16 +96,25 @@ class SimulationPurgeTest {
             UUID.fromString(mixed.id), UUID.fromString(userId("dev_" + realMember.email.substringBefore('@'))),
         )
         val unslugged = createBusiness(setup(unique("purge-plain").lowercase()), busy)
+        // A real person invited, not yet accepted.
+        val invited = createBusiness(setup(simSlug()), simUser("invitingowner").second)
+        Fixtures.sql(
+            "INSERT INTO business_members (business_id, role, invited_email, status) VALUES (?, 'staff', ?, 'invited')",
+            UUID.fromString(invited.id), "${unique("tester")}@example.com",
+        )
 
         // A real (dev) subject with an address on the simulation's domain: one mark is not enough.
         val impostorSub = "dev_${unique("impostor").lowercase()}"
         signIn(TestUser(devToken(impostorSub, "${impostorSub.removePrefix("dev_")}@sim.bookanything.test"), "x"))
 
-        listOf(old, realOwned, mixed, unslugged).forEach { age("businesses", it.id) }
+        listOf(old, realOwned, mixed, unslugged, invited).forEach { age("businesses", it.id) }
         listOf(ownerSub, customerSub, lonelySub, busySub, impostorSub).forEach { age("users", userId(it)!!) }
         return World(
             purged = listOf(old),
-            kept = mapOf("young" to youngShop, "real owner" to realOwned, "real member" to mixed, "no sim- slug" to unslugged),
+            kept = mapOf(
+                "young" to youngShop, "real owner" to realOwned, "real member" to mixed, "no sim- slug" to unslugged,
+                "real person invited" to invited,
+            ),
             goneUsers = listOf(ownerSub, customerSub, lonelySub),
             keptUsers = mapOf("member of a kept business" to busySub, "young" to youngSub, "dev subject" to impostorSub),
         )
@@ -130,6 +142,38 @@ class SimulationPurgeTest {
         world.keptUsers.forEach { (case, sub) -> if (userId(sub) == null) fail("$case was deleted") }
         assertEquals(SimulationPurge.Result(0, 0), SimulationPurge.purge(env.db, cutoff), "nothing left to do")
     }
+
+    @Test
+    fun `the deleted businesses' Stripe test accounts are deleted too, only the simulation's, and a failure doesn't stop it`() =
+        withApp(env) { api ->
+            val gateway = FakeStripeGateway()
+            val stripe = SimulationStripeAccounts(gateway)
+            val owner = SimulationFixtures.user(tokens, "owner")
+            fun row(shop: Clinic) = env.db.txBlocking { BusinessRepository.findById(it, UUID.fromString(shop.id))!! }
+            fun link(shop: Clinic, account: String) = account.also {
+                Fixtures.sql("UPDATE businesses SET stripe_account_id = ? WHERE id = ?", it, UUID.fromString(shop.id))
+            }
+            val ours = List(2) { api.createBusiness(setup(simSlug()), owner) }.map { it to link(it, stripe.create(row(it))) }
+            // An account the simulation didn't make (no marker for this business) is never deleted.
+            val other = api.createBusiness(setup(simSlug()), owner).let { it to link(it, "acct_${unique("other")}") }
+            val young = api.createBusiness(setup(simSlug()), owner).let { it to link(it, stripe.create(row(it))) }
+            (ours + other).forEach { (shop, _) -> age("businesses", shop.id) }
+            val cutoff = Instant.now().minus(Duration.ofDays(7))
+
+            // A dry run asks Stripe which are the simulation's: those would go, the other stays.
+            val dry = SimulationPurge.purge(env.db, cutoff, dryRun = true, stripe = stripe)
+            assertEquals(SimulationPurge.Result(3, 0, stripeAccounts = 2, stripeAccountsLeft = 1), dry)
+            assertTrue(gateway.deletedAccounts.isEmpty(), "a dry run deletes nothing")
+
+            gateway.failAccountDeletes.set(1)
+            val result = SimulationPurge.purge(env.db, cutoff, stripe = stripe)
+            assertEquals(SimulationPurge.Result(3, 0, stripeAccounts = 1, stripeAccountsLeft = 2), result)
+            (ours + other).forEach { (shop, _) -> assertTrue(!exists("businesses", shop.id), "the business goes whatever Stripe says") }
+            assertEquals(1, gateway.deletedAccounts.size)
+            assertTrue(gateway.deletedAccounts.single() in ours.map { it.second })
+            assertTrue(exists("businesses", young.first.id))
+            assertTrue(young.second !in gateway.deletedAccounts)
+        }
 
     private fun run(config: AppConfig, vararg args: String): Triple<Int, String, String> {
         val out = ByteArrayOutputStream()

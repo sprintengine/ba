@@ -102,8 +102,35 @@ class FakeStripeGateway : StripeGateway {
         g.await(GATE_SECONDS, TimeUnit.SECONDS)
     }
 
+    /** Accounts created with each idempotency key: the same key gives the same account, as at Stripe. */
+    private val accountsByKey = ConcurrentHashMap<String, String>()
+
+    /** The metadata each created account was given, read back by [retrieveAccount]. */
+    private val createdMetadata = ConcurrentHashMap<String, Map<String, String>>()
+
+    /** Accounts deleted ([deleteAccount]), in order. */
+    val deletedAccounts = CopyOnWriteArrayList<String>()
+
+    /** Number of upcoming account deletions that fail like a Stripe outage. */
+    val failAccountDeletes = AtomicInteger(0)
+
     override fun createAccount(params: AccountCreateParams, options: RequestOptions): String {
-        accounts.add(Call(params, options)); return "acct_new_${next()}"
+        accounts.add(Call(params, options))
+        // The SDK types metadata loosely (it may be an "unset" marker): ours is always a map of strings.
+        val metadata = (params.metadata as? Map<*, *>).orEmpty().entries.associate { (k, v) -> k.toString() to v.toString() }
+        val create = {
+            val id = "acct_new_${next()}"
+            createdMetadata[id] = metadata
+            id
+        }
+        return options.idempotencyKey?.let { accountsByKey.computeIfAbsent(it) { create() } } ?: create()
+    }
+
+    override fun deleteAccount(accountId: String): Boolean {
+        if (failAccountDeletes.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw Errors.providerError()
+        if (accountId in deletedAccounts) return false
+        deletedAccounts.add(accountId)
+        return true
     }
 
     /** Number of upcoming account reads that fail like a Stripe outage. */
@@ -111,7 +138,9 @@ class FakeStripeGateway : StripeGateway {
 
     override fun retrieveAccount(accountId: String): StripeAccountState {
         if (failAccountReads.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw Errors.providerError()
-        return accountStates[accountId] ?: accountState.copy(id = accountId)
+        if (accountId in deletedAccounts) throw StripeRefusedException("resource_missing")
+        val state = accountStates[accountId] ?: accountState.copy(id = accountId)
+        return if (state.metadata.isEmpty()) state.copy(metadata = createdMetadata[accountId].orEmpty()) else state
     }
     override fun exchangeOAuthCode(code: String): StripeOAuthConnection {
         oauthExchanges.add(code)

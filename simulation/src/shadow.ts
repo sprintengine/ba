@@ -54,6 +54,11 @@ export type SimBusiness = {
    * (long runs open new businesses instead, see `run.ts`).
    */
   dormant: boolean;
+  /**
+   * Whether it takes online payments: always with dev payments; with Stripe Checkout once its test account can take
+   * charges (`stripe.ts`). Without, bots book only what isn't paid online there.
+   */
+  onlinePayments: boolean;
 };
 
 export type ExpectedRefund = { amounts: number[]; at: number; by: "customer" | "business"; override: string };

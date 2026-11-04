@@ -58,6 +58,8 @@ async function loadBusinesses(sim: Sim, entries: ReturnType<typeof parseLog>) {
         cappedMonth: null,
         cappedAt: null,
         dormant: false,
+        // The checker books nothing: whether it took online payments doesn't matter here.
+        onlinePayments: true,
       });
     });
   }

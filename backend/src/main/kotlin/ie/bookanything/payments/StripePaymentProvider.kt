@@ -94,6 +94,13 @@ class StripePaymentProvider(
         return OAUTH_AUTHORIZE_URL + "?" + params.filter { it.second != null }.joinToString("&") { (k, v) -> "${enc(k)}=${enc(v!!)}" }
     }
 
+    /**
+     * The reliability simulation's test accounts on this provider's Stripe ([SimulationStripeAccounts]); null unless
+     * the key is a test key. Only staging with the simulation sign-in asks for them (`AppContext.simulationStripe`).
+     */
+    fun simulationAccounts(): SimulationStripeAccounts? =
+        if (SimulationStripeAccounts.isTestKey(config.secretKey)) SimulationStripeAccounts(gateway) else null
+
     override fun exchangeExistingAccountCode(code: String): String = gateway.exchangeOAuthCode(code).accountId
 
     override fun existingAccount(accountId: String): LinkedAccount {
