@@ -91,6 +91,13 @@ const WEB_ONLY_LIB_IMPORTS = WEB_ONLY_LIB.map((file) =>
     .replace(/\/\*\*$/, "/*"),
 );
 
+/** next/font/google downloads the fonts while building, so a build fails whenever Google is unreachable. */
+const NEXT_FONT_GOOGLE = {
+  group: ["next/font/google", "next/font/google/*", "@next/font/google", "@next/font/google/*"],
+  message:
+    "It downloads fonts at build time: commit the files instead (src/lib/site/fonts.module.css, next/font/local).",
+};
+
 /** Packages that only exist (or only make sense) in a browser or in Next.js. */
 const WEB_ONLY_PACKAGES = [
   "next",
@@ -183,6 +190,8 @@ export default defineConfig([
       // Turbopack can't shake zod's re-exported `z` namespace: `import { z }` ships every locale and the JSON
       // Schema tooling (380 KB raw on almost every page), `import * as z` only the schemas we call (106 KB).
       "no-restricted-syntax": ["error", ZOD_NAMESPACE_IMPORT],
+
+      "no-restricted-imports": ["error", { patterns: [NEXT_FONT_GOOGLE] }],
     },
   },
 
@@ -314,6 +323,7 @@ export default defineConfig([
         "error",
         {
           patterns: [
+            NEXT_FONT_GOOGLE,
             {
               group: WEB_ONLY_PACKAGES,
               message: "src/lib is shared with the mobile app: no web-only packages (see WEB_ONLY_LIB).",

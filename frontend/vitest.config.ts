@@ -7,8 +7,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      // next/font is compiled by Next at build time; tests use a stand-in.
-      "next/font/google": fileURLToPath(new URL("./src/test/next-font-google.ts", import.meta.url)),
     },
   },
   test: {

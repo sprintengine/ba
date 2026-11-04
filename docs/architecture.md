@@ -1353,8 +1353,8 @@ instruction and change list in the summary), `upload.created`.
 ### 15.8 Themes (frontend)
 
 Six themes are sets of design-token overrides applied with `data-theme` on the public page only
-(`/[slug]` and `/[slug]/book`): heading/body font pairing from a `next/font` allowlist, radius
-scale, surfaces and background treatment, header style, image treatment, button shape and section
+(`/[slug]` and `/[slug]/book`): heading/body font pairing from a self-hosted allowlist (font files committed to the repository,
+so a build never downloads them), radius scale, surfaces and background treatment, header style, image treatment, button shape and section
 spacing, each in light and dark. The business colour is layered on top with computed contrast
 against the theme's own surfaces. Section blocks use container queries, so the dashboard preview
 renders the real mobile and desktop layouts at any size.

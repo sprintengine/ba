@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { must } from "@/test/must";
 import type { SectionContentMap, SitePlan, SiteSectionType } from "@/lib/api/types";
+import { THEME_FONT_CLASSES } from "@/lib/site/fonts";
 import { SITE_THEME_KEYS } from "@/lib/site/themes";
 import { SAMPLE_BUSINESS, SAMPLE_CONTEXT, SAMPLE_SERVICES, samplePlan } from "../sample-site";
 import { SiteRenderer, type SiteRendererProps } from "../site-renderer";
@@ -48,7 +49,7 @@ describe("SiteRenderer", () => {
     const scope = container.querySelector("[data-theme]") as HTMLElement;
     expect(scope).toHaveAttribute("data-theme", "editorial");
     expect(scope.className).toContain("@container/site");
-    expect(scope.className).toContain("var-mock--font-instrument-serif");
+    expect(scope.className.split(" ")).toContain(THEME_FONT_CLASSES.editorial);
     expect(scope.style.getPropertyValue("--radius-button")).toBe("0");
     expect(scope.style.getPropertyValue("--tl-brand")).toMatch(/^#/);
     expect(scope.style.getPropertyValue("--td-brand")).toMatch(/^#/);

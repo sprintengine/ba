@@ -156,6 +156,12 @@ businesses' pages; that is their brand, not ours.) Scale: `text-2xs` 11 · `xs` 
 · `display-sm` / `display` / `display-lg` / `display-xl` (marketing). Headings: `font-semibold tracking-tight`.
 Add **`tnum`** (tabular numerals) to times, prices, counts in tables.
 
+**Font licences.** Every font in the website is committed with its licence beside it, and all of them are under the
+SIL Open Font License 1.1, which permits bundling and redistribution: Figtree (`app/fonts/`,
+`components/marketing/fonts/`) and the site themes' IBM Plex Sans, Fraunces, DM Sans, Archivo, Fredoka, Nunito,
+Instrument Serif, Instrument Sans and Geist (`lib/site/font-files/<family>/OFL.txt`; the files are Google Fonts'
+own latin and latin-ext subsets, unmodified).
+
 **Radii.** `rounded-md` (10px) small controls · `rounded-lg` (12px) inputs · `rounded-xl` (14px)
 cards, tables · `rounded-2xl` dialogs/sheets. Buttons use `rounded-button(-sm/-lg)` and site images `rounded-image`
 so site themes can reshape them (pill, square). **Shadows** are subtle and layered: `shadow-xs` (cards,
@@ -389,7 +395,9 @@ const { isLoaded, isSignedIn, user, getToken, signOut, mode } = useAuth();
   a `data-theme` element; `globals.css` maps `--tl-*`/`--td-*` onto the semantic tokens, so every component inside
   (including the booking flow at `/[slug]/book`) follows the theme. The palette's primary and accent colours are
   computed against the theme's own surfaces for contrast (`themes.test.ts` checks every theme against awkward colours).
-- **Fonts** come from a small `next/font` allowlist (`lib/site/fonts.ts`, not preloaded; only the theme's files load).
+- **Fonts** come from a small allowlist committed to the repository (`lib/site/fonts.ts` and `fonts.module.css`, files
+  in `lib/site/font-files/`; latin and latin-ext only, not preloaded, so only the theme's files load). A build never
+  downloads fonts: `next/font/google` is banned by lint because it fetches from Google while building.
   Use `site-heading` (theme font, weight, tracking, case) for site headings and `font-heading`/`font-body` elsewhere.
 - **Sections** are a registry in three typed parts: `lib/site/section-meta.ts` (label, defaults, "has content"; no
   zod, so the public site ships without it) extended by `lib/site/sections.ts` (the zod schema mirroring the backend,
@@ -613,8 +621,7 @@ Checks: `npm run format:check`, `lint`, `typecheck`, `test:coverage` (thresholds
   hooks, formatters, colour contrast, auth (tokens, routing, provider), key components (Field wiring,
   Calendar keyboard, MoneyInput, Button), site themes/plan logic/schema (`lib/site/*.test.ts`), every section block
   (`components/site/__tests__`) and the site editor against a stateful fake API
-  (`components/dashboard/site/__tests__/fake-site-api.ts`). `next/font/google` is stubbed in tests
-  (`src/test/next-font-google.ts`). Add tests next to what you build.
+  (`components/dashboard/site/__tests__/fake-site-api.ts`). Add tests next to what you build.
 - **Component tests** assert by role and accessible name (`getByRole("button", { name: "Save" })`), never by test id or
   class. Cover loading, empty, error (`role="alert"` / `ErrorState`) and success states, and the keyboard (Tab, Enter,
   Space, Escape, arrows: dialogs trap focus and close on Escape). Dashboard components render with `renderDashboard` and
