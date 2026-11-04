@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { CalendarHeart, Plug } from "lucide-react";
 import { useMe, useMyBookings } from "@/lib/api/hooks";
@@ -16,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvitationBanner } from "./invitation-banner";
 import { MyBookingCard } from "./my-booking-card";
+import type { MyBookingsAgentRequest } from "./my-bookings-agent-tools";
+import { useMyBookingsAgentTools } from "./use-my-bookings-agent-tools";
 
 type Tab = "upcoming" | "past";
 
@@ -24,8 +27,23 @@ export function MyBookingsPage() {
   const tab: Tab = params.get("tab") === "past" ? "past" : "upcoming";
   const bookings = useMyBookings();
   const me = useMe();
+  // A change an AI agent in the browser started (WebMCP): the booking's own dialog shows it for the customer to confirm.
+  // It lapses once the booking is no longer upcoming (cancelled meanwhile, elsewhere).
+  const [agentRequest, setAgentRequest] = useState<MyBookingsAgentRequest | null>(null);
+  const pending =
+    agentRequest && bookings.data?.upcoming.some((b) => b.id === agentRequest.bookingId)
+      ? agentRequest
+      : null;
 
   const setTab = (t: string) => setParams({ tab: t === "past" ? "past" : null });
+  useMyBookingsAgentTools({
+    bookings: bookings.data,
+    pending,
+    request: (r) => {
+      if (tab !== "upcoming") setTab("upcoming");
+      setAgentRequest(r);
+    },
+  });
 
   return (
     <>
@@ -67,6 +85,8 @@ export function MyBookingsPage() {
               tab={tab}
               items={tab === "upcoming" ? bookings.data.upcoming : bookings.data.past}
               past={bookings.data.past}
+              agentRequest={tab === "upcoming" ? pending : null}
+              onAgentRequestDone={(done) => setAgentRequest((current) => (current === done ? null : current))}
             />
           )}
         </TabsContent>
@@ -79,7 +99,20 @@ function Count({ n }: { n: number }) {
   return <span className="tnum ml-1 rounded-full bg-muted px-1.5 text-xs text-muted-foreground">{n}</span>;
 }
 
-function BookingList({ tab, items, past }: { tab: Tab; items: CustomerBooking[]; past: CustomerBooking[] }) {
+function BookingList({
+  tab,
+  items,
+  past,
+  agentRequest,
+  onAgentRequestDone,
+}: {
+  tab: Tab;
+  items: CustomerBooking[];
+  past: CustomerBooking[];
+  agentRequest: MyBookingsAgentRequest | null;
+  /** The customer closed the dialog of `request`. */
+  onAgentRequestDone: (request: MyBookingsAgentRequest) => void;
+}) {
   if (items.length === 0) {
     const previous = businessesIn(past, 4);
     return (
@@ -126,7 +159,12 @@ function BookingList({ tab, items, past }: { tab: Tab; items: CustomerBooking[];
     <ul className="flex flex-col gap-3">
       {sorted.map((b) => (
         <li key={b.id}>
-          <MyBookingCard booking={b} past={tab === "past"} />
+          <MyBookingCard
+            booking={b}
+            past={tab === "past"}
+            agentAction={agentRequest?.bookingId === b.id ? agentRequest.action : null}
+            onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
+          />
         </li>
       ))}
     </ul>

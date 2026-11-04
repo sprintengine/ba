@@ -49,6 +49,8 @@ suspend fun ApplicationCall.respondPostOnly() {
 fun Route.mcpRoutes(ctx: AppContext) {
     route("/mcp") {
         install(ContentNegotiation) { json(McpJson) }
+        // Before CORS, so a preflight from a `null` or malformed origin is refused too.
+        install(McpOriginCheck)
         // Browser-based MCP clients connect cross-origin; bearer tokens only, no cookies. Applies to /customer and /business
         // too. Mcp-Method and Mcp-Name are sent on every request from 2026-07-28 clients: a preflight refusing them fails
         // before the client can fall back to an older version.

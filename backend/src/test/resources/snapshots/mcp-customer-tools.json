@@ -82,12 +82,411 @@
             "type": "object"
         },
         "description": "Search bookanything's marketplace of businesses in Ireland (physios, car washes, music teachers, GP practices, salons, fitness studios and more). Filter by free text, city or a point with a radius, category, a date with free times and deals. Results include each business's slug, distance, from-price, up to three next free times (with any deal price) and active deals. Use the slug with the other tools. Categories: physio, gp-practice, dental, salon, barber, massage, fitness, music-lessons, tutoring, car-wash, pet-grooming, other. Cities: dublin, cork, galway, limerick, waterford, kilkenny, sligo, athlone, drogheda, dundalk, wexford, killarney, tralee, ennis, letterkenny, bray, navan, carlow, mullingar, castlebar, clonmel, tullamore, naas, swords, portlaoise.",
+        "outputSchema": {
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "business": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "slug": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "timezone": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "object",
+                                        "properties": {
+                                            "line1": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "line2": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "city": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "postcode": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "line1",
+                                            "line2",
+                                            "city",
+                                            "postcode"
+                                        ]
+                                    },
+                                    "branding": {
+                                        "type": "object",
+                                        "properties": {
+                                            "primaryColor": {
+                                                "type": "string"
+                                            },
+                                            "logoUrl": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "coverImageUrl": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            },
+                                            "portalStyle": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ],
+                                                "enum": [
+                                                    "clinical",
+                                                    "calm",
+                                                    "bold",
+                                                    "playful",
+                                                    "editorial",
+                                                    "minimal",
+                                                    null
+                                                ]
+                                            }
+                                        },
+                                        "required": [
+                                            "primaryColor",
+                                            "logoUrl",
+                                            "coverImageUrl",
+                                            "portalStyle"
+                                        ]
+                                    },
+                                    "location": {
+                                        "type": [
+                                            "object",
+                                            "null"
+                                        ],
+                                        "properties": {
+                                            "latitude": {
+                                                "type": "number"
+                                            },
+                                            "longitude": {
+                                                "type": "number"
+                                            }
+                                        },
+                                        "required": [
+                                            "latitude",
+                                            "longitude"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "slug",
+                                    "name",
+                                    "description",
+                                    "timezone",
+                                    "address",
+                                    "branding",
+                                    "location"
+                                ]
+                            },
+                            "category": {
+                                "type": "object",
+                                "properties": {
+                                    "key": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "plural": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "key",
+                                    "label",
+                                    "plural"
+                                ]
+                            },
+                            "distanceKm": {
+                                "type": [
+                                    "number",
+                                    "null"
+                                ]
+                            },
+                            "rating": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "average": {
+                                        "type": "number"
+                                    },
+                                    "count": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "average",
+                                    "count"
+                                ]
+                            },
+                            "priceFromCents": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "nextSlots": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "start": {
+                                            "type": "string"
+                                        },
+                                        "serviceId": {
+                                            "type": "string"
+                                        },
+                                        "serviceName": {
+                                            "type": "string"
+                                        },
+                                        "optionId": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "optionName": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "offer": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                },
+                                                "originalPriceCents": {
+                                                    "type": "integer"
+                                                },
+                                                "priceCents": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "label",
+                                                "originalPriceCents",
+                                                "priceCents"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "start",
+                                        "serviceId",
+                                        "serviceName",
+                                        "optionId",
+                                        "optionName",
+                                        "priceCents",
+                                        "offer"
+                                    ]
+                                }
+                            },
+                            "deals": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "kind": {
+                                            "type": "string"
+                                        },
+                                        "discount": {},
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "summary": {
+                                            "type": "string"
+                                        },
+                                        "serviceIds": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "validUntil": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "kind",
+                                        "discount",
+                                        "label",
+                                        "summary",
+                                        "serviceIds",
+                                        "validUntil"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "business",
+                            "category",
+                            "distanceKm",
+                            "rating",
+                            "priceFromCents",
+                            "currency",
+                            "nextSlots",
+                            "deals"
+                        ]
+                    }
+                },
+                "nextCursor": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "center": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "latitude": {
+                            "type": "number"
+                        },
+                        "longitude": {
+                            "type": "number"
+                        },
+                        "radiusKm": {
+                            "type": "number"
+                        },
+                        "label": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "latitude",
+                        "longitude",
+                        "radiusKm",
+                        "label"
+                    ]
+                }
+            },
+            "required": [
+                "items",
+                "nextCursor",
+                "center"
+            ],
+            "type": "object"
+        },
         "title": "Search businesses",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "marketplace:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -105,12 +504,817 @@
             "type": "object"
         },
         "description": "Everything needed to book with one business: its profile, policies (notice, cancellation, refunds), services with prices in cents, durations, options, add-ons, the selectable resource (e.g. a therapist), the booking questions each service needs answered, and active deals. Get the slug from search_marketplace.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "slug": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "description": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "industry": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "locale": {
+                            "type": "string"
+                        },
+                        "contactEmail": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "contactPhone": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "websiteUrl": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "address": {
+                            "type": "object",
+                            "properties": {
+                                "line1": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "line2": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "city": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "postcode": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "line1",
+                                "line2",
+                                "city",
+                                "postcode"
+                            ]
+                        },
+                        "branding": {
+                            "type": "object",
+                            "properties": {
+                                "primaryColor": {
+                                    "type": "string"
+                                },
+                                "logoUrl": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "coverImageUrl": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "portalStyle": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "clinical",
+                                        "calm",
+                                        "bold",
+                                        "playful",
+                                        "editorial",
+                                        "minimal",
+                                        null
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "primaryColor",
+                                "logoUrl",
+                                "coverImageUrl",
+                                "portalStyle"
+                            ]
+                        },
+                        "vocabulary": {
+                            "type": "object",
+                            "properties": {
+                                "resource": {
+                                    "type": "string"
+                                },
+                                "resources": {
+                                    "type": "string"
+                                },
+                                "customer": {
+                                    "type": "string"
+                                },
+                                "customers": {
+                                    "type": "string"
+                                },
+                                "booking": {
+                                    "type": "string"
+                                },
+                                "bookings": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "resource",
+                                "resources",
+                                "customer",
+                                "customers",
+                                "booking",
+                                "bookings"
+                            ]
+                        },
+                        "policies": {
+                            "type": "object",
+                            "properties": {
+                                "minNoticeMinutes": {
+                                    "type": "integer"
+                                },
+                                "maxAdvanceDays": {
+                                    "type": "integer"
+                                },
+                                "cancellationNoticeHours": {
+                                    "type": "integer"
+                                },
+                                "lateCancellationRefundPercent": {
+                                    "type": "integer"
+                                },
+                                "allowCustomerCancel": {
+                                    "type": "boolean"
+                                },
+                                "allowCustomerReschedule": {
+                                    "type": "boolean"
+                                },
+                                "holdMinutes": {
+                                    "type": "integer"
+                                },
+                                "requireCustomerPhone": {
+                                    "type": "boolean"
+                                },
+                                "nextAvailableOnly": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": [
+                                "minNoticeMinutes",
+                                "maxAdvanceDays",
+                                "cancellationNoticeHours",
+                                "lateCancellationRefundPercent",
+                                "allowCustomerCancel",
+                                "allowCustomerReschedule",
+                                "holdMinutes",
+                                "requireCustomerPhone",
+                                "nextAvailableOnly"
+                            ]
+                        },
+                        "customerGroups": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "name",
+                                    "description"
+                                ]
+                            }
+                        },
+                        "paymentsEnabled": {
+                            "type": "boolean"
+                        },
+                        "showBadge": {
+                            "type": "boolean"
+                        },
+                        "site": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "plan": {
+                                    "type": "object",
+                                    "properties": {
+                                        "theme": {
+                                            "type": "string",
+                                            "enum": [
+                                                "clinical",
+                                                "calm",
+                                                "bold",
+                                                "playful",
+                                                "editorial",
+                                                "minimal"
+                                            ]
+                                        },
+                                        "palette": {
+                                            "type": "object",
+                                            "properties": {
+                                                "primaryColor": {
+                                                    "type": "string"
+                                                },
+                                                "accent": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "primaryColor",
+                                                "accent"
+                                            ]
+                                        },
+                                        "seo": {
+                                            "type": "object",
+                                            "properties": {
+                                                "title": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "description": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "title",
+                                                "description"
+                                            ]
+                                        },
+                                        "sections": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    },
+                                                    "enabled": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "content": {}
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "type",
+                                                    "enabled",
+                                                    "content"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "theme",
+                                        "palette",
+                                        "seo",
+                                        "sections"
+                                    ]
+                                },
+                                "isDefault": {
+                                    "type": "boolean"
+                                },
+                                "context": {
+                                    "type": "object",
+                                    "properties": {
+                                        "team": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "description"
+                                                ]
+                                            }
+                                        },
+                                        "openingHours": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dayOfWeek": {
+                                                        "type": "integer"
+                                                    },
+                                                    "intervals": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "start": {
+                                                                    "type": "string"
+                                                                },
+                                                                "end": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "start",
+                                                                "end"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": [
+                                                    "dayOfWeek",
+                                                    "intervals"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "team",
+                                        "openingHours"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "plan",
+                                "isDefault",
+                                "context"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "description",
+                        "industry",
+                        "timezone",
+                        "currency",
+                        "locale",
+                        "contactEmail",
+                        "contactPhone",
+                        "websiteUrl",
+                        "address",
+                        "branding",
+                        "vocabulary",
+                        "policies",
+                        "customerGroups",
+                        "paymentsEnabled",
+                        "showBadge",
+                        "site"
+                    ]
+                },
+                "bookingUrl": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "category": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "color": {
+                                "type": "string"
+                            },
+                            "durationMinutes": {
+                                "type": "integer"
+                            },
+                            "bufferBeforeMinutes": {
+                                "type": "integer"
+                            },
+                            "bufferAfterMinutes": {
+                                "type": "integer"
+                            },
+                            "slotIntervalMinutes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "minNoticeMinutes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "maxAdvanceDays": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "capacity": {
+                                "type": "integer"
+                            },
+                            "priceCents": {
+                                "type": "integer"
+                            },
+                            "paymentMode": {
+                                "type": "string"
+                            },
+                            "depositCents": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "allowPayAtVenue": {
+                                "type": "boolean"
+                            },
+                            "requiresApproval": {
+                                "type": "boolean"
+                            },
+                            "locationType": {
+                                "type": "string"
+                            },
+                            "sortOrder": {
+                                "type": "integer"
+                            },
+                            "options": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "durationMinutes": {
+                                            "type": "integer"
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "durationMinutes",
+                                        "priceCents",
+                                        "sortOrder"
+                                    ]
+                                }
+                            },
+                            "addons": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "extraMinutes": {
+                                            "type": "integer"
+                                        },
+                                        "priceCents": {
+                                            "type": "integer"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "description",
+                                        "extraMinutes",
+                                        "priceCents",
+                                        "sortOrder"
+                                    ]
+                                }
+                            },
+                            "allowedGroupIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "selectableRequirement": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "resources": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "kind": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "description",
+                                                "kind"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "label",
+                                    "resources"
+                                ]
+                            },
+                            "questions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "helpText": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        },
+                                        "kind": {
+                                            "type": "string"
+                                        },
+                                        "options": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": {
+                                            "type": "boolean"
+                                        },
+                                        "sensitive": {
+                                            "type": "boolean"
+                                        },
+                                        "sortOrder": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "id",
+                                        "label",
+                                        "helpText",
+                                        "kind",
+                                        "options",
+                                        "required",
+                                        "sensitive",
+                                        "sortOrder"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "description",
+                            "category",
+                            "color",
+                            "durationMinutes",
+                            "bufferBeforeMinutes",
+                            "bufferAfterMinutes",
+                            "slotIntervalMinutes",
+                            "minNoticeMinutes",
+                            "maxAdvanceDays",
+                            "capacity",
+                            "priceCents",
+                            "paymentMode",
+                            "depositCents",
+                            "allowPayAtVenue",
+                            "requiresApproval",
+                            "locationType",
+                            "sortOrder",
+                            "options",
+                            "addons",
+                            "allowedGroupIds",
+                            "selectableRequirement",
+                            "questions"
+                        ]
+                    }
+                },
+                "deals": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "kind": {
+                                "type": "string"
+                            },
+                            "discount": {},
+                            "label": {
+                                "type": "string"
+                            },
+                            "summary": {
+                                "type": "string"
+                            },
+                            "serviceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "validUntil": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "description",
+                            "kind",
+                            "discount",
+                            "label",
+                            "summary",
+                            "serviceIds",
+                            "validUntil"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "business",
+                "bookingUrl",
+                "services",
+                "deals"
+            ],
+            "type": "object"
+        },
         "title": "Get business",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "marketplace:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -164,12 +1368,162 @@
             "type": "object"
         },
         "description": "Free start times for one service of a business between two dates (inclusive, at most 31 days; `to` defaults to `from`), in the business's timezone. Services with options need optionId. Slots with a deal carry `offer` with the discounted price. Uses the signed-in customer's own customer group at that business. Pass resourceId to choose a specific person (e.g. a therapist). Some businesses offer only their next available time: then the result has `nextAvailableOnly: true` and at most one time; call again with `after` set to that time to see the next one. A day the business hasn't opened for booking yet has no times and `opensAt` (when it opens), or `held: true` (not open yet, no time set).",
+        "outputSchema": {
+            "properties": {
+                "timezone": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "days": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "date": {
+                                "type": "string"
+                            },
+                            "slots": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "start": {
+                                            "type": "string"
+                                        },
+                                        "end": {
+                                            "type": "string"
+                                        },
+                                        "resourceIds": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "seatsLeft": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ]
+                                        },
+                                        "offer": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                },
+                                                "originalPriceCents": {
+                                                    "type": "integer"
+                                                },
+                                                "priceCents": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "label",
+                                                "originalPriceCents",
+                                                "priceCents"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "start",
+                                        "end",
+                                        "resourceIds",
+                                        "seatsLeft",
+                                        "offer"
+                                    ]
+                                }
+                            },
+                            "opensAt": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "held": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "date",
+                            "slots",
+                            "opensAt",
+                            "held"
+                        ]
+                    }
+                },
+                "nextAvailableOnly": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "timezone",
+                "from",
+                "to",
+                "durationMinutes",
+                "days",
+                "nextAvailableOnly"
+            ],
+            "type": "object"
+        },
         "title": "Check availability",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "marketplace:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -236,12 +1590,123 @@
             "type": "object"
         },
         "description": "Prepares a booking of a start time returned by check_availability, as the signed-in user (their name and verified email): returns a request with the price (deals apply automatically). Nothing is booked until it is approved (see its status and next). Required booking questions (from get_business) go in answers, keyed by question id. Some businesses require a phone number. Paid services then give a payment link for the user to pay on bookanything (get_proposal); never ask for or handle card details. A service with allowPayAtVenue lets the user choose payment=at_venue instead: nothing is paid now.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Book",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -268,12 +1733,217 @@
             "type": "object"
         },
         "description": "The signed-in user's bookings at every business: upcoming (soonest first), past (latest first) or all. Each has its id (for reschedule_booking and cancel_booking), status, time, price and whether it can still be cancelled or moved online.",
+        "outputSchema": {
+            "properties": {
+                "bookings": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "reference": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "held",
+                                    "pending_approval",
+                                    "confirmed",
+                                    "completed",
+                                    "cancelled",
+                                    "no_show",
+                                    "expired"
+                                ]
+                            },
+                            "paymentStatus": {
+                                "type": "string",
+                                "enum": [
+                                    "not_required",
+                                    "pending",
+                                    "paid",
+                                    "partially_refunded",
+                                    "refunded",
+                                    "failed",
+                                    "pay_at_venue"
+                                ]
+                            },
+                            "business": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "slug": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "slug"
+                                ]
+                            },
+                            "service": {
+                                "type": "string"
+                            },
+                            "option": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "start": {
+                                "type": "string"
+                            },
+                            "end": {
+                                "type": "string"
+                            },
+                            "timezone": {
+                                "type": "string"
+                            },
+                            "priceCents": {
+                                "type": "integer"
+                            },
+                            "originalPriceCents": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ]
+                            },
+                            "offer": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "originalPriceCents": {
+                                        "type": "integer"
+                                    },
+                                    "discountCents": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "name",
+                                    "label",
+                                    "originalPriceCents",
+                                    "discountCents"
+                                ]
+                            },
+                            "currency": {
+                                "type": "string"
+                            },
+                            "amountPaidCents": {
+                                "type": "integer"
+                            },
+                            "canCancel": {
+                                "type": "boolean"
+                            },
+                            "canReschedule": {
+                                "type": "boolean"
+                            },
+                            "refundIfCancelledNow": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "amountCents": {
+                                        "type": "integer"
+                                    },
+                                    "reason": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "amountCents",
+                                    "reason"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "reference",
+                            "status",
+                            "paymentStatus",
+                            "business",
+                            "service",
+                            "option",
+                            "start",
+                            "end",
+                            "timezone",
+                            "priceCents",
+                            "originalPriceCents",
+                            "offer",
+                            "currency",
+                            "amountPaidCents",
+                            "canCancel",
+                            "canReschedule",
+                            "refundIfCancelledNow"
+                        ]
+                    }
+                },
+                "myBookingsUrl": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "bookings",
+                "myBookingsUrl"
+            ],
+            "type": "object"
+        },
         "title": "List my bookings",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -284,12 +1954,217 @@
             "type": "object"
         },
         "description": "The signed-in user's next upcoming booking, or null when there is none.",
+        "outputSchema": {
+            "properties": {
+                "booking": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "reference": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "held",
+                                "pending_approval",
+                                "confirmed",
+                                "completed",
+                                "cancelled",
+                                "no_show",
+                                "expired"
+                            ]
+                        },
+                        "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_required",
+                                "pending",
+                                "paid",
+                                "partially_refunded",
+                                "refunded",
+                                "failed",
+                                "pay_at_venue"
+                            ]
+                        },
+                        "business": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug"
+                            ]
+                        },
+                        "service": {
+                            "type": "string"
+                        },
+                        "option": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "priceCents": {
+                            "type": "integer"
+                        },
+                        "originalPriceCents": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "offer": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "originalPriceCents": {
+                                    "type": "integer"
+                                },
+                                "discountCents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "label",
+                                "originalPriceCents",
+                                "discountCents"
+                            ]
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "amountPaidCents": {
+                            "type": "integer"
+                        },
+                        "canCancel": {
+                            "type": "boolean"
+                        },
+                        "canReschedule": {
+                            "type": "boolean"
+                        },
+                        "refundIfCancelledNow": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "amountCents": {
+                                    "type": "integer"
+                                },
+                                "reason": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "amountCents",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "reference",
+                        "status",
+                        "paymentStatus",
+                        "business",
+                        "service",
+                        "option",
+                        "start",
+                        "end",
+                        "timezone",
+                        "priceCents",
+                        "originalPriceCents",
+                        "offer",
+                        "currency",
+                        "amountPaidCents",
+                        "canCancel",
+                        "canReschedule",
+                        "refundIfCancelledNow"
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "booking",
+                "message"
+            ],
+            "type": "object"
+        },
         "title": "Get next appointment",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -327,12 +2202,162 @@
             "type": "object"
         },
         "description": "Free times one of the user's bookings can move to, between two dates (inclusive, at most 31 days; `to` defaults to `from`): same service and length, and only times its deal covers when it was booked with one. Use these with reschedule_booking. Some businesses offer only their next available time: call again with `after`.",
+        "outputSchema": {
+            "properties": {
+                "timezone": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "durationMinutes": {
+                    "type": "integer"
+                },
+                "days": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "date": {
+                                "type": "string"
+                            },
+                            "slots": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "start": {
+                                            "type": "string"
+                                        },
+                                        "end": {
+                                            "type": "string"
+                                        },
+                                        "resourceIds": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "seatsLeft": {
+                                            "type": [
+                                                "integer",
+                                                "null"
+                                            ]
+                                        },
+                                        "offer": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "label": {
+                                                    "type": "string"
+                                                },
+                                                "originalPriceCents": {
+                                                    "type": "integer"
+                                                },
+                                                "priceCents": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "label",
+                                                "originalPriceCents",
+                                                "priceCents"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "start",
+                                        "end",
+                                        "resourceIds",
+                                        "seatsLeft",
+                                        "offer"
+                                    ]
+                                }
+                            },
+                            "opensAt": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "held": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "date",
+                            "slots",
+                            "opensAt",
+                            "held"
+                        ]
+                    }
+                },
+                "nextAvailableOnly": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "timezone",
+                "from",
+                "to",
+                "durationMinutes",
+                "days",
+                "nextAvailableOnly"
+            ],
+            "type": "object"
+        },
         "title": "Find times to move a booking",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -350,12 +2375,218 @@
             "type": "object"
         },
         "description": "The payment page for one of the user's bookings that is held waiting for payment (paymentStatus awaiting payment), e.g. when the link from book was lost. Give it to the user: they pay on bookanything themselves before the hold ends. Refused once the hold has ended or nothing is due.",
+        "outputSchema": {
+            "properties": {
+                "booking": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "reference": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "held",
+                                "pending_approval",
+                                "confirmed",
+                                "completed",
+                                "cancelled",
+                                "no_show",
+                                "expired"
+                            ]
+                        },
+                        "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_required",
+                                "pending",
+                                "paid",
+                                "partially_refunded",
+                                "refunded",
+                                "failed",
+                                "pay_at_venue"
+                            ]
+                        },
+                        "business": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug"
+                            ]
+                        },
+                        "service": {
+                            "type": "string"
+                        },
+                        "option": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "priceCents": {
+                            "type": "integer"
+                        },
+                        "originalPriceCents": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "offer": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "originalPriceCents": {
+                                    "type": "integer"
+                                },
+                                "discountCents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "label",
+                                "originalPriceCents",
+                                "discountCents"
+                            ]
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "amountPaidCents": {
+                            "type": "integer"
+                        },
+                        "canCancel": {
+                            "type": "boolean"
+                        },
+                        "canReschedule": {
+                            "type": "boolean"
+                        },
+                        "refundIfCancelledNow": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "amountCents": {
+                                    "type": "integer"
+                                },
+                                "reason": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "amountCents",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "reference",
+                        "status",
+                        "paymentStatus",
+                        "business",
+                        "service",
+                        "option",
+                        "start",
+                        "end",
+                        "timezone",
+                        "priceCents",
+                        "originalPriceCents",
+                        "offer",
+                        "currency",
+                        "amountPaidCents",
+                        "canCancel",
+                        "canReschedule",
+                        "refundIfCancelledNow"
+                    ]
+                },
+                "paymentUrl": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "booking",
+                "paymentUrl",
+                "message"
+            ],
+            "type": "object"
+        },
         "title": "Get payment link",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -383,12 +2614,123 @@
             "type": "object"
         },
         "description": "Prepares moving one of the user's bookings to another free time (from find_times_to_move): nothing moves until it is approved. Only allowed until the business's cancellation notice window; a booking with a deal price can only move to times the same deal covers. Payment carries over.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Reschedule booking",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -410,12 +2752,123 @@
             "type": "object"
         },
         "description": "Prepares cancelling one of the user's bookings: the request shows the refund the business's policy gives now, and nothing is cancelled until it is approved. Refunds go back to the original payment automatically.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Cancel booking",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -433,12 +2886,258 @@
             "type": "object"
         },
         "description": "Carries out a request you prepared (a booking, move or cancellation) when its status is awaiting_confirmation, after the user clearly agreed. One awaiting_approval doesn't go ahead this way: the user approves it on bookanything at its approvalUrl. Confirming twice returns the first result.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                },
+                "booking": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "reference": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "held",
+                                "pending_approval",
+                                "confirmed",
+                                "completed",
+                                "cancelled",
+                                "no_show",
+                                "expired"
+                            ]
+                        },
+                        "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_required",
+                                "pending",
+                                "paid",
+                                "partially_refunded",
+                                "refunded",
+                                "failed",
+                                "pay_at_venue"
+                            ]
+                        },
+                        "business": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug"
+                            ]
+                        },
+                        "service": {
+                            "type": "string"
+                        },
+                        "option": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "priceCents": {
+                            "type": "integer"
+                        },
+                        "originalPriceCents": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "offer": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "originalPriceCents": {
+                                    "type": "integer"
+                                },
+                                "discountCents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "label",
+                                "originalPriceCents",
+                                "discountCents"
+                            ]
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "amountPaidCents": {
+                            "type": "integer"
+                        },
+                        "canCancel": {
+                            "type": "boolean"
+                        },
+                        "canReschedule": {
+                            "type": "boolean"
+                        },
+                        "refundIfCancelledNow": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "amountCents": {
+                                    "type": "integer"
+                                },
+                                "reason": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "amountCents",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "reference",
+                        "status",
+                        "paymentStatus",
+                        "business",
+                        "service",
+                        "option",
+                        "start",
+                        "end",
+                        "timezone",
+                        "priceCents",
+                        "originalPriceCents",
+                        "offer",
+                        "currency",
+                        "amountPaidCents",
+                        "canCancel",
+                        "canReschedule",
+                        "refundIfCancelledNow"
+                    ]
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links",
+                "booking"
+            ],
+            "type": "object"
+        },
         "title": "Confirm a request",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": true,
             "idempotentHint": true,
-            "openWorldHint": false
+            "openWorldHint": true
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -456,12 +3155,258 @@
             "type": "object"
         },
         "description": "Drops a request the user doesn't want, so it can't go ahead later. Nothing changes.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                },
+                "booking": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "reference": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "held",
+                                "pending_approval",
+                                "confirmed",
+                                "completed",
+                                "cancelled",
+                                "no_show",
+                                "expired"
+                            ]
+                        },
+                        "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_required",
+                                "pending",
+                                "paid",
+                                "partially_refunded",
+                                "refunded",
+                                "failed",
+                                "pay_at_venue"
+                            ]
+                        },
+                        "business": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug"
+                            ]
+                        },
+                        "service": {
+                            "type": "string"
+                        },
+                        "option": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "priceCents": {
+                            "type": "integer"
+                        },
+                        "originalPriceCents": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "offer": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "originalPriceCents": {
+                                    "type": "integer"
+                                },
+                                "discountCents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "label",
+                                "originalPriceCents",
+                                "discountCents"
+                            ]
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "amountPaidCents": {
+                            "type": "integer"
+                        },
+                        "canCancel": {
+                            "type": "boolean"
+                        },
+                        "canReschedule": {
+                            "type": "boolean"
+                        },
+                        "refundIfCancelledNow": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "amountCents": {
+                                    "type": "integer"
+                                },
+                                "reason": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "amountCents",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "reference",
+                        "status",
+                        "paymentStatus",
+                        "business",
+                        "service",
+                        "option",
+                        "start",
+                        "end",
+                        "timezone",
+                        "priceCents",
+                        "originalPriceCents",
+                        "offer",
+                        "currency",
+                        "amountPaidCents",
+                        "canCancel",
+                        "canReschedule",
+                        "refundIfCancelledNow"
+                    ]
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links",
+                "booking"
+            ],
+            "type": "object"
+        },
         "title": "Drop a request",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -479,12 +3424,258 @@
             "type": "object"
         },
         "description": "Where a request you prepared stands: awaiting_approval (approvalUrl is the link to give the user), awaiting_confirmation, confirmed (with what happened, the booking, and e.g. a payment link), rejected, expired or failed. Use it after the user says they've approved or declined it.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                },
+                "booking": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "reference": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "held",
+                                "pending_approval",
+                                "confirmed",
+                                "completed",
+                                "cancelled",
+                                "no_show",
+                                "expired"
+                            ]
+                        },
+                        "paymentStatus": {
+                            "type": "string",
+                            "enum": [
+                                "not_required",
+                                "pending",
+                                "paid",
+                                "partially_refunded",
+                                "refunded",
+                                "failed",
+                                "pay_at_venue"
+                            ]
+                        },
+                        "business": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "slug": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "slug"
+                            ]
+                        },
+                        "service": {
+                            "type": "string"
+                        },
+                        "option": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "start": {
+                            "type": "string"
+                        },
+                        "end": {
+                            "type": "string"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "priceCents": {
+                            "type": "integer"
+                        },
+                        "originalPriceCents": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ]
+                        },
+                        "offer": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "originalPriceCents": {
+                                    "type": "integer"
+                                },
+                                "discountCents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "label",
+                                "originalPriceCents",
+                                "discountCents"
+                            ]
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "amountPaidCents": {
+                            "type": "integer"
+                        },
+                        "canCancel": {
+                            "type": "boolean"
+                        },
+                        "canReschedule": {
+                            "type": "boolean"
+                        },
+                        "refundIfCancelledNow": {
+                            "type": [
+                                "object",
+                                "null"
+                            ],
+                            "properties": {
+                                "amountCents": {
+                                    "type": "integer"
+                                },
+                                "reason": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "amountCents",
+                                "reason"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "id",
+                        "reference",
+                        "status",
+                        "paymentStatus",
+                        "business",
+                        "service",
+                        "option",
+                        "start",
+                        "end",
+                        "timezone",
+                        "priceCents",
+                        "originalPriceCents",
+                        "offer",
+                        "currency",
+                        "amountPaidCents",
+                        "canCancel",
+                        "canReschedule",
+                        "refundIfCancelledNow"
+                    ]
+                }
+            },
+            "required": [
+                "proposalId",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links",
+                "booking"
+            ],
+            "type": "object"
+        },
         "title": "Check a request",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "bookings:read"
+                    ]
+                }
+            ]
         }
     }
 ]

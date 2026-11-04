@@ -30,6 +30,13 @@ import { resolveStep } from "@/lib/booking/steps";
 import { maxBookableDate } from "@/lib/booking/windows";
 import { todayInTz, toPlainDate, toTimeOfDay, zonedToIso } from "@/lib/format";
 import type { ModelContextTool } from "@/lib/webmcp/model-context";
+import {
+  availabilityOutput,
+  bookingOptionsOutput,
+  confirmOutput,
+  detailsOutput,
+  flowStatusOutput,
+} from "./booking-agent-output";
 import { freeSlot, monthDays, nextSlot } from "./booking-agent-availability";
 import type { BookingFlowModel } from "./use-booking-flow";
 
@@ -69,6 +76,7 @@ function getBookingOptions({ flow }: Deps): ModelContextTool {
       "the choice of who or what (resourceChoice), and the questions asked when booking; and its customer groups " +
       "(when there are any, the customer must choose one). Start here.",
     inputSchema: { type: "object", properties: {} },
+    outputSchema: bookingOptionsOutput,
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute: () => {
       const f = flow();
@@ -96,6 +104,7 @@ function checkAvailability({ flow, queryClient }: Deps): ModelContextTool {
       },
       required: ["serviceId"],
     },
+    outputSchema: availabilityOutput,
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute: async (input, { signal }) => {
       const { business, services } = flow();
@@ -181,6 +190,7 @@ function selectAppointment({ flow, queryClient }: Deps): ModelContextTool {
       },
       required: ["serviceId"],
     },
+    outputSchema: flowStatusOutput,
     execute: async (input, { signal }) => {
       const f = flow();
       const { business, services } = f;
@@ -252,6 +262,7 @@ function fillBookingDetails({ flow }: Deps): ModelContextTool {
         },
       },
     },
+    outputSchema: detailsOutput,
     execute: (input) => {
       const f = flow();
       const { form, questions, requirePhone } = f.details;
@@ -286,6 +297,7 @@ function getBookingStatus({ flow }: Deps): ModelContextTool {
       "The booking page's state: the step it shows, what has been chosen, the price and what's paid when, the " +
       "details given and what's missing, any problem it shows, and what to do next.",
     inputSchema: { type: "object", properties: {} },
+    outputSchema: flowStatusOutput,
     annotations: { readOnlyHint: true, untrustedContentHint: true },
     execute: () => flowStatus(statusInput(flow())),
   };
@@ -300,6 +312,7 @@ function confirmBooking({ flow }: Deps): ModelContextTool {
       "once the customer has seen the summary and price and agreed. When the service is paid online, the page " +
       "takes the customer to the payment page and they pay there themselves; the time is held while they do.",
     inputSchema: { type: "object", properties: {} },
+    outputSchema: confirmOutput,
     annotations: { consequentialHint: true },
     execute: async () => {
       const f = flow();

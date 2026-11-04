@@ -11,11 +11,13 @@ import ie.bookanything.http.receiveBody
 import ie.bookanything.http.receiveBoundedText
 import ie.bookanything.http.receiveJsonObjectOrNull
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.parseQueryString
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.contentType
+import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -41,6 +43,9 @@ private suspend fun ApplicationCall.oauthEndpoint(
         val (status, body) = block()
         respondOAuthJson(status, body)
     } catch (e: OAuthException) {
+        // RFC 6749 5.2: a client that authenticated with the Authorization header is told the scheme it may use.
+        val basic = request.headers[HttpHeaders.Authorization]?.startsWith("Basic", ignoreCase = true) == true
+        if (e.error == "invalid_client" && basic) response.header(HttpHeaders.WWWAuthenticate, "Basic realm=\"bookanything\"")
         respondOAuthError(e)
     }
 }
@@ -51,6 +56,18 @@ private suspend fun ApplicationCall.formParams(): Map<String, String?> {
     }
     val p = parseQueryString(receiveBoundedText(BodyLimits.OAUTH))
     return p.names().associateWith { p[it] }
+}
+
+/**
+ * The form parameters, with `client_id` also accepted from HTTP Basic (RFC 6749 2.3.1): some clients identify themselves
+ * that way even as public clients. Any password is ignored: our clients have no secret (`none`), and possession is
+ * proven by PKCE or the refresh token. A `client_id` in the body wins (the header, unauthenticated, adds nothing then).
+ */
+private suspend fun ApplicationCall.clientParams(): Map<String, String?> {
+    val params = formParams()
+    if (!params["client_id"].isNullOrBlank()) return params
+    val basic = OAuthBasic.clientId(request.headers[HttpHeaders.Authorization]) ?: return params
+    return params + ("client_id" to basic)
 }
 
 /** `/.well-known/…` metadata at the routing root (the frontend rewrites the same paths on its origin). */
@@ -111,10 +128,10 @@ fun Route.oauthRoutes(ctx: AppContext) {
     }
 
     route("/oauth/token") {
-        openCors(listOf(HttpMethod.Post))
+        openCors(listOf(HttpMethod.Post), headers = listOf(HttpHeaders.Authorization), expose = listOf(HttpHeaders.WWWAuthenticate))
         post {
             call.oauthEndpoint(ctx, OAUTH_TOKEN_LIMIT) {
-                val params = call.formParams()
+                val params = call.clientParams()
                 HttpStatusCode.OK to OAuthJson.encodeToString(
                     serializer<TokenResponse>(), withContext(Dispatchers.IO) { server.tokens.exchange(params) },
                 )
@@ -123,10 +140,10 @@ fun Route.oauthRoutes(ctx: AppContext) {
     }
 
     route("/oauth/revoke") {
-        openCors(listOf(HttpMethod.Post))
+        openCors(listOf(HttpMethod.Post), headers = listOf(HttpHeaders.Authorization), expose = listOf(HttpHeaders.WWWAuthenticate))
         post {
             call.oauthEndpoint(ctx, OAUTH_TOKEN_LIMIT) {
-                val params = call.formParams()
+                val params = call.clientParams()
                 withContext(Dispatchers.IO) { server.tokens.revoke(params) }
                 HttpStatusCode.OK to "{}"
             }

@@ -2,10 +2,10 @@
  * The booking flow's WebMCP tools, driven as a browser agent would through `document.modelContext`: look up, choose,
  * fill in and book, with the page following each step.
  */
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { assessment, business, consult, massage } from "@/lib/booking/__tests__/fixtures";
-import type { ModelContextTool } from "@/lib/webmcp/model-context";
+import { fakeModelContext, removeModelContext } from "@/test/model-context";
 import { BookingFlow } from "../booking-flow";
 import { availabilityFor, pinNow, renderWithProviders, stubApi, type ApiRequest } from "./booking-test-utils";
 import { router, trackHistory, untrackHistory, urlParams } from "./navigation-mock";
@@ -24,29 +24,6 @@ vi.mock("@/lib/auth/context", () => ({
   }),
 }));
 vi.mock("@/components/ui/toast", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-
-/** The browser's side of WebMCP: the tools the page registered, until their signal aborts. */
-function fakeModelContext() {
-  const tools = new Map<string, { tool: ModelContextTool; signal?: AbortSignal }>();
-  Object.assign(document, {
-    modelContext: {
-      registerTool: (tool: ModelContextTool, options?: { signal?: AbortSignal }) => {
-        tools.set(tool.name, { tool, signal: options?.signal });
-        return Promise.resolve();
-      },
-    },
-  });
-  const call = async (name: string, input: Record<string, unknown> = {}) => {
-    const entry = tools.get(name);
-    if (!entry) throw new Error(`No tool ${name}`);
-    let result: unknown;
-    await act(async () => {
-      result = await entry.tool.execute(input, { signal: new AbortController().signal });
-    });
-    return result as Record<string, unknown>;
-  };
-  return { tools, call };
-}
 
 const booked = {
   booking: { id: "bk1", reference: "BA-7K3F9Q" },
@@ -71,7 +48,7 @@ beforeEach(() => {
   agent = fakeModelContext();
 });
 afterEach(() => {
-  delete (document as { modelContext?: unknown }).modelContext;
+  removeModelContext();
   untrackHistory();
   vi.useRealTimers();
   vi.unstubAllGlobals();

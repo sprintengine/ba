@@ -814,7 +814,8 @@ hold's end.
   checkout link. Rate limits: 120 MCP requests/min per IP, plus the public booking
   limit and 10 MCP bookings/10 min per IP. Tool errors are returned as
   `isError` results with the API error code.
-- **Bo**, the owner/staff assistant in the dashboard: §17. Later: customer booking assistant.
+- **Bo**, the owner/staff assistant in the dashboard: §17. Customers bring their own AI instead of a chat of ours: the
+  customer MCP (§20) and WebMCP on our pages (§20.10).
 
 ## 10. Configuration (backend env)
 
@@ -1546,10 +1547,12 @@ as them. Customer-facing guide: `/help/ai-assistant`. Business members do the sa
   authorization responses (`authorization_response_iss_parameter_supported: true`), scope challenges (401 `scope`, 403
   `insufficient_scope`), refresh token rotation for public clients, exact redirect URI matching (any loopback port and name,
   RFC 8252), RFC 7009 revocation. This is backwards compatible with clients built for 2025-06-18 and 2025-11-25 authorization.
-- **Transport and lifecycle: MCP 2025-11-25** Streamable HTTP (via the official Kotlin SDK 0.15.0, the latest release; it
+- **Transport and lifecycle: MCP 2025-11-25** Streamable HTTP (via the official Kotlin SDK 0.16.0, the latest release; it
   negotiates 2024-11-05 through 2025-11-25): stateless, JSON responses, no sessions, `initialize` + `tools/list` + `tools/call`.
-  The 2026-07-28 stateless protocol (`server/discover`, no `initialize`) is not in the Kotlin SDK yet; 2026-07-28 clients fall back
-  to the initialize handshake per the spec's backward-compatibility rules. Upgrade the SDK when it ships 2026-07-28.
+  The 2026-07-28 stateless protocol (`server/discover`, no `initialize`) is not in the Kotlin SDK yet (0.16.0 has its types
+  only); 2026-07-28 clients fall back to the initialize handshake per the spec's backward-compatibility rules: a request
+  without `initialize` gets a 400 whose body is not one of the new protocol errors (`-32020`..`-32022`), which is what tells
+  them to (`McpServerTest` pins this). Upgrade the SDK when it serves 2026-07-28.
 
 ### 20.2 Where things live
 
@@ -1596,7 +1599,10 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
   Metadata documents: an https `client_id` with a path is fetched SSRF-safely (public addresses only, checked per connection, no
   redirects, 2 s, 5 KB, JSON), must name itself exactly, list valid `redirect_uris`, a `client_name`, and `none` authentication.
   Only the authorization endpoint fetches (at most 4 at a time; a document that failed is not fetched again for 5 minutes); the
-  token endpoint only knows clients stored by then.
+  token endpoint only knows clients stored by then. A refused document is logged with the reason (`ClientRegistry`, warn: the
+  user only sees that the app can't be connected). The token and revocation endpoints take `client_id` in the form or, when
+  the form has none, from `Authorization: Basic` (RFC 6749 2.3.1, the password ignored: there are no secrets; an unencoded
+  `https://` client_id is read up to the last colon).
 - **Authorize**: unknown client or unregistered redirect → our error page, never redirected. Otherwise errors
   (`unsupported_response_type`, `invalid_request` for missing/non-S256 PKCE, `invalid_target` for another `resource`) go back
   to the registered redirect with `state` and `iss`. The consent screen shows the app, where it will send the user (hostname,
@@ -1630,8 +1636,14 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
 - **CORS**: the well-known documents, `/v1/oauth/register|token|revoke` and the MCP servers allow any origin (bearer tokens or
   public data only, no cookies), exposing `WWW-Authenticate`, for browser-based MCP clients. The MCP servers allow the
   `Authorization`, `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` request headers (2026-07-28 clients send the last two
-  on every request; a preflight refusing them fails before the client can fall back to an older version). The consent API
-  (`/v1/oauth/authorize`) and everything else keep the default same-origin policy.
+  on every request; a preflight refusing them fails before the client can fall back to an older version). The token and
+  revocation endpoints allow `Authorization` too (Basic client identification). The consent API (`/v1/oauth/authorize`) and
+  everything else keep the default same-origin policy.
+- **Origin** (Streamable HTTP: an `Origin` that is present and invalid gets 403): the MCP routes refuse, before CORS and
+  authentication, an `Origin` of `null` (sandboxed frames, `file:` pages) or anything that isn't `scheme://host[:port]`, with a
+  JSON-RPC error with a null id (`McpOriginCheck`). Every real origin is allowed: the rule exists against DNS rebinding of
+  local servers, while ours are public, take bearer tokens and never cookies, and browser-based clients run on their own
+  sites. Requests without `Origin` (desktop and server-side clients) are unaffected.
 - **Consent page hardening**: `/oauth/*` is served with `X-Frame-Options: DENY`, `frame-ancestors 'none'` (no clickjacking of
   "Allow") and `Referrer-Policy: no-referrer`; it only ever navigates to a `redirectTo` returned by the API (a registered redirect).
 
@@ -1640,13 +1652,29 @@ pair outlives a narrowed consent, however a refresh or code exchange interleaves
 | Tool | Scope | Does |
 |---|---|---|
 | `search_marketplace` | marketplace:read | §18 search (text, city or point + radius, category, date, deals, paging) |
-| `get_business` | marketplace:read | profile, policies, services (options, add-ons, questions), deals |
+| `get_business` | marketplace:read | profile, policies, services (options, add-ons, resource, questions), deals, `bookingUrl` |
 | `check_availability` | marketplace:read | free times with deal prices, using the customer's own group at that business; `after` steps forward (a business offering only its next available time returns one time and `nextAvailableOnly: true`) |
-| `book` | bookings:write | public booking as the user (verified email, their group); deals apply; paid → `payment_required` + `paymentUrl` for the human; `payment: at_venue` for a service with `allowPayAtVenue`; `idempotencyKey` |
-| `list_my_bookings` | bookings:read | upcoming / past / all |
+| `book` | bookings:write | prepares a booking request (`slug`, `serviceId`, `start`; `optionId`, `addonIds`, `resourceId`, `answers`, `notes`, `phone`, `payment: online \| at_venue`) as the user (verified email, their group); deals apply; nothing is booked until it goes ahead (§20.9) |
+| `list_my_bookings` | bookings:read | upcoming / past / all (`status`, `limit` 1-50) |
 | `get_next_appointment` | bookings:read | next upcoming booking or null |
-| `reschedule_booking` | bookings:write | customer rules (notice window, deal schedule) |
-| `cancel_booking` | bookings:write | without `confirm` returns the refund preview and changes nothing; `confirm: true` cancels |
+| `find_times_to_move` | bookings:read | the times one of the user's bookings can move to (`bookingId`, `from`, `to`, `resourceId`, `after`): its own slot free, its deal's schedule |
+| `get_payment_link` | bookings:read | the checkout link of a booking still held for payment (`bookingId`) |
+| `reschedule_booking` | bookings:write | prepares a move (`bookingId`, `start`, `resourceId`) under the customer rules (notice window, deal schedule) |
+| `cancel_booking` | bookings:write | prepares a cancellation (`bookingId`, `reason`) with the refund the policy gives now |
+| `confirm_action` | bookings:write | carries out a prepared request that is `awaiting_confirmation` (`proposalId`); idempotent |
+| `cancel_action` | bookings:write | drops a prepared request (`proposalId`) |
+| `get_proposal` | bookings:read | where a request stands (`proposalId`): awaiting approval (with `approvalUrl`) or confirmation, confirmed (with the booking and links), rejected, expired, failed |
+
+**How tools are listed** (all three servers, `McpTool.listed`): each has an `outputSchema` generated from its result DTOs
+(`OutputSchemas`: every property required since the API writes defaults and nulls, nullable ones `["type", "null"]`, enums
+listed, additional properties allowed); clients such as the TypeScript SDK reject `structuredContent` that doesn't match, and
+every test that calls a tool checks the result against it (`McpOutputCheck`). Each tool and server carries our icon (`icons`:
+`/icon.svg`, `/icon-192.png`, `/icon-512.png` on the app origin), and `_meta.securitySchemes` says how it is authorized
+(ChatGPT reads it): `[{type: "oauth2", scopes: [<the tool's scope>]}]` on the signed-in servers, `[{type: "noauth"}]` on the
+anonymous one. Annotations: reads are `readOnlyHint`; `book`, `reschedule_booking`, `cancel_booking` and the business write
+tools only prepare a change, so they are not `openWorldHint` (nothing reaches anyone else until it goes ahead);
+`confirm_action` is `destructiveHint` and `openWorldHint`, since carrying out a change books, moves or cancels with a business
+(or, on the business server, changes a customer's booking).
 
 Every tool goes through the same services as the website (`PublicBooking`, `MeService`, `BookingEngine`, `BookingLifecycle`);
 another customer's booking is `NOT_FOUND`. Bookings get `source=api`; audit events use actor `api` with the user and
@@ -1686,15 +1714,14 @@ their role allows. Bo (§17) stays the in-dashboard assistant; the business serv
   approving it on bookanything carries it out. Either way it runs through `ActionService` exactly as Bo's confirm (row locked,
   savepoint, idempotent, `requireRole` again), audited as actor `ai` with `via: oauth:<client_id>` and `approvedBy`
   (`member` | `app`); `cancel_action` drops it. Only the grant that proposed (or the member, §20.8) can decide a proposal; Bo's
-  dashboard confirm route refuses it, and an app can't decide Bo's. `confirm_action` is annotated `destructiveHint`.
+  dashboard confirm route refuses it, and an app can't decide Bo's. `confirm_action` is annotated `destructiveHint` and
+  `openWorldHint` (§20.5).
 - **Tools added with it** (for Bo too): `get_booking` (detail, payments, history), `approve_bookings`, `decline_booking`,
   `set_booking_outcome` (completed / no-show), `mark_paid_in_person`, `update_booking_notes`, `get_customer`, `create_customer`,
   `update_customer`, `list_time_off`, `remove_time_off`, and for admins `list_deals`, `pause_or_resume_deal`. Out of scope, as
   for Bo (§17.4): billing and payouts, deleting the business, team roles and invitations, customer erasure and export, the site.
 - **Limits**: 3000/min per IP before authentication; 120 requests/min per grant; 60 proposals per 10 minutes per grant;
   60 confirmations per 10 minutes per user (across their apps).
-- **Customer server additions** (§20.5): `find_times_to_move` (the times one of the user's bookings can move to: its own slot
-  free, its deal's schedule) and `get_payment_link` (the checkout link of a booking still held for payment), both `bookings:read`.
 
 ### 20.8 Approvals (a person approves what their agent changes)
 
@@ -1736,6 +1763,76 @@ asked (or the customer) can see or decide one. Carrying one out claims it first 
 runs the command, so approving twice books once (the booking's idempotency key is the request id); any failure after the
 claim is recorded (`failed`, the customer told to check their bookings), so a request never hangs. Requests are kept 90
 days and deleted with the account.
+
+### 20.10 WebMCP (agents in the visitor's browser)
+
+Customers bring their own AI: besides connecting an assistant to the customer MCP (§20), an agent built into their browser
+can use our pages directly through WebMCP (W3C Web Machine Learning Community Group draft; Chrome and Edge origin trials).
+A page registers tools on `document.modelContext`; the agent calls them in the visitor's own tab, with their session, while
+they watch. There is no OAuth and no server side: the tools drive the page and call the API exactly as the page does.
+
+| Page | Tools (`components/…`) |
+|---|---|
+| Booking flow `/[slug]/book` | `get_booking_options`, `check_availability`, `select_appointment`, `fill_booking_details`, `get_booking_status`, `confirm_booking` (`booking/booking-agent-tools.ts`) |
+| Marketplace `/explore` | `search_businesses` (sets the page's own filters, so the visitor sees the results the agent reads), `open_business` (its page or booking flow, whose tools take over) (`explore/explore-agent-tools.ts`) |
+| My bookings `/my/bookings` (signed in) | `list_my_bookings`, `cancel_booking`, `reschedule_booking` (`booking/my-bookings-agent-tools.ts`) |
+
+- **Loading**: `lib/webmcp/use-model-context-tools.ts` registers a page's tools with an `AbortSignal` for as long as the
+  page is shown, and imports them only where `document.modelContext` exists (Chrome before 150: `navigator.modelContext`), so
+  other browsers download nothing. The tools read the page's state as last rendered. Explore's are registered by its layout,
+  so a search that moves to a city's page doesn't unregister them mid-call; `search_businesses` fetches through the page's
+  own query (same key, page size and cache).
+- **Input and output**: input is checked like form input (`lib/booking/agent.ts`); results are in words (dates and times in
+  the business's zone, formatted prices) and never repeat sensitive answers (`lib/booking/agent-views.ts`). A failure is
+  returned as `{ error }` rather than thrown (a thrown error reaches the agent only as "tool rejected"). Every tool declares
+  an `outputSchema`: its result with the keys always present required, or `{ error }` (`toolOutput`); the unit tests check
+  each result against it (ajv, `src/test/model-context.ts`).
+- **One change at a time on My bookings**: while a cancellation or move the agent opened is showing, another is refused,
+  and it lapses once the booking is no longer upcoming.
+- **Nothing consequential happens silently**: `confirm_booking`, `cancel_booking` and `reschedule_booking` are
+  `consequentialHint` (browsers may ask the user first). `confirm_booking` works only on the review step, after the customer
+  has seen the summary and price, and payment stays on the payment provider's page. `cancel_booking` and `reschedule_booking`
+  only open the booking card's own dialog (the refund, or the free times): the customer confirms there or dismisses it.
+  Reads that return what a business wrote are `untrustedContentHint`.
+- **Origin trials**: `WEBMCP_ORIGIN_TRIAL_TOKEN` (Chrome) and `WEBMCP_EDGE_ORIGIN_TRIAL_TOKEN` (Edge) are sent together in
+  one `Origin-Trial` header on every page (`next.config.ts`: a trial is per document, and visitors reach the pages with
+  tools by client-side navigation); each browser uses the token it signed.
+- **Tests**: Vitest drives each page's tools through a fake `document.modelContext`; the Playwright `webmcp.spec.ts`
+  installs a stand-in before the page loads and runs explore → booking page and a cancellation that only opens the dialog.
+
+### 20.11 Client compatibility notes
+
+What the MCP clients we've seen expect of the servers and the authorization server, and what we do about it.
+
+- **Claude** (claude.ai, the desktop app, Claude Code): redirects to `https://claude.ai/api/mcp/auth_callback` (Claude Code:
+  a loopback port). It identifies itself with a client ID metadata document only when `token_endpoint_auth_methods_supported`
+  includes `none` (ours is exactly `["none"]`), otherwise it registers (DCR). It checks that the protected resource metadata's
+  `resource` is exactly the URL the user typed, so the help page (`/help/ai-assistant`) shows the canonical
+  `${NEXT_PUBLIC_APP_URL}/mcp`: no trailing slash, the configured host. Next answers `/mcp/` with a 308 to `/mcp`, and the
+  metadata keeps saying `/mcp`, so a URL typed with a trailing slash, or on a host the deployment redirects (`www.` to the
+  apex), fails that check; users should paste the URL as shown. (Our own RFC 8707 comparison ignores a trailing slash and
+  host case.)
+- **ChatGPT**: redirects to `https://chatgpt.com/connector_platform_oauth_redirect` (its stable URI, used because we send
+  RFC 9207 `iss`), sends `resource` on both the authorization and token requests, asks for the advertised scopes, and reads
+  `_meta.securitySchemes` (§20.5) to know which tools need the account.
+- **Cursor**: registers with DCR as a public client, with `https://www.cursor.com/agents/mcp/oauth/callback` (web and its
+  agents) and `http://localhost:8787/callback` (desktop). Unless the user configures scopes, it asks for every
+  `scopes_supported` of the authorization server metadata, the business server's included: those are dropped (§20.4, scopes)
+  rather than failing with `invalid_scope` as they used to.
+- **2026-07-28 clients** send `Mcp-Method` and `Mcp-Name` on every request (allowed by CORS, §20.4) and try a request without
+  `initialize` first; our 400 isn't one of the new protocol errors, so they fall back to `initialize` and 2025-11-25 (§20.1).
+- **Clients refreshing in parallel** (several requests find the access token expired at once) or retrying a lost response get
+  a new pair within the reuse grace minute (§20.3) instead of being disconnected.
+- **Browser-based clients** (MCP inspectors, web apps) call the metadata, token endpoint and MCP servers cross-origin with
+  bearer tokens; an `Origin` of `null` is refused (§20.4).
+- **MCP conformance suite** (`npx @modelcontextprotocol/conformance server --url …/v1/mcp`, 0.1.16, active suite, run against
+  the anonymous server): initialize, ping, `tools/list`, a text tool call and a tool error pass. The other scenarios exercise
+  what we don't offer and fail as expected (`-32601` for prompts, resources, logging and completion; no sampling,
+  elicitation or progress; the reference server's fixture tools such as image or audio content), and its DNS-rebinding check
+  expects a localhost server to refuse a foreign `Host`/`Origin`, while ours are public servers that allow every real origin
+  (§20.4, Origin). Re-run it after SDK upgrades; anything else failing is real.
+- Needs a live deployment to confirm: the `www.`/apex redirect and trailing-slash behaviour on the real host, the
+  `Origin-Trial` header, and each client's connection end to end.
 
 ## 21. Release schedules (when days open for online booking)
 

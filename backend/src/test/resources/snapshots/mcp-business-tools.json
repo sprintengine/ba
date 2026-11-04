@@ -7,12 +7,91 @@
             "type": "object"
         },
         "description": "The businesses you're a member of on bookanything: slug, name, your role there, its timezone and today's date there, and whether its owner lets you use AI apps there. Pass the slug as `business` to the other tools (it may be left out when there is only one).",
+        "outputSchema": {
+            "properties": {
+                "businesses": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "slug": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "role": {
+                                "type": "string"
+                            },
+                            "timezone": {
+                                "type": "string"
+                            },
+                            "today": {
+                                "type": "string"
+                            },
+                            "aiAgentsAllowed": {
+                                "type": "boolean"
+                            },
+                            "dashboardUrl": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "slug",
+                            "name",
+                            "role",
+                            "timezone",
+                            "today",
+                            "aiAgentsAllowed",
+                            "dashboardUrl"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "businesses"
+            ],
+            "type": "object"
+        },
         "title": "List my businesses",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -30,12 +109,101 @@
             "type": "object"
         },
         "description": "Carries out a proposal you made (a booking, move, cancellation, blocked time, …) exactly as proposed, when its status is awaiting_confirmation. Only call it after showing the proposal to the member and getting their clear agreement. A proposal awaiting_approval doesn't go ahead this way: the member approves it on bookanything at its approvalUrl. Confirming twice returns the first result. A proposal can't be confirmed after it expires or if the time was taken meanwhile.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links"
+            ],
+            "type": "object"
+        },
         "title": "Confirm a proposal",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": true,
             "idempotentHint": true,
-            "openWorldHint": false
+            "openWorldHint": true
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -53,12 +221,101 @@
             "type": "object"
         },
         "description": "Drops a proposal the member doesn't want, so it can't be confirmed later. Nothing changes.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links"
+            ],
+            "type": "object"
+        },
         "title": "Drop a proposal",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -76,12 +333,101 @@
             "type": "object"
         },
         "description": "Where a proposal you made stands: awaiting_approval (the member hasn't approved it on bookanything yet; approvalUrl is the link to give them), awaiting_confirmation, confirmed (with what was done), rejected, expired or failed. Use it after the member says they've approved or declined it.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "url"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "message",
+                "approvalUrl",
+                "links"
+            ],
+            "type": "object"
+        },
         "title": "Check a proposal",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -107,12 +453,149 @@
             "type": "object"
         },
         "description": "Proposes approving booking requests (status pending_approval; up to 20): each customer is emailed that they're booked. Nothing is approved until the user confirms. find_bookings with status pending_approval lists them. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Approve bookings",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -160,12 +643,149 @@
             "type": "object"
         },
         "description": "Proposes blocking time for one resource on one date (time off, a meeting, maintenance): no new bookings can be made then. Existing bookings are listed and stay booked. Staff can only block their own time. Nothing changes until confirmed. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Block time",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -181,12 +801,62 @@
             "type": "object"
         },
         "description": "Today's bookings, the next 7 days, bookings and revenue in the last 30 days, pending approvals and the setup checklist. Call this for \"how are we doing\", \"what needs my attention\" or a daily summary. Staff get their own numbers and no revenue.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Business overview",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -234,12 +904,149 @@
             "type": "object"
         },
         "description": "Proposes cancelling one or more bookings (up to 20), showing each booking and the refund it would get; nothing is cancelled until the user confirms. refund: policy (the business's rules: a business cancellation refunds in full), full or none. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Cancel bookings",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -285,12 +1092,62 @@
             "type": "object"
         },
         "description": "Finds free start times for a service (and optionally one resource) over up to 7 days. Call this before proposing a new booking or a reschedule, and to answer \"when is X free\". Times with a deal say so (bookings there get it automatically). Staff see their own calendar only.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Check availability",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -319,12 +1176,149 @@
             "type": "object"
         },
         "description": "Proposes closing the whole business for one date (bank holiday, training day): nobody can book that day. Every existing booking that day is listed and stays booked (cancel them separately if asked). Nothing changes until confirmed. Admins and owners only. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Close date",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -430,12 +1424,149 @@
             "type": "object"
         },
         "description": "Proposes a new booking; nothing is booked until the user confirms. Check the time with check_availability first and use one of its start values. Use an existing customer's id when find_customers finds them, otherwise give newCustomer. paymentMode: at_venue unless the user wants a payment link (collect_online) or it is free (none). Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Create booking",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -478,12 +1609,149 @@
             "type": "object"
         },
         "description": "Proposes adding a customer record (for someone who books by phone or in person). Check find_customers first: an email can only belong to one customer. Nothing is added until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Create customer",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -512,12 +1780,149 @@
             "type": "object"
         },
         "description": "Proposes declining a booking request (status pending_approval): the customer is emailed, with the reason if given, and anything paid is refunded in full. Nothing happens until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Decline booking",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -578,12 +1983,62 @@
             "type": "object"
         },
         "description": "Searches bookings by customer name, email, phone or booking reference, status and date range. Call this to find a specific booking before rescheduling, cancelling or sending a payment link. Without dates it searches 90 days back to 180 days ahead.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Find bookings",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -605,12 +2060,62 @@
             "type": "object"
         },
         "description": "Finds customers by name, email or phone. Call this to get a customer's id before booking them in or listing their bookings. Staff see customers who have booked with them (or have no bookings yet).",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Find customers",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -632,12 +2137,62 @@
             "type": "object"
         },
         "description": "One booking in full: its details, payments (charges, refunds, paid at the venue) and history (who made, moved, approved or cancelled it, and when). Find the id with find_bookings or get_schedule.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Get booking",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -659,12 +2214,62 @@
             "type": "object"
         },
         "description": "One customer in full: contact details, notes and their bookings here, newest first. Find the id with find_customers.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Get customer",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -680,12 +2285,62 @@
             "type": "object"
         },
         "description": "The booking policies (notice, how far ahead, cancellation window and late refund, holds) and upcoming whole-business closures. Call this for questions about cancellations, refunds, notice or closed days.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Get policies",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -719,12 +2374,62 @@
             "type": "object"
         },
         "description": "Lists the bookings on the schedule for one or more days (not cancelled ones). Call this for questions like \"what's on today\", \"who is in tomorrow\", \"am I busy on Friday\" or before suggesting changes to a day. Staff only see their own calendar. Rows are short (no contact details or form answers: find_bookings has those) and stop at 60 bookings (truncated: ask for fewer days or one resource).",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Get schedule",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -751,12 +2456,62 @@
             "type": "object"
         },
         "description": "Business statistics for a date range (up to 92 days): bookings, cancellations, no-shows, revenue, refunds, new customers, top services and resource utilisation. Call this for questions about performance, busiest services or trends. Admins and owners only.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "Get stats",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -772,12 +2527,62 @@
             "type": "object"
         },
         "description": "The business's deals: what each discounts and when, whether it's active or paused, and how many bookings used it. Admins and owners only.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "List deals",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -793,12 +2598,62 @@
             "type": "object"
         },
         "description": "Lists the bookable resources (people, rooms, equipment) with ids and weekly opening hours. Call this to find a resource id, or before blocking time or changing opening hours. Staff see only their own resources.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "List resources",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -814,12 +2669,62 @@
             "type": "object"
         },
         "description": "Lists the business's services with ids, durations, prices, payment modes and options. Call this to find a service id before checking availability, booking, or changing a price or duration.",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "List services",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -849,12 +2754,62 @@
             "type": "object"
         },
         "description": "Blocked time and extra hours on each resource, and closures of the whole business, from a date (today by default). Use an id with remove_time_off. Staff see only their own resources (and the closures).",
+        "outputSchema": {
+            "properties": {
+                "business": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "data": {}
+            },
+            "required": [
+                "business",
+                "summary",
+                "data"
+            ],
+            "type": "object"
+        },
         "title": "List time off",
         "annotations": {
             "readOnlyHint": true,
             "destructiveHint": false,
             "idempotentHint": true,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:read"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -876,12 +2831,149 @@
             "type": "object"
         },
         "description": "Proposes recording that what's still due on a booking was paid at the venue (cash or card terminal). Nothing is recorded until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Mark paid in person",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -912,12 +3004,149 @@
             "type": "object"
         },
         "description": "Proposes pausing a deal (it stops discounting new bookings; booked prices stay) or resuming a paused one. Nothing changes until the user confirms. Admins and owners only. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Pause or resume deal",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -939,12 +3168,149 @@
             "type": "object"
         },
         "description": "Proposes removing blocked time or extra hours from a resource, or reopening a closed date (admins), by its id from list_time_off. Nothing changes until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Remove time off",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -987,12 +3353,149 @@
             "type": "object"
         },
         "description": "Proposes moving a booking to a new start time (same service and length); nothing moves until the user confirms. Find the booking with find_bookings or get_schedule and check free times first. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Reschedule booking",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1014,12 +3517,149 @@
             "type": "object"
         },
         "description": "Proposes emailing the customer the link to pay for a booking that is waiting for payment (status held); nothing is sent until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Send payment link",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1054,12 +3694,149 @@
             "type": "object"
         },
         "description": "Proposes recording how bookings that have started went (up to 20): completed or no_show. Nothing changes until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Set booking outcome",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1088,12 +3865,149 @@
             "type": "object"
         },
         "description": "Proposes replacing a booking's internal notes (seen by the team only, never the customer); null clears them. To add to the notes, include the existing text (get_booking shows it). Nothing changes until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Update booking notes",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1143,12 +4057,149 @@
             "type": "object"
         },
         "description": "Proposes changing a customer's name, email, phone or notes. null keeps a field as it is; an empty string clears it (not the name). Nothing changes until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Update customer",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1215,12 +4266,149 @@
             "type": "object"
         },
         "description": "Proposes new weekly hours for some days of the week, for one or more resources (e.g. \"we close at 1pm on Fridays from now on\"). Only the days given change; an empty intervals list means closed that day. Staff can only change their own hours. Nothing changes until the user confirms. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Update opening hours",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     },
     {
@@ -1256,12 +4444,149 @@
             "type": "object"
         },
         "description": "Proposes changing a service's base price and/or duration. Existing bookings keep their price and time. Nothing changes until the user confirms. Admins and owners only. Returns a proposal: nothing changes until the member approves it on bookanything (its approvalUrl) or, for a change their business lets apps make, you call confirm_action with its id.",
+        "outputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string"
+                },
+                "business": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "before": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "after": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "label",
+                            "before",
+                            "after"
+                        ]
+                    }
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "detail": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "detail"
+                        ]
+                    }
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "destructive": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "approvalUrl": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "next": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "proposalId",
+                "business",
+                "status",
+                "title",
+                "summary",
+                "changes",
+                "items",
+                "warnings",
+                "destructive",
+                "expiresAt",
+                "approvalUrl",
+                "next"
+            ],
+            "type": "object"
+        },
         "title": "Update service",
         "annotations": {
             "readOnlyHint": false,
             "destructiveHint": false,
             "idempotentHint": false,
             "openWorldHint": false
+        },
+        "icons": [
+            {
+                "src": "https://bookanything.ie/icon.svg",
+                "mimeType": "image/svg+xml",
+                "sizes": [
+                    "any"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-192.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "192x192"
+                ]
+            },
+            {
+                "src": "https://bookanything.ie/icon-512.png",
+                "mimeType": "image/png",
+                "sizes": [
+                    "512x512"
+                ]
+            }
+        ],
+        "_meta": {
+            "securitySchemes": [
+                {
+                    "type": "oauth2",
+                    "scopes": [
+                        "business:write"
+                    ]
+                }
+            ]
         }
     }
 ]

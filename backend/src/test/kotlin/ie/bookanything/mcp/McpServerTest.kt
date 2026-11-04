@@ -4,6 +4,7 @@ import ie.bookanything.support.Api
 import ie.bookanything.support.DEFAULT_NOW
 import ie.bookanything.support.Fixtures
 import ie.bookanything.support.MarketplaceFixtures
+import ie.bookanything.support.McpOutputCheck
 import ie.bookanything.support.MutableClock
 import ie.bookanything.support.TestConfig
 import ie.bookanything.support.TestEnv
@@ -58,7 +59,9 @@ class McpServerTest {
     }
 
     private suspend fun call(api: Api, tool: String, args: JsonElement): JsonObject =
-        rpc(api, "tools/call", buildJsonObject { put("name", tool); put("arguments", args) })["result"]!!.jsonObject
+        rpc(api, "tools/call", buildJsonObject { put("name", tool); put("arguments", args) })["result"]!!.jsonObject.also {
+            McpOutputCheck.assertValid(AnonymousMcp.TOOLS, tool, it)
+        }
 
     private fun isError(result: JsonObject) = result["isError"]?.jsonPrimitive?.content == "true"
     private fun text(result: JsonObject) = result["content"]!!.jsonArray.first().jsonObject["text"]!!.jsonPrimitive.content
