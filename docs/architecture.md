@@ -814,7 +814,8 @@ hold's end.
   checkout link. Rate limits: 120 MCP requests/min per IP, plus the public booking
   limit and 10 MCP bookings/10 min per IP. Tool errors are returned as
   `isError` results with the API error code.
-- **Bo**, the owner/staff assistant in the dashboard: §17. Later: customer booking assistant.
+- **Bo**, the owner/staff assistant in the dashboard: §17. Customers bring their own AI instead of a chat of ours: the
+  customer MCP (§20) and WebMCP on our pages (§20.10).
 
 ## 10. Configuration (backend env)
 
@@ -1798,6 +1799,40 @@ they watch. There is no OAuth and no server side: the tools drive the page and c
   tools by client-side navigation); each browser uses the token it signed.
 - **Tests**: Vitest drives each page's tools through a fake `document.modelContext`; the Playwright `webmcp.spec.ts`
   installs a stand-in before the page loads and runs explore → booking page and a cancellation that only opens the dialog.
+
+### 20.11 Client compatibility notes
+
+What the MCP clients we've seen expect of the servers and the authorization server, and what we do about it.
+
+- **Claude** (claude.ai, the desktop app, Claude Code): redirects to `https://claude.ai/api/mcp/auth_callback` (Claude Code:
+  a loopback port). It identifies itself with a client ID metadata document only when `token_endpoint_auth_methods_supported`
+  includes `none` (ours is exactly `["none"]`), otherwise it registers (DCR). It checks that the protected resource metadata's
+  `resource` is exactly the URL the user typed, so the help page (`/help/ai-assistant`) shows the canonical
+  `${NEXT_PUBLIC_APP_URL}/mcp`: no trailing slash, the configured host. Next answers `/mcp/` with a 308 to `/mcp`, and the
+  metadata keeps saying `/mcp`, so a URL typed with a trailing slash, or on a host the deployment redirects (`www.` to the
+  apex), fails that check; users should paste the URL as shown. (Our own RFC 8707 comparison ignores a trailing slash and
+  host case.)
+- **ChatGPT**: redirects to `https://chatgpt.com/connector_platform_oauth_redirect` (its stable URI, used because we send
+  RFC 9207 `iss`), sends `resource` on both the authorization and token requests, asks for the advertised scopes, and reads
+  `_meta.securitySchemes` (§20.5) to know which tools need the account.
+- **Cursor**: registers with DCR as a public client, with `https://www.cursor.com/agents/mcp/oauth/callback` (web and its
+  agents) and `http://localhost:8787/callback` (desktop). Unless the user configures scopes, it asks for every
+  `scopes_supported` of the authorization server metadata, the business server's included: those are dropped (§20.4, scopes)
+  rather than failing with `invalid_scope` as they used to.
+- **2026-07-28 clients** send `Mcp-Method` and `Mcp-Name` on every request (allowed by CORS, §20.4) and try a request without
+  `initialize` first; our 400 isn't one of the new protocol errors, so they fall back to `initialize` and 2025-11-25 (§20.1).
+- **Clients refreshing in parallel** (several requests find the access token expired at once) or retrying a lost response get
+  a new pair within the reuse grace minute (§20.3) instead of being disconnected.
+- **Browser-based clients** (MCP inspectors, web apps) call the metadata, token endpoint and MCP servers cross-origin with
+  bearer tokens; an `Origin` of `null` is refused (§20.4).
+- **MCP conformance suite** (`npx @modelcontextprotocol/conformance server --url …/v1/mcp`, 0.1.16, active suite, run against
+  the anonymous server): initialize, ping, `tools/list`, a text tool call and a tool error pass. The other scenarios exercise
+  what we don't offer and fail as expected (`-32601` for prompts, resources, logging and completion; no sampling,
+  elicitation or progress; the reference server's fixture tools such as image or audio content), and its DNS-rebinding check
+  expects a localhost server to refuse a foreign `Host`/`Origin`, while ours are public servers that allow every real origin
+  (§20.4, Origin). Re-run it after SDK upgrades; anything else failing is real.
+- Needs a live deployment to confirm: the `www.`/apex redirect and trailing-slash behaviour on the real host, the
+  `Origin-Trial` header, and each client's connection end to end.
 
 ## 21. Release schedules (when days open for online booking)
 
