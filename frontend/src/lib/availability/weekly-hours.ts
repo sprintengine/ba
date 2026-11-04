@@ -157,6 +157,60 @@ export function nextRange(ranges: readonly TimeRange[]): TimeRange {
   return { startTime: minutesToTime(start), endTime: minutesToTime(end), audienceGroupIds: [] };
 }
 
+/** Times snap to this many minutes on the timeline, and a range is at least this long. */
+export const TIMELINE_STEP = 15;
+const LAST_MINUTE = timeToMinutes(LATEST_END);
+
+/** The whole hours every day's timeline shares, so days line up: all the ranges, and at least 08:00–18:00. */
+export function timelineAxis(week: WeekHours): { start: number; end: number } {
+  const ranges = WEEKDAYS.flatMap(({ day }) => week[day]);
+  const starts = ranges.map((r) => timeToMinutes(r.startTime));
+  const ends = ranges.map((r) => endMinutes(r.endTime));
+  return {
+    start: Math.min(8 * 60, ...starts.map((m) => Math.floor(m / 60) * 60)),
+    end: Math.max(18 * 60, ...ends.map((m) => Math.ceil(m / 60) * 60)),
+  };
+}
+
+/** A new range from a click at `minute`: up to four hours, stopping at the next range. Null on a taken time. */
+export function rangeAt(ranges: readonly TimeRange[], minute: number): TimeRange | null {
+  const start = Math.floor(minute / 30) * 30;
+  const taken = ranges.some((r) => start >= timeToMinutes(r.startTime) && start < endMinutes(r.endTime));
+  if (taken) return null;
+  const later = ranges.map((r) => timeToMinutes(r.startTime)).filter((m) => m > start);
+  const end = Math.min(start + 240, LAST_MINUTE, ...later);
+  if (end - start < TIMELINE_STEP) return null;
+  return { startTime: minutesToTime(start), endTime: minutesToTime(end), audienceGroupIds: [] };
+}
+
+/** `ranges` with one edge of the range at `index` moved to `minute`: snapped, and clear of its neighbours. */
+export function moveRangeEdge(
+  ranges: readonly TimeRange[],
+  index: number,
+  edge: "start" | "end",
+  minute: number,
+): TimeRange[] {
+  const range = ranges[index];
+  if (!range) return [...ranges];
+  const start = timeToMinutes(range.startTime);
+  const end = endMinutes(range.endTime);
+  const others = ranges.filter((_, i) => i !== index);
+  const lo =
+    edge === "start"
+      ? Math.max(0, ...others.map((r) => endMinutes(r.endTime)).filter((m) => m <= start))
+      : start + TIMELINE_STEP;
+  const hi =
+    edge === "end"
+      ? Math.min(LAST_MINUTE, ...others.map((r) => timeToMinutes(r.startTime)).filter((m) => m >= end))
+      : end - TIMELINE_STEP;
+  if (hi < lo) return [...ranges];
+  const snapped = Math.round(minute / TIMELINE_STEP) * TIMELINE_STEP;
+  const moved = minutesToTime(Math.min(hi, Math.max(lo, snapped)));
+  return ranges.map((r, i) =>
+    i === index ? { ...r, [edge === "start" ? "startTime" : "endTime"]: moved } : r,
+  );
+}
+
 /** Per-day validation: an error message per range index (or null). */
 export function validateDay(ranges: readonly TimeRange[]): (string | null)[] {
   const errors: (string | null)[] = ranges.map((r) => rangeError(r.startTime, r.endTime));

@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { focusManager } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,12 +43,20 @@ const saveButton = () => screen.getByRole("button", { name: "Save hours" });
 const savedRules = (api: ReturnType<typeof fakeResourcesApi>) =>
   api.bodies("PUT", "/resources/r1/rules").map((b) => (b as { rules: unknown[] }).rules);
 
+/** The times beside a day's timeline, which open its editor. */
+const dayButton = (day: string) => screen.findByRole("button", { name: new RegExp(`^Edit ${day}: `) });
+
+async function openDay(user: ReturnType<typeof userEvent.setup>, day: string) {
+  await user.click(await dayButton(day));
+  return screen.findByRole("switch", { name: `${day} open` });
+}
+
 describe("WeeklyHours", () => {
   it("shows a loading state, then the week", async () => {
     setup();
     render();
     expect(screen.getByRole("status", { name: "Loading hours" })).toBeInTheDocument();
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeChecked();
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00");
     expect(screen.queryByRole("status", { name: "Loading hours" })).not.toBeInTheDocument();
   });
 
@@ -58,16 +66,21 @@ describe("WeeklyHours", () => {
     const { user } = render();
     expect(await screen.findByText("Hours are unavailable.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeInTheDocument();
+    expect(await dayButton("Monday")).toBeInTheDocument();
   });
 
-  it("shows each day's hours and the weekly total, axe-clean", async () => {
+  it("shows every day on one timeline, with its times in words and the weekly total, axe-clean", async () => {
     setup([monday, rule({ id: "wed", dayOfWeek: 3, startTime: "10:00", endTime: "12:30" })]);
     const { container } = render();
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeChecked();
-    expect(time("Monday start")).toHaveValue("09:00");
-    expect(time("Monday end")).toHaveValue("17:00");
-    expect(screen.getByRole("switch", { name: "Tuesday open" })).not.toBeChecked();
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00");
+    expect(await dayButton("Wednesday")).toHaveTextContent("10:00–12:30");
+    expect(await dayButton("Tuesday")).toHaveTextContent("Closed");
+    expect(screen.getAllByRole("group")).toHaveLength(7);
+    expect(screen.getByRole("button", { name: "Edit Monday 09:00–17:00" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Monday 09:00–17:00 start" })).toHaveAttribute(
+      "aria-valuetext",
+      "09:00",
+    );
     expect(screen.getByText("Regular hours")).toBeInTheDocument();
     expect(screen.getByText("10 h 30 min a week")).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
@@ -77,6 +90,8 @@ describe("WeeklyHours", () => {
   it("opens a day from the keyboard and saves the whole week", async () => {
     const api = setup();
     const { user } = render();
+    (await dayButton("Tuesday")).focus();
+    await user.keyboard("{Enter}");
     const tuesday = await screen.findByRole("switch", { name: "Tuesday open" });
     tuesday.focus();
     await user.keyboard(" ");
@@ -108,14 +123,70 @@ describe("WeeklyHours", () => {
       ],
     ]);
     await waitFor(() => expect(screen.queryByText("Unsaved changes")).not.toBeInTheDocument());
-    expect(screen.getByRole("switch", { name: "Tuesday open" })).toBeChecked();
+    expect(await dayButton("Tuesday")).toHaveTextContent("09:00–17:00");
+  });
+
+  it("opens the day's editor from a bar on the timeline", async () => {
+    setup();
+    const { user } = render();
+    await user.click(await screen.findByRole("button", { name: "Edit Monday 09:00–17:00" }));
+    expect(await screen.findByRole("textbox", { name: "Monday start" })).toHaveValue("09:00");
+  });
+
+  it("moves a bar's edge with the arrow keys and saves the new time", async () => {
+    const api = setup();
+    const { user } = render();
+    const end = await screen.findByRole("slider", { name: "Monday 09:00–17:00 end" });
+    end.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:15");
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+
+    await user.click(saveButton());
+    await waitFor(() => expect(savedRules(api)).toHaveLength(1));
+    expect(must(savedRules(api)[0], "saved rules")[0]).toMatchObject({
+      startTime: "09:00",
+      endTime: "17:15",
+    });
+  });
+
+  it("drags a bar's edge along the day, staying on the axis", async () => {
+    setup();
+    render();
+    const end = await screen.findByRole("slider", { name: "Monday 09:00–17:00 end" });
+    end.setPointerCapture = vi.fn();
+    const track = must(must(end.parentElement, "bar").parentElement, "track");
+    // The axis is 08:00–18:00: 100px is an hour.
+    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
+    fireEvent.pointerDown(end, { pointerId: 1, clientX: 900 });
+    fireEvent.pointerMove(end, { pointerId: 1, clientX: 655 });
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–14:30");
+    fireEvent.pointerUp(end, { pointerId: 1, clientX: 655 });
+    fireEvent.pointerMove(end, { pointerId: 1, clientX: 300 });
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–14:30");
+  });
+
+  it("adds a stretch by clicking a free part of the day, and not on a taken one", async () => {
+    setup();
+    render();
+    const bar = await screen.findByRole("button", { name: "Edit Monday 09:00–17:00" });
+    const track = must(must(bar.parentElement, "bar").parentElement, "track");
+    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
+    fireEvent.click(track, { clientX: 950 });
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00, 17:30–21:30");
+
+    const tuesday = must((await dayButton("Tuesday")).parentElement, "row");
+    const free = must(tuesday.querySelector("[data-touch-exempt]"), "Tuesday's track");
+    vi.spyOn(free, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
+    fireEvent.click(free, { clientX: 100 });
+    expect(await dayButton("Tuesday")).toHaveTextContent("09:00–13:00");
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
 
   it("keeps unsaved edits when the hours are fetched again unchanged (back to the tab)", async () => {
     const api = setup();
     const { user } = render();
-    const tuesday = await screen.findByRole("switch", { name: "Tuesday open" });
-    await user.click(tuesday);
+    await user.click(await openDay(user, "Tuesday"));
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
     const fetches = () => api.requests.filter((c) => c.method === "GET" && c.path.endsWith("/availability"));
     const before = fetches().length;
@@ -135,13 +206,14 @@ describe("WeeklyHours", () => {
   it("types and steps times, and flags ranges that end before they start", async () => {
     setup();
     const { user } = render();
-    const end = await screen.findByRole("textbox", { name: "Monday end" });
+    await openDay(user, "Monday");
+    const end = time("Monday end");
     await user.clear(end);
     await user.type(end, "8am{Enter}");
     expect(end).toHaveValue("08:00");
 
-    const error = screen.getByRole("alert");
-    expect(error).toHaveTextContent("Ends before it starts");
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Ends before it starts");
     expect(end).toHaveAttribute("aria-invalid", "true");
     expect(end).toHaveAccessibleDescription("Ends before it starts");
     expect(time("Monday start")).toHaveAccessibleDescription("Ends before it starts");
@@ -159,7 +231,8 @@ describe("WeeklyHours", () => {
 
   it("adds a second range after the first, names each, and flags an overlap", async () => {
     setup();
-    const { container, user } = render();
+    const { user } = render();
+    await openDay(user, "Monday");
     await user.click(await screen.findByRole("button", { name: "Add hours to Monday" }));
     expect(time("Monday start (1)")).toHaveValue("09:00");
     expect(time("Monday start (2)")).toHaveValue("18:00");
@@ -169,10 +242,11 @@ describe("WeeklyHours", () => {
     await user.clear(start);
     await user.type(start, "16:00");
     await user.tab();
-    expect(screen.getByRole("alert")).toHaveTextContent("Overlaps 09:00–17:00");
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Overlaps 09:00–17:00");
     expect(start).toHaveAccessibleDescription("Overlaps 09:00–17:00");
     expect(saveButton()).toBeDisabled();
-    await expectNoAxeViolations(container);
+    await expectNoAxeViolations(document.body);
 
     await user.click(screen.getByRole("button", { name: "Remove Monday 16:00–20:00" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -182,50 +256,40 @@ describe("WeeklyHours", () => {
   it("closes a day by removing its last range, and discards back to the saved hours", async () => {
     setup();
     const { user } = render();
+    await openDay(user, "Monday");
     await user.click(await screen.findByRole("button", { name: "Remove Monday 09:00–17:00" }));
     expect(screen.getByRole("switch", { name: "Monday open" })).not.toBeChecked();
     expect(screen.queryByRole("textbox", { name: "Monday start" })).not.toBeInTheDocument();
     expect(screen.getByText("0 min a week")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Discard" }));
-    expect(screen.getByRole("switch", { name: "Monday open" })).toBeChecked();
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00");
     expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
   });
 
-  it("copies a day to the weekdays from its menu with the keyboard", async () => {
+  it("copies a day to the weekdays with the keyboard", async () => {
     setup();
     const { user } = render();
-    const copy = await screen.findByRole("button", { name: "Copy Monday" });
-    copy.focus();
+    await openDay(user, "Monday");
+    screen.getByRole("button", { name: "Copy Monday to weekdays" }).focus();
     await user.keyboard("{Enter}");
-    const menu = await screen.findByRole("menu");
-    expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((i) => i.textContent),
-    ).toEqual(["Copy to all days", "Copy to weekdays", "Copy to the weekend"]);
-    await user.keyboard("{ArrowDown}{Enter}");
-
-    await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
     for (const day of ["Tuesday", "Wednesday", "Thursday", "Friday"]) {
-      expect(screen.getByRole("switch", { name: `${day} open` })).toBeChecked();
-      expect(time(`${day} start`)).toHaveValue("09:00");
+      expect(await dayButton(day)).toHaveTextContent("09:00–17:00");
     }
-    expect(screen.getByRole("switch", { name: "Saturday open" })).not.toBeChecked();
+    expect(await dayButton("Saturday")).toHaveTextContent("Closed");
     expect(screen.getByText("40 h a week")).toBeInTheDocument();
   });
 
   it("copies to the weekend and to all days", async () => {
     setup();
     const { user } = render();
-    await user.click(await screen.findByRole("button", { name: "Copy Monday" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Copy to the weekend" }));
-    expect(screen.getByRole("switch", { name: "Sunday open" })).toBeChecked();
-    expect(screen.getByRole("switch", { name: "Tuesday open" })).not.toBeChecked();
+    await openDay(user, "Monday");
+    await user.click(screen.getByRole("button", { name: "Copy Monday to the weekend" }));
+    expect(await dayButton("Sunday")).toHaveTextContent("09:00–17:00");
+    expect(await dayButton("Tuesday")).toHaveTextContent("Closed");
 
-    await user.click(screen.getByRole("button", { name: "Copy Monday" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Copy to all days" }));
-    expect(screen.getByRole("switch", { name: "Tuesday open" })).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Copy Monday to all days" }));
+    expect(await dayButton("Tuesday")).toHaveTextContent("09:00–17:00");
   });
 
   it("limits a range to chosen customer groups", async () => {
@@ -237,6 +301,7 @@ describe("WeeklyHours", () => {
       ],
     });
     const { user } = render();
+    await openDay(user, "Monday");
     const who = await screen.findByRole("button", { name: "Who can book Monday 09:00–17:00: Everyone" });
     await user.click(who);
     const dialog = await screen.findByRole("dialog", { name: "Who can book these hours" });
@@ -259,7 +324,7 @@ describe("WeeklyHours", () => {
     const api = setup();
     api.fail("PUT", /\/rules$/, () => apiError(400, "INVALID_REQUEST", "Rules overlap."));
     const { user } = render();
-    await user.click(await screen.findByRole("switch", { name: "Tuesday open" }));
+    await user.click(await openDay(user, "Tuesday"));
     await user.click(saveButton());
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Rules overlap."));
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
@@ -268,10 +333,10 @@ describe("WeeklyHours", () => {
   it("is read-only when not editable", async () => {
     setup();
     render(false);
-    expect(await screen.findByRole("switch", { name: "Monday open" })).toBeDisabled();
-    expect(time("Monday start")).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /copy monday/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /remove/i })).not.toBeInTheDocument();
+    expect(await screen.findByText("09:00–17:00", { selector: "span.text-sm" })).toBeInTheDocument();
+    expect(screen.getAllByText("Closed")).toHaveLength(6);
+    expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Edit Monday/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save hours" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /seasonal hours/i })).not.toBeInTheDocument();
   });
@@ -288,7 +353,7 @@ describe("WeeklyHours", () => {
     );
     setup(many);
     const { user } = render();
-    await user.click(await screen.findByRole("switch", { name: "Tuesday open" }));
+    await user.click(await openDay(user, "Tuesday"));
     expect(
       screen.getByText(`At most ${MAX_RULES_PER_RESOURCE} time ranges in all (there are 102)`),
     ).toBeInTheDocument();
@@ -326,8 +391,8 @@ describe("seasonal hours", () => {
 
     expect(screen.getByRole("combobox", { name: "Which hours" })).toHaveTextContent("20 Oct – 31 Oct 2026");
     expect(screen.getByText(/in addition to your regular hours/)).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "Monday open" })).not.toBeChecked();
-    await user.click(screen.getByRole("switch", { name: "Saturday open" }));
+    expect(await dayButton("Monday")).toHaveTextContent("Closed");
+    await user.click(await openDay(user, "Saturday"));
     await user.click(saveButton());
 
     await waitFor(() => expect(savedRules(api)).toHaveLength(1));
@@ -342,17 +407,17 @@ describe("seasonal hours", () => {
     const { user } = render();
     const which = await screen.findByRole("combobox", { name: "Which hours" });
     expect(which).toHaveTextContent("Regular hours");
-    expect(screen.getByRole("switch", { name: "Friday open" })).not.toBeChecked();
+    expect(await dayButton("Friday")).toHaveTextContent("Closed");
 
     which.focus();
     await user.keyboard("{Enter}");
     await user.click(await screen.findByRole("option", { name: "1 Jun onwards" }));
-    expect(screen.getByRole("switch", { name: "Friday open" })).toBeChecked();
-    expect(screen.getByRole("switch", { name: "Monday open" })).not.toBeChecked();
+    expect(await dayButton("Friday")).not.toHaveTextContent("Closed");
+    expect(await dayButton("Monday")).toHaveTextContent("Closed");
 
     await user.click(screen.getByRole("button", { name: "Remove these hours" }));
     expect(screen.queryByRole("combobox", { name: "Which hours" })).not.toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "Monday open" })).toBeChecked();
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
 

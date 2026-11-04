@@ -5,12 +5,15 @@ import {
   addPeriod,
   copyDay,
   emptyWeek,
+  moveRangeEdge,
   nextRange,
+  rangeAt,
   removeSchedule,
   rulesToSchedules,
   scheduleFor,
   schedulesError,
   schedulesToRules,
+  timelineAxis,
   updateSchedule,
   validateDay,
   validatePeriod,
@@ -180,5 +183,46 @@ describe("schedulesError", () => {
   it("allows up to 100 time ranges in all, like the backend", () => {
     expect(schedulesError(withRanges(100))).toBeNull();
     expect(schedulesError(withRanges(101))).toBe("At most 100 time ranges in all (there are 101)");
+  });
+});
+
+describe("the timeline", () => {
+  const range = (startTime: string, endTime: string) => ({ startTime, endTime, audienceGroupIds: [] });
+
+  it("shares one axis of whole hours, at least 08:00 to 18:00", () => {
+    expect(timelineAxis(emptyWeek())).toEqual({ start: 8 * 60, end: 18 * 60 });
+    const week = { ...emptyWeek(), 1: [range("07:30", "12:00")], 5: [range("13:00", "21:15")] };
+    expect(timelineAxis(week)).toEqual({ start: 7 * 60, end: 22 * 60 });
+  });
+
+  it("adds a range from a click, on the half hour, up to four hours and short of the next one", () => {
+    expect(rangeAt([], 9 * 60 + 40)).toMatchObject({ startTime: "09:30", endTime: "13:30" });
+    expect(rangeAt([range("11:00", "12:00")], 9 * 60)).toMatchObject({ endTime: "11:00" });
+    expect(rangeAt([], 22 * 60)).toMatchObject({ startTime: "22:00", endTime: "23:59" });
+  });
+
+  it("adds nothing on a taken time or where there is no room", () => {
+    expect(rangeAt([range("09:00", "17:00")], 12 * 60)).toBeNull();
+    expect(rangeAt([range("09:40", "12:00")], 9 * 60 + 30)).toBeNull();
+  });
+
+  it("moves an edge to the nearest quarter hour", () => {
+    const moved = moveRangeEdge([range("09:00", "17:00")], 0, "end", 18 * 60 + 8);
+    expect(moved[0]).toMatchObject({ startTime: "09:00", endTime: "18:15" });
+    const earlier = moveRangeEdge([range("09:00", "17:00")], 0, "start", 7 * 60 + 52);
+    expect(earlier[0]).toMatchObject({ startTime: "07:45", endTime: "17:00" });
+  });
+
+  it("keeps an edge clear of the neighbouring ranges, the other edge and the end of the day", () => {
+    const day = [range("09:00", "12:00"), range("13:00", "17:00")];
+    expect(moveRangeEdge(day, 0, "end", 15 * 60)[0]?.endTime).toBe("13:00");
+    expect(moveRangeEdge(day, 1, "start", 10 * 60)[1]?.startTime).toBe("12:00");
+    expect(moveRangeEdge(day, 0, "start", 13 * 60)[0]?.startTime).toBe("11:45");
+    expect(moveRangeEdge(day, 1, "end", 24 * 60)[1]?.endTime).toBe("23:59");
+  });
+
+  it("leaves the ranges alone for an unknown index", () => {
+    const day = [range("09:00", "12:00")];
+    expect(moveRangeEdge(day, 3, "end", 15 * 60)).toEqual(day);
   });
 });
