@@ -13,10 +13,16 @@ enum class AppEnv { DEVELOPMENT, STAGING, PRODUCTION, TEST;
 
     /**
      * Production rules apply: no dev auth, dev payments, demo seed, fake model or rate-limit multiplier, and the
-     * production settings are required. Staging is production in every check; it only has its own name, for logs,
-     * error tracking and staging-only test features that may key off it later.
+     * production settings are required. Staging is production in every check; it only has its own name, for logs and
+     * error tracking, and may switch on the reliability simulation's sign-in ([allowsSimulationAuth]).
      */
     val isProductionLike: Boolean get() = this == PRODUCTION || this == STAGING
+
+    /**
+     * Whether the reliability simulation's sign-in (`SIMULATION_AUTH_SECRET`, [SimulationAuthConfig]) may be switched on:
+     * staging, and development and tests. Never production, which refuses to start with it set.
+     */
+    val allowsSimulationAuth: Boolean get() = this != PRODUCTION
 
     /** The name logs and error tracking tag events with (`development`, `staging`, `production`, `test`). */
     val wire: String get() = name.lowercase()
@@ -61,6 +67,12 @@ data class AppConfig(
      * address can run repeatedly while the limiter itself stays on. Refused in production.
      */
     val rateLimitMultiplier: Int = 1,
+    /**
+     * The reliability simulation's sign-in (`SIMULATION_AUTH_SECRET`; docs/simulation.md, "On staging"): signed, short-lived
+     * tokens for identities in a reserved namespace, and a higher rate-limit allowance for requests that carry them. Null
+     * (off) unless configured; refused in production.
+     */
+    val simulationAuth: SimulationAuthConfig? = null,
     /**
      * Proxies whose X-Forwarded-For entries are trusted (IPs or CIDRs). Default: loopback and
      * private ranges. Only used when [trustForwardedFor] is on.
@@ -144,6 +156,7 @@ data class AppConfig(
         if (tokenSecret.length < 16) {
             throw ConfigException("TOKEN_SECRET must be at least 16 characters.")
         }
+        simulationAuth?.validate(env, tokenSecret)
     }
 
     companion object {
@@ -177,6 +190,7 @@ data class AppConfig(
                     ?: if (dev) DEV_TOKEN_SECRET else throw ConfigException("TOKEN_SECRET is required in production."),
                 rateLimitsEnabled = env.bool("RATE_LIMITS_ENABLED", true),
                 rateLimitMultiplier = env.int("RATE_LIMIT_MULTIPLIER", 1),
+                simulationAuth = SimulationAuthConfig.fromEnvironment(env),
                 trustedProxies = trustedProxies(env),
                 trustedProxyHops = trustedProxyHops(env),
                 clientIpHeader = clientIpHeader(env),

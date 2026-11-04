@@ -15,6 +15,8 @@ import ie.bookanything.auth.ClerkJwtVerifier
 import ie.bookanything.auth.DevTokenVerifier
 import ie.bookanything.auth.Memberships
 import ie.bookanything.auth.Role
+import ie.bookanything.auth.SimulationAwareVerifier
+import ie.bookanything.auth.SimulationTokens
 import ie.bookanything.auth.TokenService
 import ie.bookanything.auth.TokenVerifier
 import ie.bookanything.booking.BookingModule
@@ -97,12 +99,18 @@ class AppContext(
     /** Push notifications to the mobile app; off unless configured (section 22). */
     val push: PushSender = DisabledPushSender,
 ) {
-    val auth = Authenticator(verifier, db)
+    /**
+     * The reliability simulation's tokens: only with `SIMULATION_AUTH_SECRET`, which [AppConfig] refuses in production
+     * (and [SimulationTokens] refuses to be built there). Null everywhere else, and then nothing below knows of them.
+     */
+    val simulation: SimulationTokens? = config.simulationAuth?.let { SimulationTokens(it.secret, clock, config.env) }
+    val auth = Authenticator(simulation?.let { SimulationAwareVerifier(verifier, it) } ?: verifier, db)
     val inbox = Inbox(push = push.enabled)
     val rateLimiter = RateLimiter(
         db, config.rateLimitsEnabled,
         ClientIpResolver(config.trustForwardedFor, config.trustedProxies, config.trustedProxyHops, config.clientIpHeader),
         multiplier = config.rateLimitMultiplier,
+        simulationMultiplier = config.simulationAuth?.rateLimitMultiplier ?: 1,
     )
 
     val ai = AiModule(db, clock, config.ai, prices, modelClient, overageReporter)

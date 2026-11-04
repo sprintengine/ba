@@ -49,6 +49,7 @@ loki.process "api" {
       timestamp  = "timestamp",
       requestId  = "mdc.requestId",
       businessId = "mdc.businessId",
+      simulation = "mdc.simulation",
     }
   }
 
@@ -63,7 +64,7 @@ loki.process "api" {
   }
 
   stage.structured_metadata {
-    values = { requestId = "", businessId = "" }
+    values = { requestId = "", businessId = "", simulation = "" }
   }
 
   // DEBUG and TRACE lines (LOG_LEVEL lowered while investigating) stay on the VM: they would use up the log volume.
