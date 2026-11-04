@@ -205,7 +205,9 @@ PROFILE=smoke k6 run load/booking.js
 E2E_DB=bookanything_load E2E_BACKEND_PORT=8098 E2E_STACK_DIR=/tmp/bookanything-load scripts/e2e-stack.sh down
 ```
 
-Against a development backend the script creates its own businesses (`BUSINESSES`, 40 by default: a Free business takes
+Before measuring, the script warms the backend up (a few reads of each business's availability, counted towards no
+threshold): a freshly started JVM answers its first requests slowly while it compiles them, which a short run would
+otherwise report as latency. Against a development backend the script creates its own businesses (`BUSINESSES`, 40 by default: a Free business takes
 100 bookings a month, after which bookings are refused with 409). On staging, where dev sign-in doesn't exist, create
 the businesses beforehand and pass their slugs (`SLUGS=a,b,c`, each with a service bookable without paying online), and
 set `BASE_URL` to the staging API. Staging's public rate limits (20 bookings per 10 minutes per address) will throttle
