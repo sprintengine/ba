@@ -308,14 +308,21 @@ export function OverflowMarker({
           type="button"
           data-event=""
           aria-label={`${n} more ${v("booking", { count: n })}, ${from} to ${until}`}
-          className="absolute z-[5] flex justify-center rounded-md border border-border bg-surface-raised pt-1 text-xs font-semibold text-muted-foreground shadow-xs transition-colors outline-none hover:z-30 hover:border-border-strong hover:text-foreground focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:z-30 data-[state=open]:text-foreground"
+          className="@container absolute z-[5] overflow-hidden rounded-md border border-border bg-muted px-1.5 py-1 text-left text-xs leading-4 font-semibold text-foreground shadow-xs transition-colors outline-none hover:z-30 hover:border-border-strong focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:z-30"
           style={{
             ...lanePosition(overflow.lane, overflow.lanes),
             top: top(s) + 1,
             height: Math.max((e - s) * PX_PER_MIN - 2, 22),
           }}
         >
-          <span className="tnum">+{n}</span>
+          {/* The whole column: what's there and when. A lane beside other blocks: the count. */}
+          <span className="tnum block truncate @max-[6rem]:hidden">
+            {n} {v("booking", { count: n })}
+          </span>
+          <span className="tnum block truncate text-2xs font-normal text-muted-foreground @max-[6rem]:hidden">
+            {from}–{until}
+          </span>
+          <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent

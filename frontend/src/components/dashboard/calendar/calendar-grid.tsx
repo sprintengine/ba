@@ -80,7 +80,7 @@ const onEmptyGrid = (e: React.MouseEvent<HTMLElement>) => {
 
 /** The narrowest a block may get before overlapping bookings fold into "+N" (day view, week view). */
 const MIN_LANE_PX = 72;
-const MIN_LANE_PX_WEEK = 56;
+const MIN_LANE_PX_WEEK = 72;
 
 type ColumnProps = {
   date: PlainDate;

@@ -114,13 +114,13 @@ function DayHeader({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-14 flex-1 items-center gap-2 border-l border-border px-3 text-left transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
+        "flex h-14 flex-1 items-center gap-1.5 border-l border-border px-2 text-left transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset",
         className,
       )}
     >
       <span
         className={cn(
-          "tnum flex size-8 items-center justify-center rounded-full text-sm font-semibold",
+          "tnum flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
           isToday ? "bg-brand text-brand-foreground" : "text-foreground",
         )}
       >
@@ -130,7 +130,7 @@ function DayHeader({
         <span className={cn("text-xs font-medium", isToday ? "text-brand" : "text-muted-foreground")}>
           {fmt.date(date, "weekday")}
         </span>
-        <span className="tnum text-2xs text-subtle-foreground">
+        <span className="tnum text-2xs whitespace-nowrap text-subtle-foreground">
           {count > 0 ? `${count} booked` : "\u00a0"}
         </span>
       </span>
