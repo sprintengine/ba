@@ -3,7 +3,7 @@
 A suite that runs the app the way its users do, for as long as you let it: customers book random times, pay or
 walk away from payment, cancel and reschedule; owners approve requests, book for customers, add and retire services,
 add staff, change who can do what and their hours, take time off and close for the day. Throughout, a checker asserts
-the invariants below. It runs for as long as you ask, and is built to run for days on a staging environment (once the
+the invariants below. It runs for 10 minutes in CI, and is built to run for days on a staging environment (once the
 simulation can sign in there; see [On staging](#on-staging)), to show the app stays correct under sustained,
 overlapping, realistic use, and to find the bugs that only show up then.
 
@@ -24,7 +24,7 @@ This is not a load test: it runs at a modest, steady rate and judges correctness
 Businesses are created through onboarding at the start, in timezones where it is working hours then (so bookings
 start, end and get outcomes within a short run; the zones differ from run to run). Holds last 5 minutes (with the
 development payment provider; Stripe makes them at least 31) and minimum notice is 0 to 30 minutes, so lapsed holds,
-outcomes and reminders all happen within a 10-minute run.
+outcomes and reminders all happen during a CI run.
 
 **The Free plan scenario.** At the start, one more business is driven to its monthly limit: concurrent customer and
 staff bookings up to 97, then 7 at once for the last 3 places (exactly 3 may succeed), then a customer and a staff
@@ -122,6 +122,12 @@ them).
 ### In CI
 
 The **Simulation checks** job runs the package's format, lint, typecheck and unit tests (with coverage thresholds).
+
+The **Simulation** job runs it for 10 minutes at 90 actions a minute against the same kind of stack the E2E job builds
+(Postgres 16, the development backend with dev sign-in, the dev payment provider and `RATE_LIMIT_MULTIPLIER=50`), with
+SQL checks and the seed `ci-<run id>-<attempt>`. Any violation fails it. The report goes to the job summary, and the
+action log, report and backend log are uploaded as the `simulation` artifact: download it and
+`scripts/simulation.sh replay --from-log <path to sim.jsonl>` to run the same seed locally.
 
 ### On staging
 
