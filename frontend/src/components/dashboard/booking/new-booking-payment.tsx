@@ -1,6 +1,5 @@
 "use client";
 
-import { Banknote, CircleSlash, CreditCard } from "lucide-react";
 import type { Service } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { isPricedService, type NewBookingValues as Values } from "@/lib/dashboard/new-booking";
@@ -28,7 +27,6 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
           >
             <RadioCard
               value="collect_online"
-              icon={<CreditCard />}
               title="Online"
               description={business.paymentsEnabled ? "Held until paid" : "Connect payments first"}
               disabled={unpriced || !business.paymentsEnabled}
@@ -36,7 +34,6 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
             />
             <RadioCard
               value="at_venue"
-              icon={<Banknote />}
               title="At venue"
               description="Pay on the day"
               disabled={unpriced}
@@ -44,7 +41,6 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
             />
             <RadioCard
               value="none"
-              icon={<CircleSlash />}
               title="No charge"
               description="Nothing to pay"
               className="p-3"
