@@ -185,12 +185,22 @@ included); staging, development and the tests may set it. Design and checks: [`d
 - Whoever holds the secret can mint any number of identities, so signed-in simulation traffic is in effect unlimited
   on staging, and can sign in as any account with a `sim.bookanything.test` address: never use one for a real person.
 
+Simulated businesses take test payments through `POST /v1/businesses/{id}/payments/simulation-account`
+(`SimulationPaymentRoutes.kt`): on staging only, for a simulation owner of a simulation business (the purge's rule
+below), with a Stripe test key, it creates a platform-controlled test account for the business with Stripe's
+verification test values (`SimulationStripeAccounts`), stores it and says when Stripe has enabled charges. Anywhere
+else the path is a 404; with a live key or none it answers `PAYMENTS_NOT_CONFIGURED`. Details:
+[`docs/simulation.md`](../docs/simulation.md), "Payments on staging".
+
 Clean up after long runs with `backend purge-simulation` (on the VM: `sudo -u deploy docker compose run --rm --no-deps
 backend purge-simulation --older-than-days 7`; `--dry-run` counts first). It deletes only businesses with a `sim-`
 slug whose owner and every member are simulation users, created before the cutoff (with their bookings, customers and
 emails, and a real tester's booking there too), then simulation users created before it who belong to no business and
-are no business's customer. Each business is re-checked under a row lock before it is deleted. Pick a cutoff longer
-than any run still going: a run reads every business it opened until it ends.
+are no business's customer. A pending invitation to anyone else keeps a business too. Each business is re-checked with
+it and its memberships locked before it is deleted. Once a batch is gone, it deletes their Stripe test accounts (on
+staging with a test `STRIPE_SECRET_KEY` only, and only accounts whose metadata marks them as the simulation's for that
+business; failures are logged and counted, not fatal; `--dry-run` asks Stripe which would go). Pick a cutoff longer than any run
+still going: a run reads every business it opened until it ends.
 
 ## Integrations (all optional; each is off until its keys are set)
 
@@ -268,6 +278,9 @@ The unit and route tests use a fake gateway. `StripeContractTest` (JUnit tag `st
 its Account Link, checks the OAuth error mapping, creates a plan checkout and the billing portal, reads a platform
 subscription, cancels and refunds a duplicate one, and on an account that can take payments creates a Checkout Session
 on it, expires it, confirms a card PaymentIntent server-side (`pm_card_visa`) and refunds it (twice with one key: once).
+It also creates a staging simulation account (`SimulationStripeAccounts`, a platform-controlled account in Ireland
+with Stripe's verification test values), fails if Stripe doesn't enable charges on it within a minute (listing what
+is still due), takes and refunds a payment on it and deletes it.
 Accounts and customers it creates are deleted afterwards, and prices and products archived. It is not part of `test` or `check`:
 
 ```
