@@ -9,7 +9,7 @@ import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { ActionButton } from "@/components/ui/action-button";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingStatusBadge } from "@/components/ui/status-badge";
@@ -28,7 +28,6 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2}>Today&apos;s {v("bookings")}</CardTitle>
-        <CardDescription>{business.timezone.replace(/_/g, " ")}</CardDescription>
         <CardAction>
           <ActionButton
             variant="ghost"

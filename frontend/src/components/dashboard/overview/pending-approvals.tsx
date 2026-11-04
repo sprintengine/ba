@@ -10,7 +10,7 @@ import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { IconButton } from "@/components/ui/icon-button";
+import { Button } from "@/components/ui/button";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { DeclineBookingDialog } from "../booking/decline-dialog";
 import { useApproveAction } from "../booking/use-approve-action";
@@ -55,28 +55,39 @@ export function PendingApprovals({ today }: { today: string }) {
       </CardHeader>
       <CardContent className="flex flex-col px-3 pb-3">
         {items.map((b) => (
-          <div key={b.id} className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-accent/60">
+          <div
+            key={b.id}
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-2 py-2 hover:bg-accent/60"
+          >
             <button
               type="button"
               onClick={() => openBooking(b.id)}
-              className="flex min-w-0 flex-1 flex-col text-left"
+              className="flex min-w-40 flex-1 flex-col text-left"
             >
               <span className="truncate text-sm font-medium">{b.customer.name}</span>
               <span className="tnum truncate text-xs text-muted-foreground">
                 {b.service.name} · {fmt.relDay(b.start)}, {fmt.time(b.start)}
               </span>
             </button>
-            <IconButton label={`Decline ${b.customer.name}`} variant="ghost" onClick={() => setDeclining(b)}>
-              <X />
-            </IconButton>
-            <IconButton
-              label={`Approve ${b.customer.name}`}
-              variant="secondary"
-              loading={approval.isApproving(b.id)}
-              onClick={() => approval.approve(b.id)}
-            >
-              <Check />
-            </IconButton>
+            <div className="ml-auto flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={`Decline ${b.customer.name}`}
+                onClick={() => setDeclining(b)}
+              >
+                <X /> Decline
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                aria-label={`Approve ${b.customer.name}`}
+                loading={approval.isApproving(b.id)}
+                onClick={() => approval.approve(b.id)}
+              >
+                <Check /> Approve
+              </Button>
+            </div>
           </div>
         ))}
       </CardContent>
