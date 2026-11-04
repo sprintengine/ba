@@ -766,12 +766,33 @@ type BusinessSetup = {
   - customer cancels ≥ `cancellation_notice_hours` before start → full refund.
   - later → `late_cancellation_refund_percent` of amount paid.
   - staff may override with `refund: "full" | "none"`.
-- **Platform billing**: Stripe Billing on the platform account. Checkout
-  Session `mode=subscription` with `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS`;
-  Billing Portal for management. A business whose paid plan is still billing
-  (active, trialing, past due) can't be deleted (409 "Cancel your plan in
-  Billing first"): deleting only suspends it, which would leave Stripe
-  charging and take the owner's billing portal away.
+- **Platform billing**: Stripe Billing on the platform account. Checkout Session
+  `mode=subscription` with `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS`; Billing
+  Portal for management. One subscription per business: plan checkouts asked for
+  again within a 30-minute window (same plan, price and return page) get the
+  same session (idempotency key and parameters, expiry included, are the
+  window's; a session lives 32 to 62 minutes), and a second live subscription
+  that still comes about (checkouts for two plans finished at once) is cancelled
+  at once and its invoice refunded (`stripe_duplicate_subscription` job),
+  keeping the one the business had; the owners get a `payments_alert`. When the
+  business's subscription is past due and the second is paid (unless it was
+  already found to be a duplicate), the event makes the second its plan instead
+  and the old one is the one cancelled. The job
+  reads the business and both subscriptions again first: when the one the
+  business had has ended meanwhile, the second becomes its plan instead of being
+  cancelled; a retry after a partial failure finishes refunding one already
+  cancelled. A second subscription that wasn't started here (no `businessId` in
+  its metadata) is never cancelled automatically: the owners are told to cancel
+  it. Only plan subscriptions (a plan's price, or `metadata.plan`) count.
+  Subscription events are applied as Stripe has the subscription now (read
+  before the event's transaction, then decided under the business's lock; the
+  event's own copy when Stripe refuses the read, or can't be reached on the last
+  attempt), so an older event delivered late doesn't write its own older copy,
+  and a failed invoice makes the plan past due only when it is the plan
+  subscription's. A business whose paid plan is still billing (active, trialing,
+  past due) can't be deleted (409 "Cancel your plan in Billing first"): deleting
+  only suspends it, which would leave Stripe charging and take the owner's
+  billing portal away.
 
 ### Provider calls happen after commit
 
@@ -1131,8 +1152,13 @@ Clarifications made while implementing; the backend follows these.
 - **Plans from subscriptions**: `active`/`trialing` → plan of the price
   (`STRIPE_PRICE_*`, falling back to `metadata.plan`); `past_due` keeps the plan
   (dunning); `incomplete` never upgrades; `canceled`/`incomplete_expired`/`unpaid`/
-  `paused`/deleted → `free`. Events for an older subscription never override the
-  current one. `invoice.payment_failed` sets `plan_status=past_due`.
+  `paused`/deleted → `free`. An active or trialing plan subscription other
+  than the current one becomes the plan only when the current one isn't
+  billing, or is past due and it wasn't already found to be a duplicate (see
+  "Platform billing" in §7); other events for
+  other subscriptions don't change the plan, and a subscription that isn't for
+  a plan is ignored. `invoice.payment_failed` sets `plan_status=past_due` when
+  the invoice is the current subscription's.
 - **Emails**: the cancellation and declined emails state the refund (or that it
   is being processed, that the business will arrange it when it failed, or that
   no refund applies); a separate `payment_refunded` email is sent only for

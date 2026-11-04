@@ -1,0 +1,59 @@
+name: Stripe contract (nightly)
+
+# Runs SdkStripeGateway against Stripe's test mode every night, so a change on Stripe's side (or in the SDK) that breaks
+# a call we make shows up before a customer finds it. Needs the STRIPE_TEST_SECRET_KEY secret (a test-mode key,
+# sk_test_...); without it the job is skipped, not failed. Setup: backend/README.md, "Stripe contract tests".
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stripe-contract
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Secret present?
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::STRIPE_TEST_SECRET_KEY is not set: the Stripe contract tests are skipped."
+          fi
+
+  contract:
+    name: Stripe test mode
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+      STRIPE_TEST_CONNECTED_ACCOUNT: ${{ secrets.STRIPE_TEST_CONNECTED_ACCOUNT }}
+      STRIPE_TEST_CONNECT_CLIENT_ID: ${{ secrets.STRIPE_TEST_CONNECT_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Contract tests
+        run: ./gradlew :backend:stripeContractTest
+      - name: Upload test report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: stripe-contract-report
+          path: backend/build/reports/tests/stripeContractTest/

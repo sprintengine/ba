@@ -11,11 +11,20 @@ import ie.bookanything.config.StripeConfig
 import ie.bookanything.http.Errors
 import ie.bookanything.payments.StripeAccountState
 import ie.bookanything.payments.StripeGateway
+import ie.bookanything.payments.StripeInvoicePayment
 import ie.bookanything.payments.StripeOAuthConnection
 import ie.bookanything.payments.StripeOAuthError
 import ie.bookanything.payments.StripeRefundRef
 import ie.bookanything.payments.StripeRefusedException
 import ie.bookanything.payments.StripeSessionRef
+import ie.bookanything.payments.StripeSubscription
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -161,6 +170,70 @@ class FakeStripeGateway : StripeGateway {
     override fun createPortalSession(params: PortalSessionCreateParams): String {
         portals.add(params); return "https://billing.stripe.test/p/session/${params.customer}"
     }
+
+    /**
+     * Subscriptions as Stripe has them now, as a test sets them; else as the latest platform subscription event sent
+     * ([observe]) described it; else none.
+     */
+    val subscriptions = ConcurrentHashMap<String, StripeSubscription>()
+    private val sentSubscriptions = ConcurrentHashMap<String, StripeSubscription>()
+
+    /** Called with each webhook a test sends: a platform subscription event is what Stripe has now, unless a test set it. */
+    fun observe(payload: String) {
+        val event = runCatching { Json.parseToJsonElement(payload).jsonObject }.getOrNull() ?: return
+        val type = event["type"]?.jsonPrimitive?.content.orEmpty()
+        if (!type.startsWith("customer.subscription.") || event["account"]?.let { it !is JsonNull } == true) return
+        val sub = event["data"]?.jsonObject?.get("object")?.jsonObject ?: return
+        fun str(o: JsonObject, key: String) = (o[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
+        val id = str(sub, "id") ?: return
+        sentSubscriptions[id] = StripeSubscription(
+            id, str(sub, "status").orEmpty(), str(sub, "customer"),
+            (sub["items"]?.jsonObject?.get("data") as? JsonArray).orEmpty()
+                .mapNotNull { (it as? JsonObject)?.get("price")?.jsonObject?.let { p -> str(p, "id") } },
+            (sub["metadata"] as? JsonObject).orEmpty().mapNotNull { (k, v) -> (v as? JsonPrimitive)?.content?.let { k to it } }.toMap(),
+            str(sub, "latest_invoice"),
+        )
+    }
+    val cancelledSubscriptions = CopyOnWriteArrayList<Call<String>>()
+
+    /** The paid payments of each invoice a test has set. */
+    val invoicePayments = ConcurrentHashMap<String, List<StripeInvoicePayment>>()
+
+    /** Reads of subscriptions that fail as unreachable, then refused (`refusalCode`), counted down. */
+    val failSubscriptionReads = AtomicInteger(0)
+    val refuseSubscriptionReads = AtomicInteger(0)
+
+    /** Subscriptions every read of which is refused (`refusalCode`). */
+    val unreadableSubscriptions: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /** Subscriptions every read of which fails as unreachable. */
+    val failingSubscriptions: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    override fun retrieveSubscription(subscriptionId: String): StripeSubscription? {
+        if (failSubscriptionReads.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw Errors.providerError()
+        if (refuseSubscriptionReads.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw StripeRefusedException(refusalCode)
+        if (subscriptionId in unreadableSubscriptions) throw StripeRefusedException(refusalCode)
+        if (subscriptionId in failingSubscriptions) throw Errors.providerError()
+        return subscriptions[subscriptionId] ?: sentSubscriptions[subscriptionId]
+    }
+
+    /** Cancels refused (`refusalCode`), and invoice payment lists that fail as unreachable, counted down. */
+    val refuseCancels = AtomicInteger(0)
+    val failInvoicePayments = AtomicInteger(0)
+
+    override fun cancelSubscription(subscriptionId: String, idempotencyKey: String) {
+        if (refuseCancels.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw StripeRefusedException(refusalCode)
+        cancelledSubscriptions.add(Call(subscriptionId, RequestOptions.builder().setIdempotencyKey(idempotencyKey).build()))
+        (subscriptions[subscriptionId] ?: sentSubscriptions[subscriptionId])?.let {
+            subscriptions[subscriptionId] =
+                it.copy(status = "canceled")
+        }
+    }
+    override fun invoicePayments(invoiceId: String): List<StripeInvoicePayment> {
+        if (failInvoicePayments.getAndUpdate { if (it > 0) it - 1 else 0 } > 0) throw Errors.providerError()
+        return invoicePayments[invoiceId].orEmpty()
+    }
+
     override fun createMeterEvent(params: MeterEventCreateParams) {
         meterEvents.add(params)
     }

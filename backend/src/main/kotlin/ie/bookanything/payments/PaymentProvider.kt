@@ -140,3 +140,33 @@ interface PaymentProvider {
 
     fun createBillingPortal(business: BusinessRow, returnUrl: String): String
 }
+
+/** Platform plan subscriptions as the provider keeps them (Stripe Billing): implemented by `StripePaymentProvider`. */
+interface PlatformSubscriptions {
+    /** A platform subscription as the provider has it now (applied instead of an event's copy); null when it has none. */
+    fun currentSubscription(subscriptionId: String): StripeSubscription?
+
+    /**
+     * Cancels a second, duplicate subscription of the same business at once (no proration, no final invoice): true when
+     * cancelled, false when Stripe refused. Throws when Stripe can't be reached, to be retried.
+     */
+    fun cancelDuplicateSubscription(subscriptionId: String): Boolean
+
+    /**
+     * Refunds what a cancelled duplicate subscription's [latestInvoice] charged, each payment once (retries are safe).
+     * Throws when Stripe can't be reached, to be retried; on the [lastAttempt], and for what Stripe refused, what wasn't
+     * refunded is reported instead.
+     */
+    fun refundDuplicateSubscription(subscriptionId: String, latestInvoice: String?, lastAttempt: Boolean): DuplicateCancel
+}
+
+/**
+ * How cancelling a duplicate subscription went: whether it was [cancelled] (or gone already), the money [refunded] by
+ * currency (empty: nothing had been paid), and what Stripe didn't refund ([notRefunded]: PaymentIntents, or the invoice
+ * when its payments couldn't be listed).
+ */
+data class DuplicateCancel(
+    val cancelled: Boolean,
+    val refunded: Map<String, Long> = emptyMap(),
+    val notRefunded: List<String> = emptyList(),
+)

@@ -62,7 +62,8 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    // The Stripe contract tests call Stripe's test mode: their own task, never part of `test` or `check`.
+    useJUnitPlatform { excludeTags("stripe-contract") }
     maxHeapSize = "1g"
     testLogging {
         events("failed")
@@ -71,6 +72,24 @@ tasks.test {
     }
     // Tests must run against real Postgres; never silently skip.
     systemProperty("bookanything.requireDocker", "true")
+}
+
+// `./gradlew :backend:stripeContractTest`: SdkStripeGateway against Stripe's test mode (STRIPE_TEST_SECRET_KEY; skipped
+// without it). Nightly in CI (.github/workflows/stripe-contract.yml); setup in backend/README.md.
+val stripeContractTest by tasks.registering(Test::class) {
+    description = "Runs SdkStripeGateway against Stripe test mode (needs STRIPE_TEST_SECRET_KEY)."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("stripe-contract") }
+    maxHeapSize = "1g"
+    // Stripe answers differently each run: never up to date.
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 // Formatting: rules and line length come from the root .editorconfig. `ktlintFormat` fixes, `ktlintCheck` verifies.
@@ -100,6 +119,12 @@ tasks.named("check") {
 // branches 61.9% when they were set; Kotlin's generated data-class branches keep the branch figure low). Raise them as
 // coverage grows; never lower one to get a build through.
 kover {
+    // Coverage is the JUnit run's; the contract tests (Stripe test mode, nightly) don't count towards it.
+    currentProject {
+        instrumentation {
+            disabledForTestTasks.add("stripeContractTest")
+        }
+    }
     reports {
         total {
             xml { onCheck = true }

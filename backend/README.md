@@ -232,6 +232,46 @@ it waits, a checkout on it was just paid or an upcoming booking paid on it could
 deauthorized while a business here uses it or any business's money on it could still need it. Stripe's
 `account.application.deauthorized` forgets the account from Stripe's side and tells the owners.
 
+### Stripe contract tests (test mode)
+
+The unit and route tests use a fake gateway. `StripeContractTest` (JUnit tag `stripe-contract`) runs the real
+`SdkStripeGateway` against Stripe's **test mode**: it creates a connected account with our controller settings and
+its Account Link, checks the OAuth error mapping, creates a plan checkout and the billing portal, reads a platform
+subscription, cancels and refunds a duplicate one, and on an account that can take payments creates a Checkout Session
+on it, expires it, confirms a card PaymentIntent server-side (`pm_card_visa`) and refunds it (twice with one key: once).
+Accounts and customers it creates are deleted afterwards, and prices and products archived. It is not part of `test` or `check`:
+
+```
+STRIPE_TEST_SECRET_KEY=sk_test_... ./gradlew :backend:stripeContractTest
+```
+
+Without the key every test is skipped; a live key is refused. Optional: `STRIPE_TEST_CONNECTED_ACCOUNT` (an onboarded
+test connected account; otherwise one is created with Stripe's verification test values, and the payment test is
+skipped if Stripe doesn't enable it within a minute) and `STRIPE_TEST_CONNECT_CLIENT_ID` (the test-mode `ca_...`).
+The workflow `.github/workflows/stripe-contract.yml` runs it nightly (and on demand) when the repository secret
+`STRIPE_TEST_SECRET_KEY` exists, and is skipped cleanly otherwise; the two optional values can be secrets too.
+
+**Setting up a Stripe test account** (test mode, for local development and this suite):
+1. In test mode, **Connect → Get started**: enable Connect as a platform (the platform profile can be test data),
+   and complete the platform profile, including its responsibilities for losses: without it Stripe won't create the
+   test connected account, and the payment test is skipped.
+   For "I already have a Stripe account", **Settings → Connect → Onboarding options → OAuth**: enable OAuth, copy the
+   test client id into `STRIPE_CONNECT_CLIENT_ID` and add `http://localhost:3000/api/v1/payments/stripe/callback` as a
+   redirect URI.
+2. **Product catalogue**: create the "Pro" and "Business" products with monthly recurring prices; put the price ids
+   in `STRIPE_PRICE_PRO` / `STRIPE_PRICE_BUSINESS`. **Settings → Billing → Customer portal**: save a configuration
+   (the contract test skips its portal check without one).
+3. **Webhooks**: locally, forward both kinds of events with the Stripe CLI and use the `whsec_...` it prints for
+   `STRIPE_WEBHOOK_SECRET` (one secret serves both):
+   `stripe listen --forward-to localhost:8080/v1/webhooks/stripe --forward-connect-to localhost:8080/v1/webhooks/stripe`.
+   For a deployed environment, add the two endpoints listed under "Stripe (payments and billing)" above.
+4. Use `sk_test_...` for `STRIPE_SECRET_KEY`; test cards such as `4242 4242 4242 4242` pay at Checkout.
+
+For **live mode**, repeat 1-3 in live mode: enable Connect (platform profile and branding), OAuth with the live
+client id and the production redirect URI `https://<app-host>/api/v1/payments/stripe/callback`, the live Pro and
+Business prices, the customer portal, and the two webhook endpoints (`https://<api-host>/v1/webhooks/stripe`, "Your
+account" and "Connected accounts" events) with their signing secrets.
+
 ### Email (Resend)
 
 Create an API key, verify the sending domain of `EMAIL_FROM` in Resend, set `RESEND_API_KEY`.
