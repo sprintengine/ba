@@ -19,7 +19,8 @@ object QueryBudgets {
         "public services" to 8,
         // Availability and booking read the business's release schedules (one statement, section 21).
         "public availability" to 13,
-        "public booking" to 28,
+        // A Free business's booking also takes its monthly-count lock, so bookings at once count one after another.
+        "public booking" to 29,
         "manage booking" to 3,
         "templates" to 0,
         // Marketplace (/explore).
