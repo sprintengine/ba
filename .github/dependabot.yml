@@ -81,6 +81,18 @@ updates:
       prefix: build
       include: scope
 
+  # The backup tools image: Postgres stays on the database's major version (16), so only its patches come here.
+  - package-ecosystem: docker
+    directory: /deploy/backup
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

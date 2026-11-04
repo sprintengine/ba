@@ -105,4 +105,5 @@ GitHub (Settings of the repository):
 | `STAGING_CLERK_SECRET_KEY`, `PRODUCTION_CLERK_SECRET_KEY` | each Clerk instance's secret key, the Workers' only secret |
 | `PUBLICATION_DENYLIST` | the pull request check's list of names that must never be published (engineering.md §14) |
 
-The VMs need nothing from GitHub: they pull public images. Each VM's own settings are its env files (deployment.md 2.2).
+The nightly database backups have secrets and variables of their own (deployment.md section 4). The VMs need nothing
+from GitHub: they pull public images. Each VM's own settings are its env files (deployment.md 2.2).

@@ -1,0 +1,101 @@
+name: Database backup
+
+# Nightly pg_dump of each environment's database to R2, restored straight away into a throwaway Postgres 16 and checked
+# (deploy/backup, docs/deployment.md "Backups"). The provider's point-in-time restore is the first line; this is the
+# second copy, outside the provider. An environment without its database secret is skipped with a notice.
+#
+# Repository secrets: STAGING_BACKUP_DATABASE_URL, PRODUCTION_BACKUP_DATABASE_URL (the owner role, which bypasses
+# row-level security; direct endpoint), BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY. Repository variables:
+# BACKUP_S3_ENDPOINT, BACKUP_S3_BUCKET. No GitHub environment: a reviewer on `production` must not hold up a backup.
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Back up one environment (default both)
+        type: choice
+        options: [both, staging, production]
+        default: both
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Back up ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.environment != 'both' && format('["{0}"]', inputs.environment) || '["staging", "production"]') }}
+    concurrency:
+      group: db-backup-${{ matrix.environment }}
+      cancel-in-progress: false
+    services:
+      # The restore test's target: empty, thrown away with the runner.
+      restore:
+        image: postgres:16
+        env:
+          POSTGRES_DB: restore_test
+          POSTGRES_USER: restore
+          POSTGRES_PASSWORD: restore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U restore -d restore_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: ${{ secrets[format('{0}_BACKUP_DATABASE_URL', matrix.environment == 'production' && 'PRODUCTION' || 'STAGING')] }}
+    steps:
+      - name: Check the environment is configured
+        id: configured
+        run: |
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "::notice title=Not backed up::${{ matrix.environment }} has no ${{ matrix.environment == 'production' && 'PRODUCTION' || 'STAGING' }}_BACKUP_DATABASE_URL secret yet (docs/deployment.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.configured.outputs.ok == 'true'
+        with:
+          sparse-checkout: deploy/backup
+
+      - name: Build the backup tools image
+        if: steps.configured.outputs.ok == 'true'
+        run: docker build --quiet -t bookanything-backup deploy/backup
+
+      - name: Dump and upload
+        id: backup
+        if: steps.configured.outputs.ok == 'true'
+        env:
+          BACKUP_S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          PREFIX: ${{ matrix.environment }}
+        run: |
+          docker run --rm -e DATABASE_URL -e BACKUP_S3_ENDPOINT -e BACKUP_S3_BUCKET \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e BACKUP_PREFIX="$PREFIX" \
+            bookanything-backup backup.sh | tee backup.log
+          key="$(sed -n 's#^uploaded s3://[^/]*/##p' backup.log)"
+          [[ -n "$key" ]] || { echo "::error::backup.sh did not report an uploaded key"; exit 1; }
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Restore it into an empty Postgres and check it
+        if: steps.configured.outputs.ok == 'true'
+        env:
+          BACKUP_S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          KEY: ${{ steps.backup.outputs.key }}
+        run: |
+          docker run --rm --network host -e TARGET_DATABASE_URL=postgres://restore:restore@localhost:5432/restore_test \
+            -e BACKUP_S3_ENDPOINT -e BACKUP_S3_BUCKET -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            bookanything-backup restore.sh "$KEY"
