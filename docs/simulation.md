@@ -161,7 +161,8 @@ real visitors' buckets are untouched. Raise the multiplier (up to 1000) for high
 2. Staging backend (`backend.env` on the staging VM): `SIMULATION_AUTH_SECRET=<secret>`, optionally
    `SIMULATION_RATE_LIMIT_MULTIPLIER=50`; then `sudo -u deploy ./deploy.sh`. The startup line says `simulation=on`.
    Never set it in production: the API refuses to start.
-3. GitHub (Settings → Secrets and variables → Actions): secret `STAGING_SIMULATION_AUTH_SECRET=<secret>`, variables
+3. GitHub (Settings → Environments → `staging`; its deployment branches must stay limited to `main`, so a run
+   dispatched on another branch can't read them): secret `STAGING_SIMULATION_AUTH_SECRET=<secret>`, variables
    `STAGING_API_URL` (the staging API, e.g. `https://api-staging.bookanything.ie`) and `STAGING_APP_URL` (the staging
    website), and optionally the secret `STAGING_SIM_DATABASE_URL`, a read-only `postgres://` URL for the SQL checks.
 4. Run the workflow by hand with `duration: 10m` to check it; the nightly run then follows.
@@ -180,8 +181,8 @@ with the 4242 4242 4242 4242 test card; the others are abandoned (their hold lap
 Stripe's webhook after the redirect, so the bots read the booking until it stops being held (up to 90 seconds), and
 expect holds of at least 31 minutes. Prerequisites:
 
-- Playwright: `npm --prefix simulation install --no-save playwright && npx playwright install chromium` (the workflow
-  does this);
+- Playwright's Chromium: Playwright itself is pinned in `simulation/package-lock.json`; `npm --prefix simulation ci`
+  then `npx --prefix simulation playwright install chromium` (the workflow does this);
 - Stripe on the staging backend in test mode: `STRIPE_SECRET_KEY` (`sk_test_…`), and both webhook endpoints with
   their secrets (`STRIPE_WEBHOOK_SECRET`, `STRIPE_CONNECT_WEBHOOK_SECRET`; backend/README.md "Stripe");
 - a Connect account with charges enabled on every simulated business. Online payment is refused with
@@ -196,6 +197,11 @@ The JSONL log gains a line per action and per request, so give it disk to match.
 coverage, but each run starts a fresh world, so it doesn't find the bugs that need days of accumulated state
 (month boundaries, long-lived holds and reminders across days); a run of days does. Either way, purge with a cutoff
 longer than the run.
+
+**What the secret allows.** Anyone with it can sign in on staging as any number of simulation identities (so
+signed-in simulation traffic is in effect unlimited there) and as any account with a `sim.bookanything.test` address:
+never use such an address for a real person. The purge deletes simulated businesses with everything in them, a real
+tester's bookings there included. Production refuses the secret, so none of this reaches it.
 
 Simulated businesses are named `Sim Business …` with slugs `sim-<tag>-…`; `purge-simulation` removes them once they
 are older than the cutoff. Email to their customers is never sent: the backend skips addresses on special-use domains

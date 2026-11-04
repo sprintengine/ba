@@ -136,6 +136,12 @@ the backend also accepts its own simulation tokens beside Clerk's:
   times each limit. Limits still apply. The guest header counts only on a request with no `Authorization` header.
 - **Observability.** Such requests carry `simulation="true"` on the `http_server_requests_total` and
   `http_server_duration_seconds` series and a `simulation=true` log field (docs/observability.md).
+- **What the secret allows.** Whoever holds it can sign in as any identity in the namespace, as many as they like, so
+  signed-in simulation traffic is in effect not rate limited on staging (each identity has its own bucket). It can
+  also sign in as anyone who registered or was invited with an address on `sim.bookanything.test`: never enter such an
+  address for a real person. Treat the secret like any staging credential, and rotate it by changing it on both sides.
+- **Cleanup.** `backend purge-simulation` deletes a simulated business with everything in it, so a real tester's
+  booking or customer record at one goes with it; it re-checks each business under a row lock before deleting it.
 - Email to special-use domains (`.test`, `.example`, `.invalid`, `.localhost`) is never handed to the email provider in
   any environment (logged as `skipped`): it can't be delivered, and bounces hurt the sending domain.
 

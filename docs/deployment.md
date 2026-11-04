@@ -130,9 +130,9 @@ The simulation ([`simulation.md`](simulation.md), "On staging") runs against sta
 |---|---|---|
 | Staging VM, `backend.env` | `SIMULATION_AUTH_SECRET` | `openssl rand -base64 48`; not `TOKEN_SECRET`. **Never in production's `backend.env`**: the API refuses to start with it. |
 | Staging VM, `backend.env` | `SIMULATION_RATE_LIMIT_MULTIPLIER` | optional, default `50`: the simulation's rate-limit allowance |
-| GitHub, Actions secret | `STAGING_SIMULATION_AUTH_SECRET` | the same value as `SIMULATION_AUTH_SECRET` |
-| GitHub, Actions variables | `STAGING_API_URL`, `STAGING_APP_URL` | `https://api-staging.bookanything.ie`, `https://staging.bookanything.ie` |
-| GitHub, Actions secret | `STAGING_SIM_DATABASE_URL` | optional: a read-only `postgres://` URL to the staging database, for the SQL checks |
+| GitHub, `staging` environment secret | `STAGING_SIMULATION_AUTH_SECRET` | the same value as `SIMULATION_AUTH_SECRET`. The environment's deployment branches stay limited to `main`, so a run on any other branch can't read it. |
+| GitHub, `staging` environment variables | `STAGING_API_URL`, `STAGING_APP_URL` | `https://api-staging.bookanything.ie`, `https://staging.bookanything.ie` |
+| GitHub, `staging` environment secret | `STAGING_SIM_DATABASE_URL` | optional: a read-only `postgres://` URL to the staging database, for the SQL checks |
 | Staging VM, crontab of `deploy` | `purge-simulation` | weekly, e.g. `0 4 * * 0 cd /opt/bookanything && docker compose run --rm --no-deps backend purge-simulation --older-than-days 7` |
 
 After setting the secret, `sudo -u deploy ./deploy.sh` restarts the API with it (its startup line then says
