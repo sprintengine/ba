@@ -48,10 +48,10 @@ export function StepHeader({
             >
               <ChevronLeft className="size-4" /> {backLabel}
             </button>
-            <span aria-hidden className="h-3.5 w-px bg-border" />
           </>
         )}
-        <span className="tnum" aria-live="polite">
+        {/* The progress bar shows this; screen readers still hear it. */}
+        <span className="sr-only" aria-live="polite">
           Step {index + 1}
           {total !== null && ` of ${total}`}
         </span>
