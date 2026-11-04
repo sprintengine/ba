@@ -8,7 +8,7 @@
  * "<Family> Fallback" face is the size-adjusted local fallback `next/font` generated for that family, so the swap
  * from fallback to web font shifts the layout no more than before. To update a family, request the css2 URL above
  * its rules (keep its axes: the themes' headings set `SOFT`, `opsz` and `wdth`) with a current browser's user agent,
- * and replace its files and rules together (`fonts.test.ts` lists each family's subsets).
+ * and replace its files and rules together (`fonts.test.ts` lists each family's weights, styles and subsets).
  * Licences: `font-files/<family>/OFL.txt`.
  *
  * Nothing is preloaded: a browser only downloads a file when an element inside a theme's scope uses the family.
