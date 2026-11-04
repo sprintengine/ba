@@ -24,6 +24,7 @@ import ie.bookanything.http.ApiJson
 import ie.bookanything.http.NoStoreByDefault
 import ie.bookanything.http.configureErrors
 import ie.bookanything.jobs.JobWorker
+import ie.bookanything.jobs.SimulationPurge
 import ie.bookanything.marketplace.marketplaceSettingsRoutes
 import ie.bookanything.marketplace.publicMarketplaceRoutes
 import ie.bookanything.mcp.customer.customerRequestRoutes
@@ -144,12 +145,16 @@ private fun command(config: AppConfig, args: Array<String>): Int {
                 DemoSeeder(AppContext.create(config, ds)).seed()
             }
         }
+        "purge-simulation" -> return SimulationPurge.command(config, args.drop(1)) { createDataSource(config.database) }
         "email-preview" -> {
             val dir = java.io.File(args.getOrNull(1) ?: "build/email-previews")
             ie.bookanything.notifications.EmailPreviews.writeAll(dir).forEach { println(it.path) }
         }
         else -> {
-            System.err.println("Unknown command '${args.first()}'. Commands: serve (default), migrate, seed-demo, email-preview [dir]")
+            System.err.println(
+                "Unknown command '${args.first()}'. Commands: serve (default), migrate, seed-demo, email-preview [dir], " +
+                    "purge-simulation [--older-than-days N] [--dry-run]",
+            )
             return 2
         }
     }
