@@ -57,9 +57,10 @@ OAuth; guide at `/help/ai-assistant`); geocoding uses Mapbox when
 ## Checks
 
 ```sh
-npm test               # backend: ktlint, detekt, tests, coverage floor; frontend and mobile: format, lint, typecheck, tests + coverage
+npm test               # backend: ktlint, detekt, tests, coverage floor; frontend, mobile and simulation: format, lint, typecheck, tests + coverage
 npm run build          # frontend production build
 npm run test:e2e       # Playwright (needs the backend running)
+npm run simulation:run # reliability simulation against its own local stack (docs/simulation.md)
 ```
 
 Colima users: set these before running the backend tests.
@@ -70,8 +71,10 @@ export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
 export TESTCONTAINERS_RYUK_DISABLED=true
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same backend, frontend and mobile checks plus a Playwright end-to-end job; see
-[`docs/engineering.md`](docs/engineering.md#1-checks).
+CI (`.github/workflows/ci.yml`) runs the same backend, frontend, mobile and simulation checks plus a Playwright
+end-to-end job; see [`docs/engineering.md`](docs/engineering.md#1-checks). The reliability simulation (scripted
+customers, owners and staff for minutes or days, with invariant checks) is described in
+[`docs/simulation.md`](docs/simulation.md).
 
 ## Licence
 

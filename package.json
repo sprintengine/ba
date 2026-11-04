@@ -14,9 +14,12 @@
     "mobile:dev": "npm --prefix mobile run start",
     "mobile:ios": "npm --prefix mobile run ios",
     "mobile:check": "npm --prefix mobile run check",
+    "simulation:install": "npm --prefix simulation ci",
+    "simulation:check": "npm --prefix simulation run check",
+    "simulation:run": "scripts/simulation.sh",
     "build": "npm --prefix frontend run build",
     "test:e2e": "npm --prefix frontend run test:e2e",
-    "test": "npm run backend:check && npm run frontend:check && npm run mobile:check",
+    "test": "npm run backend:check && npm run frontend:check && npm run mobile:check && npm run simulation:check",
     "hooks:install": "git config core.hooksPath scripts/hooks",
     "test:scripts": "node --test 'scripts/**/*.test.mjs' 'deploy/**/*.test.mjs'"
   }
