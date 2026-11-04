@@ -42,7 +42,7 @@ export function AffectedSlotsPreview({ delay = 400 }: { delay?: number }) {
       <div className="flex items-center justify-between gap-3">
         <h3
           id="affected-times"
-          className="text-xs font-medium tracking-wide text-subtle-foreground uppercase"
+          className="text-sm font-medium text-muted-foreground"
         >
           Affected times
         </h3>

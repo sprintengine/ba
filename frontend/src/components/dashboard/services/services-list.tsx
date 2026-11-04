@@ -93,7 +93,7 @@ export function ServicesList() {
           {groups.entries.map(([cat, list]) => (
             <section key={cat || "all"} className="flex flex-col gap-2">
               {cat && (
-                <h2 className="px-1 text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+                <h2 className="px-1 text-sm font-medium text-muted-foreground">
                   {cat}
                 </h2>
               )}
@@ -106,7 +106,7 @@ export function ServicesList() {
           ))}
           {groups.inactive.length > 0 && (
             <section className="flex flex-col gap-2">
-              <h2 className="px-1 text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+              <h2 className="px-1 text-sm font-medium text-muted-foreground">
                 Inactive
               </h2>
               <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-dashed border-border-strong bg-surface-sunken/50">

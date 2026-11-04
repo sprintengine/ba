@@ -19,7 +19,7 @@ export function CustomerPreview() {
   const durText = durationLabel(values);
   return (
     <div className="flex flex-col gap-3">
-      <span aria-hidden className="text-xs font-medium tracking-wide text-subtle-foreground uppercase">
+      <span aria-hidden className="text-sm font-medium text-muted-foreground">
         Customer preview
       </span>
       <BusinessThemeProvider

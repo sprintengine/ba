@@ -77,7 +77,7 @@ export function PanelSection({
   return (
     <section className={cn("flex flex-col gap-2.5", className)}>
       <div className="flex min-h-6 items-center justify-between gap-3">
-        <h3 className="text-xs font-medium tracking-wide text-subtle-foreground uppercase">{title}</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         {action}
       </div>
       {children}

@@ -342,7 +342,7 @@ function Preview({ isNew }: { isNew: boolean }) {
   const days = valid ? previewDays(timing, today, PREVIEW_DAYS, business.timezone, now) : [];
   return (
     <div className="flex flex-col gap-4">
-      <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+      <p className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
         <Sparkles className="size-3.5" /> What {v("customers")} will see
       </p>
       {valid ? (
