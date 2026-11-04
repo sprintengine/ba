@@ -139,7 +139,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         }
       />
 
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <MiniStat label={v("bookings", { title: true })} value={String(c.bookingCount)} />
