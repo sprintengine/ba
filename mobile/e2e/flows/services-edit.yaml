@@ -1,0 +1,75 @@
+# An owner creates a service, edits its length, then deletes it again (so the flow can run repeatedly). Phones push
+# the editor; on iPad it opens beside the list and stays open after saving, so re-opening the row is harmless.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Create, edit and delete a service
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- runFlow:
+    file: ../subflows/open-business-section.yaml
+    env:
+      SECTION: services
+- extendedWaitUntil:
+    visible:
+      id: "services-new"
+    timeout: 20000
+- evalScript: ${output.service = 'E2E Yoga ' + Date.now()}
+
+# Create
+- tapOn:
+    id: "services-new"
+- extendedWaitUntil:
+    visible:
+      id: "service-name"
+    timeout: 10000
+- tapOn:
+    id: "service-name"
+- inputText: ${output.service}
+- tapOn:
+    id: "service-price"
+- inputText: "25"
+- hideKeyboard
+- tapOn:
+    id: "service-save"
+- extendedWaitUntil:
+    visible: "${output.service} created"
+    timeout: 20000
+
+# Edit
+- scrollUntilVisible:
+    element:
+      text: "${output.service}.*"
+    direction: DOWN
+- tapOn:
+    text: "${output.service}.*"
+- extendedWaitUntil:
+    visible:
+      id: "service-duration"
+    timeout: 10000
+- tapOn:
+    id: "service-duration"
+- eraseText: 5
+- inputText: "45"
+- hideKeyboard
+- tapOn:
+    id: "service-save"
+- extendedWaitUntil:
+    visible: "${output.service} saved"
+    timeout: 20000
+- assertVisible: "45 min.*"
+
+# Delete (confirmed in the native alert)
+- tapOn:
+    text: "${output.service}.*"
+- scrollUntilVisible:
+    element:
+      id: "service-delete"
+    direction: DOWN
+- tapOn:
+    id: "service-delete"
+- tapOn: "Delete service"
+- extendedWaitUntil:
+    visible: "${output.service} removed"
+    timeout: 20000

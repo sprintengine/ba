@@ -1,0 +1,490 @@
+[
+    {
+        "name": "search_marketplace",
+        "inputSchema": {
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Free text: a business name, a service or what the user needs (e.g. \"sports massage\")"
+                },
+                "city": {
+                    "type": "string",
+                    "description": "City slug or name, e.g. \"dublin\" (searches a 20 km radius unless radiusKm is set)"
+                },
+                "near": {
+                    "type": "object",
+                    "description": "Search around this point instead of a city",
+                    "properties": {
+                        "latitude": {
+                            "type": "number",
+                            "description": "Latitude in degrees",
+                            "minimum": -90.0,
+                            "maximum": 90.0
+                        },
+                        "longitude": {
+                            "type": "number",
+                            "description": "Longitude in degrees",
+                            "minimum": -180.0,
+                            "maximum": 180.0
+                        }
+                    },
+                    "required": [
+                        "latitude",
+                        "longitude"
+                    ],
+                    "additionalProperties": false
+                },
+                "radiusKm": {
+                    "type": "number",
+                    "description": "Search radius in km around city or near (1-200)",
+                    "minimum": 1.0,
+                    "maximum": 200.0
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Category key",
+                    "enum": [
+                        "physio",
+                        "gp-practice",
+                        "dental",
+                        "salon",
+                        "barber",
+                        "massage",
+                        "fitness",
+                        "music-lessons",
+                        "tutoring",
+                        "car-wash",
+                        "pet-grooming",
+                        "other"
+                    ]
+                },
+                "date": {
+                    "type": "string",
+                    "description": "Only businesses with a free time on this date (YYYY-MM-DD, business timezone)",
+                    "format": "date"
+                },
+                "dealsOnly": {
+                    "type": "boolean",
+                    "description": "Only businesses with an active deal (off-peak or last-minute discount)"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Results per page (1-30, default 12)",
+                    "minimum": 1,
+                    "maximum": 30
+                },
+                "cursor": {
+                    "type": "string",
+                    "description": "nextCursor from a previous result, to get the next page"
+                }
+            },
+            "required": [],
+            "type": "object"
+        },
+        "description": "Search bookanything's marketplace of businesses in Ireland (physios, car washes, music teachers, GP practices, salons, fitness studios and more). Filter by free text, city or a point with a radius, category, a date with free times and deals. Results include each business's slug, distance, from-price, up to three next free times (with any deal price) and active deals. Use the slug with the other tools. Categories: physio, gp-practice, dental, salon, barber, massage, fitness, music-lessons, tutoring, car-wash, pet-grooming, other. Cities: dublin, cork, galway, limerick, waterford, kilkenny, sligo, athlone, drogheda, dundalk, wexford, killarney, tralee, ennis, letterkenny, bray, navan, carlow, mullingar, castlebar, clonmel, tullamore, naas, swords, portlaoise.",
+        "title": "Search businesses",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "get_business",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                }
+            },
+            "required": [
+                "slug"
+            ],
+            "type": "object"
+        },
+        "description": "Everything needed to book with one business: its profile, policies (notice, cancellation, refunds), services with prices in cents, durations, options, add-ons, the selectable resource (e.g. a therapist), the booking questions each service needs answered, and active deals. Get the slug from search_marketplace.",
+        "title": "Get business",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "check_availability",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                },
+                "serviceId": {
+                    "type": "string",
+                    "description": "Service id"
+                },
+                "from": {
+                    "type": "string",
+                    "description": "First date, YYYY-MM-DD",
+                    "format": "date"
+                },
+                "to": {
+                    "type": "string",
+                    "description": "Last date, YYYY-MM-DD (default: from)",
+                    "format": "date"
+                },
+                "optionId": {
+                    "type": "string",
+                    "description": "Option id (required when the service has options)"
+                },
+                "addonIds": {
+                    "type": "array",
+                    "description": "Add-on ids",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resourceId": {
+                    "type": "string",
+                    "description": "Selectable resource id, e.g. a specific therapist"
+                },
+                "after": {
+                    "type": "string",
+                    "description": "Only times starting after this (ISO-8601 with offset); pass the last time you were shown to see later ones",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "slug",
+                "serviceId",
+                "from"
+            ],
+            "type": "object"
+        },
+        "description": "Free start times for one service of a business between two dates (inclusive, at most 31 days; `to` defaults to `from`), in the business's timezone. Services with options need optionId. Slots with a deal carry `offer` with the discounted price. Uses the signed-in customer's own customer group at that business. Pass resourceId to choose a specific person (e.g. a therapist). Some businesses offer only their next available time: then the result has `nextAvailableOnly: true` and at most one time; call again with `after` set to that time to see the next one. A day the business hasn't opened for booking yet has no times and `opensAt` (when it opens), or `held: true` (not open yet, no time set).",
+        "title": "Check availability",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "book",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                },
+                "serviceId": {
+                    "type": "string",
+                    "description": "Service id"
+                },
+                "start": {
+                    "type": "string",
+                    "description": "Start time exactly as returned by check_availability (ISO-8601 with offset)",
+                    "format": "date-time"
+                },
+                "optionId": {
+                    "type": "string",
+                    "description": "Option id (required when the service has options)"
+                },
+                "addonIds": {
+                    "type": "array",
+                    "description": "Add-on ids",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resourceId": {
+                    "type": "string",
+                    "description": "Selectable resource id, e.g. a specific therapist"
+                },
+                "answers": {
+                    "type": "object",
+                    "description": "Booking question id → answer",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "notes": {
+                    "type": "string",
+                    "description": "Optional note for the business"
+                },
+                "phone": {
+                    "type": "string",
+                    "description": "The user's phone number, when the business requires one"
+                },
+                "payment": {
+                    "type": "string",
+                    "description": "online (default: as the service says) or at_venue (only when the service has allowPayAtVenue)",
+                    "enum": [
+                        "online",
+                        "at_venue"
+                    ]
+                }
+            },
+            "required": [
+                "slug",
+                "serviceId",
+                "start"
+            ],
+            "type": "object"
+        },
+        "description": "Prepares a booking of a start time returned by check_availability, as the signed-in user (their name and verified email): returns a request with the price (deals apply automatically). Nothing is booked until it is approved (see its status and next). Required booking questions (from get_business) go in answers, keyed by question id. Some businesses require a phone number. Paid services then give a payment link for the user to pay on bookanything (get_proposal); never ask for or handle card details. A service with allowPayAtVenue lets the user choose payment=at_venue instead: nothing is paid now.",
+        "title": "Book",
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "idempotentHint": false,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "list_my_bookings",
+        "inputSchema": {
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "description": "Which bookings (default upcoming)",
+                    "enum": [
+                        "upcoming",
+                        "past",
+                        "all"
+                    ]
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "At most this many (1-50, default 10)",
+                    "minimum": 1,
+                    "maximum": 50
+                }
+            },
+            "required": [],
+            "type": "object"
+        },
+        "description": "The signed-in user's bookings at every business: upcoming (soonest first), past (latest first) or all. Each has its id (for reschedule_booking and cancel_booking), status, time, price and whether it can still be cancelled or moved online.",
+        "title": "List my bookings",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "get_next_appointment",
+        "inputSchema": {
+            "properties": {},
+            "required": [],
+            "type": "object"
+        },
+        "description": "The signed-in user's next upcoming booking, or null when there is none.",
+        "title": "Get next appointment",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "find_times_to_move",
+        "inputSchema": {
+            "properties": {
+                "bookingId": {
+                    "type": "string",
+                    "description": "Booking id from list_my_bookings"
+                },
+                "from": {
+                    "type": "string",
+                    "description": "First date, YYYY-MM-DD",
+                    "format": "date"
+                },
+                "to": {
+                    "type": "string",
+                    "description": "Last date, YYYY-MM-DD (default: from)",
+                    "format": "date"
+                },
+                "resourceId": {
+                    "type": "string",
+                    "description": "Selectable resource id, to see e.g. another therapist's times"
+                },
+                "after": {
+                    "type": "string",
+                    "description": "Only times starting after this (ISO-8601 with offset)",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "bookingId",
+                "from"
+            ],
+            "type": "object"
+        },
+        "description": "Free times one of the user's bookings can move to, between two dates (inclusive, at most 31 days; `to` defaults to `from`): same service and length, and only times its deal covers when it was booked with one. Use these with reschedule_booking. Some businesses offer only their next available time: call again with `after`.",
+        "title": "Find times to move a booking",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "get_payment_link",
+        "inputSchema": {
+            "properties": {
+                "bookingId": {
+                    "type": "string",
+                    "description": "Booking id from list_my_bookings"
+                }
+            },
+            "required": [
+                "bookingId"
+            ],
+            "type": "object"
+        },
+        "description": "The payment page for one of the user's bookings that is held waiting for payment (paymentStatus awaiting payment), e.g. when the link from book was lost. Give it to the user: they pay on bookanything themselves before the hold ends. Refused once the hold has ended or nothing is due.",
+        "title": "Get payment link",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "reschedule_booking",
+        "inputSchema": {
+            "properties": {
+                "bookingId": {
+                    "type": "string",
+                    "description": "Booking id from list_my_bookings"
+                },
+                "start": {
+                    "type": "string",
+                    "description": "New start time exactly as returned by check_availability",
+                    "format": "date-time"
+                },
+                "resourceId": {
+                    "type": "string",
+                    "description": "Selectable resource id, to change e.g. the therapist"
+                }
+            },
+            "required": [
+                "bookingId",
+                "start"
+            ],
+            "type": "object"
+        },
+        "description": "Prepares moving one of the user's bookings to another free time (from find_times_to_move): nothing moves until it is approved. Only allowed until the business's cancellation notice window; a booking with a deal price can only move to times the same deal covers. Payment carries over.",
+        "title": "Reschedule booking",
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "idempotentHint": false,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "cancel_booking",
+        "inputSchema": {
+            "properties": {
+                "bookingId": {
+                    "type": "string",
+                    "description": "Booking id from list_my_bookings"
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional reason, shared with the business"
+                }
+            },
+            "required": [
+                "bookingId"
+            ],
+            "type": "object"
+        },
+        "description": "Prepares cancelling one of the user's bookings: the request shows the refund the business's policy gives now, and nothing is cancelled until it is approved. Refunds go back to the original payment automatically.",
+        "title": "Cancel booking",
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "idempotentHint": false,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "confirm_action",
+        "inputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string",
+                    "description": "The proposalId a tool returned"
+                }
+            },
+            "required": [
+                "proposalId"
+            ],
+            "type": "object"
+        },
+        "description": "Carries out a request you prepared (a booking, move or cancellation) when its status is awaiting_confirmation, after the user clearly agreed. One awaiting_approval doesn't go ahead this way: the user approves it on bookanything at its approvalUrl. Confirming twice returns the first result.",
+        "title": "Confirm a request",
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "cancel_action",
+        "inputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string",
+                    "description": "The proposalId a tool returned"
+                }
+            },
+            "required": [
+                "proposalId"
+            ],
+            "type": "object"
+        },
+        "description": "Drops a request the user doesn't want, so it can't go ahead later. Nothing changes.",
+        "title": "Drop a request",
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "get_proposal",
+        "inputSchema": {
+            "properties": {
+                "proposalId": {
+                    "type": "string",
+                    "description": "The proposalId a tool returned"
+                }
+            },
+            "required": [
+                "proposalId"
+            ],
+            "type": "object"
+        },
+        "description": "Where a request you prepared stands: awaiting_approval (approvalUrl is the link to give the user), awaiting_confirmation, confirmed (with what happened, the booking, and e.g. a payment link), rejected, expired or failed. Use it after the user says they've approved or declined it.",
+        "title": "Check a request",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    }
+]

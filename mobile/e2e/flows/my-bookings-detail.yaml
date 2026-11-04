@@ -1,0 +1,26 @@
+# My bookings: open a booking, see its details, come back; switch to Past.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: My bookings list and detail
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "booking-BA-.*"
+    timeout: 20000
+- tapOn:
+    id: "booking-BA-.*"
+    index: 0
+- assertVisible:
+    id: "booking-detail"
+- assertVisible: "Reference BA-.*"
+# Back to the list (the tab pops its stack; Maestro's `back` is Android-only).
+- tapOn:
+    id: "tab-bookings"
+- tapOn: "Past.*"
+- assertVisible:
+    id: "my-bookings-list"
+- assertVisible:
+    id: "booking-BA-.*"

@@ -1,0 +1,32 @@
+# Bo: the owner opens the assistant from a business header and sends a message. Needs the backend with a model, or
+# the scripted fake (`AI_FAKE_SCRIPT=demo`, development only), so Bo streams a reply.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Bo, open and send a message
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- extendedWaitUntil:
+    visible:
+      id: "header-assistant"
+    timeout: 20000
+- tapOn:
+    id: "header-assistant"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-input"
+- inputText: "What's on this week?"
+- tapOn:
+    id: "assistant-send"
+- assertVisible: "What's on this week?"
+- extendedWaitUntil:
+    notVisible:
+      id: "assistant-thinking"
+    timeout: 60000
+- assertNotVisible:
+    id: "turn-error"
+- takeScreenshot: e2e/screenshots/bo-reply

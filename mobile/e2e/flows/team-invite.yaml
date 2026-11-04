@@ -1,0 +1,34 @@
+# An owner invites someone to the team as staff; the invitation shows under "Pending invitations".
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Invite a team member
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- runFlow:
+    file: ../subflows/open-business-section.yaml
+    env:
+      SECTION: team
+- extendedWaitUntil:
+    visible:
+      id: "team-invite"
+    timeout: 20000
+- evalScript: ${output.email = 'jordan.' + Date.now() + '@example.test'}
+- tapOn:
+    id: "team-invite"
+- tapOn:
+    id: "invite-email"
+- inputText: ${output.email}
+- tapOn:
+    id: "invite-role-staff"
+- tapOn:
+    id: "invite-send"
+- extendedWaitUntil:
+    visible: "Invite sent to ${output.email}"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "member-${output.email}"
+    direction: DOWN
+- assertVisible: "PENDING INVITATIONS"

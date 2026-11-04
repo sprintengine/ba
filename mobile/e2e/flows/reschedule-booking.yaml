@@ -1,0 +1,43 @@
+# My bookings → an upcoming booking → Reschedule → another free time → moved.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Reschedule a booking
+tags: [my-bookings]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "booking-BA-.*"
+    timeout: 20000
+- tapOn:
+    id: "booking-BA-.*"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "booking-detail"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "booking-reschedule"
+- tapOn:
+    id: "booking-reschedule"
+- extendedWaitUntil:
+    visible:
+      id: "reschedule-sheet"
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      id: "slot-.*"
+    timeout: 20000
+- tapOn:
+    id: "slot-.*"
+    index: 1
+- assertVisible: "Move to .*"
+- takeScreenshot: e2e/screenshots/reschedule
+- tapOn:
+    id: "reschedule-confirm"
+- extendedWaitUntil:
+    visible: "Moved to .*"
+    timeout: 15000

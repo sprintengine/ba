@@ -1,0 +1,48 @@
+"use client";
+
+import { CalendarPlus, Download } from "lucide-react";
+import type { CustomerBooking } from "@/lib/api/types";
+import { bookingCalendarEvent, downloadIcs, googleCalendarUrl } from "@/lib/booking/calendar-links";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+/** "Add to calendar": Google Calendar link or an .ics download for a customer's booking. */
+export function AddToCalendar({
+  booking,
+  manageUrl,
+  variant = "secondary",
+  className,
+}: {
+  booking: CustomerBooking;
+  manageUrl?: string | null;
+  variant?: "secondary" | "ghost" | "soft";
+  className?: string;
+}) {
+  const event = bookingCalendarEvent(booking, manageUrl);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant={variant} className={className}>
+          <CalendarPlus />
+          <span className="max-sm:hidden">Add to calendar</span>
+          <span className="sm:hidden">Calendar</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem asChild>
+          <a href={googleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+            <CalendarPlus /> Google Calendar
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => downloadIcs(event, `${booking.reference}.ics`)}>
+          <Download /> Apple, Outlook & others (.ics)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

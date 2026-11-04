@@ -1,0 +1,78 @@
+# Explore → a business → book a service that's paid at the venue (nothing to pay now) → booked.
+# Seeded data: Meadowbrook Family Practice (customer groups, then "Smear test", free, paid at the venue).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Browse and book a free service
+tags: [booking]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "tab-explore"
+    timeout: 20000
+- tapOn:
+    id: "tab-explore"
+- extendedWaitUntil:
+    visible:
+      id: "explore-search"
+    timeout: 20000
+- tapOn:
+    id: "explore-search"
+- inputText: "Meadowbrook"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: "listing-meadowbrook-practice"
+    timeout: 20000
+- takeScreenshot: e2e/screenshots/explore-results
+- tapOn:
+    id: "listing-meadowbrook-practice"
+- extendedWaitUntil:
+    visible:
+      id: "business-page"
+    timeout: 20000
+- tapOn:
+    id: "business-book"
+- extendedWaitUntil:
+    visible:
+      id: "booking-flow"
+    timeout: 20000
+# The practice asks who is booking first.
+- tapOn:
+    id: "group-.*"
+    index: 0
+- scrollUntilVisible:
+    element: "Smear test.*"
+- tapOn: "Smear test.*"
+# Any clinician, when asked.
+- tapOn:
+    id: "resource-any"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "slot-.*"
+    timeout: 20000
+- tapOn:
+    id: "slot-.*"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "details-step"
+    timeout: 10000
+- tapOn:
+    id: "details-review"
+- extendedWaitUntil:
+    visible:
+      id: "review-step"
+    timeout: 10000
+- takeScreenshot: e2e/screenshots/booking-review
+- tapOn:
+    id: "booking-submit"
+- extendedWaitUntil:
+    visible:
+      id: "manage-hero-.*"
+    timeout: 20000
+- assertVisible: "You're booked|Request received"
+- takeScreenshot: e2e/screenshots/booking-booked

@@ -1,0 +1,34 @@
+# Shared editor settings. ktlint reads the [*.{kt,kts}] section; Prettier reads .prettierrc.json first.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+indent_size = 4
+max_line_length = 140
+ktlint_code_style = intellij_idea
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+# The house style packs related arguments and parameters several to a line and keeps short lambdas, `when`
+# branches and `@Serializable` declarations on one line. These rules would put every argument, parameter,
+# statement and annotation on its own line (about +25% lines), so they are off. Lines over 140 are still
+# rejected, and the max-line-length fixers (binary-expression and property wrapping) stay on.
+ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_parameter-list-wrapping = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_function-literal = disabled
+ktlint_standard_blank-line-between-when-conditions = disabled
+ktlint_standard_annotation = disabled
+ktlint_standard_spacing-between-declarations-with-annotations = disabled
+ktlint_standard_enum-wrapping = disabled

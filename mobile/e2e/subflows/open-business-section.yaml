@@ -1,0 +1,28 @@
+# Open a business section (Env: SECTION = services | resources | team | offers | reports | settings …), signed in as a
+# member: phones go through More, large screens use the sidebar.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+---
+- extendedWaitUntil:
+    visible:
+      id: "tab-more|tab-${SECTION}"
+    timeout: 60000
+- runFlow:
+    when:
+      visible:
+        id: "tab-more"
+    commands:
+      - tapOn:
+          id: "tab-more"
+      - scrollUntilVisible:
+          element:
+            id: "more-${SECTION}"
+          direction: DOWN
+      - tapOn:
+          id: "more-${SECTION}"
+- runFlow:
+    when:
+      notVisible:
+        id: "tab-more"
+    commands:
+      - tapOn:
+          id: "tab-${SECTION}"

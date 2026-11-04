@@ -1,0 +1,21 @@
+# Local development services. Usage: docker compose up -d
+# The backend defaults to jdbc:postgresql://localhost:5432/bookanything_dev.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: bookanything_dev
+      POSTGRES_USER: bookanything
+      POSTGRES_PASSWORD: bookanything
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookanything -d bookanything_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:

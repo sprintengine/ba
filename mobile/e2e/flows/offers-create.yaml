@@ -1,0 +1,79 @@
+# An owner creates an off-peak deal (weekdays, afternoons, 15% off) and sees it in the Offers list.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Create an offer
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- runFlow:
+    file: ../subflows/open-business-section.yaml
+    env:
+      SECTION: offers
+- extendedWaitUntil:
+    visible:
+      id: "offers-new|offers-create"
+    timeout: 20000
+- evalScript: ${output.name = 'Quiet afternoons ' + Date.now()}
+# The header's + once there are deals; the empty state's button before the first.
+- runFlow:
+    when:
+      visible:
+        id: "offers-new"
+    commands:
+      - tapOn:
+          id: "offers-new"
+- runFlow:
+    when:
+      visible:
+        id: "offers-create"
+    commands:
+      - tapOn:
+          id: "offers-create"
+- extendedWaitUntil:
+    visible:
+      id: "offer-name"
+    timeout: 10000
+- tapOn:
+    id: "offer-name"
+- inputText: ${output.name}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "offer-percent"
+    direction: DOWN
+- tapOn:
+    id: "offer-percent"
+- eraseText: 3
+- inputText: "15"
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "offer-days-weekdays"
+    direction: DOWN
+- tapOn:
+    id: "offer-days-weekdays"
+- scrollUntilVisible:
+    element:
+      id: "offer-add-hours"
+    direction: DOWN
+- tapOn:
+    id: "offer-add-hours"
+- scrollUntilVisible:
+    element:
+      id: "offer-preview-summary"
+    direction: DOWN
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: "offer-save"
+    direction: DOWN
+- tapOn:
+    id: "offer-save"
+- extendedWaitUntil:
+    visible: "${output.name} created"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "${output.name}"
+    direction: DOWN
+- assertVisible: "15% off"

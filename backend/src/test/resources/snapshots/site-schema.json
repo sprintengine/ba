@@ -1,0 +1,210 @@
+{
+    "type": "object",
+    "properties": {
+        "theme": {
+            "type": "string",
+            "enum": [
+                "clinical",
+                "calm",
+                "bold",
+                "playful",
+                "editorial",
+                "minimal"
+            ],
+            "description": "Visual theme"
+        },
+        "primaryColor": {
+            "type": "string",
+            "description": "Brand colour, hex like #0f766e, dark enough for white button text"
+        },
+        "accentColor": {
+            "type": "string",
+            "description": "Optional accent colour, hex, or \"\" for none"
+        },
+        "seoTitle": {
+            "type": "string",
+            "description": "Page title for search engines (≤ 70)"
+        },
+        "seoDescription": {
+            "type": "string",
+            "description": "Search result description (≤ 160)"
+        },
+        "sections": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Existing section id to keep it, or \"\" for a new section"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "hero",
+                            "services",
+                            "team",
+                            "about",
+                            "gallery",
+                            "testimonials",
+                            "faq",
+                            "hours",
+                            "cta",
+                            "contact"
+                        ],
+                        "description": "Section type"
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Shown on the page"
+                    },
+                    "variant": {
+                        "type": "string",
+                        "enum": [
+                            "",
+                            "split",
+                            "cover",
+                            "minimal"
+                        ],
+                        "description": "hero: layout; other types: \"\""
+                    },
+                    "eyebrow": {
+                        "type": "string",
+                        "description": "hero: short line above the headline (≤ 60), else \"\""
+                    },
+                    "headline": {
+                        "type": "string",
+                        "description": "hero (≤ 90) and cta (≤ 90): headline, else \"\""
+                    },
+                    "subheadline": {
+                        "type": "string",
+                        "description": "hero: one or two sentences (≤ 240), else \"\""
+                    },
+                    "heading": {
+                        "type": "string",
+                        "description": "services, team, about, gallery, testimonials, faq, hours, contact: section heading (≤ 80), else \"\""
+                    },
+                    "intro": {
+                        "type": "string",
+                        "description": "services and team: short intro (≤ 300), else \"\""
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "about: text (≤ 1500, paragraphs separated by a blank line); cta (≤ 240) and contact (≤ 300): short text; hours: short note (≤ 200); else \"\""
+                    },
+                    "ctaLabel": {
+                        "type": "string",
+                        "description": "hero: button label; cta: button label (≤ 30), else \"\""
+                    },
+                    "highlights": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "≤ 60 characters"
+                        },
+                        "description": "about: up to 4 short true highlights, else []"
+                    },
+                    "faq": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question": {
+                                    "type": "string",
+                                    "description": "≤ 140"
+                                },
+                                "answer": {
+                                    "type": "string",
+                                    "description": "≤ 600"
+                                }
+                            },
+                            "required": [
+                                "question",
+                                "answer"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "faq: questions and answers based only on the facts given, else []"
+                    },
+                    "serviceIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "a service id from the list given"
+                        },
+                        "description": "services: ids to show in order ([] = all public services), else []"
+                    },
+                    "team": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "resourceId": {
+                                    "type": "string",
+                                    "description": "a team member id from the list given"
+                                },
+                                "bio": {
+                                    "type": "string",
+                                    "description": "≤ 400, \"\" for none"
+                                }
+                            },
+                            "required": [
+                                "resourceId",
+                                "bio"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "team: people to show with short bios ([] = everyone), else []"
+                    },
+                    "pattern": {
+                        "type": "string",
+                        "enum": [
+                            "",
+                            "aurora",
+                            "mesh",
+                            "waves",
+                            "grid",
+                            "dots",
+                            "rays"
+                        ],
+                        "description": "hero and about: generated background pattern, else \"\""
+                    },
+                    "showPrices": {
+                        "type": "boolean",
+                        "description": "services: show prices from the booking system"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "enabled",
+                    "variant",
+                    "eyebrow",
+                    "headline",
+                    "subheadline",
+                    "heading",
+                    "intro",
+                    "body",
+                    "ctaLabel",
+                    "highlights",
+                    "faq",
+                    "serviceIds",
+                    "team",
+                    "pattern",
+                    "showPrices"
+                ],
+                "additionalProperties": false
+            },
+            "description": "The page, top to bottom: at most 16 sections and at most one hero"
+        }
+    },
+    "required": [
+        "theme",
+        "primaryColor",
+        "accentColor",
+        "seoTitle",
+        "seoDescription",
+        "sections"
+    ],
+    "additionalProperties": false
+}

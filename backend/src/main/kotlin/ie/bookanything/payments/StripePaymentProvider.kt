@@ -1,0 +1,265 @@
+package ie.bookanything.payments
+
+import com.stripe.net.RequestOptions
+import com.stripe.param.AccountCreateParams
+import com.stripe.param.AccountLinkCreateParams
+import com.stripe.param.CustomerCreateParams
+import com.stripe.param.RefundCreateParams
+import com.stripe.param.checkout.SessionCreateParams
+import ie.bookanything.business.BusinessRow
+import ie.bookanything.business.Plan
+import ie.bookanything.config.StripeConfig
+import ie.bookanything.http.ApiException
+import ie.bookanything.http.Errors
+import org.slf4j.LoggerFactory
+import java.time.Clock
+import java.time.Duration
+import com.stripe.param.billingportal.SessionCreateParams as PortalSessionCreateParams
+
+/**
+ * Stripe Connect provider (docs/architecture.md section 7).
+ *
+ * - Each business has its own connected account (Stripe-hosted onboarding via Account Links;
+ *   Stripe collects requirements, the account pays its own Stripe fees and has the full dashboard).
+ * - Booking payments are **direct charges on the connected account** (`Stripe-Account` header):
+ *   the business is merchant of record and the platform takes **no application fee**.
+ * - Platform billing (plans) runs on the platform account with Stripe Billing.
+ */
+class StripePaymentProvider(
+    private val gateway: StripeGateway,
+    private val config: StripeConfig,
+    private val clock: Clock = Clock.systemUTC(),
+) : PaymentProvider {
+    private val log = LoggerFactory.getLogger(StripePaymentProvider::class.java)
+
+    override val name = "stripe"
+
+    /** Checkout Sessions must expire at least 30 minutes after creation; one extra minute absorbs clock skew. */
+    override val minHoldMinutes = MIN_HOLD_MINUTES
+
+    override fun chargesEnabled(business: BusinessRow) = business.stripeAccountId != null && business.stripeChargesEnabled
+
+    override fun connectStatus(business: BusinessRow): ConnectStatus {
+        val accountId = business.stripeAccountId ?: return ConnectStatus(false, false, false)
+        return try {
+            val a = gateway.retrieveAccount(accountId)
+            ConnectStatus(true, a.chargesEnabled, a.detailsSubmitted)
+        } catch (_: ApiException) {
+            // Stripe unreachable (the gateway turns StripeException into a provider error): report what the last
+            // account.updated webhook told us.
+            ConnectStatus(true, business.stripeChargesEnabled, business.stripeDetailsSubmitted)
+        }
+    }
+
+    override fun createConnectLink(business: BusinessRow, returnUrl: String): ConnectLink {
+        var created: String? = null
+        val accountId = business.stripeAccountId ?: gateway.createAccount(
+            accountParams(business),
+            // Two concurrent first clicks must not create two accounts.
+            RequestOptions.builder().setIdempotencyKey("bookanything-account-${business.id}").build(),
+        ).also { created = it }
+        val url = gateway.createAccountLink(
+            AccountLinkCreateParams.builder()
+                .setAccount(accountId)
+                .setType(AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
+                .setRefreshUrl(withQuery(returnUrl, "stripe=refresh"))
+                .setReturnUrl(withQuery(returnUrl, "stripe=return"))
+                .build(),
+        )
+        return ConnectLink(url, created)
+    }
+
+    fun accountParams(business: BusinessRow): AccountCreateParams = AccountCreateParams.builder()
+        .setCountry(business.country)
+        .setDefaultCurrency(business.currency.lowercase())
+        .apply { business.contactEmail?.let { setEmail(it) } }
+        .setController(
+            AccountCreateParams.Controller.builder()
+                .setFees(AccountCreateParams.Controller.Fees.builder().setPayer(AccountCreateParams.Controller.Fees.Payer.ACCOUNT).build())
+                .setLosses(
+                    AccountCreateParams.Controller.Losses.builder().setPayments(
+                        AccountCreateParams.Controller.Losses.Payments.STRIPE,
+                    ).build(),
+                )
+                .setRequirementCollection(AccountCreateParams.Controller.RequirementCollection.STRIPE)
+                .setStripeDashboard(
+                    AccountCreateParams.Controller.StripeDashboard.builder()
+                        .setType(AccountCreateParams.Controller.StripeDashboard.Type.FULL).build(),
+                )
+                .build(),
+        )
+        .setBusinessProfile(
+            AccountCreateParams.BusinessProfile.builder()
+                .setName(business.name)
+                .apply { business.websiteUrl?.let { setUrl(it) } }
+                .build(),
+        )
+        .putMetadata("businessId", business.id.toString())
+        .putMetadata("slug", business.slug)
+        .build()
+
+    /** Builds the Checkout Session parameters. Public so tests can assert the exact request. */
+    fun checkoutParams(request: CheckoutRequest): SessionCreateParams {
+        val now = clock.instant()
+        // Stripe accepts expires_at between 30 minutes and 24 hours after creation.
+        val earliest = now.plus(Duration.ofMinutes(30)).plusSeconds(30)
+        val latest = now.plus(Duration.ofHours(24)).minusSeconds(60)
+        val expiresAt = request.expiresAt.coerceIn(earliest, latest)
+        val metadata = mapOf(
+            "bookingId" to request.bookingId.toString(),
+            "paymentId" to request.paymentId.toString(),
+            "businessId" to request.business.id.toString(),
+        )
+        return SessionCreateParams.builder()
+            .setMode(SessionCreateParams.Mode.PAYMENT)
+            .addLineItem(
+                SessionCreateParams.LineItem.builder()
+                    .setQuantity(1L)
+                    .setPriceData(
+                        SessionCreateParams.LineItem.PriceData.builder()
+                            .setCurrency(request.currency.lowercase())
+                            .setUnitAmount(request.amountCents.toLong())
+                            .setProductData(
+                                SessionCreateParams.LineItem.PriceData.ProductData.builder().setName(
+                                    request.description.take(STRIPE_PRODUCT_NAME_MAX),
+                                ).build(),
+                            )
+                            .build(),
+                    )
+                    .build(),
+            )
+            .apply { request.customerEmail?.let { setCustomerEmail(it) } }
+            .setClientReferenceId(request.paymentId.toString())
+            .setExpiresAt(expiresAt.epochSecond)
+            .setSuccessUrl(request.successUrl)
+            .setCancelUrl(request.cancelUrl)
+            .putAllMetadata(metadata)
+            // Direct charge on the connected account: no application_fee_amount, no transfer_data.
+            .setPaymentIntentData(
+                SessionCreateParams.PaymentIntentData.builder()
+                    .setDescription(request.description.take(STRIPE_DESCRIPTION_MAX))
+                    .putAllMetadata(metadata)
+                    .build(),
+            )
+            .build()
+    }
+
+    fun connectedAccountOptions(business: BusinessRow, idempotencyKey: String): RequestOptions {
+        val account = business.stripeAccountId ?: throw Errors.paymentsNotConfigured()
+        return RequestOptions.builder().setStripeAccount(account).setIdempotencyKey(idempotencyKey).build()
+    }
+
+    override fun createCheckout(request: CheckoutRequest): CheckoutSession {
+        if (!chargesEnabled(request.business)) throw Errors.paymentsNotConfigured()
+        val session = gateway.createCheckoutSession(
+            checkoutParams(request), connectedAccountOptions(request.business, "bookanything-checkout-${request.paymentId}"),
+        )
+        val url = session.url ?: throw Errors.providerError()
+        return CheckoutSession(session.id, url)
+    }
+
+    /**
+     * Expires the Checkout Session on the connected account while it is still open. A session the customer completed
+     * meanwhile is left alone: its payment confirms or refunds the booking as any late payment does.
+     */
+    override fun expireCheckout(business: BusinessRow, providerRef: String) {
+        // Once paid, a charge is known by its PaymentIntent: there is no session to close.
+        if (!providerRef.startsWith("cs_")) return
+        val account = RequestOptions.builder().setStripeAccount(business.stripeAccountId ?: return).build()
+        if (gateway.retrieveCheckoutSession(providerRef, account).status != "open") return
+        gateway.expireCheckoutSession(providerRef, account)
+    }
+
+    override fun refund(request: RefundRequest): RefundResult {
+        val ref = request.chargeProviderRef ?: error("Charge has no Stripe reference")
+        val options = connectedAccountOptions(request.business, "bookanything-refund-${request.refundPaymentId}")
+        // Charges store the Checkout Session id until the payment completes, then the PaymentIntent id.
+        val paymentIntent = if (ref.startsWith("cs_")) {
+            gateway.retrieveCheckoutSession(
+                ref, RequestOptions.builder().setStripeAccount(request.business.stripeAccountId).build(),
+            ).paymentIntentId
+                ?: error("Checkout Session $ref has no PaymentIntent")
+        } else {
+            ref
+        }
+        val refund = gateway.createRefund(
+            RefundCreateParams.builder()
+                .setPaymentIntent(paymentIntent)
+                .setAmount(request.amountCents.toLong())
+                .putMetadata("refundPaymentId", request.refundPaymentId.toString())
+                .putMetadata("businessId", request.business.id.toString())
+                .build(),
+            options,
+        )
+        // "pending" refunds are accepted by Stripe and count towards charge.amount_refunded.
+        val ok = refund.status == "succeeded" || refund.status == "pending"
+        if (!ok) log.warn("stripe refund {} for payment {} has status {}", refund.id, request.refundPaymentId, refund.status)
+        return RefundResult(refund.id, ok)
+    }
+
+    fun priceFor(plan: Plan): String? = when (plan) {
+        Plan.PRO -> config.pricePro
+        Plan.BUSINESS -> config.priceBusiness
+        Plan.FREE -> null
+    }
+
+    fun billingCheckoutParams(
+        business: BusinessRow, customerId: String, plan: Plan, price: String, returnUrl: String,
+    ): SessionCreateParams =
+        SessionCreateParams.builder()
+            .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+            .setCustomer(customerId)
+            .addLineItem(SessionCreateParams.LineItem.builder().setPrice(price).setQuantity(1L).build())
+            .setClientReferenceId(business.id.toString())
+            .putMetadata("businessId", business.id.toString())
+            .putMetadata("plan", plan.wire)
+            .setSubscriptionData(
+                SessionCreateParams.SubscriptionData.builder()
+                    .putMetadata("businessId", business.id.toString())
+                    .putMetadata("plan", plan.wire)
+                    .build(),
+            )
+            .setAllowPromotionCodes(true)
+            .setSuccessUrl(withQuery(returnUrl, "billing=success"))
+            .setCancelUrl(withQuery(returnUrl, "billing=cancelled"))
+            .build()
+
+    override fun createBillingCheckout(business: BusinessRow, plan: Plan, returnUrl: String, ownerEmail: String?): BillingSession {
+        val price = priceFor(plan) ?: throw Errors.paymentsNotConfigured("Billing prices are not configured on this server.")
+        var created: String? = null
+        val customerId = business.stripeCustomerId ?: gateway.createCustomer(
+            CustomerCreateParams.builder()
+                .setName(business.name)
+                .apply { (ownerEmail ?: business.contactEmail)?.let { setEmail(it) } }
+                .putMetadata("businessId", business.id.toString())
+                .putMetadata("slug", business.slug)
+                .build(),
+            RequestOptions.builder().setIdempotencyKey("bookanything-customer-${business.id}").build(),
+        ).also { created = it }
+        val session = gateway.createCheckoutSession(
+            billingCheckoutParams(business, customerId, plan, price, returnUrl),
+            RequestOptions.builder().build(),
+        )
+        return BillingSession(session.url ?: throw Errors.providerError(), created)
+    }
+
+    override fun createBillingPortal(business: BusinessRow, returnUrl: String): String {
+        val customerId = business.stripeCustomerId
+            ?: throw Errors.conflict("There is no billing account yet. Choose a plan first.")
+        return gateway.createPortalSession(PortalSessionCreateParams.builder().setCustomer(customerId).setReturnUrl(returnUrl).build())
+    }
+
+    companion object {
+        const val MIN_HOLD_MINUTES = 31
+
+        fun withQuery(url: String, query: String): String {
+            val (base, fragment) = url.split('#', limit = 2).let { it[0] to it.getOrNull(1) }
+            val sep = if (base.contains('?')) "&" else "?"
+            return base + sep + query + fragment?.let { "#$it" }.orEmpty()
+        }
+    }
+}
+
+/** Stripe's length limits for a product name and a PaymentIntent description. */
+private const val STRIPE_PRODUCT_NAME_MAX = 250
+private const val STRIPE_DESCRIPTION_MAX = 500

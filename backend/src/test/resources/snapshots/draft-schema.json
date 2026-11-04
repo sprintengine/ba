@@ -1,0 +1,511 @@
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Business name"
+        },
+        "industry": {
+            "type": "string",
+            "description": "Short lowercase slug, e.g. physio"
+        },
+        "description": {
+            "type": "string",
+            "description": "One or two sentences for the booking page"
+        },
+        "timezone": {
+            "type": "string",
+            "description": "IANA timezone, e.g. Europe/Dublin"
+        },
+        "currency": {
+            "type": "string",
+            "description": "ISO 4217, e.g. EUR"
+        },
+        "locale": {
+            "type": "string",
+            "description": "e.g. en-IE"
+        },
+        "country": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-2, e.g. IE"
+        },
+        "primaryColor": {
+            "type": "string",
+            "description": "Hex colour like #0f766e"
+        },
+        "vocabulary": {
+            "type": "object",
+            "properties": {
+                "resource": {
+                    "type": "string",
+                    "description": "Singular, e.g. Therapist"
+                },
+                "resources": {
+                    "type": "string",
+                    "description": "Plural"
+                },
+                "customer": {
+                    "type": "string",
+                    "description": "Singular, e.g. Patient"
+                },
+                "customers": {
+                    "type": "string",
+                    "description": "Plural"
+                },
+                "booking": {
+                    "type": "string",
+                    "description": "Singular, e.g. Appointment"
+                },
+                "bookings": {
+                    "type": "string",
+                    "description": "Plural"
+                }
+            },
+            "required": [
+                "resource",
+                "resources",
+                "customer",
+                "customers",
+                "booking",
+                "bookings"
+            ],
+            "additionalProperties": false
+        },
+        "policies": {
+            "type": "object",
+            "properties": {
+                "minNoticeMinutes": {
+                    "type": "integer",
+                    "description": "Minimum notice before a booking starts"
+                },
+                "maxAdvanceDays": {
+                    "type": "integer",
+                    "description": "How far ahead customers can book (1-730)"
+                },
+                "cancellationNoticeHours": {
+                    "type": "integer",
+                    "description": "Free cancellation up to this many hours before"
+                },
+                "lateCancellationRefundPercent": {
+                    "type": "integer",
+                    "description": "0-100, refund for later cancellations"
+                },
+                "allowCustomerCancel": {
+                    "type": "boolean",
+                    "description": "Customers may cancel online"
+                },
+                "allowCustomerReschedule": {
+                    "type": "boolean",
+                    "description": "Customers may reschedule online"
+                },
+                "holdMinutes": {
+                    "type": "integer",
+                    "description": "Minutes a slot is held while paying online (30-60)"
+                },
+                "requireCustomerPhone": {
+                    "type": "boolean",
+                    "description": "Phone number required"
+                }
+            },
+            "required": [
+                "minNoticeMinutes",
+                "maxAdvanceDays",
+                "cancellationNoticeHours",
+                "lateCancellationRefundPercent",
+                "allowCustomerCancel",
+                "allowCustomerReschedule",
+                "holdMinutes",
+                "requireCustomerPhone"
+            ],
+            "additionalProperties": false
+        },
+        "customerGroups": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "Short unique key, e.g. new_patients"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Display name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "\"\" if none"
+                    },
+                    "restricted": {
+                        "type": "boolean",
+                        "description": "Only bookable in hours windows that list this group"
+                    }
+                },
+                "required": [
+                    "key",
+                    "name",
+                    "description",
+                    "restricted"
+                ],
+                "additionalProperties": false
+            },
+            "description": "Optional customer segments"
+        },
+        "resources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": "Short unique key, e.g. therapist_1"
+                    },
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "person",
+                            "space",
+                            "equipment"
+                        ],
+                        "description": "person, space or equipment"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Display name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "\"\" if none"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "description": "Usually 1"
+                    },
+                    "weeklyHours": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "dayOfWeek": {
+                                    "type": "integer",
+                                    "description": "1 = Monday … 7 = Sunday"
+                                },
+                                "startTime": {
+                                    "type": "string",
+                                    "description": "HH:mm, 24-hour"
+                                },
+                                "endTime": {
+                                    "type": "string",
+                                    "description": "HH:mm, 24-hour, after startTime"
+                                },
+                                "audienceGroupKeys": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "description": "customer group key"
+                                    },
+                                    "description": "empty = everyone"
+                                }
+                            },
+                            "required": [
+                                "dayOfWeek",
+                                "startTime",
+                                "endTime",
+                                "audienceGroupKeys"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "Weekly opening hours"
+                    }
+                },
+                "required": [
+                    "key",
+                    "kind",
+                    "name",
+                    "description",
+                    "capacity",
+                    "weeklyHours"
+                ],
+                "additionalProperties": false
+            },
+            "description": "Bookable resources"
+        },
+        "services": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Unique service name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Short description, \"\" if none"
+                    },
+                    "category": {
+                        "type": "string",
+                        "description": "\"\" if none"
+                    },
+                    "durationMinutes": {
+                        "type": "integer",
+                        "description": "Base duration, multiple of 5"
+                    },
+                    "bufferBeforeMinutes": {
+                        "type": "integer",
+                        "description": "0 if none"
+                    },
+                    "bufferAfterMinutes": {
+                        "type": "integer",
+                        "description": "0 if none"
+                    },
+                    "slotIntervalMinutes": {
+                        "type": "integer",
+                        "description": "Start-time step; 0 = the duration"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "description": "Seats per slot; 1 unless a group session"
+                    },
+                    "priceCents": {
+                        "type": "integer",
+                        "description": "Base price in minor units"
+                    },
+                    "paymentMode": {
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "deposit",
+                            "at_venue",
+                            "free"
+                        ],
+                        "description": "full, deposit, at_venue or free"
+                    },
+                    "depositCents": {
+                        "type": "integer",
+                        "description": "Deposit when paymentMode is deposit, else 0"
+                    },
+                    "requiresApproval": {
+                        "type": "boolean",
+                        "description": "Business must accept each booking"
+                    },
+                    "locationType": {
+                        "type": "string",
+                        "enum": [
+                            "business",
+                            "customer",
+                            "online"
+                        ],
+                        "description": "business, customer or online"
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Variant name"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "\"\" if none"
+                                },
+                                "durationMinutes": {
+                                    "type": "integer",
+                                    "description": "Duration for this variant"
+                                },
+                                "priceCents": {
+                                    "type": "integer",
+                                    "description": "Price for this variant"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "description",
+                                "durationMinutes",
+                                "priceCents"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "Mutually exclusive variants; empty if none"
+                    },
+                    "addons": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "description": "Extra name"
+                                },
+                                "description": {
+                                    "type": "string",
+                                    "description": "\"\" if none"
+                                },
+                                "extraMinutes": {
+                                    "type": "integer",
+                                    "description": "Added minutes"
+                                },
+                                "priceCents": {
+                                    "type": "integer",
+                                    "description": "Added price"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "description",
+                                "extraMinutes",
+                                "priceCents"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "Optional extras"
+                    },
+                    "requirements": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "description": "e.g. Therapist"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "description": "How many from the pool, usually 1"
+                                },
+                                "customerSelectable": {
+                                    "type": "boolean",
+                                    "description": "Customer picks which one (at most one requirement per service)"
+                                },
+                                "resourceKeys": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "description": "resource key"
+                                    },
+                                    "description": "The pool"
+                                }
+                            },
+                            "required": [
+                                "label",
+                                "quantity",
+                                "customerSelectable",
+                                "resourceKeys"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "description": "Resources each booking needs; at least one"
+                    },
+                    "allowedGroupKeys": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "customer group key"
+                        },
+                        "description": "Empty = everyone"
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "category",
+                    "durationMinutes",
+                    "bufferBeforeMinutes",
+                    "bufferAfterMinutes",
+                    "slotIntervalMinutes",
+                    "capacity",
+                    "priceCents",
+                    "paymentMode",
+                    "depositCents",
+                    "requiresApproval",
+                    "locationType",
+                    "options",
+                    "addons",
+                    "requirements",
+                    "allowedGroupKeys"
+                ],
+                "additionalProperties": false
+            },
+            "description": "Bookable services"
+        },
+        "questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": "Question text"
+                    },
+                    "helpText": {
+                        "type": "string",
+                        "description": "\"\" if none"
+                    },
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "text",
+                            "textarea",
+                            "select",
+                            "checkbox",
+                            "number",
+                            "phone",
+                            "email"
+                        ],
+                        "description": "Field type"
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "description": "choice"
+                        },
+                        "description": "Choices for select, else empty"
+                    },
+                    "required": {
+                        "type": "boolean",
+                        "description": "Must be answered"
+                    },
+                    "sensitive": {
+                        "type": "boolean",
+                        "description": "Health or other personal details"
+                    },
+                    "serviceName": {
+                        "type": "string",
+                        "description": "Name of the one service it applies to, \"\" = all services"
+                    }
+                },
+                "required": [
+                    "label",
+                    "helpText",
+                    "kind",
+                    "options",
+                    "required",
+                    "sensitive",
+                    "serviceName"
+                ],
+                "additionalProperties": false
+            },
+            "description": "Booking form questions (name, email and phone are always collected)"
+        }
+    },
+    "required": [
+        "name",
+        "industry",
+        "description",
+        "timezone",
+        "currency",
+        "locale",
+        "country",
+        "primaryColor",
+        "vocabulary",
+        "policies",
+        "customerGroups",
+        "resources",
+        "services",
+        "questions"
+    ],
+    "additionalProperties": false
+}

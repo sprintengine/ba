@@ -1,0 +1,20 @@
+# Approvals from More: what the owner's AI agents asked to change (or that there's nothing yet). Not run in CI yet.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Agent approvals for an owner
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- extendedWaitUntil:
+    visible:
+      id: "today"
+    timeout: 20000
+- tapOn:
+    id: "tab-more"
+- tapOn:
+    id: "more-approvals"
+- extendedWaitUntil:
+    visible:
+      id: "approvals-empty|approvals-waiting|approvals-decided"
+    timeout: 10000

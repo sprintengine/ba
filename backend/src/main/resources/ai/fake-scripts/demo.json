@@ -1,0 +1,116 @@
+{
+  "rules": [
+    {
+      "match": [
+        "use lots of credits"
+      ],
+      "steps": [
+        {
+          "text": "Done. That was an expensive one.",
+          "usage": {
+            "input": 1000,
+            "output": 1000000
+          }
+        }
+      ]
+    },
+    {
+      "match": [
+        "book"
+      ],
+      "steps": [
+        {
+          "text": "Let me look at your services.",
+          "tools": [
+            {
+              "name": "list_services",
+              "input": {}
+            }
+          ],
+          "delayMs": 700
+        },
+        {
+          "tools": [
+            {
+              "name": "check_availability",
+              "input": {
+                "serviceId": "${list_services.services[0].id}",
+                "date": "${tomorrow}",
+                "days": 7,
+                "resourceId": null,
+                "optionId": "${list_services.services[0].options[0].id}"
+              }
+            }
+          ],
+          "delayMs": 700
+        },
+        {
+          "text": "The first free time is ${check_availability.firstFree.time}.",
+          "tools": [
+            {
+              "name": "create_booking",
+              "input": {
+                "serviceId": "${list_services.services[0].id}",
+                "optionId": "${list_services.services[0].options[0].id}",
+                "start": "${check_availability.firstFree.start}",
+                "resourceIds": null,
+                "customerId": null,
+                "newCustomer": {
+                  "name": "Robin Example",
+                  "email": null,
+                  "phone": null
+                },
+                "paymentMode": "at_venue",
+                "notifyCustomer": false,
+                "internalNotes": "Booked with Bo"
+              }
+            }
+          ],
+          "delayMs": 700
+        },
+        {
+          "text": "I've prepared a ${check_availability.service} for Robin Example. Confirm it below and it goes straight into the calendar.",
+          "delayMs": 700
+        }
+      ]
+    },
+    {
+      "match": [
+        "today",
+        "schedule",
+        "on this week",
+        "what's on"
+      ],
+      "steps": [
+        {
+          "tools": [
+            {
+              "name": "get_schedule",
+              "input": {
+                "date": "${today}",
+                "days": 7,
+                "resourceId": null
+              }
+            }
+          ],
+          "delayMs": 700
+        },
+        {
+          "text": "This week you have ${get_schedule.total} bookings, with ${get_schedule.days[*].bookings[*].resources[0].name}.",
+          "delayMs": 700
+        }
+      ]
+    },
+    {
+      "match": [
+        "*"
+      ],
+      "steps": [
+        {
+          "text": "I'm Bo, running on a scripted demo model. Try \"what's on this week\" or \"book someone in tomorrow\".",
+          "delayMs": 700
+        }
+      ]
+    }
+  ]
+}

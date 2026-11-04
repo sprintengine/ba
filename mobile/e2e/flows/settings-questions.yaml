@@ -1,0 +1,62 @@
+# An owner adds a booking question (a choice, asked for every service) in Settings › Questions, sees it in the list,
+# then deletes it again. Works on phones (pushed screen) and iPad (the settings master–detail).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Settings › Questions
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- runFlow:
+    file: ../subflows/open-business-section.yaml
+    env:
+      SECTION: settings
+- scrollUntilVisible:
+    element:
+      id: "settings-questions"
+    direction: DOWN
+- tapOn:
+    id: "settings-questions"
+- extendedWaitUntil:
+    visible:
+      id: "question-new"
+    timeout: 20000
+- evalScript: ${output.label = 'E2E question ' + Date.now()}
+- tapOn:
+    id: "question-new"
+- tapOn:
+    id: "question-label"
+- inputText: ${output.label}
+- tapOn:
+    id: "question-kind"
+- tapOn: "Choice"
+- tapOn:
+    id: "question-choices"
+- inputText: "Morning"
+- pressKey: Enter
+- inputText: "Afternoon"
+- hideKeyboard
+- tapOn:
+    id: "question-save"
+- extendedWaitUntil:
+    visible: "Question added"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${output.label}.*"
+    direction: DOWN
+- assertVisible: "Choice: Morning, Afternoon · All services"
+# Clean up: open it and delete it.
+- tapOn:
+    text: "${output.label}.*"
+- scrollUntilVisible:
+    element:
+      id: "question-delete"
+    direction: DOWN
+- tapOn:
+    id: "question-delete"
+- tapOn: "Delete"
+- extendedWaitUntil:
+    visible: "Question deleted"
+    timeout: 20000
+- assertNotVisible: "${output.label}"

@@ -1,0 +1,38 @@
+# My bookings → an upcoming booking → Cancel → the refund preview → cancelled.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Cancel a booking
+tags: [my-bookings]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "booking-BA-.*"
+    timeout: 20000
+- tapOn:
+    id: "booking-BA-.*"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "booking-detail"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "booking-cancel"
+- tapOn:
+    id: "booking-cancel"
+- extendedWaitUntil:
+    visible:
+      id: "refund-preview"
+    timeout: 10000
+- tapOn:
+    id: "cancel-reason"
+- inputText: "Plans changed"
+- takeScreenshot: e2e/screenshots/cancel
+- tapOn:
+    id: "cancel-confirm"
+- extendedWaitUntil:
+    visible: ".*was cancelled"
+    timeout: 15000

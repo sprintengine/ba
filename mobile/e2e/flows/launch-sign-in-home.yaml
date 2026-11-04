@@ -1,0 +1,18 @@
+# Launch → dev sign-in as the demo customer → My bookings (against the local backend with seeded demo data).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Launch, dev sign-in, home
+tags: [smoke]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "my-bookings-list"
+    timeout: 20000
+- assertVisible: "My bookings"
+- assertVisible:
+    id: "tab-bookings"
+    selected: true
+- takeScreenshot: e2e/screenshots/customer-home

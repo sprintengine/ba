@@ -1,0 +1,54 @@
+/*
+ * The stage: the replica drawn at its design size (--dw wide, chrome included) and scaled down to fit its column,
+ * never up. tan(atan2(a, b)) is a / b as a plain number (CSS can't otherwise divide one length by another). Sized
+ * in CSS, so the server's HTML already has the final height and nothing shifts when the page hydrates.
+ */
+.fit {
+  container-type: inline-size;
+  aspect-ratio: var(--ar);
+}
+.fitStage {
+  transform-origin: 0 0;
+  scale: min(1, tan(atan2(100cqw, var(--dw))));
+}
+
+/*
+ * On a phone a whole desktop window would shrink to unreadable text, so the stage becomes a camera: a 4:5 crop
+ * showing --cam-w of the design width, panned (in step with the cursor's glide) to keep the cursor in the middle,
+ * clamped to the window's edges. --cam-x/--cam-y are the cursor in stage coordinates.
+ */
+@media (max-width: 639.98px) {
+  .camera {
+    --cam-w: 480px;
+    --k: tan(atan2(100cqw, var(--cam-w)));
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 14px;
+    box-shadow:
+      0 0 0 1px var(--border),
+      0 24px 60px -24px rgb(0 0 0 / 0.35);
+  }
+  .camera > .fitStage {
+    scale: var(--k);
+    translate: clamp(calc(100cqw - var(--dw) * var(--k)), calc(50cqw - var(--cam-x) * var(--k)), 0px)
+      clamp(calc(125cqw - var(--dh) * var(--k)), calc(62.5cqw - var(--cam-y) * var(--k)), 0px);
+    transition: translate var(--cam-ms) cubic-bezier(0.45, 0.05, 0.25, 1);
+  }
+}
+
+/* Demo stage motion. Reduced motion: the player doesn't run at all, so only the caret needs stopping. */
+
+.caret {
+  animation: caret-blink 1.05s steps(1) infinite;
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}

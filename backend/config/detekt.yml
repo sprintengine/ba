@@ -1,0 +1,159 @@
+# detekt 2 on top of the default rule set (`buildUponDefaultConfig = true`): only the differences live here.
+# Goal: findings that are worth a reviewer's time. Formatting and line length belong to ktlint (.editorconfig).
+# Suppress a finding only for a deliberate design choice, locally, with a reason:
+#   @Suppress("TooGenericExceptionCaught") // Job boundary: one failing job must not stop the worker.
+
+config:
+  validation: true
+
+complexity:
+  # Thresholds sit just above the house style (raw JDBC services, Ktor route tables); anything past them should be split.
+  # Development-only demo data (seed/) is a long list of literals, so it is exempt from the size rules.
+  CyclomaticComplexMethod:
+    allowedComplexity: 15
+    ignoreSimpleWhenEntries: true
+    excludes: ['**/test/**', '**/seed/**']
+  ComplexCondition:
+    allowedConditions: 4
+  LongMethod:
+    allowedLines: 80
+    excludes: ['**/test/**', '**/seed/**']
+  LargeClass:
+    allowedLines: 600
+    excludes: ['**/test/**']
+  LongParameterList:
+    # Repository and lifecycle functions take (conn, business, id, actor, now, ...) explicitly instead of a context bag.
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 10
+    ignoreDefaultParameters: true
+    ignoreDataClasses: true
+    excludes: ['**/test/**']
+  NestedBlockDepth:
+    allowedDepth: 4
+  TooManyFunctions:
+    allowedFunctionsPerFile: 25
+    allowedFunctionsPerClass: 20
+    allowedFunctionsPerObject: 20
+    allowedFunctionsPerInterface: 15
+    ignorePrivate: true
+    ignoreOverridden: true
+
+coroutines:
+  # Blocking JDBC runs on Dispatchers.IO by design; there is no test that swaps dispatchers.
+  InjectDispatcher:
+    active: false
+  GlobalCoroutineUsage:
+    active: true
+  SuspendFunSwallowedCancellation:
+    active: true
+
+exceptions:
+  # Swallowing is fine when the variable says so (`_`, `ignored`, `expected`), the type is a parse failure, or the
+  # exception is translated into a 400 that carries its details (missing fields, the image rejection reason).
+  SwallowedException:
+    ignoredExceptionTypes:
+      - 'DateTimeParseException'
+      - 'IllegalArgumentException'
+      - 'ImageRejected'
+      - 'MissingFieldException'
+      - 'MalformedURLException'
+      - 'NumberFormatException'
+      - 'ParseException'
+      - 'SerializationException'
+      - 'URISyntaxException'
+      - 'UnknownHostException'
+  NotImplementedDeclaration:
+    active: true
+  ObjectExtendsThrowable:
+    active: true
+  ErrorUsageWithThrowable:
+    active: true
+
+naming:
+  FunctionNaming:
+    # Ktor route builders and test names in backticks.
+    excludes: ['**/test/**']
+
+performance:
+  # Spread copies a vararg array; ours are short SQL parameter lists.
+  SpreadOperator:
+    active: false
+
+potential-bugs:
+  # `!!` is our invariant assertion (a row read back in the same transaction, a regex group that must match).
+  # A broken invariant is a 500 either way; `checkNotNull` everywhere would add noise, not safety.
+  UnsafeCallOnNullableType:
+    active: false
+  MapGetWithNotNullAssertionOperator:
+    excludes: ['**/test/**']
+  DontDowncastCollectionTypes:
+    active: true
+  # Catches "null" leaking into user-facing text and idempotency keys.
+  NullableToStringCall:
+    active: true
+    excludes: ['**/test/**']
+  UnconditionalJumpStatementInLoop:
+    active: true
+  UnnecessaryNotNullCheck:
+    active: true
+  # Deprecated library APIs are replaced when they are flagged, not left for the next major upgrade.
+  Deprecation:
+    active: true
+
+style:
+  MaxLineLength:
+    active: false
+  MagicNumber:
+    # Only where a bare number is a business rule (money, time, availability, jobs, tokens). Elsewhere almost every
+    # literal is a field limit next to the field it constrains (`v.range(s.durationMinutes, "durationMinutes", 5, 1440)`),
+    # a truncation length for a log line, or specification data (IP ranges, image formats, WCAG maths, seed data);
+    # naming those 250+ literals would add indirection, not clarity.
+    includes:
+      - '**/ai/usage/**'
+      - '**/availability/**'
+      - '**/booking/**'
+      - '**/jobs/**'
+      - '**/oauth/**'
+      - '**/offers/**'
+      - '**/payments/**'
+    excludes: ['**/test/**']
+    ignoreNumbers: ['-1', '0', '1', '2', '10', '24', '60', '100', '1000']
+    ignorePropertyDeclaration: true
+    ignoreLocalVariableDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+    ignoreNamedArgument: true
+    ignoreRanges: true
+    ignoreEnums: true
+    ignoreAnnotation: true
+    ignoreExtensionFunctions: true
+  ReturnCount:
+    max: 4
+    excludeGuardClauses: true
+    excludeReturnFromLambda: true
+  # Our error model is "throw an ApiException (Errors.*), StatusPages renders it", so validation code throws a lot
+  # by design; counting throws would push code back towards error-code returns.
+  ThrowsCount:
+    active: false
+  DestructuringDeclarationWithTooManyEntries:
+    maxDestructuringEntries: 4
+  LoopWithTooManyJumpStatements:
+    maxJumpCount: 2
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - reason: 'Log through SLF4J (LoggerFactory) so output carries the call id and level.'
+        value: 'kotlin.io.println'
+      - reason: 'Log through SLF4J (LoggerFactory) so output carries the call id and level.'
+        value: 'kotlin.io.print'
+    excludes: ['**/test/**', '**/Application.kt', '**/seed/**']
+  CollapsibleIfStatements:
+    active: true
+  UseEmptyCounterpart:
+    active: true
+  UseIfEmptyOrIfBlank:
+    active: true
+  UnnecessaryLet:
+    active: true
+  # ktlint's no-unused-imports misses some (it can't resolve references); detekt keeps them from coming back.
+  UnusedImport:
+    active: true

@@ -1,0 +1,133 @@
+{
+  "$comment": "Web-vitals budgets for tests/e2e/performance.spec.ts. Re-record with PERF_UPDATE=1 (docs/engineering.md, Performance budgets) and say why in the commit.",
+  "profile": {
+    "device": "Pixel 7",
+    "cpu": {
+      "benchmarkTargetMs": 450,
+      "maxRate": 10
+    },
+    "network": {
+      "latencyMs": 150,
+      "downloadKbps": 9000,
+      "uploadKbps": 1500
+    }
+  },
+  "runs": 5,
+  "pages": {
+    "marketing home": {
+      "path": "/",
+      "budget": {
+        "lcp": 950,
+        "fcp": 950,
+        "tbt": 450,
+        "ttfb": 300,
+        "cls": 0.02,
+        "jsBytes": 444416,
+        "requests": 42
+      },
+      "recorded": {
+        "lcp": 620,
+        "fcp": 620,
+        "cls": 0,
+        "tbt": 186,
+        "ttfb": 5,
+        "requests": 38,
+        "jsRequests": 25,
+        "jsBytes": 431377,
+        "totalBytes": 779410
+      }
+    },
+    "pricing": {
+      "path": "/pricing",
+      "budget": {
+        "lcp": 800,
+        "fcp": 800,
+        "tbt": 300,
+        "ttfb": 300,
+        "cls": 0.02,
+        "jsBytes": 346112,
+        "requests": 42
+      },
+      "recorded": {
+        "lcp": 516,
+        "fcp": 516,
+        "cls": 0,
+        "tbt": 44,
+        "ttfb": 4,
+        "requests": 38,
+        "jsRequests": 26,
+        "jsBytes": 334916,
+        "totalBytes": 466797
+      }
+    },
+    "explore": {
+      "path": "/explore",
+      "budget": {
+        "lcp": 750,
+        "fcp": 750,
+        "tbt": 450,
+        "ttfb": 300,
+        "cls": 0.03,
+        "jsBytes": 480256,
+        "requests": 64
+      },
+      "recorded": {
+        "lcp": 468,
+        "fcp": 468,
+        "cls": 0.009,
+        "tbt": 197,
+        "ttfb": 3,
+        "requests": 58,
+        "jsRequests": 40,
+        "jsBytes": 466191,
+        "totalBytes": 590470
+      }
+    },
+    "booking flow": {
+      "path": "/lumen-physio/book",
+      "budget": {
+        "lcp": 750,
+        "fcp": 750,
+        "tbt": 400,
+        "ttfb": 300,
+        "cls": 0.02,
+        "jsBytes": 442368,
+        "requests": 54
+      },
+      "recorded": {
+        "lcp": 476,
+        "fcp": 476,
+        "cls": 0,
+        "tbt": 117,
+        "ttfb": 7,
+        "requests": 49,
+        "jsRequests": 36,
+        "jsBytes": 429358,
+        "totalBytes": 670248
+      }
+    },
+    "dashboard overview": {
+      "path": "/dashboard/lumen-physio",
+      "budget": {
+        "lcp": 2700,
+        "fcp": 700,
+        "tbt": 400,
+        "ttfb": 300,
+        "cls": 0.03,
+        "jsBytes": 525312,
+        "requests": 62
+      },
+      "recorded": {
+        "lcp": 1800,
+        "fcp": 444,
+        "cls": 0.008,
+        "tbt": 122,
+        "ttfb": 5,
+        "requests": 56,
+        "jsRequests": 40,
+        "jsBytes": 509873,
+        "totalBytes": 591604
+      }
+    }
+  }
+}

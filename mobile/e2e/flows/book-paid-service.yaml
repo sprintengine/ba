@@ -1,0 +1,49 @@
+# Book a paid service up to Stripe Checkout opening (in development: the website's dev checkout page).
+# Seeded data: Gleam Car Wash, "Exterior wash" (€15, paid online in full).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Book a paid service until Checkout opens
+tags: [booking, payments]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "tab-explore"
+    timeout: 20000
+- openLink: ${DEEP_LINK_SCHEME || "bookanything-dev"}://gleam-car-wash/book
+- extendedWaitUntil:
+    visible:
+      id: "booking-flow"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "Exterior wash.*"
+- tapOn: "Exterior wash.*"
+- tapOn:
+    id: "step-continue"
+    optional: true
+- tapOn:
+    id: "resource-any"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "slot-.*"
+    timeout: 20000
+- tapOn:
+    id: "slot-.*"
+    index: 0
+- tapOn:
+    id: "details-review"
+- extendedWaitUntil:
+    visible:
+      id: "booking-submit"
+    timeout: 10000
+- assertVisible: "Continue to payment.*"
+- tapOn:
+    id: "booking-submit"
+# Checkout opens over the app (the in-app browser in development).
+- extendedWaitUntil:
+    visible: "Done|Cancel|Pay.*"
+    timeout: 30000
+- takeScreenshot: e2e/screenshots/checkout-open

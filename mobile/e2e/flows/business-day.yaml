@@ -1,0 +1,59 @@
+# The demo owner's business day on a phone: Today, the calendar, a booking from the list, a customer and their
+# history. Needs the seeded demo business (bookings and customers); not run in CI yet.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Business day for an owner
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- extendedWaitUntil:
+    visible:
+      id: "today"
+    timeout: 20000
+- assertVisible:
+    id: "today-new-booking"
+
+# Calendar: a day, then the next one and back to today.
+- tapOn:
+    id: "tab-calendar"
+- extendedWaitUntil:
+    visible:
+      id: "calendar-date"
+    timeout: 10000
+- tapOn:
+    id: "calendar-next"
+- tapOn:
+    id: "calendar-today"
+
+# Bookings: open the first one.
+- tapOn:
+    id: "tab-bookings"
+- extendedWaitUntil:
+    visible:
+      id: "booking-row-BA-.*"
+    timeout: 10000
+- tapOn:
+    id: "booking-row-BA-.*"
+    index: 0
+- assertVisible:
+    id: "booking-detail"
+- assertVisible: "Reference BA-.*"
+
+# Customers: search, open the first, see their history.
+- tapOn:
+    id: "tab-customers"
+- extendedWaitUntil:
+    visible:
+      id: "customer-row-.*"
+    timeout: 10000
+- tapOn:
+    id: "customer-row-.*"
+    index: 0
+- assertVisible:
+    id: "customer-detail"
+- assertVisible: "History"
+- scrollUntilVisible:
+    element:
+      id: "customer-details-form"
+    direction: DOWN

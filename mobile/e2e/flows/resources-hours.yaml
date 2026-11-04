@@ -1,0 +1,83 @@
+# An owner adds a room, opens it (its own screen on phones, beside the list on iPad), opens it on Saturdays, saves
+# the weekly hours, then adds a day off under "Time off".
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Resource weekly hours and time off
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- runFlow:
+    file: ../subflows/open-business-section.yaml
+    env:
+      SECTION: resources
+- extendedWaitUntil:
+    visible:
+      id: "resource-add"
+    timeout: 20000
+- evalScript: ${output.name = 'Room ' + Date.now()}
+
+# Add a room.
+- tapOn:
+    id: "resource-add"
+- tapOn: "Room / space"
+- tapOn:
+    id: "resource-name"
+- inputText: ${output.name}
+- hideKeyboard
+- tapOn:
+    id: "resource-save"
+- extendedWaitUntil:
+    visible: "${output.name} added"
+    timeout: 20000
+
+# Open it.
+- scrollUntilVisible:
+    element: ${output.name}
+    direction: DOWN
+- tapOn: ${output.name}
+- extendedWaitUntil:
+    visible:
+      id: "weekly-hours"
+    timeout: 20000
+
+# Weekly hours: open on Saturdays (09:00–17:00 to start with) and save.
+- scrollUntilVisible:
+    element:
+      id: "hours-saturday-open"
+    direction: DOWN
+- tapOn:
+    id: "hours-saturday-open"
+- assertVisible:
+    id: "hours-saturday-0"
+- scrollUntilVisible:
+    element:
+      id: "hours-save"
+    direction: DOWN
+- tapOn:
+    id: "hours-save"
+- extendedWaitUntil:
+    visible: "Hours saved"
+    timeout: 20000
+
+# Time off: a day off with a note.
+- scrollUntilVisible:
+    element: "Time off"
+    direction: UP
+- tapOn: "Time off"
+- extendedWaitUntil:
+    visible:
+      id: "time-off-add"
+    timeout: 20000
+- tapOn:
+    id: "time-off-add"
+- tapOn:
+    id: "time-off-reason"
+- inputText: "Training day"
+- hideKeyboard
+- tapOn:
+    id: "time-off-save"
+- extendedWaitUntil:
+    visible: "Added"
+    timeout: 20000
+- assertVisible: ".*Training day.*"

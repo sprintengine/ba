@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Generated native projects (Continuous Native Generation: `npx expo prebuild`)
+/ios
+/android
+
+# Tests
+coverage/
+
+# Native signing material and keys: never commit
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro / debug
+.metro-health-check*
+npm-debug.*
+
+# Local env (copy .env.example to .env.local)
+.env
+.env*.local
+
+*.tsbuildinfo
+.DS_Store
+
+# Maestro screenshots and reports
+e2e/screenshots/

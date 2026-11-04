@@ -1,0 +1,27 @@
+# The bell → the inbox → the approval a notification is about. Needs an AI app's request waiting for the demo
+# customer (have a connected AI app propose a booking, or a seeded agent_approval notification).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Notification opens its approval
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "header-notifications"
+    timeout: 20000
+- tapOn:
+    id: "header-notifications"
+- extendedWaitUntil:
+    visible:
+      id: "notifications-inbox"
+    timeout: 10000
+- tapOn:
+    id: "notification-.*"
+    index: 0
+- extendedWaitUntil:
+    notVisible:
+      id: "notifications-inbox"
+    timeout: 10000
+- takeScreenshot: e2e/screenshots/notification-approval

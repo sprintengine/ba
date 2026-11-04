@@ -1,0 +1,33 @@
+# Fresh install state → (dev client: load the bundle from Metro) → sign in with a seeded demo account.
+# Env: ACCOUNT = dev_customer | dev_owner | dev_staff; DEV_SERVER_URL = the Metro URL for a dev client build
+# (e.g. http://localhost:8081; leave it unset for preview/release builds, which embed their bundle).
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- runFlow:
+    when:
+      true: ${!!DEV_SERVER_URL}
+    commands:
+      - openLink: exp+bookanything://expo-development-client/?url=${encodeURIComponent(DEV_SERVER_URL)}&disableOnboarding=1
+      # iOS asks before an outside link opens the app the first time; then the dev client may show its menu.
+      - extendedWaitUntil:
+          visible: "Open|Reload|Book anything.*"
+          timeout: 60000
+      - tapOn:
+          text: "Open"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: "xmark|dev-sign-in-${ACCOUNT}"
+          timeout: 60000
+      - tapOn:
+          id: "xmark"
+          optional: true
+- extendedWaitUntil:
+    visible:
+      id: "dev-sign-in-${ACCOUNT}"
+    timeout: 60000
+- tapOn:
+    id: "dev-sign-in-${ACCOUNT}"

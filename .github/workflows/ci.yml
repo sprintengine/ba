@@ -1,0 +1,275 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch or PR cancels the run in progress.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Caches the Gradle distribution, dependencies and build cache.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Testcontainers needs the runner's Docker daemon; tests fail (never skip) without it.
+      - name: Require Docker
+        run: docker info --format 'Docker {{.ServerVersion}}'
+
+      - name: ktlint
+        run: ./gradlew :backend:ktlintCheck
+
+      - name: detekt
+        run: ./gradlew :backend:detektMain :backend:detektTest
+
+      - name: Tests (Testcontainers) and coverage floor
+        run: ./gradlew :backend:test :backend:koverXmlReport :backend:koverHtmlReport :backend:koverVerify :backend:koverLog
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/build/reports/kover/
+          if-no-files-found: ignore
+
+      - name: Upload test and lint reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/build/reports/tests/
+            backend/build/reports/detekt/
+            backend/build/reports/ktlint/
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    # The instrumented unit tests alone take about 15 minutes on a hosted runner; the whole job ran past 20.
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Unit tests with coverage thresholds
+        run: npm run test:coverage
+      - run: npm run build
+      # First-load JS/CSS per key route (gzip) against perf/bundle-baseline.json; prints the table either way.
+      - name: Bundle-size budget
+        run: npm run perf:bundle
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      # Only mobile/ is installed: the website code it shares (frontend/src/lib) resolves its packages from
+      # mobile/node_modules (mobile/shared-code.js).
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - name: Design tokens (with selftest)
+        run: npm run lint:tokens
+      - run: npm run typecheck
+      - name: App config resolves for every variant
+        run: |
+          for variant in development preview production; do
+            APP_VARIANT=$variant npx expo config --type public > /dev/null
+          done
+      # Includes the shared-code boundary (scripts/shared-boundary.test.js) and the whole-app flows.
+      - name: Unit, component and app tests with coverage thresholds
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: mobile/coverage/
+          if-no-files-found: ignore
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bookanything_ci
+          POSTGRES_USER: bookanything
+          POSTGRES_PASSWORD: bookanything
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookanything -d bookanything_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      # Backend: development mode with dev auth and the scripted fake model (no external services).
+      APP_ENV: development
+      AUTH_MODE: dev
+      AI_FAKE_SCRIPT: demo
+      # One suite run books ~20 times through one address (the public limit is 20 per 10 minutes); development only.
+      RATE_LIMIT_MULTIPLIER: "50"
+      DATABASE_URL: jdbc:postgresql://localhost:5432/bookanything_ci
+      DATABASE_USERNAME: bookanything
+      DATABASE_PASSWORD: bookanything
+      APP_BASE_URL: http://localhost:3000
+      # Frontend: rewrites /api to the backend (read at build time) and keeps the /dev routes in the build.
+      BACKEND_ORIGIN: http://localhost:8080
+      NEXT_PUBLIC_ENABLE_DEV_ROUTES: "true"
+      E2E_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build backend
+        run: ./gradlew :backend:installDist
+
+      - name: Migrate and seed demo data
+        run: backend/build/install/backend/bin/backend seed-demo
+
+      - name: Start backend
+        run: |
+          nohup backend/build/install/backend/bin/backend > backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8080/v1/health && exit 0
+            sleep 2
+          done
+          echo "Backend did not become healthy"; cat backend.log; exit 1
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start frontend
+        working-directory: frontend
+        run: |
+          nohup npm run start -- -p 3000 > ../frontend.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS -o /dev/null http://localhost:3000/ && exit 0
+            sleep 2
+          done
+          echo "Frontend did not start"; cat ../frontend.log; exit 1
+
+      - name: Playwright version
+        id: playwright
+        working-directory: frontend
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Every project (desktop Chrome, Pixel 7, performance) runs on Chromium.
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: frontend
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright (desktop + mobile)
+        working-directory: frontend
+        run: npx playwright test --project=chromium --project=mobile
+
+      # On its own, after the suite, so nothing else shares the CPU it measures (about two minutes). The report also
+      # goes to the job summary.
+      - name: Web-vitals budgets
+        working-directory: frontend
+        env:
+          PERF_REPORT: perf-report/web-vitals
+        run: npx playwright test --project=performance --workers=1
+
+      - name: Upload web-vitals report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-vitals-report
+          path: frontend/perf-report/
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report and traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+            backend.log
+            frontend.log
+          if-no-files-found: ignore

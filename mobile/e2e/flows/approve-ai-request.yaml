@@ -1,0 +1,40 @@
+# Approvals → a request an AI app made → Approve → done.
+# Needs a waiting request for dev_customer: ask the customer MCP (an AI app connected to the dev backend) to book,
+# move or cancel something first; without one the flow checks the empty state and stops.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Approve an AI app's request
+tags: [approvals]
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_customer
+- extendedWaitUntil:
+    visible:
+      id: "tab-approvals"
+    timeout: 20000
+- tapOn:
+    id: "tab-approvals"
+- extendedWaitUntil:
+    visible:
+      id: "approvals-list"
+    timeout: 20000
+- runFlow:
+    when:
+      visible:
+        id: "approvals-empty"
+    commands:
+      - assertVisible: "Nothing to approve"
+      - takeScreenshot: e2e/screenshots/approvals-empty
+- runFlow:
+    when:
+      visible:
+        id: "request-approve"
+    commands:
+      - takeScreenshot: e2e/screenshots/approvals-waiting
+      - tapOn:
+          id: "request-approve"
+          index: 0
+      - extendedWaitUntil:
+          visible: "Done"
+          timeout: 20000

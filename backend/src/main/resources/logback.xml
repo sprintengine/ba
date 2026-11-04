@@ -1,0 +1,17 @@
+<configuration>
+    <!-- logfmt-style structured lines; request and business ids come from MDC. -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>ts=%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%level logger=%logger{30} requestId=%X{requestId:--} businessId=%X{businessId:--} msg="%replace(%msg){'"','\\"'}"%n%ex</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="liquibase" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="org.testcontainers" level="WARN"/>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

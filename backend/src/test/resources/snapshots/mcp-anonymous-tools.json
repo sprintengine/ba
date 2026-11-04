@@ -1,0 +1,202 @@
+[
+    {
+        "name": "search_marketplace",
+        "inputSchema": {
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Free text: a business name, a service or what the user needs (e.g. \"sports massage\")"
+                },
+                "city": {
+                    "type": "string",
+                    "description": "City slug or name, e.g. \"dublin\" (searches a 20 km radius unless radiusKm is set)"
+                },
+                "near": {
+                    "type": "object",
+                    "description": "Search around this point instead of a city",
+                    "properties": {
+                        "latitude": {
+                            "type": "number",
+                            "description": "Latitude in degrees",
+                            "minimum": -90.0,
+                            "maximum": 90.0
+                        },
+                        "longitude": {
+                            "type": "number",
+                            "description": "Longitude in degrees",
+                            "minimum": -180.0,
+                            "maximum": 180.0
+                        }
+                    },
+                    "required": [
+                        "latitude",
+                        "longitude"
+                    ],
+                    "additionalProperties": false
+                },
+                "radiusKm": {
+                    "type": "number",
+                    "description": "Search radius in km around city or near (1-200)",
+                    "minimum": 1.0,
+                    "maximum": 200.0
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Category key",
+                    "enum": [
+                        "physio",
+                        "gp-practice",
+                        "dental",
+                        "salon",
+                        "barber",
+                        "massage",
+                        "fitness",
+                        "music-lessons",
+                        "tutoring",
+                        "car-wash",
+                        "pet-grooming",
+                        "other"
+                    ]
+                },
+                "date": {
+                    "type": "string",
+                    "description": "Only businesses with a free time on this date (YYYY-MM-DD, business timezone)",
+                    "format": "date"
+                },
+                "dealsOnly": {
+                    "type": "boolean",
+                    "description": "Only businesses with an active deal (off-peak or last-minute discount)"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Results per page (1-30, default 12)",
+                    "minimum": 1,
+                    "maximum": 30
+                },
+                "cursor": {
+                    "type": "string",
+                    "description": "nextCursor from a previous result, to get the next page"
+                }
+            },
+            "required": [],
+            "type": "object"
+        },
+        "description": "Search bookanything's marketplace of businesses in Ireland (physios, car washes, music teachers, GP practices, salons, fitness studios and more). Filter by free text, city or a point with a radius, category, a date with free times and deals. Results include each business's slug, distance, from-price, up to three next free times (with any deal price) and active deals. Use the slug with the other tools. Categories: physio, gp-practice, dental, salon, barber, massage, fitness, music-lessons, tutoring, car-wash, pet-grooming, other. Cities: dublin, cork, galway, limerick, waterford, kilkenny, sligo, athlone, drogheda, dundalk, wexford, killarney, tralee, ennis, letterkenny, bray, navan, carlow, mullingar, castlebar, clonmel, tullamore, naas, swords, portlaoise.",
+        "title": "Search businesses",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "find_business",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                }
+            },
+            "required": [
+                "slug"
+            ],
+            "type": "object"
+        },
+        "description": "A business's public profile by slug: name, description, address, contact details, timezone, currency, booking policies (notice, cancellation), customer groups, whether it takes online payments, and its booking page URL.",
+        "title": "Find business",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "list_services",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                }
+            },
+            "required": [
+                "slug"
+            ],
+            "type": "object"
+        },
+        "description": "The bookable services of a business: duration, price in minor units (cents), payment mode, options (choose one with optionId), add-ons, the selectable resource (e.g. a therapist) and the booking questions.",
+        "title": "List services",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    },
+    {
+        "name": "check_availability",
+        "inputSchema": {
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "description": "The business's slug: the path of its page, e.g. \"lumen-physio\" for https://bookanything.ie/lumen-physio"
+                },
+                "serviceId": {
+                    "type": "string",
+                    "description": "Service id"
+                },
+                "from": {
+                    "type": "string",
+                    "description": "First date, YYYY-MM-DD",
+                    "format": "date"
+                },
+                "to": {
+                    "type": "string",
+                    "description": "Last date, YYYY-MM-DD (default: from)",
+                    "format": "date"
+                },
+                "optionId": {
+                    "type": "string",
+                    "description": "Option id (required when the service has options)"
+                },
+                "addonIds": {
+                    "type": "array",
+                    "description": "Add-on ids",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resourceId": {
+                    "type": "string",
+                    "description": "Selectable resource id, e.g. a specific therapist"
+                },
+                "groupId": {
+                    "type": "string",
+                    "description": "Customer group id"
+                },
+                "after": {
+                    "type": "string",
+                    "description": "Only times starting after this (ISO-8601 with offset); pass the last time you were shown to see later ones",
+                    "format": "date-time"
+                }
+            },
+            "required": [
+                "slug",
+                "serviceId",
+                "from"
+            ],
+            "type": "object"
+        },
+        "description": "Free start times for one service of a business between two dates (inclusive, at most 31 days; `to` defaults to `from`), in the business's timezone. Services with options need optionId. Slots with a deal carry `offer` with the discounted price. Pass groupId for restricted customer groups. Pass resourceId to choose a specific person (e.g. a therapist). Some businesses offer only their next available time: then the result has `nextAvailableOnly: true` and at most one time; call again with `after` set to that time to see the next one. A day the business hasn't opened for booking yet has no times and `opensAt` (when it opens), or `held: true` (not open yet, no time set).",
+        "title": "Check availability",
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        }
+    }
+]

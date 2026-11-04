@@ -1,0 +1,20 @@
+# The demo owner lands in their business; More lists every section an owner sees.
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Business shell for an owner
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- extendedWaitUntil:
+    visible:
+      id: "today"
+    timeout: 20000
+- tapOn:
+    id: "tab-more"
+- assertVisible:
+    id: "more-settings"
+- tapOn:
+    id: "more-settings"
+- assertVisible:
+    id: "settings-general"

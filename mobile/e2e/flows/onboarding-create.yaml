@@ -1,0 +1,60 @@
+# An owner sets up a second business from the business switcher: starts from a template, reviews it, creates it and
+# lands on its dashboard, which the switcher then lists. (With AI configured the "Draft my setup" path works the
+# same; a template keeps the flow independent of the AI provider.)
+appId: ${APP_ID || "ie.bookanything.app.dev"}
+name: Create a business
+---
+- runFlow:
+    file: ../subflows/dev-sign-in.yaml
+    env:
+      ACCOUNT: dev_owner
+- evalScript: ${output.name = 'Maestro Wash ' + Date.now()}
+- extendedWaitUntil:
+    visible:
+      id: "business-switcher"
+    timeout: 60000
+- tapOn:
+    id: "business-switcher"
+- tapOn:
+    id: "switch-new-business"
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-describe"
+    timeout: 20000
+- tapOn:
+    id: "onboarding-name"
+- inputText: ${output.name}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "onboarding-template-generic"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "onboarding-template-generic"
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-review"
+    timeout: 20000
+- assertVisible: ${output.name}
+# The address is derived from the name and checked live.
+- extendedWaitUntil:
+    visible: "Ready to create"
+    timeout: 20000
+- tapOn:
+    id: "onboarding-create"
+- extendedWaitUntil:
+    visible:
+      id: "onboarding-success"
+    timeout: 30000
+- assertVisible: "${output.name} is ready"
+- tapOn:
+    id: "onboarding-open-dashboard"
+- extendedWaitUntil:
+    notVisible:
+      id: "onboarding-success"
+    timeout: 20000
+# The switcher lists the new business.
+- tapOn:
+    id: "business-switcher"
+- assertVisible: ${output.name}
