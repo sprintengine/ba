@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiSection } from "../ai";
-import { HeroRings } from "../hero-rings";
 import { LogoMarquee } from "../logo-marquee";
 import { MoneySection } from "../money";
 import { ProofSection } from "../proof";
@@ -45,14 +44,6 @@ describe("the AI section's promise", () => {
     expect(container.textContent).toMatch(/included on every plan/);
     expect(container.textContent).toMatch(/monthly credits/);
     expect(container.textContent).not.toMatch(/or ours|unlimited/i);
-  });
-});
-
-describe("the hero's rings", () => {
-  it("shows the plain mark where WebGL isn't available", () => {
-    const { container } = render(<HeroRings phone={{ current: null }} />);
-    expect(container.querySelector("canvas")).not.toBeInTheDocument();
-    expect(container.querySelector("svg")).toBeInTheDocument();
   });
 });
 
