@@ -14,11 +14,11 @@ export function TimezoneNote({ timeZone, className }: { timeZone: string; classN
   }, [timeZone]);
   const city = timeZone.split("/").pop()?.replace(/_/g, " ") ?? timeZone;
   return (
-    <p className={cn("flex items-start gap-1.5 text-xs text-muted-foreground", className)}>
-      <Globe className="mt-px size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
+    <p className={cn("flex items-start gap-1.5 text-sm text-muted-foreground", className)}>
+      <Globe className="mt-0.5 size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
       <span>
         Times in {city} time ({timeZoneLabel(timeZone)})
-        {differs && <span className="text-subtle-foreground"> · different from your device</span>}
+        {differs && <span> · different from your device</span>}
       </span>
     </p>
   );

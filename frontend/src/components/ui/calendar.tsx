@@ -162,7 +162,7 @@ export function Calendar({
                 key={d}
                 scope="col"
                 abbr={d}
-                className="pb-1 text-center text-xs font-medium text-subtle-foreground"
+                className="pb-1 text-center text-xs font-medium text-muted-foreground"
               >
                 {d.slice(0, 2)}
               </th>
