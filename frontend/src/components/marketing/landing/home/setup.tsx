@@ -23,10 +23,11 @@ export function SetupSection() {
           lead="Describe your business in a sentence, or paste your website. We set out what you told us, suggest the rest, and nothing goes live until you’ve checked it."
         />
         <SetupDraft />
-        <ul className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
+        <h3 className="mt-12 text-[0.9375rem] font-semibold text-muted-foreground">Also included</h3>
+        <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
           {ALSO.map(([title, body]) => (
             <li key={title}>
-              <h3 className="font-semibold tracking-tight">{title}</h3>
+              <h4 className="font-semibold tracking-tight">{title}</h4>
               <p className="mt-1 text-sm leading-normal text-muted-foreground">{body}</p>
             </li>
           ))}
