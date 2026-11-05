@@ -58,7 +58,7 @@ export function NotificationBell({
     <span
       aria-hidden
       className={cn(
-        "flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[0.625rem] leading-none font-semibold text-danger-foreground",
+        "flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[0.625rem] leading-none font-semibold text-background",
         variant === "icon" || collapsed ? "absolute -top-0.5 -right-0.5" : "ml-auto",
       )}
     >

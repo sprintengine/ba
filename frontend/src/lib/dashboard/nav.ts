@@ -132,7 +132,7 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     segment: "payments",
     label: "Payments",
     minRole: "owner",
-    description: "Connect Stripe to take payments.",
+    description: "How you take payments.",
   },
   {
     segment: "billing",

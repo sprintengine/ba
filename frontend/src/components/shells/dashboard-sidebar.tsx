@@ -92,7 +92,7 @@ export function SidebarContent({
           >
             <Search className="size-3.5" />
             <span className="flex-1 text-left">Search…</span>
-            <span className="flex gap-0.5 pointer-coarse:hidden">
+            <span className="flex gap-0.5 max-sm:hidden pointer-coarse:hidden">
               <Kbd>⌘</Kbd>
               <Kbd>K</Kbd>
             </span>
