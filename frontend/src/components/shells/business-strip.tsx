@@ -29,7 +29,10 @@ export function BusinessStrip({
 
   return (
     // Runs edge to edge across the page, like the header it is.
-    <div className="-mx-4 -mt-6 mb-6 flex items-center gap-4 border-b border-border px-4 sm:-mx-6 sm:-mt-8 sm:mb-8 sm:px-6 lg:-mx-10 lg:px-10">
+    <div
+      data-business-strip=""
+      className="-mx-4 -mt-6 mb-6 flex items-center gap-4 border-b border-border px-4 sm:-mx-6 sm:-mt-8 sm:mb-8 sm:px-6 lg:-mx-10 lg:px-10"
+    >
       <nav
         aria-label="Business"
         className="flex min-w-0 flex-1 snap-x scrollbar-none gap-5 overflow-x-auto max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] max-sm:pr-8"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ListChecks, X } from "lucide-react";
+import { Check, ListChecks } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useBookings } from "@/lib/api/hooks";
 import { useBusinessContext } from "@/lib/business/business-context";
@@ -72,15 +72,15 @@ export function PendingApprovals({ today }: { today: string }) {
             <div className="ml-auto flex items-center gap-1">
               <Button
                 size="sm"
-                variant="ghost"
+                variant="secondary"
                 aria-label={`Decline ${b.customer.name}`}
                 onClick={() => setDeclining(b)}
               >
-                <X /> Decline
+                Decline
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant="primary"
                 aria-label={`Approve ${b.customer.name}`}
                 loading={approval.isApproving(b.id)}
                 onClick={() => approval.approve(b.id)}
