@@ -20,14 +20,27 @@ import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { applyApiErrors, Form, FormField, FormRootError } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/toast";
 import { ImageUploadDropzone } from "@/components/dashboard/image-upload";
 import { PortalStylePicker } from "@/components/booking/portal-style-picker";
 import { SiteScope } from "@/components/site/site-scope";
-import { SaveBar, SettingsCard, SettingsHeader } from "./settings-common";
+import {
+  SaveBar,
+  SettingFormRow,
+  SettingGroup,
+  SettingRow,
+  SettingsHeader,
+  settingsStack,
+} from "./settings-common";
 
 type V = BrandingValues;
 const toValues = businessToBrandingValues;
+
+/** The words a business can change: what a row asks about, with the one and the many side by side. */
+const WORDING = [
+  { label: "What's booked", one: "booking", many: "bookings" },
+  { label: "Who books", one: "customer", many: "customers" },
+  { label: "Who or what is booked", one: "resource", many: "resources" },
+] as const;
 
 export function BrandingSettings() {
   const business = useCurrentBusiness();
@@ -39,31 +52,34 @@ export function BrandingSettings() {
       <SettingsHeader segment="branding" />
       <Form
         form={form}
-        className="gap-6"
+        className={settingsStack}
         onSubmit={async (v) => {
           try {
             const saved = await update.mutateAsync(brandingValuesToUpdate(v));
             form.reset(toValues(saved));
-            toast.success("Branding saved");
           } catch (err) {
             applyApiErrors(form, flattenFieldErrors(err, ["branding", "vocabulary"]));
           }
         }}
       >
-        <SettingsCard title="Preview" description="Your booking page header, live as you edit.">
+        <SettingGroup title="Preview" description="Your booking page header, live as you edit.">
           <Preview />
-        </SettingsCard>
-        <SettingsCard
+        </SettingGroup>
+        <SettingGroup
           title="Colour and images"
-          description="Buttons, selected dates and links use your colour. We adjust it automatically so text stays readable in light and dark mode."
+          description="We adjust your colour automatically so text stays readable in light and dark mode."
         >
-          <FormField<V, "primaryColor"> name="primaryColor" label="Brand colour">
+          <SettingFormRow<V, "primaryColor">
+            name="primaryColor"
+            stacked
+            label="Brand colour"
+            help="Used for buttons, selected dates and links."
+          >
             {(field) => <ColorPicker value={field.value} onValueChange={field.onChange} />}
-          </FormField>
-          <FormField<V, "logoUrl">
+          </SettingFormRow>
+          <SettingFormRow<V, "logoUrl">
             name="logoUrl"
             label="Logo"
-            optional
             help="A square image works best. Upload one, or paste an image address."
           >
             {(field) => (
@@ -83,11 +99,10 @@ export function BrandingSettings() {
                 />
               </div>
             )}
-          </FormField>
-          <FormField<V, "coverImageUrl">
+          </SettingFormRow>
+          <SettingFormRow<V, "coverImageUrl">
             name="coverImageUrl"
             label="Cover image"
-            optional
             help={
               business.sitesEnabled
                 ? "Wide photo (3:1) used when your site has no hero image of its own."
@@ -111,38 +126,34 @@ export function BrandingSettings() {
                 />
               </div>
             )}
-          </FormField>
-        </SettingsCard>
+          </SettingFormRow>
+        </SettingGroup>
         {/* With a site, the booking pages wear the site's theme (chosen in the site editor) instead. */}
         {!business.sitesEnabled && (
-          <SettingsCard
+          <SettingGroup
             title="Booking page style"
-            description="Fonts, corners and surfaces for your booking page. Your colour, logo and cover go on top."
+            description="Fonts, corners and surfaces. Your colour, logo and cover go on top."
           >
             <StyleField />
-          </SettingsCard>
+          </SettingGroup>
         )}
-        <SettingsCard
+        <SettingGroup
           title="Wording"
-          description="Use the words your customers use — a physio has patients and appointments, a school has students and lessons."
+          description="Use the words your customers use: a physio has patients and appointments, a school has students and lessons. One on the left, many on the right."
         >
-          <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
-            {(
-              [
-                ["booking", "What's booked (one)"],
-                ["bookings", "What's booked (many)"],
-                ["customer", "Who books (one)"],
-                ["customers", "Who books (many)"],
-                ["resource", "Who or what is booked (one)"],
-                ["resources", "Who or what is booked (many)"],
-              ] as const
-            ).map(([key, label]) => (
-              <FormField<V, typeof key> key={key} name={key} label={label}>
-                {(field) => <Input {...field} autoComplete="off" />}
-              </FormField>
-            ))}
-          </div>
-        </SettingsCard>
+          {WORDING.map(({ label, one, many }) => (
+            <SettingRow key={one} label={label}>
+              <div className="grid grid-cols-2 gap-2">
+                <FormField<V, typeof one> name={one}>
+                  {(field) => <Input {...field} autoComplete="off" aria-label={`${label} (one)`} />}
+                </FormField>
+                <FormField<V, typeof many> name={many}>
+                  {(field) => <Input {...field} autoComplete="off" aria-label={`${label} (many)`} />}
+                </FormField>
+              </div>
+            </SettingRow>
+          ))}
+        </SettingGroup>
         <FormRootError />
         <SaveBar dirty={form.formState.isDirty} onDiscard={() => form.reset(toValues(business))} />
       </Form>
@@ -154,7 +165,7 @@ function StyleField() {
   const business = useCurrentBusiness();
   const color = useWatch<V, "primaryColor">({ name: "primaryColor" });
   return (
-    <FormField<V, "portalStyle"> name="portalStyle" label="Style">
+    <SettingFormRow<V, "portalStyle"> name="portalStyle" stacked>
       {(field) => (
         <PortalStylePicker
           value={field.value}
@@ -163,7 +174,7 @@ function StyleField() {
           businessName={business.name}
         />
       )}
-    </FormField>
+    </SettingFormRow>
   );
 }
 
@@ -177,7 +188,7 @@ function PreviewTheme({
   color: string;
   children: React.ReactNode;
 }) {
-  const className = "overflow-hidden rounded-xl border border-border bg-background";
+  const className = "bg-background";
   if (!style) {
     return (
       <BusinessThemeProvider primaryColor={color} className={className}>

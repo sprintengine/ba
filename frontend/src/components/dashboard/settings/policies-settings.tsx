@@ -9,12 +9,11 @@ import { formatDuration } from "@/lib/format";
 import { flattenFieldErrors } from "@/lib/settings/api-fields";
 import { policiesSchema, policySummary } from "@/lib/settings/policies-form";
 import { useVocabulary } from "@/lib/vocabulary";
-import { applyApiErrors, Form, FormField, FormRootError } from "@/components/ui/form";
+import { applyApiErrors, Form, FormRootError } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "@/components/ui/toast";
 import { NumberInput } from "@/components/ui/number-input";
-import { SaveBar, SettingsCard, SettingsHeader } from "./settings-common";
+import { SaveBar, SettingFormRow, SettingGroup, SettingsHeader, settingsStack } from "./settings-common";
 
 const NOTICE = [0, 30, 60, 120, 240, 720, 1440, 2880, 10080];
 const noticeLabel = (m: number) =>
@@ -34,29 +33,28 @@ export function PoliciesSettings() {
       <SettingsHeader segment="policies" />
       <Form
         form={form}
-        className="gap-6"
+        className={settingsStack}
         onSubmit={async (p) => {
           try {
             const saved = await update.mutateAsync({ policies: p });
             form.reset(saved.policies);
-            toast.success("Policies saved");
           } catch (err) {
             applyApiErrors(form, flattenFieldErrors(err, ["policies"]));
           }
         }}
       >
-        <SettingsCard
+        <SettingGroup
           title="When people can book"
-          description={`These apply to your public page. Services can override them, and your team can always book any free time.`}
+          description="On your public page. Services can override these, and your team can always book any free time."
         >
-          <FormField<Policies, "minNoticeMinutes">
+          <SettingFormRow<Policies, "minNoticeMinutes">
             name="minNoticeMinutes"
             label="Minimum notice"
             help="How close to the start someone can still book online."
           >
             {(field) => (
               <Select value={String(field.value)} onValueChange={(x) => field.onChange(Number(x))}>
-                <SelectTrigger ref={field.ref} className="sm:w-60">
+                <SelectTrigger ref={field.ref}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -70,8 +68,8 @@ export function PoliciesSettings() {
                 </SelectContent>
               </Select>
             )}
-          </FormField>
-          <FormField<Policies, "maxAdvanceDays">
+          </SettingFormRow>
+          <SettingFormRow<Policies, "maxAdvanceDays">
             name="maxAdvanceDays"
             label="How far ahead"
             help="The furthest date people can pick, counted from today. Release schedules can keep days closed until they open."
@@ -83,100 +81,94 @@ export function PoliciesSettings() {
                 value={field.value}
                 onValueChange={(n) => field.onChange(n ?? 0)}
                 min={1}
-                className="sm:w-60"
                 unit="days"
               />
             )}
-          </FormField>
-          <FormField<Policies, "nextAvailableOnly">
+          </SettingFormRow>
+          <SettingFormRow<Policies, "nextAvailableOnly">
             name="nextAvailableOnly"
-            orientation="horizontal"
+            fit
             label="Offer the next available time only"
             help={`${v("customers", { title: true })} see the earliest time and can ask for a later one. Your team still sees everything.`}
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-          </FormField>
-          <FormField<Policies, "requireCustomerPhone">
+          </SettingFormRow>
+          <SettingFormRow<Policies, "requireCustomerPhone">
             name="requireCustomerPhone"
-            orientation="horizontal"
+            fit
             label="Require a phone number"
             help="Off, phone is optional when people book online."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-          </FormField>
-        </SettingsCard>
+          </SettingFormRow>
+        </SettingGroup>
 
-        <SettingsCard
+        <SettingGroup
           title="Cancelling and rescheduling"
           description={policySummary(values, v("customers", { title: true }))}
+          note="When you cancel, people always get a full refund. Card processing fees aren't returned by the payment provider."
         >
-          <FormField<Policies, "allowCustomerCancel">
+          <SettingFormRow<Policies, "allowCustomerCancel">
             name="allowCustomerCancel"
-            orientation="horizontal"
+            fit
             label="Let people cancel online"
             help="From the link in their confirmation email or their account."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-          </FormField>
-          <FormField<Policies, "allowCustomerReschedule">
+          </SettingFormRow>
+          <SettingFormRow<Policies, "allowCustomerReschedule">
             name="allowCustomerReschedule"
-            orientation="horizontal"
+            fit
             label="Let people reschedule online"
             help="Only to free times, and only before the cancellation window closes."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-          </FormField>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField<Policies, "cancellationNoticeHours">
-              name="cancellationNoticeHours"
-              label="Free cancellation up to"
-              help="Hours before the start. After this it counts as a late cancellation."
-            >
-              {(field) => (
-                <NumberInput
-                  ref={field.ref}
-                  mode="decimal"
-                  value={field.value}
-                  onValueChange={(n) => field.onChange(n ?? 0)}
-                  min={0}
-                  unit="hours"
-                />
-              )}
-            </FormField>
-            <FormField<Policies, "lateCancellationRefundPercent">
-              name="lateCancellationRefundPercent"
-              label="Refund for late cancellations"
-              help="Share of what they paid online. You can always refund more by hand."
-            >
-              {(field) => (
-                <Select value={String(field.value)} onValueChange={(x) => field.onChange(Number(x))}>
-                  <SelectTrigger ref={field.ref}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[...new Set([0, 25, 50, 75, 100, field.value])]
-                      .sort((a, b) => a - b)
-                      .map((p) => (
-                        <SelectItem key={p} value={String(p)}>
-                          {p === 0 ? "No refund" : p === 100 ? "Full refund" : `${p}%`}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormField>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            When you cancel, people always get a full refund. Card processing fees aren&apos;t returned by the
-            payment provider.
-          </p>
-        </SettingsCard>
+          </SettingFormRow>
+          <SettingFormRow<Policies, "cancellationNoticeHours">
+            name="cancellationNoticeHours"
+            label="Free cancellation up to"
+            help="Hours before the start. After this it counts as a late cancellation."
+          >
+            {(field) => (
+              <NumberInput
+                ref={field.ref}
+                mode="decimal"
+                value={field.value}
+                onValueChange={(n) => field.onChange(n ?? 0)}
+                min={0}
+                unit="hours"
+              />
+            )}
+          </SettingFormRow>
+          <SettingFormRow<Policies, "lateCancellationRefundPercent">
+            name="lateCancellationRefundPercent"
+            label="Refund for late cancellations"
+            help="Share of what they paid online. You can always refund more by hand."
+          >
+            {(field) => (
+              <Select value={String(field.value)} onValueChange={(x) => field.onChange(Number(x))}>
+                <SelectTrigger ref={field.ref}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...new Set([0, 25, 50, 75, 100, field.value])]
+                    .sort((a, b) => a - b)
+                    .map((p) => (
+                      <SelectItem key={p} value={String(p)}>
+                        {p === 0 ? "No refund" : p === 100 ? "Full refund" : `${p}%`}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
+          </SettingFormRow>
+        </SettingGroup>
 
-        <SettingsCard
+        <SettingGroup
           title="Unpaid holds"
           description={`When a service is paid online, the time is held while the ${v("customer")} pays. If they don't finish, it's released.`}
         >
-          <FormField<Policies, "holdMinutes">
+          <SettingFormRow<Policies, "holdMinutes">
             name="holdMinutes"
             label="Hold the slot for"
             help={
@@ -192,12 +184,11 @@ export function PoliciesSettings() {
                 value={field.value}
                 onValueChange={(n) => field.onChange(n ?? 0)}
                 min={stripe ? 30 : 5}
-                className="sm:w-60"
                 unit="min"
               />
             )}
-          </FormField>
-        </SettingsCard>
+          </SettingFormRow>
+        </SettingGroup>
 
         <FormRootError />
         <SaveBar dirty={form.formState.isDirty} onDiscard={() => form.reset(business.policies)} />
