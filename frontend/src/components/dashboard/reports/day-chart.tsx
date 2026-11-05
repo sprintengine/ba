@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { ReportSummary } from "@/lib/api/types";
-import { chartTickInterval } from "@/lib/dashboard/reports";
+import { chartTickInterval, chartTicks } from "@/lib/dashboard/reports";
 import { useVocabulary } from "@/lib/vocabulary";
 import { useFmt } from "../common";
 
@@ -38,6 +38,14 @@ export function DayChart({ data, measure }: { data: ReportSummary; measure: Meas
   const [width, setWidth] = useState(0);
   const fits = width > 0 ? Math.max(1, Math.floor((width - yAxisWidth) / TICK_SLOT_PX)) : rows.length;
   const interval = Math.max(chartTickInterval(rows.length), Math.ceil(rows.length / fits) - 1);
+  const ticks = useMemo(
+    () =>
+      chartTicks(
+        rows.map((r) => r.date),
+        interval,
+      ),
+    [rows, interval],
+  );
   return (
     <div
       className="h-64 w-full"
@@ -47,7 +55,7 @@ export function DayChart({ data, measure }: { data: ReportSummary; measure: Meas
       <ResponsiveContainer width="100%" height="100%" onResize={(w) => setWidth(w)}>
         <BarChart
           data={rows}
-          margin={{ top: 8, right: 4, bottom: 0, left: 0 }}
+          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
           barCategoryGap={rows.length > 60 ? 1 : 2}
         >
           <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
@@ -55,7 +63,8 @@ export function DayChart({ data, measure }: { data: ReportSummary; measure: Meas
             dataKey="date"
             tickLine={false}
             axisLine={{ stroke: "var(--chart-axis)" }}
-            interval={interval}
+            ticks={ticks}
+            interval={0}
             tick={{ fill: "var(--subtle-foreground)", fontSize: 11 }}
             tickFormatter={(d: string) => fmt.date(d, "short")}
           />
