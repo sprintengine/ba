@@ -61,7 +61,6 @@ export function BookingsList() {
     <PageContainer size="wide">
       <PageHeader
         title={v("bookings", { title: true })}
-        description={`Search, filter and manage every ${v("booking")}.`}
         actions={
           <ActionButton
             variant="primary"
@@ -85,7 +84,7 @@ export function BookingsList() {
       {bookings.isError && !bookings.data ? (
         <ErrorState error={bookings.error} onRetry={() => bookings.refetch()} headingLevel={2} />
       ) : (
-        <BookingsResults items={items} paging={bookings} filtered={filtered} onClearFilters={reset} />
+        <BookingsResults items={items} paging={bookings} filtered={filtered} />
       )}
     </PageContainer>
   );

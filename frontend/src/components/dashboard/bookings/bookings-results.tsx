@@ -24,12 +24,10 @@ export function BookingsResults({
   items,
   paging,
   filtered,
-  onClearFilters,
 }: {
   items: Booking[];
   paging: Paging;
   filtered: boolean;
-  onClearFilters: () => void;
 }) {
   const { v } = useVocabulary();
   const { openBooking, openNewBooking } = useBookingActions();
@@ -47,12 +45,7 @@ export function BookingsResults({
             headingLevel={2}
             icon={<CalendarSearch />}
             title={`No ${v("bookings")} match`}
-            description="Try a wider date range or fewer filters."
-            action={
-              <Button variant="secondary" onClick={onClearFilters}>
-                Clear filters
-              </Button>
-            }
+            description="Try clearing the search or filters."
           />
         ) : (
           <EmptyState

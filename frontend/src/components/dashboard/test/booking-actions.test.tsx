@@ -140,12 +140,12 @@ describe("BookingActionsBar", () => {
     const { unmount } = renderDashboard(
       <BookingActionsBar booking={booking({ ...started, status: "completed" })} />,
     );
-    await userEvent.click(screen.getByRole("button", { name: "Mark no-show instead" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mark as no-show" }));
     await waitFor(() => expect(requestBody(api, "/status")).toEqual({ status: "no_show" }));
     unmount();
 
     renderDashboard(<BookingActionsBar booking={booking({ ...started, status: "no_show" })} />);
-    await userEvent.click(screen.getByRole("button", { name: "Mark completed instead" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mark as completed" }));
     await waitFor(() => expect(requestBody(api, "/status")).toEqual({ status: "completed" }));
   });
 

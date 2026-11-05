@@ -94,7 +94,7 @@ describe("BookingsList", () => {
     renderList();
     expect((await screen.findAllByText("Alex Morgan")).length).toBeGreaterThan(0);
     expect(screen.getByText("1 appointment")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reset" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
     const url = listCalls(api)[0];
     expect(url?.searchParams.get("from")).toBe("2099-09-20");
     expect(url?.searchParams.get("to")).toBeNull();
@@ -186,7 +186,7 @@ describe("BookingsList", () => {
     await waitFor(() => replacedWith(""));
     expect(screen.getByRole("textbox", { name: "Search appointments" })).toHaveValue("");
     replace.mockClear();
-    await user.click(screen.getByRole("button", { name: "Reset" }));
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
     await waitFor(() => replacedWith(""));
   });
 
