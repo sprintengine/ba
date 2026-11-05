@@ -127,7 +127,7 @@ export function ResourcesView() {
                     className={cn(
                       "flex min-w-52 snap-start items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-w-0",
                       active
-                        ? "border-border bg-surface shadow-xs dark:bg-surface-raised"
+                        ? "border-transparent bg-accent"
                         : "border-transparent hover:bg-accent/60",
                       !r.isActive && "opacity-60",
                     )}
@@ -198,7 +198,7 @@ function ResourcePanel({
 }) {
   const [tab, setTab] = useState("hours");
   return (
-    <div className="flex min-w-0 flex-col rounded-xl border border-border bg-surface p-5 shadow-xs">
+    <div className="flex min-w-0 flex-col lg:border-l lg:border-border lg:pl-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
