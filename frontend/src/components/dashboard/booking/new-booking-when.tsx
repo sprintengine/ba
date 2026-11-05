@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TimeInput } from "@/components/ui/time-input";
 import { SlotPicker } from "./slot-picker";
 
-/** Step 2: the date, who with (when several can do it), and a free time or an exact time. */
+/** The date, who with (when several can do it), and a free time or an exact time. */
 export function WhenFields({
   service,
   resources,

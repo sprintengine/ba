@@ -60,6 +60,7 @@ test.describe("dashboard (staff scoping)", () => {
     await page.getByRole("button", { name: /^new /i }).click();
     const name = `Quinn Example ${Date.now().toString(36)}`;
     await sheet.getByRole("textbox", { name: "Name", exact: true }).fill(name);
+    await sheet.getByRole("button", { name: /^payment/i }).click();
     await sheet.getByRole("switch", { name: /^email the/i }).click();
     await sheet.getByRole("button", { name: /^create /i }).click();
     await expect(page.getByText(/created/i).first()).toBeVisible({ timeout: 15_000 });

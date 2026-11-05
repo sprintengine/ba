@@ -6,15 +6,14 @@ import { FormField } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { questionAnswerInput } from "@/components/common/question-answer-input";
 import { SensitiveMark } from "../common";
-import { Step } from "./new-booking-step";
 
-/** Step 4 (only when the service has questions): the booking form's questions, all optional for staff. */
+/** The booking form's questions, all optional for staff. */
 export function QuestionFields({ questions }: { questions: FormQuestion[] }) {
   if (questions.length === 0) return null;
   const sorted = [...questions].sort((a, b) => a.sortOrder - b.sortOrder);
   return (
-    <Step n={4} title="Questions">
-      <p className="-mt-1.5 text-xs text-muted-foreground">
+    <>
+      <p className="text-xs text-muted-foreground">
         All optional when you book for someone. Fill in what you know.
       </p>
       {sorted.map((q) => (
@@ -44,6 +43,6 @@ export function QuestionFields({ questions }: { questions: FormQuestion[] }) {
           }}
         </FormField>
       ))}
-    </Step>
+    </>
   );
 }
