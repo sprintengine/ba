@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   CalendarCheck,
   CalendarPlus,
@@ -8,6 +9,7 @@ import {
   ChevronRight,
   CircleSlash,
   Columns3,
+  List,
 } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -31,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/components/ui/use-media-query";
@@ -69,6 +72,7 @@ export function CalendarToolbar({
   onNew: () => void;
 }) {
   const { v } = useVocabulary();
+  const business = useCurrentBusiness();
   const phone = useMediaQuery("(max-width: 639px)");
   return (
     // One wrapping row: the date row with "New" at its end, the filters under both; from `xl` it is all one row.
@@ -158,6 +162,12 @@ export function CalendarToolbar({
             { value: "week", label: "Week", icon: <CalendarRange aria-hidden />, shortcut: "W" },
           ]}
         />
+        {/* Phones have the list in the tab bar. */}
+        <Button asChild variant="ghost" size="sm" className="max-sm:hidden">
+          <Link href={dashboardHref(business.slug, "bookings")}>
+            <List aria-hidden /> All {v("bookings")}
+          </Link>
+        </Button>
       </div>
       <ActionButton
         variant="primary"
