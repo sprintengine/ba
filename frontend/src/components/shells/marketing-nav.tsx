@@ -14,7 +14,7 @@ import { INDUSTRIES } from "./industries";
 const LINKS = [
   { href: "/#product", label: "Product" },
   { href: "/#features", label: "Features" },
-  { href: "/#industries", label: "Industries" },
+  { href: "/#industries", label: "Examples" },
   { href: "/pricing", label: "Pricing" },
 ];
 

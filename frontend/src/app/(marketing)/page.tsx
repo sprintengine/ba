@@ -72,11 +72,11 @@ const FAQ: FaqItem[] = [
     ),
   },
   {
-    question: "My business isn't a physio, car wash, music school or GP. Will it work?",
+    question: "My business isn't in your examples. Will it work?",
     answer: (
       <p>
-        Very likely. If you work by appointment, it will fit. The four templates are only starting points.
-        Describe your business and we&apos;ll draft a setup for it.
+        Very likely. If you work by appointment, it will fit, with as many appointment types as you need on
+        every plan. Describe your business and we&apos;ll draft a setup for it.
       </p>
     ),
   },

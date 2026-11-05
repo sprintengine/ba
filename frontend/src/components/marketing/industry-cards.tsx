@@ -6,6 +6,7 @@ import { BusinessThemeProvider } from "@/lib/theme/business-theme";
 import { cn } from "@/lib/utils";
 import { INDUSTRIES } from "@/components/shells/industries";
 import { INDUSTRY_LIST } from "./industry-content";
+import { EXAMPLE_CARDS, photoSrc, photoSrcSet } from "./landing/examples/cards";
 import type { IndustryContent } from "./industries/types";
 
 const OTHERS = [
@@ -19,26 +20,12 @@ const OTHERS = [
 ];
 
 /** Grid of launch-industry cards, each themed in its example business's colour. */
-export function IndustryCards({
-  exclude,
-  showOther = true,
-  swipe = false,
-}: {
-  exclude?: string;
-  showOther?: boolean;
-  /** On a phone, one row to swipe through instead of a long stack. */
-  swipe?: boolean;
-}) {
+export function IndustryCards({ exclude, showOther = true }: { exclude?: string; showOther?: boolean }) {
   const list = INDUSTRY_LIST.filter((c) => c.slug !== exclude);
   return (
     <div className="grid gap-4">
       <div
-        className={cn(
-          "grid gap-4 sm:grid-cols-2",
-          list.length === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3",
-          swipe &&
-            "max-sm:-mx-4 max-sm:flex max-sm:snap-x max-sm:snap-mandatory max-sm:scroll-px-4 max-sm:scrollbar-none max-sm:overflow-x-auto max-sm:px-4 max-sm:*:w-[82%] max-sm:*:shrink-0 max-sm:*:snap-start",
-        )}
+        className={cn("grid gap-4 sm:grid-cols-2", list.length === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3")}
       >
         {list.map((c) => (
           <IndustryCard key={c.slug} content={c} />
@@ -79,23 +66,34 @@ export function IndustryCards({
 
 function IndustryCard({ content: c }: { content: IndustryContent }) {
   const name = INDUSTRIES.find((i) => i.slug === c.slug)?.name ?? c.slug;
+  const photo = EXAMPLE_CARDS.find((e) => e.page === c.slug);
   return (
     <BusinessThemeProvider primaryColor={c.color} className="flex">
       <Link
         href={`/for/${c.slug}`}
         className="group focus-ring relative flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-brand-border hover:shadow-lg"
       >
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-24 bg-linear-to-b from-brand-soft to-transparent opacity-70"
-        />
-        <div className="relative flex items-start justify-between gap-3 p-5 pb-4">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-button">
-            <c.icon className="size-5" />
+        {photo && (
+          <span className="relative block aspect-[3/2] w-full overflow-hidden bg-muted">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static WebP in two sizes; next/image is not used */}
+            <img
+              src={photoSrc(photo.photo, 960)}
+              srcSet={photoSrcSet(photo.photo)}
+              sizes="(min-width: 1024px) 24rem, (min-width: 640px) 50vw, 100vw"
+              alt={photo.alt}
+              width={960}
+              height={640}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover transition-[scale] duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
+            />
           </span>
-          <ArrowUpRight className="size-4 text-subtle-foreground transition-[color,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-brand" />
-        </div>
-        <div className="relative px-5">
+        )}
+        <ArrowUpRight
+          aria-hidden
+          className="absolute top-3 right-3 size-7 rounded-full bg-black/55 p-1.5 text-white backdrop-blur-sm transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+        />
+        <div className="relative px-5 pt-4">
           <h3 className="text-base font-semibold tracking-tight">{name}</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">e.g. {c.business.name}</p>
         </div>
@@ -111,7 +109,7 @@ function IndustryCard({ content: c }: { content: IndustryContent }) {
           ))}
         </ul>
         <span className="relative border-t border-border-subtle px-5 py-3 text-sm font-medium text-brand">
-          See an example
+          See this template
         </span>
       </Link>
     </BusinessThemeProvider>
