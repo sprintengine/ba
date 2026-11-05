@@ -68,9 +68,9 @@ export function ImageUploadDropzone({
           if (!disabled) void handle(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong bg-surface-sunken text-center transition-colors",
+          "flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border-strong bg-surface-sunken text-center transition-colors",
           "focus-within:ring-2 focus-within:ring-ring hover:border-brand hover:bg-brand-soft/40",
-          compact ? "px-4 py-4" : "px-6 py-10",
+          compact ? "px-3 py-2.5" : "flex-col px-6 py-10",
           dragging && "border-brand bg-brand-soft/50",
           disabled && "pointer-events-none opacity-50",
         )}
@@ -78,7 +78,7 @@ export function ImageUploadDropzone({
         {upload.isPending ? (
           <Spinner label="Uploading" />
         ) : (
-          <ImageUp className="size-6 text-muted-foreground" aria-hidden />
+          <ImageUp className={cn("text-muted-foreground", compact ? "size-4.5" : "size-6")} aria-hidden />
         )}
         <span className="text-sm font-medium">
           {upload.isPending ? "Uploading…" : "Drop an image or click to upload"}

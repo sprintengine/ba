@@ -69,7 +69,8 @@ export function ColorPicker({
             if (n) onValueChange(n);
           }}
           onBlur={() => setDraft(null)}
-          className="tnum w-32 font-mono text-sm uppercase"
+          wrapperClassName="w-32"
+          className="tnum font-mono text-sm uppercase"
           maxLength={7}
           aria-label="Hex colour"
           leading={
