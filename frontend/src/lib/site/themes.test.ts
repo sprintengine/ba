@@ -42,6 +42,16 @@ describe("site themes", () => {
     }
   });
 
+  it("gives form fields an edge that reads on every surface they sit on (WCAG 1.4.11: 3:1)", () => {
+    for (const key of SITE_THEME_KEYS) {
+      for (const mode of [SITE_THEMES[key].light, SITE_THEMES[key].dark]) {
+        for (const fill of [mode.background, mode.surface, mode.surfaceRaised]) {
+          expect(contrastRatio(mode.input, fill), `${key} input on ${fill}`).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+
   it.each(SITE_THEME_KEYS)("%s: any primary colour yields accessible brand tokens in both modes", (key) => {
     for (const color of NASTY) {
       const vars = siteThemeVars(key, { primaryColor: color, accent: color });

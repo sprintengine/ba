@@ -35,7 +35,7 @@ export const EDITORIAL: SiteThemeDef = {
     border: "#d8d2c6",
     borderSubtle: "#e6e1d7",
     borderStrong: "#161310",
-    input: "#bdb6a8",
+    input: "#938d82",
   },
   dark: {
     background: "#121110",
@@ -50,6 +50,6 @@ export const EDITORIAL: SiteThemeDef = {
     border: "#3a3631",
     borderSubtle: "#2a2723",
     borderStrong: "#f3efe8",
-    input: "#4a453e",
+    input: "#6c6760",
   },
 };

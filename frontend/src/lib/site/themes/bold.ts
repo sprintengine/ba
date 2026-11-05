@@ -44,7 +44,7 @@ export const BOLD: SiteThemeDef = {
     border: "#dadad6",
     borderSubtle: "#e8e8e5",
     borderStrong: "#0a0a0b",
-    input: "#b9b9b4",
+    input: "#92928f",
   },
   dark: {
     background: "#08080a",
@@ -59,6 +59,6 @@ export const BOLD: SiteThemeDef = {
     border: "#2a2a2f",
     borderSubtle: "#1f1f23",
     borderStrong: "#fafafa",
-    input: "#3a3a40",
+    input: "#66666b",
   },
 };
