@@ -26,7 +26,7 @@ export const EXAMPLE_CARDS: ExampleCard[] = [
     shape: "Three hairdressers, three chairs",
     types: "Cuts, colour, highlights and more",
     photo: "hair-salon",
-    alt: "A hairdresser blow-drying a client's hair in a bright salon",
+    alt: "A hairdresser cutting a client's hair in a bright salon",
   },
   {
     slug: "gp-practice",
