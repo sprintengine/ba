@@ -1,12 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMediaQuery } from "@/components/ui/use-media-query";
-
-/** Tailwind's `lg` and up (iPad landscape, laptops): the full, collapsible sidebar. Below it the sidebar is a rail. */
-export function useIsWideLayout(): boolean {
-  return useMediaQuery("(min-width: 1024px)", true);
-}
 
 const TEXT_ENTRY =
   "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, [contenteditable=true], [contenteditable='']";

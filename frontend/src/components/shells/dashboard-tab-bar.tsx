@@ -11,7 +11,7 @@ import { DASHBOARD_NAV, TAB_BAR_KEYS, dashboardHref, isNavItemActive } from "./d
 import { useSoftKeyboardOpen } from "./use-shell-layout";
 
 const tabClass =
-  "flex min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg px-0.5 pt-1.5 pb-1 text-center text-[0.625rem] leading-3 font-medium tracking-tight whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset [&_svg]:size-5.5 [&_svg]:shrink-0";
+  "flex min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg px-0.5 pt-1.5 pb-1 text-center text-xs leading-4 font-medium tracking-tight whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset [&_svg]:size-5.5 [&_svg]:shrink-0";
 
 /**
  * Phone navigation (below `sm`; every iPad, the mini included, gets the rail): the most used pages as glyphs with short labels, and "More" for the full
@@ -46,7 +46,12 @@ export function DashboardTabBar({
       <ul className="grid h-(--tab-bar-height) grid-cols-5">
         {items.map((item) => {
           const active = slug !== null && isNavItemActive(item, slug, pathname);
-          const label = item.vocabulary ? v(item.vocabulary, { title: true }) : item.label;
+          const label =
+            item.key === "overview"
+              ? "Today"
+              : item.vocabulary
+                ? v(item.vocabulary, { title: true })
+                : item.label;
           return (
             <li key={item.key} className="flex min-w-0">
               <Link

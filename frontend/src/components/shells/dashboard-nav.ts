@@ -1,13 +1,14 @@
 import {
   BadgePercent,
   BarChart3,
+  Building2,
   CalendarCheck2,
   CalendarDays,
   Boxes,
   PanelsTopLeft,
   LayoutGrid,
   Settings,
-  Sparkles,
+  Tag,
   Users,
   UsersRound,
   type LucideIcon,
@@ -30,7 +31,7 @@ const ICONS: Record<DashboardSectionKey, LucideIcon> = {
   calendar: CalendarDays,
   bookings: CalendarCheck2,
   customers: Users,
-  services: Sparkles,
+  services: Tag,
   offers: BadgePercent,
   resources: Boxes,
   team: UsersRound,
@@ -48,4 +49,68 @@ export const DASHBOARD_NAV: DashboardNavItem[] = DASHBOARD_SECTIONS.map((section
 /** The items [role] may see, without the site builder unless websites are on. */
 export function dashboardNavFor(role: MemberRole, sitesEnabled: boolean): DashboardNavItem[] {
   return DASHBOARD_NAV.filter((item) => sectionVisible(item, role, sitesEnabled));
+}
+
+/** The sections gathered under Business in the rail, in order; the strip on those pages moves between them. */
+const BUSINESS_KEYS: readonly DashboardSectionKey[] = [
+  "services",
+  "offers",
+  "resources",
+  "team",
+  "site",
+  "settings",
+];
+
+/** The Business sections [role] may see. */
+export function businessNavFor(role: MemberRole, sitesEnabled: boolean): DashboardNavItem[] {
+  return dashboardNavFor(role, sitesEnabled).filter((item) => BUSINESS_KEYS.includes(item.key));
+}
+
+export type RailItem = {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  /** The section the link opens. */
+  section: DashboardNavItem;
+  /** The sections that light this item. */
+  covers: DashboardNavItem[];
+  /** Take the label from the business vocabulary. */
+  vocabulary?: DashboardNavItem["vocabulary"];
+};
+
+/**
+ * The rail's five items. Today, Calendar (with the Bookings list behind it), Customers, Business (everything about how
+ * the business is set up) and Reports. Every section stays reachable; ones [role] may not see drop out.
+ */
+export function railItemsFor(role: MemberRole, sitesEnabled: boolean): RailItem[] {
+  const visible = dashboardNavFor(role, sitesEnabled);
+  const section = (key: DashboardSectionKey) => visible.find((item) => item.key === key);
+  const business = businessNavFor(role, sitesEnabled);
+  const single = (key: DashboardSectionKey, label: string, icon?: LucideIcon): RailItem[] => {
+    const item = section(key);
+    return item
+      ? [{ key, label, icon: icon ?? item.icon, section: item, covers: [item], vocabulary: item.vocabulary }]
+      : [];
+  };
+  const calendar = section("calendar");
+  const bookings = section("bookings");
+  return [
+    ...single("overview", "Today"),
+    ...(calendar
+      ? [
+          {
+            key: "calendar",
+            label: "Calendar",
+            icon: calendar.icon,
+            section: calendar,
+            covers: bookings ? [calendar, bookings] : [calendar],
+          },
+        ]
+      : []),
+    ...single("customers", "Customers"),
+    ...(business[0]
+      ? [{ key: "business", label: "Business", icon: Building2, section: business[0], covers: business }]
+      : []),
+    ...single("reports", "Reports"),
+  ];
 }
