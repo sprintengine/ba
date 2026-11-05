@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CreditCard, Hourglass, MapPin, UserRound } from "lucide-react";
+import { CreditCard, DoorOpen, Hourglass, MapPin, UserRound } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
 import {
   useCancelMyBooking,
@@ -163,6 +163,8 @@ function CardFacts({ booking: b, inactive }: { booking: CustomerBooking; inactiv
   const place = shortAddress(b.business.address);
   const people = b.resources.map((r) => r.name).join(" · ");
   const balance = inactive ? null : balanceDueCents(b);
+  // A room or a piece of equipment isn't a person.
+  const WithIcon = b.resources.some((r) => r.kind === "person") ? UserRound : DoorOpen;
   return (
     <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
       <li>
@@ -181,7 +183,7 @@ function CardFacts({ booking: b, inactive }: { booking: CustomerBooking; inactiv
       </li>
       {people && (
         <li className="flex items-center gap-1.5">
-          <UserRound className="size-3.5" aria-hidden /> {people}
+          <WithIcon className="size-3.5" aria-hidden /> {people}
         </li>
       )}
       {place && (
