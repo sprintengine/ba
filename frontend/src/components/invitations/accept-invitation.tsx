@@ -98,7 +98,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
         )}
         {user && view.offerOtherAccount && (
           <Button
-            variant="ghost"
+            variant="secondary"
             onClick={() => signOut({ redirectUrl: signInUrl(`/invitations/${token}`) })}
           >
             Use a different account

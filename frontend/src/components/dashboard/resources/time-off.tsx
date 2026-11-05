@@ -74,7 +74,7 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
       <OverrideList
         items={upcoming}
         editable={editable}
-        empty={<p className="text-sm text-muted-foreground">Nothing planned.</p>}
+        empty={<p className="text-sm text-muted-foreground">No time off or extra hours.</p>}
       />
       <OverrideDialog
         open={adding}

@@ -165,7 +165,13 @@ export function NotificationList({
   // The business only tells them apart when there is more than one.
   const several = new Set(items.map((n) => n.businessName).filter(Boolean)).size > 1;
   return (
-    <ul className={cn("flex flex-col divide-y divide-border-subtle", compact && "max-h-96 overflow-y-auto")}>
+    <ul
+      className={cn(
+        "flex flex-col divide-y divide-border-subtle",
+        compact &&
+          "max-h-96 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] pb-4",
+      )}
+    >
       {items.map((n) => (
         <li key={n.id}>
           <Link

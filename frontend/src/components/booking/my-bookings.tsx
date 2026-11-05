@@ -59,6 +59,8 @@ export function MyBookingsPage() {
             label="Connected apps"
             variant="ghost"
             collapse={false}
+            // On a phone it would take a line of its own; the account menu has it.
+            className="max-sm:hidden"
           />
         }
       />
