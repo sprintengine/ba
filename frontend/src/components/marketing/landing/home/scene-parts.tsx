@@ -1,4 +1,48 @@
 import { Pause, Play } from "lucide-react";
+import { CARD, CARD_RAISED, CARD_TEXT, serviceTint } from "@/components/dashboard/calendar/event-card";
+import { cn } from "@/lib/utils";
+
+/**
+ * The booking scene's frames, shared with its poster so nothing moves when the scene arrives. On a laptop the phone
+ * shrinks to fit under the heading, and the calendar stays the phone's height.
+ */
+export const SCENE_GRID =
+  "relative grid justify-items-center gap-4 [--iphone-scale:0.66] sm:gap-5 sm:[--iphone-scale:0.72] lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:justify-items-stretch lg:gap-6 lg:[--iphone-scale:0.82] xl:gap-12 [@media(min-width:1024px)_and_(max-height:960px)]:[--iphone-scale:0.72]";
+export const SCENE_CALENDAR = "h-[17rem] w-full sm:h-[45rem] lg:h-[calc(878px*var(--iphone-scale))]";
+
+export type SampleBookingProps = {
+  who: string;
+  when: string;
+  what: string;
+  color: string;
+  via: string;
+};
+
+/** A booking as the calendar draws it, at reading size, for the page around the scenes. */
+export function SampleBooking({
+  who,
+  when,
+  what,
+  color,
+  via,
+  className,
+  style,
+}: SampleBookingProps & { className?: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      className={cn(CARD, CARD_RAISED, "h-[5.25rem] w-full text-base", className)}
+      style={{ ...serviceTint(color), ...style }}
+    >
+      <span className={cn(CARD_TEXT, "px-3.5 py-2.5")}>
+        <span className="block truncate text-[0.9375rem] leading-5 font-semibold text-foreground">{who}</span>
+        <span className="block truncate text-[0.8125rem] leading-5 text-muted-foreground">
+          {when} · {what}
+        </span>
+        <span className="block truncate text-[0.8125rem] leading-5 font-medium text-foreground">{via}</span>
+      </span>
+    </div>
+  );
+}
 
 export function SceneToggle({ paused, onToggle }: { paused: boolean; onToggle: () => void }) {
   return (

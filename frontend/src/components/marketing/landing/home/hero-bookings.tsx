@@ -2,10 +2,9 @@
 
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { CARD, CARD_RAISED, CARD_TEXT, serviceTint } from "@/components/dashboard/calendar/event-card";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
-import { SceneToggle } from "./scene-parts";
+import { SampleBooking, SceneToggle } from "./scene-parts";
 import { ThreadField } from "./thread-field";
 
 /** Sample bookings: all kinds of business, from all the ways a booking comes in. */
@@ -44,30 +43,18 @@ const SHOWN = 3;
 function Card({ n, depth }: { n: number; depth: number }) {
   const b = BOOKINGS[n % BOOKINGS.length]!;
   return (
-    <div
+    <SampleBooking
+      {...b}
       className={cn(
-        CARD,
-        CARD_RAISED,
-        "inset-x-0 top-0 h-[5.25rem] origin-top text-base transition-[transform,opacity] duration-500 ease-out",
+        "inset-x-0 top-0 origin-top transition-[transform,opacity] duration-500 ease-out",
         depth === 0 && "animate-rise",
       )}
       style={{
-        ...serviceTint(b.color),
         zIndex: SHOWN - depth,
         opacity: 1 - depth * 0.2,
         transform: `translateY(${String(depth * 5.9)}rem) scale(${String(1 - depth * 0.05)})`,
       }}
-    >
-      <span className={cn(CARD_TEXT, "px-3.5 py-2.5")}>
-        <span className="block truncate text-[0.9375rem] leading-5 font-semibold text-foreground">
-          {b.who}
-        </span>
-        <span className="block truncate text-[0.8125rem] leading-5 text-muted-foreground">
-          {b.when} · {b.what}
-        </span>
-        <span className="block truncate text-[0.8125rem] leading-5 font-medium text-foreground">{b.via}</span>
-      </span>
-    </div>
+    />
   );
 }
 
@@ -91,14 +78,17 @@ export function HeroBookings() {
         onArrive={onArrive}
         className="inset-0 -z-10 [mask-image:linear-gradient(180deg,transparent_40%,black_62%)] lg:[mask-image:linear-gradient(90deg,transparent_22%,black_52%)]"
       />
-      <div className="flex flex-col items-end gap-3">
+      <div className="flex flex-col gap-3">
         <div aria-hidden className="relative h-[16.5rem] w-full" inert>
           <div ref={target} className="absolute inset-x-0 top-0 h-[5.25rem]" />
           {Array.from({ length: SHOWN }, (_, depth) => (
             <Card key={newest - depth} n={newest - depth} depth={depth} />
           ))}
         </div>
-        {!reduce && <SceneToggle paused={paused} onToggle={() => setPaused((p) => !p)} />}
+        <div className="flex min-h-8 items-center justify-between gap-3 text-sm text-muted-foreground">
+          Every booking lands on one calendar.
+          {!reduce && <SceneToggle paused={paused} onToggle={() => setPaused((p) => !p)} />}
+        </div>
       </div>
     </>
   );

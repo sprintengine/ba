@@ -23,8 +23,8 @@ export function Hero() {
             Booking software your AI can run.
           </h1>
           <p className="mt-7 max-w-[35rem] text-lg leading-[1.55] text-muted-foreground sm:text-xl sm:leading-[1.5]">
-            Clients book and pay themselves, day and night. Your AI, or ours, handles the rest. Fewer calls,
-            and you&apos;re home on time.
+            Clients book and pay online, day or night. Connect the AI you already use, like ChatGPT or Claude,
+            and run the whole business by asking it. It&apos;s included on every plan.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Button asChild variant="primary" size="xl" className="rounded-[14px] font-semibold">

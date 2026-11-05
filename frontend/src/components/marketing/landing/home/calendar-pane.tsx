@@ -43,9 +43,14 @@ const time = (iso: string) => formatTime(iso, LUMEN.timezone, LUMEN.locale);
 const hour = (h: number) => minutesToTime(h * 60);
 /** Vertical scale here: the app's day view zoomed out, so the afternoon fits one window. */
 export const CALENDAR_HOUR_PX = 110;
-export const CALENDAR_HOUR_PX_PHONE = 60;
-/** A phone has room for a stretch of the afternoon: the part around the demo's booking. */
-const PHONE_SCROLLED_HOURS = 1.75;
+export const CALENDAR_HOUR_PX_PHONE = 80;
+/** A phone has room for a stretch of the afternoon. It opens at 14:30, on a whole booking, above the demo's. */
+const PHONE_SCROLLED_HOURS = 1.5;
+/** The toolbar, the names and the foot, around the hours. */
+const CHROME_PX = 168;
+
+/** The hour height at which the whole afternoon fits a calendar this tall. */
+export const fitHourPx = (height: number) => Math.floor((height - CHROME_PX) / (LAST_HOUR - FIRST_HOUR));
 
 /** The app's rail, drawn from its own items and classes. */
 function Rail() {
@@ -179,6 +184,7 @@ export function CalendarPane({
   entries,
   columns: shown,
   phone,
+  hourPx,
   narrow,
 }: {
   date: PlainDate;
@@ -186,10 +192,10 @@ export function CalendarPane({
   /** How many people fit the width. */
   columns: number;
   phone: boolean;
+  hourPx: number;
   /** Too narrow for the toolbar's view and day controls. */
   narrow: boolean;
 }) {
-  const hourPx = phone ? CALENDAR_HOUR_PX_PHONE : CALENDAR_HOUR_PX;
   const columns = useMemo<Columns>(
     () =>
       TEAM.slice(0, shown).map((resource) => ({

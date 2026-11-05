@@ -12,11 +12,11 @@ import {
   serviceTint,
 } from "@/components/dashboard/calendar/event-card";
 import { BookingPhone } from "./booking-phone";
-import { CALENDAR_HOUR_PX, CALENDAR_HOUR_PX_PHONE, CalendarPane } from "./calendar-pane";
+import { CALENDAR_HOUR_PX, CALENDAR_HOUR_PX_PHONE, CalendarPane, fitHourPx } from "./calendar-pane";
 import { CLIENT, FIRST_HOUR, NOW_MINUTES, TEAM, type DemoEntry } from "./fixture";
 import { IPhone } from "./iphone";
 import { drawThread, flight, THREAD_GRADIENT_STOPS, type FlightPath } from "./flight";
-import { SceneToggle } from "./scene-parts";
+import { SCENE_CALENDAR, SCENE_GRID, SceneToggle } from "./scene-parts";
 import { useBookingDemo } from "./use-booking-demo";
 
 /** The time on the phone: the same afternoon as the calendar's now line. */
@@ -30,16 +30,16 @@ const endOf = (e: DemoEntry) => {
 
 type Flying = { entry: DemoEntry; box: { left: number; top: number; width: number; height: number } };
 
-function useWidth(ref: React.RefObject<HTMLElement | null>) {
-  const [width, setWidth] = useState(0);
+function useSize(ref: React.RefObject<HTMLElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    const ro = new ResizeObserver(() => setSize({ width: el.clientWidth, height: el.clientHeight }));
     ro.observe(el);
     return () => ro.disconnect();
   }, [ref]);
-  return width;
+  return size;
 }
 
 /** The booking as the calendar draws it, on its way there. */
@@ -86,10 +86,11 @@ export function BookedScene() {
   const [notice, setNotice] = useState<DemoEntry | null>(null);
   const [visible, setVisible] = useState(false);
   const land = useRef<() => void>(() => undefined);
-  const width = useWidth(calendar);
+  const { width, height } = useSize(calendar);
   const phone = width > 0 && width < 560;
   const columns = width >= 760 ? 3 : width >= 560 ? 2 : 1;
-  const hourPx = phone ? CALENDAR_HOUR_PX_PHONE : CALENDAR_HOUR_PX;
+  // The afternoon always fills the window, to scale, however tall the phone beside it is.
+  const hourPx = phone ? CALENDAR_HOUR_PX_PHONE : Math.min(CALENDAR_HOUR_PX, fitHourPx(height));
 
   useEffect(() => {
     const el = root.current;
@@ -163,10 +164,7 @@ export function BookedScene() {
 
   return (
     <div>
-      <div
-        ref={root}
-        className="relative grid justify-items-center gap-5 [--iphone-scale:0.66] sm:[--iphone-scale:0.72] lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:justify-items-stretch lg:gap-12 lg:[--iphone-scale:0.82]"
-      >
+      <div ref={root} className={SCENE_GRID}>
         <div
           role="group"
           aria-label="Live demo of a booking page. Tap through it."
@@ -190,13 +188,17 @@ export function BookedScene() {
           ref={calendar}
           aria-hidden
           inert
-          className="relative flex h-[13rem] w-full min-w-0 overflow-hidden rounded-2xl bg-background shadow-[0_40px_80px_-40px_rgb(0_0_0/0.3)] ring-1 ring-border sm:h-[45rem]"
+          className={cn(
+            SCENE_CALENDAR,
+            "relative flex min-w-0 overflow-hidden rounded-2xl bg-background shadow-[0_40px_80px_-40px_rgb(0_0_0/0.3)] ring-1 ring-border",
+          )}
         >
           <CalendarPane
             date={demo.date}
             entries={demo.entries}
             columns={columns}
             phone={phone}
+            hourPx={hourPx}
             narrow={width > 0 && width < 760}
           />
           {notice && (
@@ -240,8 +242,8 @@ export function BookedScene() {
       </div>
       <div className="mt-6 flex items-center justify-between gap-4 lg:mt-5">
         <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">Live demo on a sample business.</span>{" "}
-          {demo.auto ? "Tap the phone to try it yourself." : `Book as ${CLIENT.name}. A booked time is gone.`}
+          <span className="font-semibold text-foreground">A working demo with a made-up clinic.</span>{" "}
+          {demo.auto ? "Tap through it to try it." : `Book as ${CLIENT.name}. A booked time is gone.`}
         </p>
         <SceneToggle paused={demo.paused} onToggle={demo.toggle} />
       </div>

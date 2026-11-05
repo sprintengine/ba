@@ -16,11 +16,11 @@ export function BookedSection() {
             lit="You see it on your calendar."
           />
           <p className="text-base leading-[1.6] text-muted-foreground sm:text-lg lg:pb-1">
-            Clients pick a time that&apos;s actually free and pay online. No calls, no back and forth, nothing
-            to copy across.
+            Clients pick a free time and pay online, and it shows up on your calendar straight away. No phone
+            calls, nothing to type in.
           </p>
         </div>
-        <div className="mt-10 sm:mt-12">
+        <div className="mt-8 sm:mt-10 lg:mt-8">
           <BookedSceneLoader />
         </div>
         <p className="sr-only">

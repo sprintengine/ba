@@ -29,9 +29,11 @@ const bend = (a: Point, c: Point, b: Point, t: number): Point => ({
  */
 export function flight(el: HTMLElement, scene: HTMLElement, from: DOMRect, to: Box) {
   const s = scene.getBoundingClientRect();
-  const a = { x: from.left - s.left + from.width / 2, y: from.top - s.top + from.height / 2 };
   const b = { x: to.left + to.width / 2, y: to.top + to.height / 2 };
-  const across = Math.abs(b.x - a.x) > Math.abs(b.y - a.y);
+  const middle = { x: from.left - s.left + from.width / 2, y: from.top - s.top + from.height / 2 };
+  const across = Math.abs(b.x - middle.x) > Math.abs(b.y - middle.y);
+  // It leaves by the booking's own edge, on the side it's going: the right beside a calendar, the foot above one.
+  const a = across ? { x: from.right - s.left, y: middle.y } : { x: middle.x, y: from.bottom - s.top };
   const c = across
     ? { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - 0.16 * Math.abs(b.x - a.x) }
     : { x: Math.max(a.x, b.x) + 70, y: (a.y + b.y) / 2 };

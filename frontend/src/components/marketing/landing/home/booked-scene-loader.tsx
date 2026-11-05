@@ -2,13 +2,14 @@
 
 import dynamic from "next/dynamic";
 import { IPhone } from "./iphone";
+import { SCENE_CALENDAR, SCENE_GRID } from "./scene-parts";
 
 /** What the scene takes up until its chunk arrives: the same frames, so nothing moves when it does. */
 function Poster() {
   return (
-    <div className="grid justify-items-center gap-5 [--iphone-scale:0.66] sm:[--iphone-scale:0.72] lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:justify-items-stretch lg:gap-12 lg:[--iphone-scale:0.82]">
+    <div className={SCENE_GRID}>
       <IPhone />
-      <div className="h-[13rem] w-full rounded-2xl bg-background ring-1 ring-border sm:h-[45rem]" />
+      <div className={`${SCENE_CALENDAR} rounded-2xl bg-background ring-1 ring-border`} />
     </div>
   );
 }
