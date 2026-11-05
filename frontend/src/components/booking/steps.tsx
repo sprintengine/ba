@@ -214,16 +214,12 @@ function ServiceCard({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border bg-surface p-4 pl-5 text-left shadow-xs transition-[border-color,box-shadow,transform] duration-150 outline-none sm:p-5 sm:pl-6 dark:bg-surface-raised",
+        "group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-xs transition-[border-color,box-shadow,transform] duration-150 outline-none sm:p-5 dark:bg-surface-raised",
         "hover:border-border-strong hover:shadow-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.995]",
         selected ? "border-primary shadow-[0_0_0_1px_var(--primary)]" : "border-border",
       )}
     >
-      <span
-        aria-hidden
-        className="absolute inset-y-4 left-0 w-[3px] rounded-r-full opacity-80"
-        style={{ backgroundColor: s.color }}
-      />
+      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-start justify-between gap-3">
           <span className="text-[0.9375rem] leading-6 font-semibold tracking-tight">{s.name}</span>
