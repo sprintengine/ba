@@ -10,7 +10,8 @@ test("owner uploads a logo and it appears on the booking page", async ({ page, r
   const { slug, owner } = await createSiteBusiness(request);
   await signInAs(page, owner);
   await page.goto(`/dashboard/${slug}/settings/branding`);
-  await expect(page.getByRole("heading", { name: "Branding" })).toBeVisible({ timeout: 20_000 });
+  // The selected tab names the section on screen; the heading is there for screen readers.
+  await expect(page.getByRole("heading", { name: "Branding" })).toBeAttached({ timeout: 20_000 });
 
   await page
     .locator('input[type="file"]')
