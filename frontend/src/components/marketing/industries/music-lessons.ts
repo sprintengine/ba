@@ -82,7 +82,7 @@ export const MUSIC_LESSONS: IndustryContent = {
     {
       icon: CreditCard,
       title: "Paid when booked",
-      body: "Lessons are paid online at booking, straight to your Stripe account. No more chasing cash at the door.",
+      body: "Lessons are paid online at booking, straight to your own account. No more chasing cash at the door.",
     },
     {
       icon: Repeat,

@@ -182,7 +182,7 @@ export default async function IndustryPage({ params }: Props) {
               },
               {
                 title: "Make it yours",
-                body: "Add your team's names, adjust prices and hours, set your cancellation policy and connect Stripe.",
+                body: "Add your team's names, adjust prices and hours, set your cancellation policy and connect your payment provider.",
               },
               {
                 title: "Share your link",

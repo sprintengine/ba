@@ -16,7 +16,7 @@ const POINTS = [
   {
     icon: CreditCard,
     title: "0% platform fee",
-    body: "Payments and deposits go straight to your own Stripe account. We don't take a cut.",
+    body: "Payments and deposits go straight to your own account. We don't take a cut.",
   },
 ];
 
