@@ -146,7 +146,7 @@ export function StartStep({
                       </span>
                       <span className="flex flex-col gap-1">
                         <span className="text-sm font-semibold">{t.name}</span>
-                        <span className="line-clamp-2 text-sm text-muted-foreground">{t.description}</span>
+                        <span className="text-sm text-muted-foreground">{t.description}</span>
                       </span>
                     </button>
                   </li>

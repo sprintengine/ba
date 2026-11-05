@@ -54,7 +54,7 @@ export function CustomerForm({
         {(field) => <Input {...field} autoComplete="off" />}
       </FormField>
       <div className="grid gap-5 sm:grid-cols-2">
-        <FormField<CustomerFormValues, "email"> name="email" label="Email" optional>
+        <FormField<CustomerFormValues, "email"> name="email" label="Email" optional className="sm:col-span-2">
           {(field) => <Input {...field} type="email" autoComplete="off" />}
         </FormField>
         <FormField<CustomerFormValues, "phone"> name="phone" label="Phone" optional>
