@@ -15,7 +15,8 @@ import { Spinner } from "./spinner";
  * bottom (the booking drawer on the right, bottom sheets on phones), and a toast there covered the next action.
  */
 export function Toaster() {
-  const { resolvedTheme } = useTheme();
+  const { forcedTheme, resolvedTheme: chosen } = useTheme();
+  const resolvedTheme = forcedTheme ?? chosen;
   return (
     <Sonner
       theme={resolvedTheme === "dark" || resolvedTheme === "light" ? resolvedTheme : "system"}

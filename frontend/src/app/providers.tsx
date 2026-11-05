@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { isLightOnlyPath } from "@/lib/theme/light-only-routes";
 import { ThemeProvider } from "@/lib/theme/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 
@@ -8,8 +10,9 @@ import { Toaster } from "@/components/ui/toast";
  * them (app-providers.tsx), so the marketing pages don't ship Clerk.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   return (
-    <ThemeProvider>
+    <ThemeProvider forcedTheme={isLightOnlyPath(pathname) ? "light" : undefined}>
       {children}
       <Toaster />
     </ThemeProvider>

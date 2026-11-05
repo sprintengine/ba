@@ -23,10 +23,15 @@ const dashboard = (name: string, sub: string, title: string | RegExp): MainPage 
   ready: heading(title),
 });
 
-export const PUBLIC_PAGES: MainPage[] = [
+/** The website: light only, whatever the OS or the visitor's choice in the app. */
+export const LIGHT_ONLY_PAGES: MainPage[] = [
   { name: "marketing home", path: "/", ready: heading(/./) },
   { name: "pricing", path: "/pricing", ready: heading(/./) },
   { name: "explore", path: "/explore", ready: heading(/./) },
+];
+
+export const PUBLIC_PAGES: MainPage[] = [
+  ...LIGHT_ONLY_PAGES,
   { name: "sign in", path: "/sign-in", ready: heading(/./) },
   {
     name: "booking flow",

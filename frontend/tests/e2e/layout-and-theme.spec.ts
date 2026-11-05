@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { requireLiveBackend } from "./dashboard-helpers";
-import { MAIN_PAGES, openMainPage } from "./main-pages";
+import { LIGHT_ONLY_PAGES, MAIN_PAGES, openMainPage } from "./main-pages";
 
 /**
- * Page-wide smoke checks on the main pages: nothing scrolls sideways on a phone, and dark mode (following the OS)
- * gives a dark page without errors. Uses the demo seed, read-only.
+ * Page-wide smoke checks on the main pages: nothing scrolls sideways on a phone, dark mode (following the OS) gives a
+ * dark page without errors, and the website stays light. Uses the demo seed, read-only.
  */
 test.beforeEach(async ({ page }, testInfo) => {
   await requireLiveBackend(page, testInfo);
@@ -42,11 +42,16 @@ for (const main of MAIN_PAGES) {
     expect(overflow, `${main.path} is ${overflow}px wider than the screen`).toBeLessThanOrEqual(0);
   });
 
-  test(`${main.name} follows the OS into dark mode`, async ({ page }) => {
+  test(`${main.name} on a dark OS`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     const errors = await pageErrors(page, () => openMainPage(page, main));
-    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
-    expect(await backgroundLuminance(page)).toBeLessThan(0.1);
+    if (LIGHT_ONLY_PAGES.includes(main)) {
+      await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+      expect(await backgroundLuminance(page)).toBeGreaterThan(0.9);
+    } else {
+      await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+      expect(await backgroundLuminance(page)).toBeLessThan(0.1);
+    }
     expect(errors).toEqual([]);
   });
 }
