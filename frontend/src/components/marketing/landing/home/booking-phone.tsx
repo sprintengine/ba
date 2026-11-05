@@ -24,7 +24,16 @@ import { siteScopeProps } from "@/components/site/site-scope";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { Slot } from "@/lib/api/types";
-import { CLIENT, freeSlots, isOpenDay, LUMEN, LUMEN_STYLE, SERVICES, type DemoEntry } from "./fixture";
+import {
+  CLIENT,
+  EARLIEST_TODAY,
+  freeSlots,
+  isOpenDay,
+  LUMEN,
+  LUMEN_STYLE,
+  SERVICES,
+  type DemoEntry,
+} from "./fixture";
 import type { BookingDemo } from "./use-booking-demo";
 
 const SCOPE = siteScopeProps(LUMEN_STYLE.theme, LUMEN_STYLE.palette);
@@ -44,8 +53,12 @@ function Times({
   onPick: (slot: Slot) => void;
 }) {
   const service = demo.service ?? SERVICES[1]!;
-  const slots = useMemo(() => freeSlots(entries, service, demo.date), [entries, service, demo.date]);
   const min = demo.today;
+  const earliest = demo.date === min ? EARLIEST_TODAY : 0;
+  const slots = useMemo(
+    () => freeSlots(entries, service, demo.date, earliest),
+    [entries, service, demo.date, earliest],
+  );
   return (
     <div className="flex flex-col gap-5">
       <WeekStrip

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
+import { minutesToTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   CARD,
@@ -12,14 +13,14 @@ import {
 } from "@/components/dashboard/calendar/event-card";
 import { BookingPhone } from "./booking-phone";
 import { CALENDAR_HOUR_PX, CALENDAR_HOUR_PX_PHONE, CalendarPane } from "./calendar-pane";
-import { CLIENT, FIRST_HOUR, TEAM, type DemoEntry } from "./fixture";
+import { CLIENT, FIRST_HOUR, NOW_MINUTES, TEAM, type DemoEntry } from "./fixture";
 import { IPhone } from "./iphone";
 import { drawThread, flight, THREAD_GRADIENT_STOPS, type FlightPath } from "./flight";
 import { SceneToggle } from "./scene-parts";
 import { useBookingDemo } from "./use-booking-demo";
 
 /** The time on the phone: the same afternoon as the calendar's now line. */
-const PHONE_TIME = "15:14";
+const PHONE_TIME = minutesToTime(NOW_MINUTES);
 
 const minutes = (at: string) => Number(at.slice(0, 2)) * 60 + Number(at.slice(3));
 const endOf = (e: DemoEntry) => {

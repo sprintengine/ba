@@ -24,9 +24,9 @@ export function BookedSection() {
           <BookedSceneLoader />
         </div>
         <p className="sr-only">
-          A client picks a sports massage on their phone, chooses 15:30 and pays €45. The booking leaves the
-          phone and lands straight away on the business&apos;s calendar, in Sam&apos;s column. The phone is a
-          working demo.
+          A client picks a follow-up treatment on their phone, chooses 15:30 and pays €60. The booking leaves
+          the phone and lands straight away on the business&apos;s calendar, in Sam&apos;s column. The phone
+          is a working demo.
         </p>
       </PrismContainer>
     </section>

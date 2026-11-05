@@ -24,7 +24,16 @@ import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Switch } from "@/components/ui/switch";
-import { FIRST_HOUR, LAST_HOUR, LUMEN, openHours, TEAM, toBooking, type DemoEntry } from "./fixture";
+import {
+  FIRST_HOUR,
+  LAST_HOUR,
+  LUMEN,
+  NOW_MINUTES,
+  openHours,
+  TEAM,
+  toBooking,
+  type DemoEntry,
+} from "./fixture";
 
 type Columns = React.ComponentProps<typeof CalendarHeaderRow>["columns"];
 
@@ -32,9 +41,6 @@ const RAIL = railItemsFor("owner", false);
 const noop = () => undefined;
 const time = (iso: string) => formatTime(iso, LUMEN.timezone, LUMEN.locale);
 const hour = (h: number) => minutesToTime(h * 60);
-/** Where the now line sits: mid-afternoon, with the day's bookings around it. */
-const NOW = 15 * 60 + 14;
-
 /** Vertical scale here: the app's day view zoomed out, so the afternoon fits one window. */
 export const CALENDAR_HOUR_PX = 110;
 export const CALENDAR_HOUR_PX_PHONE = 60;
@@ -212,7 +218,7 @@ export function CalendarPane({
                 startHour={FIRST_HOUR}
                 endHour={LAST_HOUR}
                 formatHour={hour}
-                nowMinute={NOW}
+                nowMinute={NOW_MINUTES}
                 hourPx={hourPx}
               />
             </div>
@@ -226,7 +232,7 @@ export function CalendarPane({
                     open={c.open}
                     startHour={FIRST_HOUR}
                     endHour={LAST_HOUR}
-                    nowMinute={NOW}
+                    nowMinute={NOW_MINUTES}
                     blocked={c.blocked}
                     formatTime={time}
                     onSelectBooking={noop}

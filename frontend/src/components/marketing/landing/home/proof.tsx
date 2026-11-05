@@ -44,7 +44,7 @@ function Race() {
         </p>
         <p className={lane}>
           <CornerDownRight className="size-4 text-muted-foreground" />
-          <span className="text-muted-foreground">Just taken. Next free time is 16:15</span>
+          <span className="text-muted-foreground">Just taken. Next free time is 16:00</span>
         </p>
       </div>
     </div>

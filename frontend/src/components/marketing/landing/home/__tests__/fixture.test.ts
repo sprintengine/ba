@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { formatTime } from "@/lib/format";
+import { PHYSIO } from "@/components/marketing/industries/physio";
 import {
+  BOOKED_SERVICE,
   dayEntries,
   demoDay,
+  EARLIEST_TODAY,
   freeSlots,
   isOpenDay,
-  SPORTS_MASSAGE,
+  SERVICES,
   TEAM,
   toBooking,
   whoIsFree,
@@ -12,7 +16,14 @@ import {
 
 const DAY = "2026-11-05";
 const times = (entries: ReturnType<typeof dayEntries>) =>
-  freeSlots(entries, SPORTS_MASSAGE, DAY).map((s) => s.start);
+  freeSlots(entries, BOOKED_SERVICE, DAY).map((s) => s.start);
+
+describe("the sample business", () => {
+  it("charges what the physio template on the same page lists", () => {
+    const listed = PHYSIO.services.map((s) => [s.name, s.durationMinutes, s.priceCents]);
+    expect(SERVICES.map((s) => [s.name, s.durationMinutes, s.priceCents])).toEqual(listed);
+  });
+});
 
 describe("the demo's day", () => {
   it("never puts two bookings on one person at once", () => {
@@ -26,16 +37,27 @@ describe("the demo's day", () => {
   });
 
   it("offers 15:30, the time the script books, with Sam", () => {
-    expect(whoIsFree(dayEntries([]), SPORTS_MASSAGE, "15:30")).toBe("sam");
+    expect(whoIsFree(dayEntries([]), BOOKED_SERVICE, "15:30")).toBe("sam");
+  });
+
+  it("offers nothing that has passed today, and 15:30 first", () => {
+    const first = freeSlots(dayEntries([]), BOOKED_SERVICE, DAY, EARLIEST_TODAY)[0]!;
+    expect(formatTime(first.start, "Europe/Dublin", "en-IE")).toBe("15:30");
+  });
+
+  it("agrees with the page: the next free time after 15:30 goes is 16:00", () => {
+    const taken = [{ who: "sam", at: "15:30", customer: "x", service: BOOKED_SERVICE, room: "Room 1" }];
+    const left = freeSlots(dayEntries(taken), BOOKED_SERVICE, DAY, EARLIEST_TODAY);
+    expect(formatTime(left[0]!.start, "Europe/Dublin", "en-IE")).toBe("16:00");
   });
 
   it("stops offering a time once everyone is taken", () => {
     let entries = dayEntries([]);
     const before = times(entries);
     for (;;) {
-      const who = whoIsFree(entries, SPORTS_MASSAGE, "15:30");
+      const who = whoIsFree(entries, BOOKED_SERVICE, "15:30");
       if (!who) break;
-      entries = [...entries, { who, at: "15:30", customer: "x", service: SPORTS_MASSAGE, room: "Room 2" }];
+      entries = [...entries, { who, at: "15:30", customer: "x", service: BOOKED_SERVICE, room: "Room 2" }];
     }
     expect(times(entries).length).toBeLessThan(before.length);
   });

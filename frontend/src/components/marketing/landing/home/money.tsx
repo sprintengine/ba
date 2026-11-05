@@ -39,7 +39,7 @@ export function MoneySection() {
         />
         <div className="mt-12 sm:mt-14">
           <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border bg-surface p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-10">
-            <Stop label="Client pays" value="€45.00" note="By card, wallet or pay later, when they book." />
+            <Stop label="Client pays" value="€60.00" note="By card, wallet or pay later, when they book." />
             <ArrowRight
               className="size-5 shrink-0 text-subtle-foreground max-sm:rotate-90 sm:mt-9"
               aria-hidden
@@ -51,7 +51,7 @@ export function MoneySection() {
             />
             <Stop
               label="Your account"
-              value="€45.00"
+              value="€60.00"
               note="Less your provider's own card fee, on their payout days."
             />
           </div>

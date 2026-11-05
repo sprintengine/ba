@@ -13,19 +13,31 @@ const BOOKINGS = [
   {
     who: "Rory Kane",
     when: "15:30–16:15",
-    what: "Sports massage",
+    what: "Follow-up treatment",
     color: "#0ea5e9",
-    via: "Their AI assistant",
+    via: "Their AI assistant · Paid €60",
   },
-  { who: "Priya Nair", when: "10:00–11:00", what: "Full valet", color: "#e0702f", via: "Your booking page" },
+  {
+    who: "Priya Nair",
+    when: "10:00–11:30",
+    what: "Full valet",
+    color: "#e0702f",
+    via: "Your booking page · Paid €60",
+  },
   {
     who: "Ella Walsh",
     when: "17:00–17:30",
     what: "Piano lesson",
     color: "#a99bff",
-    via: "A link on Instagram",
+    via: "A link on Instagram · Paid €25",
   },
-  { who: "Tom Byrne", when: "09:15–09:30", what: "Blood test", color: "#5b4ae0", via: "Your website" },
+  {
+    who: "Tom Byrne",
+    when: "09:15–09:25",
+    what: "Blood test",
+    color: "#5b4ae0",
+    via: "Your website · Paid €25",
+  },
 ];
 const SHOWN = 3;
 
@@ -42,7 +54,7 @@ function Card({ n, depth }: { n: number; depth: number }) {
       style={{
         ...serviceTint(b.color),
         zIndex: SHOWN - depth,
-        opacity: 1 - depth * 0.3,
+        opacity: 1 - depth * 0.2,
         transform: `translateY(${String(depth * 5.9)}rem) scale(${String(1 - depth * 0.05)})`,
       }}
     >

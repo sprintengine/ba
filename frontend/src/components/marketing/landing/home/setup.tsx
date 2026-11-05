@@ -2,10 +2,10 @@ import { Sparkles } from "lucide-react";
 import { PrismContainer, PrismHeading } from "../heading";
 
 const DRAFT: { label: string; value: string }[] = [
-  { label: "Services", value: "Initial assessment, sports massage, follow-up" },
+  { label: "Services", value: "Initial assessment, follow-up, sports massage" },
   { label: "Hours", value: "Mon to Sat, 09:00 to 18:00" },
-  { label: "Team", value: "Aoife and Sam" },
-  { label: "Rooms and equipment", value: "Rehab gym, shockwave machine" },
+  { label: "Team", value: "Sam, Aoife and Niamh" },
+  { label: "Rooms", value: "Rooms 1 to 3, rehab gym" },
 ];
 
 const ALSO = [
@@ -31,7 +31,7 @@ export function SetupSection() {
         <div className="mt-12 grid items-center gap-8 sm:mt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
           <div>
             <p className="text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.2] font-medium tracking-[-0.025em] text-balance">
-              “A physio clinic in Dublin. Two physios, a rehab gym and a shockwave machine.”
+              “A physio clinic in Dublin. Three physios, three rooms and a rehab gym.”
             </p>
             <p className="mt-5 flex items-center gap-2 text-[0.9375rem] text-muted-foreground">
               <Sparkles className="size-4" aria-hidden /> Drafted from that one sentence

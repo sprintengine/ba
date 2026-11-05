@@ -20,19 +20,19 @@ type Script = {
 
 const SCRIPTS = {
   customer: {
-    ask: "Book me a sports massage on Thursday, any time after 3.",
+    ask: "Book me a follow-up on Thursday, any time after 3.",
     working: "Checking times at Lumen Physiotherapy",
     reply: "Sam is free on Thursday at these times.",
     card: {
-      title: "Sports massage",
+      title: "Follow-up treatment",
       sub: "Lumen Physiotherapy · 45 minutes",
-      chips: ["15:30", "16:15"],
+      chips: ["15:30", "15:45"],
       rows: [
         ["With", "Sam Rivers"],
-        ["Price", "€45"],
+        ["Price", "€60"],
       ],
     },
-    action: "Book and pay €45",
+    action: "Book and pay €60",
     done: "You're booked and paid. It's on their calendar, and a reminder is set for Wednesday.",
   },
   owner: {
@@ -43,9 +43,9 @@ const SCRIPTS = {
       title: "Move three bookings to Aoife",
       sub: "Friday afternoon · same times",
       rows: [
-        ["14:00", "Toby Marsh"],
-        ["15:00", "Avery Lane"],
-        ["16:15", "Casey Rowe"],
+        ["14:00", "Remy Stroud"],
+        ["15:00", "Dara Quinn"],
+        ["16:15", "Jo Hayes"],
       ],
     },
     action: "Approve changes",

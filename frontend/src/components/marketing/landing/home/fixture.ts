@@ -14,6 +14,11 @@ import {
 
 const TZ = "Europe/Dublin";
 
+/** The demo's moment: mid-afternoon, with the day's bookings around it. The phone and the calendar both show it. */
+export const NOW_MINUTES = 15 * 60 + 14;
+/** How far ahead a client can book, so the first time on offer today follows from the clock. */
+const MIN_NOTICE = 15;
+
 export const LUMEN = {
   id: "sample-lumen",
   slug: "lumen-physio",
@@ -29,7 +34,7 @@ export const LUMEN = {
   address: { line1: "Unit 4, Lantern Quay", line2: null, city: "Dublin", postcode: "D02 XY01" },
   branding: { primaryColor: "#5b4ae0", logoUrl: null, coverImageUrl: null },
   policies: {
-    minNoticeMinutes: 120,
+    minNoticeMinutes: MIN_NOTICE,
     maxAdvanceDays: 60,
     cancellationNoticeHours: 24,
     lateCancellationRefundPercent: 50,
@@ -85,15 +90,17 @@ const service = (
     questions: [],
   }) as unknown as PublicService;
 
+/** Lumen's services, at the lengths and prices of the physio template that the home page's industry card lists. */
 export const SERVICES = [
   service("assessment", "Initial assessment", "#5b4ae0", 60, 7000, 10, 0),
-  service("massage", "Sports massage", "#0ea5e9", 45, 4500, 0, 1),
-  service("follow-up", "Follow-up treatment", "#a99bff", 30, 4000, 0, 2),
+  service("follow-up", "Follow-up treatment", "#0ea5e9", 45, 6000, 0, 1),
+  service("massage", "Sports massage", "#a99bff", 30, 4000, 0, 2),
 ];
 
-const [ASSESSMENT, MASSAGE, FOLLOW_UP] = SERVICES as [PublicService, PublicService, PublicService];
+const [ASSESSMENT, FOLLOW_UP, MASSAGE] = SERVICES as [PublicService, PublicService, PublicService];
 
-export const SPORTS_MASSAGE = MASSAGE;
+/** What the demo's client books. */
+export const BOOKED_SERVICE = FOLLOW_UP;
 
 const resource = (id: string, name: string, color: string, sortOrder: number): Resource => ({
   id,
@@ -122,19 +129,23 @@ export const openHours = (id: string) => [{ start: 9 * 60, end: FINISH[id] ?? 18
 export type DemoEntry = { who: string; at: string; customer: string; service: PublicService; room: string };
 
 const DAY: DemoEntry[] = [
-  { who: "sam", at: "13:30", customer: "Remy Stroud", service: MASSAGE, room: "Room 1" },
-  { who: "sam", at: "14:30", customer: "Dara Quinn", service: FOLLOW_UP, room: "Room 1" },
+  { who: "sam", at: "13:30", customer: "Remy Stroud", service: FOLLOW_UP, room: "Room 1" },
+  { who: "sam", at: "14:30", customer: "Dara Quinn", service: MASSAGE, room: "Room 1" },
   { who: "sam", at: "16:30", customer: "Jo Hayes", service: ASSESSMENT, room: "Rehab gym" },
   { who: "aoife", at: "13:00", customer: "Toby Marsh", service: ASSESSMENT, room: "Room 2" },
-  { who: "aoife", at: "14:15", customer: "Avery Lane", service: MASSAGE, room: "Room 2" },
+  { who: "aoife", at: "14:15", customer: "Avery Lane", service: FOLLOW_UP, room: "Room 2" },
   { who: "aoife", at: "15:15", customer: "Casey Rowe", service: ASSESSMENT, room: "Rehab gym" },
-  { who: "aoife", at: "16:30", customer: "Eli Byrne", service: FOLLOW_UP, room: "Room 2" },
-  { who: "niamh", at: "13:00", customer: "Mia Doyle", service: FOLLOW_UP, room: "Room 3" },
+  { who: "aoife", at: "16:30", customer: "Eli Byrne", service: MASSAGE, room: "Room 2" },
+  { who: "niamh", at: "13:00", customer: "Mia Doyle", service: MASSAGE, room: "Room 3" },
   { who: "niamh", at: "14:00", customer: "Liam Hayes", service: ASSESSMENT, room: "Room 3" },
-  { who: "niamh", at: "15:30", customer: "Noor Ali", service: FOLLOW_UP, room: "Room 3" },
+  { who: "niamh", at: "15:30", customer: "Noor Ali", service: MASSAGE, room: "Room 3" },
 ];
 
 const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+
+/** Each person's usual room, as on the rest of their day. */
+export const roomFor = (who: string) =>
+  ({ sam: "Room 1", aoife: "Room 2", niamh: "Room 3" })[who] ?? "Room 1";
 
 /** The demo's booked client. */
 export const CLIENT = { name: "Rory Kane", email: "rory@example.com", phone: "085 555 0142" };
@@ -179,10 +190,19 @@ export function whoIsFree(entries: DemoEntry[], chosen: PublicService, time: str
 
 export const dayEntries = (extra: DemoEntry[]) => [...DAY, ...extra];
 
+/** The first minute a client can book on the demo's own day: nothing in the past, nothing inside the notice. */
+export const EARLIEST_TODAY = NOW_MINUTES + MIN_NOTICE;
+
 /** The times left on a day: a booked time is gone, as it is on the real page. */
-export function freeSlots(entries: DemoEntry[], chosen: PublicService, date: PlainDate): Slot[] {
+export function freeSlots(
+  entries: DemoEntry[],
+  chosen: PublicService,
+  date: PlainDate,
+  earliest = 0,
+): Slot[] {
   const slots: Slot[] = [];
   for (let m = FIRST_HOUR * 60; m + chosen.durationMinutes <= LAST_HOUR * 60; m += 15) {
+    if (m < earliest) continue;
     const time = minutesToTime(m);
     const who = whoIsFree(entries, chosen, time);
     if (!who) continue;

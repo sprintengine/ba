@@ -4,7 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import type { PublicService } from "@/lib/api/types";
 import { zonedToIso, type PlainDate } from "@/lib/format";
-import { CLIENT, dayEntries, demoDay, LUMEN, SPORTS_MASSAGE, whoIsFree, type DemoEntry } from "./fixture";
+import {
+  BOOKED_SERVICE,
+  CLIENT,
+  dayEntries,
+  demoDay,
+  LUMEN,
+  roomFor,
+  whoIsFree,
+  type DemoEntry,
+} from "./fixture";
 
 export type DemoStep = "service" | "time" | "review" | "paying" | "done";
 
@@ -63,11 +72,11 @@ export function useBookingDemo({
   useEffect(() => {
     if (!reduce || rested.current) return;
     rested.current = true;
-    const who = whoIsFree(dayEntries([]), SPORTS_MASSAGE, AUTO_TIME) ?? "sam";
+    const who = whoIsFree(dayEntries([]), BOOKED_SERVICE, AUTO_TIME) ?? "sam";
     setAuto(false);
-    setService(SPORTS_MASSAGE);
+    setService(BOOKED_SERVICE);
     setTime(AUTO_TIME);
-    setBooked([{ who, at: AUTO_TIME, customer: CLIENT.name, service: SPORTS_MASSAGE, room: "Room 2" }]);
+    setBooked([{ who, at: AUTO_TIME, customer: CLIENT.name, service: BOOKED_SERVICE, room: roomFor(who) }]);
     setStep("done");
   }, [reduce]);
 
@@ -79,7 +88,7 @@ export function useBookingDemo({
       const who = whoIsFree(entries, service, time);
       setStep("done");
       if (!who) return;
-      const entry = { who, at: time, customer: CLIENT.name, service, room: "Room 2" };
+      const entry = { who, at: time, customer: CLIENT.name, service, room: roomFor(who) };
       onPaid(entry, () => setBooked((b) => [...b, entry]));
     }, 900);
     return () => window.clearTimeout(id);
@@ -117,7 +126,7 @@ export function useBookingDemo({
     const byText = (root: HTMLElement, text: string) =>
       [...root.querySelectorAll("button")].find((b) => b.textContent.includes(text));
 
-    if (step === "service") tap((r) => byText(r, SPORTS_MASSAGE.name));
+    if (step === "service") tap((r) => byText(r, BOOKED_SERVICE.name));
     if (step === "time") tap((r) => byText(r, AUTO_TIME));
     if (step === "review") tap((r) => r.querySelector<HTMLElement>('[data-demo="pay"]'));
     if (step === "done") {
