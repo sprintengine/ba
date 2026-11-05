@@ -65,11 +65,14 @@ export function OverviewView() {
           <OverviewStats overview={overview.data} todays={todays} now={now} loading={overview.isPending} />
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <TodayCard bookings={todays} loading={overview.isPending} now={now} />
-            <div className="flex flex-col gap-6">
-              {perms.manageSettings && overview.data && <SetupChecklist items={overview.data.checklist} />}
-              <PendingApprovals today={today} />
-              <ShareCard />
-            </div>
+            {/* Waits for the data: on a phone this column sits under Today, which grows once its bookings arrive. */}
+            {overview.data && (
+              <div className="flex flex-col gap-6">
+                {perms.manageSettings && <SetupChecklist items={overview.data.checklist} />}
+                <PendingApprovals today={today} />
+                <ShareCard />
+              </div>
+            )}
           </div>
         </div>
       )}
