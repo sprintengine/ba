@@ -87,10 +87,7 @@ export function TeamView() {
             />
             <div className="grid gap-3 sm:grid-cols-3">
               {(["owner", "admin", "staff"] as const).map((r) => (
-                <div
-                  key={r}
-                  className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 shadow-xs"
-                >
+                <div key={r} className="flex flex-col gap-2">
                   <h3 className="flex items-center gap-2 text-sm font-semibold">
                     <ShieldCheck className="size-4 text-brand" /> {info[r].label}
                   </h3>

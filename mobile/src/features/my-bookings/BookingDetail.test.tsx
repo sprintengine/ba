@@ -17,7 +17,7 @@ describe("BookingDetail", () => {
     expect(screen.getByText("Partly refunded")).toBeOnTheScreen();
     expect(screen.getByText("Reference BA-7K3F9Q")).toBeOnTheScreen();
     expect(screen.getByText(/Tuesday,? 6 October 2026/)).toBeOnTheScreen();
-    expect(screen.getByText("13:00 – 14:00 (1 h) · Europe/Dublin")).toBeOnTheScreen();
+    expect(screen.getByText("13:00–14:00 (1 h) · Europe/Dublin")).toBeOnTheScreen();
     expect(screen.getByText("Alex Morgan")).toBeOnTheScreen();
     expect(screen.getByLabelText("Price: €56")).toBeOnTheScreen();
     expect(screen.getByLabelText("Deposit: €20")).toBeOnTheScreen();

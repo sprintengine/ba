@@ -115,14 +115,13 @@ const OVERLAYS: Overlay[] = [
     name: "navigation",
     path: DASH,
     open: async (page) => {
-      // Phones: the tab bar's "More"; iPad portrait: the rail's expand control. The full sidebar has no overlay.
+      // Phones: the tab bar's "More". The rail shows from iPad portrait up and has no overlay.
       await expect(
         page.getByRole("navigation", { name: /Dashboard|Quick navigation/ }).first(),
       ).toBeVisible();
       const more = page.getByRole("button", { name: "More" });
-      test.skip(await page.getByRole("button", { name: "Collapse sidebar" }).isVisible(), "full sidebar");
-      if (await more.isVisible()) await more.click();
-      else await page.getByRole("button", { name: "Expand sidebar" }).click();
+      test.skip(!(await more.isVisible()), "rail");
+      await more.click();
       await expect(page.getByRole("dialog").getByRole("link", { name: "Settings" })).toBeVisible();
     },
   },

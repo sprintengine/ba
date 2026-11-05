@@ -1,29 +1,41 @@
 "use client";
 
-import { CalendarDays, CalendarPlus } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { CalendarDays, CalendarPlus, ChevronDown } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrentBusiness } from "@/lib/business/business-context";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingStatusBadge } from "@/components/ui/status-badge";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
 
-/** Today's bookings in order, with a "now" divider; past ones faded. */
+/** Today's bookings in order, what's ahead first: finished ones fold into a line above, with a "now" divider. */
 export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loading: boolean; now: Date }) {
   const { v } = useVocabulary();
   const fmt = useFmt();
   const { openBooking, openNewBooking } = useBookingActions();
-  const nowIndex = bookings.findIndex((b) => new Date(b.start) > now);
+  const business = useCurrentBusiness();
+  const [showDone, setShowDone] = useState(false);
+  const done = bookings.filter((b) => new Date(b.end) <= now);
+  const shown = showDone ? bookings : bookings.filter((b) => new Date(b.end) > now);
+  const nowIndex = shown.findIndex((b) => new Date(b.start) > now);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2}>Today&apos;s {v("bookings")}</CardTitle>
+        <CardAction>
+          <Button asChild variant="link" size="xs" className="text-xs">
+            <Link href={`/dashboard/${business.slug}/bookings`}>All {v("bookings")}</Link>
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent className="-mx-2 pb-3">
         {loading ? (
@@ -53,7 +65,23 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
           />
         ) : (
           <ol className="flex flex-col">
-            {bookings.map((b, i) => {
+            {done.length > 0 && (
+              <li>
+                <button
+                  type="button"
+                  aria-expanded={showDone}
+                  onClick={() => setShowDone((o) => !o)}
+                  className="flex min-h-9 w-full items-center gap-1.5 rounded-lg px-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:min-h-11"
+                >
+                  <ChevronDown
+                    aria-hidden
+                    className={cn("size-4 transition-transform", showDone && "rotate-180")}
+                  />
+                  {done.length} finished earlier today
+                </button>
+              </li>
+            )}
+            {shown.map((b, i) => {
               const past = new Date(b.end) <= now;
               return (
                 <li key={b.id}>

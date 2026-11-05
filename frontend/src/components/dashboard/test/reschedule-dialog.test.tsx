@@ -106,6 +106,7 @@ describe("RescheduleDialog", () => {
     await user.click(await screen.findByRole("option", { name: "Any available therapist" }));
     await waitFor(() => expect(availabilityQuery(calls).some((q) => !("resourceId" in q))).toBe(true));
 
+    await user.click(await screen.findByRole("button", { name: /^Afternoon/ }));
     await user.click(await screen.findByRole("radio", { name: "14:00" }));
     await user.click(screen.getByRole("button", { name: "Move to 14:00" }));
     await waitFor(() =>

@@ -34,17 +34,15 @@ const countLabel = (n: number) => (n > 99 ? "99+" : String(n));
 
 /**
  * The bell (§22): what happened that the person should know, newest first, with an unread count. Checks every half
- * minute and when the tab regains focus. `row` is the dashboard sidebar's row (a glyph alone when `collapsed`).
+ * minute and when the tab regains focus. `row` is a row in the navigation sheet, `rail` an item in the dashboard rail (glyph over label).
  */
 export function NotificationBell({
   variant = "icon",
-  collapsed = false,
   className,
   side,
   align = "end",
 }: {
-  variant?: "icon" | "row";
-  collapsed?: boolean;
+  variant?: "icon" | "row" | "rail";
   className?: string;
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
@@ -60,7 +58,9 @@ export function NotificationBell({
       aria-hidden
       className={cn(
         "flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[0.625rem] leading-none font-semibold text-background",
-        variant === "icon" || collapsed ? "absolute -top-0.5 -right-0.5" : "ml-auto",
+        variant === "icon" && "absolute -top-0.5 -right-0.5",
+        variant === "row" && "ml-auto",
+        variant === "rail" && "absolute top-0.5 left-[calc(50%+0.25rem)]",
       )}
     >
       {countLabel(unread)}
@@ -70,10 +70,20 @@ export function NotificationBell({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        {variant === "row" ? (
+        {variant === "rail" ? (
+          // The name holds what's on screen, word and count, in that order (WCAG 2.5.3).
+          <button
+            type="button"
+            aria-label={unread > 0 ? `Alerts ${countLabel(unread)}, unread notifications` : "Alerts"}
+            className={cn("relative", className)}
+          >
+            <Bell strokeWidth={1.75} />
+            <span>Alerts</span> {badge}
+          </button>
+        ) : variant === "row" ? (
           <button type="button" aria-label={label} className={cn("relative", className)}>
             <Bell className="size-4 shrink-0 text-subtle-foreground" />
-            {!collapsed && <span>Notifications</span>} {badge}
+            <span>Notifications</span> {badge}
           </button>
         ) : (
           <IconButton label={label} tooltip={false} size="md" className={cn("relative", className)}>

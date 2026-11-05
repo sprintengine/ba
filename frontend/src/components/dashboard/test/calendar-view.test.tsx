@@ -151,9 +151,9 @@ describe("CalendarView", () => {
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&view=week`);
     await user.click(screen.getByRole("switch", { name: "Cancelled" }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&cancelled=1`);
-    await user.click(screen.getByRole("combobox", { name: "Filter by therapist" }));
-    await user.click(await screen.findByRole("option", { name: /Jo Park/ }));
-    expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r2`);
+    await user.click(screen.getByRole("button", { name: /^Filter by therapist/ }));
+    await user.click(await screen.findByRole("checkbox", { name: /Jo Park/ }));
+    expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r1`);
     await user.click(screen.getByRole("button", { name: /new appointment/i }));
     expect(actions.openNewBooking).toHaveBeenCalledWith({ date: "2099-10-01", resourceId: undefined });
   });
@@ -332,13 +332,14 @@ describe("CalendarView", () => {
     ]);
     render();
     const cancelled = await screen.findByRole("button", { name: /Cass Gone/ });
-    expect(cancelled).toHaveAccessibleName(/11:00.*Cass Gone.*Cancelled/);
+    expect(cancelled).toHaveAccessibleName(/Cass Gone.*Cancelled/);
+    expect(within(cancelled).getByText(/11:00/)).toBeInTheDocument();
     expect(screen.getByText(/1 appointment ·/)).toBeInTheDocument();
   });
 
-  it("keeps a squeezed short event's start time on screen, clear of the status dot, in week view", async () => {
+  it("keeps a short event's start time on screen in week view, and says when it needs approval", async () => {
     search = "date=2099-10-01&view=week";
-    const short = { start: "2099-10-01T12:15:00+01:00", end: "2099-10-01T12:45:00+01:00" };
+    const short = { start: "2099-10-01T12:15:00+01:00", end: "2099-10-01T12:30:00+01:00" };
     api([
       booking({ ...short, status: "pending_approval" }),
       booking({
@@ -353,9 +354,7 @@ describe("CalendarView", () => {
     // The time is the label that fits a narrow lane; the name ellipsizes beside it (and is in the accessible name).
     expect(event).toHaveAccessibleName(/^12:15\s*Cass Lane/);
     expect(within(event).getByText("12:15")).not.toHaveClass("sr-only");
-    // Room for the status dot of the pending one.
-    const pending = screen.getByRole("button", { name: /Alex Morgan/ });
-    expect(must(within(pending).getByText("Alex Morgan").parentElement)).toHaveClass("pr-3");
+    expect(screen.getByRole("button", { name: /Alex Morgan/ })).toHaveAccessibleName(/Needs approval/);
   });
 
   it("draws a class as one block with its count, and lists who is booked", async () => {

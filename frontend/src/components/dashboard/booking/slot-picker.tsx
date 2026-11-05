@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { CalendarSearch, RotateCw } from "lucide-react";
 import type { Slot } from "@/lib/api/types";
@@ -60,6 +60,7 @@ export function SlotPicker({
     to: addDaysToPlainDate(date, 6),
   };
   const availability = useStaffAvailability(business.id, query, { placeholderData: keepPreviousData });
+  const [period, setPeriod] = useState<string | null>(null);
 
   const { daySlots, nextDay } = useMemo(() => {
     const days = availability.data?.days ?? [];
@@ -113,22 +114,47 @@ export function SlotPicker({
 
   // Placeholder times are the previous query's (another service, option or week): shown dimmed, not choosable.
   const stale = availability.isPlaceholderData;
+  // Always grouped by period (groupAbove 0), however few times there are. One period shows at a time, so a full day
+  // doesn't push the rest of the form away: the one holding the chosen time, else the one picked, else the first.
+  const groups = groupByDayPeriod(daySlots, (s) => toTimeOfDay(s.start, fmt.tz), 0);
+  const shown =
+    groups.find((g) => g.items.some((s) => s.start === value) && period === null) ??
+    groups.find((g) => g.key === period) ??
+    groups[0];
   return (
     <div
       className={cn("flex flex-col gap-3 transition-opacity", stale && "opacity-60")}
       aria-busy={stale || undefined}
     >
-      {/* Always headed by period (groupAbove 0), however few times there are. */}
-      {groupByDayPeriod(daySlots, (s) => toTimeOfDay(s.start, fmt.tz), 0).map((group) => (
+      {groups.length > 1 && (
+        <div role="group" aria-label="Part of the day" className="flex flex-wrap gap-1">
+          {groups.map((g) => (
+            <button
+              key={g.key}
+              type="button"
+              aria-pressed={g === shown}
+              onClick={() => setPeriod(g.key)}
+              className={cn(
+                "tnum inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:h-11",
+                g === shown ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent/60",
+              )}
+            >
+              {g.label}
+              <span className="text-xs font-normal text-muted-foreground">{g.items.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {shown && (
         <SlotGroup
-          key={group.key}
-          label={group.label ?? ""}
-          slots={group.items}
+          key={shown.key}
+          label={shown.label ?? ""}
+          slots={shown.items}
           value={value}
           onChange={onChange}
           disabled={stale}
         />
-      ))}
+      )}
     </div>
   );
 }
@@ -176,7 +202,6 @@ function SlotGroup({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-subtle-foreground">{label}</span>
       <div
         role="radiogroup"
         aria-label={`${label} times`}

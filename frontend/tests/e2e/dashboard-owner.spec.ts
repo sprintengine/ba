@@ -37,6 +37,7 @@ test.describe("dashboard (owner)", () => {
     await page.getByRole("button", { name: /new customer/i }).click();
     await sheet.getByRole("textbox", { name: "Name", exact: true }).fill(name);
     await sheet.getByRole("textbox", { name: /^Email/ }).fill(`${Date.now()}@example.test`);
+    await sheet.getByRole("button", { name: /^payment/i }).click();
     await sheet.getByRole("switch", { name: /email the customer/i }).click();
 
     await sheet.getByRole("button", { name: /create booking/i }).click();
@@ -56,7 +57,7 @@ test.describe("dashboard (owner)", () => {
   });
 
   test("calendar shows one column per resource and supports keyboard navigation", async ({ page }) => {
-    await page.goto("/dashboard/lumen-physio/calendar");
+    await page.goto("/dashboard/lumen-physio/calendar?resource=everything");
     await waitForDashboard(page);
     await expect(page.getByRole("group", { name: /treatment room 1/i })).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("w");

@@ -1,3 +1,4 @@
-/** Vertical scale of the calendar grid. */
-export const HOUR_PX = 64;
-export const PX_PER_MIN = HOUR_PX / 60;
+import type { CalendarMode } from "@/lib/dashboard/calendar";
+
+/** Vertical scale of the calendar grid: time is always to scale. A day reads bookings; a week reads the shape of it. */
+export const hourPx = (view: CalendarMode) => (view === "day" ? 200 : 96);

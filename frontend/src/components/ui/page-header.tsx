@@ -40,7 +40,12 @@ export function PageHeader({
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-4 sm:flex-nowrap sm:items-end">
         <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1">
           {eyebrow && <div className="mb-1">{eyebrow}</div>}
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
+          <h1
+            data-page-title={back ? undefined : ""}
+            className="text-2xl font-semibold tracking-tight text-foreground"
+          >
+            {title}
+          </h1>
           {description && <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}

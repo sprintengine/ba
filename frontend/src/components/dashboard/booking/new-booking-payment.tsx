@@ -7,9 +7,8 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { FormField } from "@/components/ui/form";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 
-/** Last step: how it is paid (online only when priced and payments are connected), the email, internal notes. */
+/** How it is paid (online only when priced and payments are connected), and the email. */
 export function PaymentFields({ service }: { service: Service | undefined }) {
   const business = useCurrentBusiness();
   const { v } = useVocabulary();
@@ -50,9 +49,6 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
         help="Confirmation with a link to manage it."
       >
         {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-      </FormField>
-      <FormField<Values, "internalNotes"> name="internalNotes" label="Internal notes" optional>
-        {(field) => <Textarea {...field} rows={2} placeholder="Only your team can see these notes." />}
       </FormField>
     </>
   );

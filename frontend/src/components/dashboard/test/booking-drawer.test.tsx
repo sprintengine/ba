@@ -212,7 +212,7 @@ describe("BookingDrawer details", () => {
       "tel:+353 1 234 5678",
     );
     expect(screen.getByText(/Follow-up/)).toHaveTextContent("Follow-up · Long");
-    expect(screen.getByText(/Hot stones/)).toHaveTextContent("+ Hot stones (15 min)");
+    expect(screen.getByText(/Hot stones/)).toHaveTextContent("Hot stones (15 min)");
     expect(screen.getByText(/Blocks 10 min before and 5 min after/)).toBeInTheDocument();
     expect(screen.getByText(/Booked via booking page on/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Note from the patient" })).toBeInTheDocument();
@@ -252,8 +252,8 @@ describe("BookingDrawer details", () => {
   it("explains a pending request and a cancellation", async () => {
     serve(bookingDetail({ status: "pending_approval", paymentStatus: "not_required" }));
     const { unmount } = renderDrawer();
-    expect(await screen.findByText(/needs your approval/)).toHaveTextContent(
-      "This appointment needs your approval. The patient is told once you approve or decline.",
+    expect(await screen.findByText(/is told once you approve or decline/)).toHaveTextContent(
+      "The patient is told once you approve or decline.",
     );
     unmount();
 
