@@ -81,13 +81,13 @@ export function CalendarReleaseRow({
 
   return (
     <div
-      className="sticky top-14 z-20 flex border-b border-border bg-surface/95 backdrop-blur-sm"
+      className="flex border-b border-border bg-background"
       role="group"
       aria-label="Online booking releases"
     >
-      <div className="sticky left-0 z-10 w-14 shrink-0 bg-surface/95" />
+      <div className="sticky left-0 z-10 w-14 shrink-0 bg-background" />
       {view === "day" ? (
-        <div className="flex flex-1 flex-wrap gap-1.5 border-l border-border px-2 py-1.5 [&>div]:flex-row [&>div]:flex-wrap">
+        <div className="sticky left-14 flex flex-1 flex-wrap gap-1.5 border-l border-border px-2 py-1.5 [&>div]:flex-row [&>div]:flex-wrap">
           {first && cell(first)}
         </div>
       ) : (

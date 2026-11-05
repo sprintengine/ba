@@ -12,8 +12,10 @@ import {
   type MinuteInterval,
 } from "@/lib/dashboard/calendar-layout";
 import { cn } from "@/lib/utils";
-import { EventBlock, OverflowMarker } from "./event-block";
-import { HOUR_PX, PX_PER_MIN } from "./grid-scale";
+import { EventBlock } from "./event-block";
+import { OverflowMarker } from "./event-groups";
+
+const formatHalf = (h: number) => minutesToTime(h * 60 + 30);
 
 /** Hour labels down the left edge, and the current time where the now line crosses it. */
 export function TimeGutter({
@@ -21,28 +23,44 @@ export function TimeGutter({
   endHour,
   formatHour,
   nowMinute = null,
+  hourPx,
 }: {
   startHour: number;
   endHour: number;
   formatHour: (h: number) => string;
+  hourPx: number;
   /** Shown as a label on the gutter when today is on screen. */
   nowMinute?: number | null;
 }) {
   const showNow = nowMinute !== null && nowMinute >= startHour * 60 && nowMinute <= endHour * 60;
-  const nowTop = showNow ? (nowMinute - startHour * 60) * PX_PER_MIN : 0;
+  const nowTop = showNow ? ((nowMinute - startHour * 60) * hourPx) / 60 : 0;
+  // A tall hour has room for its half; the day view reads to the half hour without following a line across.
+  const halves = hourPx >= 160;
   return (
-    <div className="relative w-14 shrink-0" style={{ height: (endHour - startHour) * HOUR_PX }} aria-hidden>
+    <div className="relative w-14 shrink-0" style={{ height: (endHour - startHour) * hourPx }} aria-hidden>
       {Array.from({ length: endHour - startHour }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "tnum absolute right-2 -translate-y-1/2 text-2xs font-medium text-subtle-foreground",
-            // The now label takes the place of an hour label it would touch.
-            showNow && Math.abs(i * HOUR_PX - nowTop) < 12 && "invisible",
+        <span key={i}>
+          <span
+            className={cn(
+              "tnum absolute right-2 -translate-y-1/2 text-xs font-medium text-muted-foreground",
+              // The now label takes the place of an hour label it would touch.
+              showNow && Math.abs(i * hourPx - nowTop) < 12 && "invisible",
+            )}
+            style={{ top: i * hourPx }}
+          >
+            {i === 0 ? "" : formatHour(startHour + i)}
+          </span>
+          {halves && (
+            <span
+              className={cn(
+                "tnum absolute right-2 -translate-y-1/2 text-xs text-subtle-foreground",
+                showNow && Math.abs((i + 0.5) * hourPx - nowTop) < 12 && "invisible",
+              )}
+              style={{ top: (i + 0.5) * hourPx }}
+            >
+              {formatHalf(startHour + i)}
+            </span>
           )}
-          style={{ top: i * HOUR_PX }}
-        >
-          {i === 0 ? "" : formatHour(startHour + i)}
         </span>
       ))}
       {showNow && (
@@ -58,15 +76,15 @@ export function TimeGutter({
 }
 
 /** Horizontal hour and quarter-hour lines, drawn once behind all columns. */
-function GridLines({ startHour, endHour }: { startHour: number; endHour: number }) {
+function GridLines({ startHour, endHour, hourPx }: { startHour: number; endHour: number; hourPx: number }) {
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0"
       style={{
         backgroundImage: `linear-gradient(to bottom, var(--border) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklab, var(--border-subtle) 70%, transparent) 1px, transparent 1px)`,
-        backgroundSize: `100% ${HOUR_PX}px, 100% ${HOUR_PX / 2}px`,
-        height: (endHour - startHour) * HOUR_PX,
+        backgroundSize: `100% ${hourPx}px, 100% ${hourPx / 2}px`,
+        height: (endHour - startHour) * hourPx,
       }}
     />
   );
@@ -99,6 +117,7 @@ type ColumnProps = {
   /** The column's resource in day view. */
   resourceId?: string;
   label: string;
+  hourPx: number;
 };
 
 /**
@@ -120,7 +139,9 @@ export const DayColumn = memo(function DayColumn({
   onCreate,
   resourceId,
   label,
+  hourPx,
 }: ColumnProps) {
+  const pxPerMin = hourPx / 60;
   const positioned = useMemo(
     () => layoutDay(groupSessions(bookings), date, timeZone),
     [bookings, date, timeZone],
@@ -143,8 +164,8 @@ export const DayColumn = memo(function DayColumn({
     [positioned, maxLanes, compact],
   );
   const [hover, setHover] = useState<number | null>(null);
-  const top = (m: number) => (m - startHour * 60) * PX_PER_MIN;
-  const height = (endHour - startHour) * HOUR_PX;
+  const top = (m: number) => (m - startHour * 60) * pxPerMin;
+  const height = (endHour - startHour) * hourPx;
 
   return (
     // Click-to-create on an empty slot is a pointer shortcut; keyboard users create bookings with the
@@ -154,18 +175,18 @@ export const DayColumn = memo(function DayColumn({
       ref={ref}
       role="group"
       aria-label={label}
-      className="relative min-w-0 flex-1 border-l border-border bg-muted/70 dark:bg-background"
+      className="relative min-w-0 flex-1 border-l border-border bg-muted/70 dark:bg-surface-sunken"
       style={{ height }}
       onMouseMove={(e) => {
         if (!onCreate || !onEmptyGrid(e)) return setHover(null);
         const rect = e.currentTarget.getBoundingClientRect();
-        setHover(snapMinute(e.clientY - rect.top, PX_PER_MIN, startHour * 60));
+        setHover(snapMinute(e.clientY - rect.top, pxPerMin, startHour * 60));
       }}
       onMouseLeave={() => setHover(null)}
       onClick={(e) => {
         if (!onCreate || !onEmptyGrid(e)) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        onCreate(date, snapMinute(e.clientY - rect.top, PX_PER_MIN, startHour * 60), resourceId);
+        onCreate(date, snapMinute(e.clientY - rect.top, pxPerMin, startHour * 60), resourceId);
       }}
     >
       {/* Open hours are "paper"; closed time stays sunken. */}
@@ -178,19 +199,19 @@ export const DayColumn = memo(function DayColumn({
             key={`${i.start}-${i.end}`}
             aria-hidden
             className="absolute inset-x-0 bg-surface dark:bg-surface-raised"
-            style={{ top: top(s), height: (e - s) * PX_PER_MIN }}
+            style={{ top: top(s), height: (e - s) * pxPerMin }}
           />
         );
       })}
-      <GridLines startHour={startHour} endHour={endHour} />
+      <GridLines startHour={startHour} endHour={endHour} hourPx={hourPx} />
 
       {hover !== null && onCreate && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-1 z-10 flex items-center gap-1 rounded-md border border-dashed border-brand-border bg-brand-soft/60 px-1.5 text-2xs font-medium text-brand-soft-foreground"
-          style={{ top: top(hover), height: 15 * PX_PER_MIN * 2 - 2 }}
+          className="pointer-events-none absolute inset-x-1 z-10 flex items-start gap-1 rounded-lg border border-dashed border-brand-border bg-brand-soft/60 px-2 py-1 text-xs font-medium text-brand-soft-foreground"
+          style={{ top: top(hover), height: 30 * pxPerMin - 2 }}
         >
-          <Plus className="size-3" /> <span className="tnum">{minutesToTime(hover)}</span>
+          <Plus className="size-3.5" /> <span className="tnum">{minutesToTime(hover)}</span>
         </div>
       )}
 
@@ -201,7 +222,9 @@ export const DayColumn = memo(function DayColumn({
           top={top}
           startHour={startHour}
           endHour={endHour}
+          pxPerMin={pxPerMin}
           compact={compact}
+          columnResourceId={resourceId}
           formatTime={formatTime}
           onSelect={onSelectBooking}
         />
@@ -213,6 +236,7 @@ export const DayColumn = memo(function DayColumn({
           top={top}
           startHour={startHour}
           endHour={endHour}
+          pxPerMin={pxPerMin}
           formatTime={formatTime}
           onSelect={onSelectBooking}
           whole={compact}

@@ -56,7 +56,7 @@ test.describe("dashboard (owner)", () => {
   });
 
   test("calendar shows one column per resource and supports keyboard navigation", async ({ page }) => {
-    await page.goto("/dashboard/lumen-physio/calendar");
+    await page.goto("/dashboard/lumen-physio/calendar?resource=everything");
     await waitForDashboard(page);
     await expect(page.getByRole("group", { name: /treatment room 1/i })).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("w");

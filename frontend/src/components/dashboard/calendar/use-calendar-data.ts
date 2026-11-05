@@ -18,6 +18,7 @@ import {
   type CalendarMode,
   type CalendarParams,
 } from "@/lib/dashboard/calendar";
+import { chosenResources, parseResourceChoice } from "@/lib/dashboard/calendar-resources";
 import { addDaysToPlainDate, todayInTz, type PlainDate } from "@/lib/format/datetime";
 import { mergeIntervals, openIntervalsForDate } from "@/lib/availability/windows";
 import {
@@ -151,7 +152,7 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
   const range = useMemo(() => calendarRange(view, date), [view, date]);
   const { days, from, to } = range;
   const { query: resourcesQ, resources, inactive } = useSortedResources(business.id);
-  const selected = resourceId !== "all" ? resources.find((r) => r.id === resourceId) : undefined;
+  const choice = useMemo(() => parseResourceChoice(resourceId), [resourceId]);
   const { query: bookingsQ, bookings: loaded } = useAllBookings(
     business.id,
     view,
@@ -167,13 +168,16 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
     const byDate = groupByDate(loaded, business.timezone);
     return [...new Set(days.flatMap((d) => byDate.get(d) ?? []))];
   }, [placeholder, loaded, days, business.timezone]);
+  const shown = useMemo(() => chosenResources(choice, resources, bookings), [choice, resources, bookings]);
+  /** The one resource chosen, if there is exactly one: new bookings start with it. */
+  const selected = choice.type === "ids" && shown.length === 1 ? shown[0] : undefined;
   // A deactivated resource keeps the bookings it already had: give it a column (after the active ones, marked
   // inactive) while it has any in the range, so they don't vanish from the day view.
   const columnsResources = useMemo(() => {
-    if (selected) return [selected];
+    if (choice.type === "ids" || choice.type === "spaces") return shown;
     const booked = new Set(bookings.flatMap((b) => b.resources.map((x) => x.id)));
-    return [...resources, ...inactive.filter((r) => booked.has(r.id))];
-  }, [selected, resources, inactive, bookings]);
+    return [...shown, ...inactive.filter((r) => booked.has(r.id))];
+  }, [choice.type, shown, inactive, bookings]);
   const { openFor, pending: hoursPending } = useOpenHours(
     business.id,
     resources,
@@ -190,10 +194,10 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
         open: openFor([r.id], date),
       }));
     }
-    const ids = selected ? [selected.id] : resources.map((r) => r.id);
-    const scoped = selected
-      ? bookings.filter((b) => b.resources.some((x) => x.id === selected.id))
-      : bookings;
+    // By default a week is the whole business; a choice narrows it to the bookings of what was chosen.
+    const narrowed = choice.type === "ids" || choice.type === "spaces";
+    const ids = narrowed ? shown.map((r) => r.id) : resources.map((r) => r.id);
+    const scoped = narrowed ? bookings.filter((b) => b.resources.some((x) => ids.includes(x.id))) : bookings;
     const byDate = groupByDate(scoped, business.timezone);
     return days.map((d) => ({
       key: d,
@@ -202,7 +206,18 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
       bookings: byDate.get(d) ?? [],
       open: openFor(ids, d),
     }));
-  }, [view, columnsResources, resources, date, bookings, openFor, selected, business.timezone, days]);
+  }, [
+    view,
+    columnsResources,
+    resources,
+    date,
+    bookings,
+    openFor,
+    choice.type,
+    shown,
+    business.timezone,
+    days,
+  ]);
 
   const [startHour, endHour] = useMemo(() => {
     const open = columns.flatMap((c) => c.open);
@@ -214,11 +229,17 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
     columns.flatMap((c) => c.bookings.filter((b) => b.status !== "cancelled").map((b) => b.id)),
   ).size;
 
+  const waiting = new Set(
+    columns.flatMap((c) => c.bookings.filter((b) => b.status === "pending_approval").map((b) => b.id)),
+  ).size;
+
   return {
     days,
     from,
     to,
     resources,
+    choice,
+    shown,
     selected,
     columns,
     startHour,
@@ -227,6 +248,8 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
     firstOpen: Math.min(...columns.flatMap((c) => c.open.map((i) => i.start)), 24 * 60),
     /** Distinct bookings shown, not counting cancelled ones. */
     count,
+    /** Distinct bookings shown that are waiting for the business's approval. */
+    waiting,
     resourcesQ,
     bookingsQ,
     // Open hours too: they set the grid's hour range, which would otherwise re-scale the grid once they arrive.

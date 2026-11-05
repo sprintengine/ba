@@ -60,6 +60,8 @@ export function DashboardShell({
   const [navOpen, setNavOpen] = useState(false);
   const pathname = usePathname();
   const toggleCommand = useCallback(() => setCommandOpen((o) => !o), []);
+  // The calendar fills the window and scrolls inside it, so its names and times stay pinned.
+  const fillsWindow = pathname.endsWith("/calendar");
   useShellShortcuts({ onToggleCommand: toggleCommand });
 
   useEffect(() => {
@@ -103,8 +105,12 @@ export function DashboardShell({
               floating over the corner, the last row can also scroll clear of it. */}
           <div
             className={cn(
-              "px-4 pt-6 pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+1.5rem)] sm:px-6 sm:py-8 lg:px-10",
-              floating && "pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+5.5rem)] sm:pb-8",
+              fillsWindow
+                ? "h-[calc(100dvh-3.5rem-env(safe-area-inset-top)-var(--tab-bar-height)-env(safe-area-inset-bottom))] sm:h-dvh"
+                : "px-4 pt-6 pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+1.5rem)] sm:px-6 sm:py-8 lg:px-10",
+              !fillsWindow &&
+                floating &&
+                "pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+5.5rem)] sm:pb-8",
             )}
           >
             {business && (
