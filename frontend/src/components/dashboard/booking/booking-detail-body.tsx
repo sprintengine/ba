@@ -92,10 +92,11 @@ function CustomerSection({ booking: b }: { booking: BookingDetail }) {
       }
     >
       <div className="flex flex-col gap-1.5 text-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium">{b.customer.name}</span>
-          {group && <Badge tone="brand">{group.name}</Badge>}
-        </div>
+        {group && (
+          <Badge tone="brand" className="w-fit">
+            {group.name}
+          </Badge>
+        )}
         {b.customer.email && (
           <a
             href={`mailto:${b.customer.email}`}

@@ -67,13 +67,18 @@ export function CalendarView() {
     if (!ready || !scroller.current || scrolledFor.current === key) return;
     scrolledFor.current = key;
     // Before opening time, today starts at the working day too, not on empty hours.
-    const target = Math.max(firstOpen - 30, days.includes(today) ? nowMinute - 90 : 0);
+    // Any other day starts at its first booking, so a busy day never opens on empty rows.
+    const starts = columns.flatMap((c) =>
+      c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.start, business.timezone))),
+    );
+    const firstBusy = starts.length > 0 ? Math.min(...starts) : firstOpen;
+    const target = days.includes(today) ? Math.max(firstOpen - 30, nowMinute - 90) : firstBusy - 30;
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * HOUR_PX);
     // Where the week doesn't fit, it opens on today rather than on Monday.
     const column =
       view === "week" ? scroller.current.querySelectorAll("[role=group]")[days.indexOf(today)] : null;
     if (column instanceof HTMLElement) scroller.current.scrollLeft = column.offsetLeft - HOUR_GUTTER_PX;
-  }, [ready, view, date, days, today, nowMinute, firstOpen, startHour]);
+  }, [ready, view, date, days, today, nowMinute, firstOpen, startHour, columns, business.timezone]);
   useEffect(() => {
     const el = scroller.current;
     if (!el || typeof ResizeObserver === "undefined") return;

@@ -70,7 +70,7 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   onSelect={() => run(() => openBooking(b.id))}
                 >
                   {/* A fixed width, so the names line up down the list whatever the reference's glyphs. */}
-                  <span className="w-18 shrink-0 truncate font-mono text-2xs whitespace-nowrap text-subtle-foreground">
+                  <span className="w-18 shrink-0 truncate font-mono text-2xs whitespace-nowrap text-subtle-foreground max-sm:hidden">
                     {b.reference}
                   </span>
                   <span className="truncate">

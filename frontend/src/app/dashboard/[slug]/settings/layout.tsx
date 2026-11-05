@@ -45,7 +45,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 href={href}
                 aria-current={active ? "page" : undefined}
                 // On phones the sections scroll sideways: keep the current one in view.
-                ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
+                ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "start" }) : undefined}
                 className={cn(
                   "inline-flex shrink-0 snap-start items-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:h-11",
                   active

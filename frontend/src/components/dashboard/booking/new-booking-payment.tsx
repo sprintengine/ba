@@ -52,7 +52,7 @@ export function PaymentFields({ service }: { service: Service | undefined }) {
         {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
       </FormField>
       <FormField<Values, "internalNotes"> name="internalNotes" label="Internal notes" optional>
-        {(field) => <Textarea {...field} rows={2} placeholder="Only your team sees these." />}
+        {(field) => <Textarea {...field} rows={2} placeholder="Only your team can see these notes." />}
       </FormField>
     </>
   );

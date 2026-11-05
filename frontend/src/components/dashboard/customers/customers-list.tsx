@@ -161,7 +161,7 @@ export function CustomersList() {
                             <span className="flex min-w-0 items-center gap-2 font-medium">
                               <span className="truncate">{c.name}</span>
                               {c.hasAccount && (
-                                <Badge tone="brand" className="h-5 shrink-0">
+                                <Badge tone="brand" className="h-5 shrink-0 max-sm:hidden">
                                   Account
                                 </Badge>
                               )}

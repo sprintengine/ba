@@ -39,11 +39,14 @@ export function SetupChecklist({ items }: { items: { key: ChecklistKey; done: bo
           />
         </div>
         <ul className="flex flex-col">
-          {items.map((item) => (
-            <li key={item.key}>
-              <ChecklistItem step={steps[item.key]} done={item.done} />
-            </li>
-          ))}
+          {/* The bar and the count already say what's done: the list is what's left. */}
+          {items
+            .filter((item) => !item.done)
+            .map((item) => (
+              <li key={item.key}>
+                <ChecklistItem step={steps[item.key]} done={false} />
+              </li>
+            ))}
         </ul>
       </CardContent>
     </Card>
