@@ -129,7 +129,7 @@ describe("Consent page states", () => {
     mockApi(() => apiError(400, "INVALID_REQUEST", "Unknown app."));
     const { container } = renderWithProviders(<AuthorizePage />);
     expect(await screen.findByText("This connection link isn't valid")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Go to My bookings" })).toHaveAttribute("href", "/my/bookings");
+    expect(screen.getByRole("link", { name: "Go to my bookings" })).toHaveAttribute("href", "/my/bookings");
     await expectNoAxeViolations(container);
   });
 });

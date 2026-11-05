@@ -77,7 +77,7 @@ export const PAYMENT_MODE_LABEL: Record<PaymentMode, string> = {
 export const PAYMENT_MODE_SHORT: Record<PaymentMode, string> = {
   full: "Prepaid",
   deposit: "Deposit",
-  at_venue: "At venue",
+  at_venue: "Pay at venue",
   free: "Free",
 };
 

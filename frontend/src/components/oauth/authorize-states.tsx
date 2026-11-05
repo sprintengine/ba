@@ -54,7 +54,7 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
         }
         action={
           <Button asChild variant="secondary">
-            <Link href="/my/bookings">Go to My bookings</Link>
+            <Link href="/my/bookings">Go to my bookings</Link>
           </Button>
         }
       />

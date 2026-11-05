@@ -51,7 +51,6 @@ export function MyBookingsPage() {
     <>
       <PageHeader
         title="My bookings"
-        description="Everything you've booked on bookanything, in one place."
         actions={
           <ActionButton
             href="/my/connected-apps"

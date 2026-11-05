@@ -136,7 +136,7 @@ export function CustomerRequestsPage() {
             headingLevel={2}
             icon={<Bot />}
             title="Nothing to approve"
-            description="When your AI assistant (Claude, ChatGPT and others) prepares a booking, a move or a cancellation for you, it appears here for you to approve."
+            description="Anything waiting for your OK appears here."
             action={
               <Button asChild variant="secondary">
                 <Link href={AI_HELP_PATH}>Use bookanything in your AI assistant</Link>

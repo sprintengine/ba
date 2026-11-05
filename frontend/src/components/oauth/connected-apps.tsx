@@ -41,7 +41,7 @@ export function ConnectedAppsPage() {
             headingLevel={2}
             icon={<Plug />}
             title="No connected apps"
-            description="When you connect an AI assistant such as Claude or ChatGPT to bookanything, it shows up here with what it's allowed to do. You can disconnect it at any time."
+            description="Connect an AI assistant such as Claude or ChatGPT and it shows up here with what it's allowed to do."
             action={
               <Button asChild variant="secondary">
                 <Link href={AI_HELP_PATH}>
