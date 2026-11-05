@@ -27,9 +27,9 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
       </CardHeader>
       <CardContent className="-mx-2 pb-3">
         {loading ? (
-          <div className="flex flex-col gap-2 px-2" aria-busy>
+          <div className="flex flex-col px-2" aria-busy>
             {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="flex items-center gap-3 py-2">
+              <div key={i} className="flex h-15 items-center gap-3">
                 <Skeleton className="h-4 w-11" />
                 <Skeleton className="size-8 rounded-full" />
                 <div className="flex flex-1 flex-col gap-1.5">
