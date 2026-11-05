@@ -1,190 +1,166 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowUp, Check, Loader, Plus } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useMounted } from "@/lib/hooks/use-mounted";
+import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 import { IPhone } from "./iphone";
-import { SceneToggle } from "./scene-parts";
+import { SampleBooking, SceneToggle, type SampleBookingProps } from "./scene-parts";
 import { useScene } from "./use-scene";
 
-const STEPS = [1100, 1500, 2300, 1000, 4600] as const;
+/** The chats run the assistant's real card, so they come as their own chunk; the frames hold their place. */
+const OwnerChat = dynamic(() => import("./ai-chat").then((m) => m.OwnerChat), {
+  ssr: false,
+  loading: () => <IPhone time="15:14" />,
+});
+const ClientChat = dynamic(() => import("./ai-chat").then((m) => m.ClientChat), {
+  ssr: false,
+  loading: () => <IPhone time="15:14" />,
+});
 
-type Script = {
-  ask: string;
-  working: string;
-  reply: string;
-  card: { title: string; sub: string; chips?: string[]; rows: [string, string][] };
-  action: string;
-  done: string;
-};
+/** A chat's steps: asked, then a proposal, then it's being approved, then done. */
+const STEPS = [1300, 3400, 800, 5600] as const;
+const LAST = STEPS.length - 1;
 
-const SCRIPTS = {
-  customer: {
-    ask: "Book me a follow-up on Thursday, any time after 3.",
-    working: "Checking times at Lumen Physiotherapy",
-    reply: "Sam is free on Thursday at these times.",
-    card: {
-      title: "Follow-up treatment",
-      sub: "Lumen Physiotherapy · 45 minutes",
-      chips: ["15:30", "15:45"],
-      rows: [
-        ["With", "Sam Rivers"],
-        ["Price", "€60"],
-      ],
-    },
-    action: "Book and pay €60",
-    done: "You're booked and paid. It's on their calendar, and a reminder is set for Wednesday.",
-  },
-  owner: {
-    ask: "Sam's off on Friday afternoon. Can you sort out their bookings?",
-    working: "Looking at Friday's calendar",
-    reply: "Aoife is free for all three. Here's what I'd change.",
-    card: {
-      title: "Move three bookings to Aoife",
-      sub: "Friday afternoon · same times",
-      rows: [
-        ["14:00", "Remy Stroud"],
-        ["15:00", "Dara Quinn"],
-        ["16:15", "Jo Hayes"],
-      ],
-    },
-    action: "Approve changes",
-    done: "Done. All three are moved and each client has been told.",
-  },
-} satisfies Record<string, Script>;
+export type AiSide = "owner" | "customer";
 
-export type AiScript = keyof typeof SCRIPTS;
-
-function Chat({ script }: { script: AiScript }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [paused, setPaused] = useState(false);
-  const step = useScene(ref, STEPS, paused);
-  const s: Script = SCRIPTS[script];
-
-  return (
-    <div ref={ref} className="flex flex-col items-center gap-5 [--iphone-scale:0.76] lg:[--iphone-scale:0.8]">
-      <div aria-hidden inert>
-        <IPhone time="15:14">
-          <div className="absolute inset-0 flex flex-col bg-surface pt-[3.375rem] text-left">
-            <p className="py-3 text-center text-[1.0625rem] font-semibold">Assistant</p>
-            <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden px-4 pb-4 text-[1.0625rem] leading-[1.4]">
-              <p className="ml-10 self-end rounded-[1.375rem] rounded-br-md bg-primary px-4 py-3 text-primary-foreground">
-                {s.ask}
-              </p>
-              {step >= 1 && (
-                <p className="flex animate-fade-in items-center gap-2 text-[0.9375rem] text-muted-foreground">
-                  {step === 1 ? <Loader className="size-4 animate-spin" /> : <Check className="size-4" />}
-                  {s.working}
-                </p>
-              )}
-              {step >= 2 && (
-                <div className="flex animate-rise flex-col gap-3">
-                  <p>{s.reply}</p>
-                  <div className="rounded-[1.25rem] border border-border bg-background p-4 shadow-sm">
-                    <p className="font-semibold">{s.card.title}</p>
-                    <p className="text-[0.9375rem] text-muted-foreground">{s.card.sub}</p>
-                    {s.card.chips && (
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        {s.card.chips.map((c, i) => (
-                          <span
-                            key={c}
-                            className={cn(
-                              "tnum rounded-lg border py-2.5 text-center text-[0.9375rem] font-medium",
-                              i === 0
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-surface",
-                            )}
-                          >
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <dl className="mt-3 flex flex-col gap-1.5 text-[0.9375rem]">
-                      {s.card.rows.map(([a, b]) => (
-                        <div key={a} className="flex justify-between gap-3">
-                          <dt className="text-muted-foreground">{a}</dt>
-                          <dd className="tnum font-medium">{b}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <span
-                      className={cn(
-                        "mt-3.5 flex items-center justify-center gap-1.5 rounded-xl py-3 font-semibold transition-colors",
-                        step >= 3
-                          ? "bg-success-soft text-success-soft-foreground"
-                          : "bg-primary text-primary-foreground",
-                      )}
-                    >
-                      {step >= 3 ? (
-                        <>
-                          <Check className="size-4.5" /> Confirmed
-                        </>
-                      ) : (
-                        s.action
-                      )}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {step >= 4 && <p className="animate-fade-in">{s.done}</p>}
-            </div>
-            <div className="mx-3 mb-9 flex h-12 shrink-0 items-center gap-2.5 rounded-full bg-muted pr-1.5 pl-4 text-muted-foreground">
-              <Plus className="size-5" />
-              <span className="flex-1 text-[1.0625rem]">Ask anything</span>
-              <span className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground">
-                <ArrowUp className="size-5" />
-              </span>
-            </div>
-          </div>
-        </IPhone>
-      </div>
-      <SceneToggle paused={paused} onToggle={() => setPaused((p) => !p)} />
-    </div>
-  );
-}
-
-const TABS: { key: AiScript; label: string }[] = [
+const TABS: { key: AiSide; label: string }[] = [
   { key: "owner", label: "For your business" },
   { key: "customer", label: "For your customers" },
 ];
 
-/** The two sides of the AI story, one phone each: the owner's assistant, and a customer's. */
+/** What each conversation leaves on the calendar, as the calendar draws it. */
+const OUTCOME: Record<AiSide, SampleBookingProps> = {
+  owner: {
+    who: "Remy Stroud",
+    when: "14:00–14:45",
+    what: "Friday",
+    color: "#0ea5e9",
+    via: "Moved to Aoife · Client told",
+  },
+  customer: {
+    who: "Rory Kane",
+    when: "15:30–16:15",
+    what: "Thursday",
+    color: "#0ea5e9",
+    via: "Their AI assistant · Paid €60",
+  },
+};
+
+function Side({
+  side,
+  shown,
+  paused,
+  onLoop,
+  children,
+}: {
+  side: AiSide;
+  /** Below the wide layout one side shows at a time. */
+  shown: boolean;
+  paused: boolean;
+  onLoop: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const step = useScene(ref, STEPS, paused);
+  const previous = useRef(0);
+  useEffect(() => {
+    if (previous.current === LAST && step === 0) onLoop();
+    previous.current = step;
+  }, [step, onLoop]);
+  const Chat = side === "owner" ? OwnerChat : ClientChat;
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-col-reverse items-center gap-8 lg:flex-row lg:gap-16 xl:flex-1 xl:gap-8",
+        side === "customer" && "xl:flex-row-reverse",
+        !shown && "max-xl:hidden",
+      )}
+    >
+      <div className="w-full min-w-0 flex-1">
+        <h3 className="mb-5 text-[0.9375rem] font-semibold text-muted-foreground max-xl:hidden">
+          {TABS.find((t) => t.key === side)?.label}
+        </h3>
+        {children}
+        <div className="mt-6 h-[5.25rem]" aria-hidden>
+          {step === LAST && <SampleBooking {...OUTCOME[side]} className="relative animate-rise" />}
+        </div>
+      </div>
+      <div
+        ref={ref}
+        aria-hidden
+        inert
+        className="[--iphone-scale:0.76] lg:[--iphone-scale:0.74] xl:[--iphone-scale:0.76]"
+      >
+        <Chat step={step} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The two sides of the AI story, side by side where there's room: the owner's assistant, and a client's. On a narrower
+ * screen they take turns, until the visitor picks one.
+ */
 export function AiScene({
   heading,
+  footer,
   children,
 }: {
   heading: React.ReactNode;
-  children: Record<AiScript, React.ReactNode>;
+  footer: React.ReactNode;
+  children: Record<AiSide, React.ReactNode>;
 }) {
-  const [tab, setTab] = useState<AiScript>("owner");
+  const [tab, setTab] = useState<AiSide>("owner");
+  const [auto, setAuto] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const mounted = useMounted();
+  const reduce = useReducedMotion() && mounted;
+  const turn = useCallback(() => {
+    if (auto) setTab((t) => (t === "owner" ? "customer" : "owner"));
+  }, [auto]);
+
   return (
-    <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-24">
-      <div>
-        {heading}
-        <div
-          role="group"
-          aria-label="Who the assistant works for"
-          className="mt-10 inline-flex gap-1 rounded-xl bg-muted p-1"
-        >
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              aria-pressed={tab === t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "focus-ring rounded-lg px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors pointer-coarse:min-h-11",
-                tab === t.key && "bg-surface text-foreground shadow-xs",
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-7">{children[tab]}</div>
+    <div>
+      {heading}
+      <div
+        role="group"
+        aria-label="Who the assistant works for"
+        className="mt-8 inline-flex gap-1 rounded-xl bg-muted p-1 xl:hidden"
+      >
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            aria-pressed={tab === t.key}
+            onClick={() => {
+              setAuto(false);
+              setTab(t.key);
+            }}
+            className={cn(
+              "focus-ring rounded-lg px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors pointer-coarse:min-h-11",
+              tab === t.key && "bg-surface text-foreground shadow-xs",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
-      <Chat key={tab} script={tab} />
+      <div className="mt-8 flex flex-col gap-6 xl:mt-14 xl:flex-row">
+        {TABS.map((t) => (
+          <Side key={t.key} side={t.key} shown={tab === t.key} paused={paused} onLoop={turn}>
+            {children[t.key]}
+          </Side>
+        ))}
+      </div>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        {footer}
+        <span className="flex items-center gap-3 text-sm text-muted-foreground">
+          Example chats with a made-up clinic.
+          {!reduce && <SceneToggle paused={paused} onToggle={() => setPaused((p) => !p)} />}
+        </span>
+      </div>
     </div>
   );
 }

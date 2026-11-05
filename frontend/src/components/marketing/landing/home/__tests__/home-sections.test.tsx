@@ -37,6 +37,16 @@ describe("the AI section", () => {
   });
 });
 
+describe("the AI section's promise", () => {
+  it("leads with the assistant you already have, and doesn't give ours away", () => {
+    const { container } = render(<AiSection />);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(/Use the AI you already have/);
+    expect(container.textContent).toMatch(/included on every plan/);
+    expect(container.textContent).toMatch(/monthly credits/);
+    expect(container.textContent).not.toMatch(/or ours|unlimited/i);
+  });
+});
+
 describe("the logo marquee", () => {
   it("hides the repeated run from assistive tech", () => {
     const { container } = render(<LogoMarquee />);
@@ -45,6 +55,11 @@ describe("the logo marquee", () => {
     expect(runs[0]).not.toHaveAttribute("aria-hidden");
     expect(runs[1]).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByRole("img", { name: "Stripe" })).toBeInTheDocument();
+  });
+
+  it("names every provider the FAQ does", () => {
+    const { container } = render(<LogoMarquee />);
+    expect(container.querySelector("ul")).toHaveTextContent("Mollie");
   });
 
   it("is one still row with reduced motion", () => {
@@ -58,6 +73,7 @@ describe("what the page may claim", () => {
   it("keeps the proof to our own testing, and says it isn't customers", () => {
     const { container } = render(<ProofSection />);
     expect(container.textContent).toMatch(/bots, not customers/);
+    expect(container.textContent).not.toMatch(/database|race/i);
     expect(container.textContent).not.toMatch(/trusted by|uptime|99\.\d/i);
   });
 
