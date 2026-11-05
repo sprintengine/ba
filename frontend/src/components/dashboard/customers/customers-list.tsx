@@ -46,6 +46,8 @@ export function CustomersList() {
   const groups = useCustomerGroups(business.id);
   const groupName = useMemo(() => new Map((groups.data ?? []).map((g) => [g.id, g.name])), [groups.data]);
   const items = customers.data ?? NO_CUSTOMERS;
+  // A column of dashes says nothing: it appears once someone is in a group.
+  const showGroup = items.some((c) => c.groupId && groupName.has(c.groupId));
   const [adding, setAdding] = useState(false);
   const create = useCreateCustomer(business.id);
 
@@ -112,7 +114,7 @@ export function CustomersList() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Contact</TableHead>
-                <TableHead className="hidden lg:table-cell">Group</TableHead>
+                {showGroup && <TableHead className="hidden lg:table-cell">Group</TableHead>}
                 <TableHead align="right">{v("bookings", { title: true })}</TableHead>
                 <TableHead className="hidden sm:table-cell">Last visit</TableHead>
               </TableRow>
@@ -130,9 +132,11 @@ export function CustomersList() {
                       <TableCell className="hidden md:table-cell">
                         <Skeleton className="h-4 w-44" />
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-20" />
-                      </TableCell>
+                      {showGroup && (
+                        <TableCell className="hidden lg:table-cell">
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                      )}
                       <TableCell align="right">
                         <Skeleton className="ml-auto h-4 w-6" />
                       </TableCell>
@@ -175,13 +179,15 @@ export function CustomersList() {
                           {c.phone && <span className="tnum text-xs text-muted-foreground">{c.phone}</span>}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {c.groupId && groupName.get(c.groupId) ? (
-                          <Badge>{groupName.get(c.groupId)}</Badge>
-                        ) : (
-                          <span className="text-subtle-foreground">—</span>
-                        )}
-                      </TableCell>
+                      {showGroup && (
+                        <TableCell className="hidden lg:table-cell">
+                          {c.groupId && groupName.get(c.groupId) ? (
+                            <Badge>{groupName.get(c.groupId)}</Badge>
+                          ) : (
+                            <span className="text-subtle-foreground">—</span>
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell align="right">{c.bookingCount}</TableCell>
                       <TableCell className="hidden text-muted-foreground sm:table-cell">
                         {c.lastBookingAt ? fmt.date(c.lastBookingAt, "medium") : "—"}

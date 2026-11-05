@@ -150,7 +150,7 @@ describe("CustomerDetailView", () => {
     expect(screen.getByRole("link", { name: /\+353871234567/ })).toHaveAttribute("href", "tel:+353871234567");
     // The group: a badge by the name, and the value of the form's Group select.
     expect(await screen.findByRole("combobox", { name: "Group" })).toHaveTextContent("Members");
-    expect(screen.getByText("Has an account").parentElement).toHaveTextContent("Members");
+    expect(screen.getByText("Account").parentElement).toHaveTextContent("Members");
     // Upcoming: only the future booking that isn't cancelled.
     expect(screen.getByText("Upcoming").nextSibling).toHaveTextContent("1");
     expect(screen.getByText("Appointments").nextSibling).toHaveTextContent("3");

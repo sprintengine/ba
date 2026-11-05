@@ -144,7 +144,7 @@ export function WeeklyHoursEditor({
         onCopyDay={(day, targets) => setDays(copyDay(active.days, day, targets))}
       />
 
-      {editable && (
+      {editable && (dirty || tooMany) && (
         <div className="flex items-center justify-end gap-2">
           {tooMany ? (
             <span className="mr-auto text-xs font-medium text-danger-soft-foreground">{tooMany}</span>

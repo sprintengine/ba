@@ -158,7 +158,7 @@ export function BillingSettings() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 xl:grid-cols-3">
             {sorted.map((p) => {
               const current = p.plan === b!.plan;
               return (
@@ -188,7 +188,7 @@ export function BillingSettings() {
                   </ul>
                   {p.plan !== "free" && !current && (
                     <Button
-                      variant={p.plan === "pro" ? "primary" : "secondary"}
+                      variant="secondary"
                       loading={
                         subscribed
                           ? portal.isPending

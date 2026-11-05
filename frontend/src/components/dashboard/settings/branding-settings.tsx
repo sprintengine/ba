@@ -197,6 +197,7 @@ function Preview() {
   const business = useCurrentBusiness();
   const v = useWatch<V>() as V;
   const color = HEX_COLOR.test(v.primaryColor) ? v.primaryColor : business.branding.primaryColor;
+  const noun = vocab(v, "booking");
   const isImageUrl = (url: string | undefined) => !!url && /^https?:\/\//.test(url);
   const cover = isImageUrl(v.coverImageUrl) ? v.coverImageUrl : null;
   const logo = isImageUrl(v.logoUrl) ? v.logoUrl : null;
@@ -216,7 +217,8 @@ function Preview() {
         )}
         <div className="flex flex-col gap-3 p-4">
           <p className="site-heading text-base font-semibold tracking-tight">
-            Book {/^[aeiou]/i.test(vocab(v, "booking")) ? "an" : "a"} {vocab(v, "booking")}
+            {/* The default wording has no noun to book: nobody says "Book a booking". */}
+            {noun === "booking" ? "Book online" : `Book ${/^[aeiou]/i.test(noun) ? "an" : "a"} ${noun}`}
           </p>
           <div className="flex items-center justify-between gap-3 rounded-lg border border-brand-border bg-brand-soft/60 px-3 py-2.5">
             <span className="flex items-center gap-2 text-sm font-medium">

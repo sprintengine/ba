@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Info, Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import type { CustomerGroup } from "@/lib/api/types";
 import {
   useCreateCustomerGroup,
@@ -59,19 +59,10 @@ export function GroupsSettings() {
           />
         }
       />
-      <div className="mb-6 flex gap-3 rounded-xl border border-info-border bg-info-soft px-4 py-3.5 text-sm text-info-soft-foreground">
-        <Info className="mt-0.5 size-4 shrink-0" />
-        <div className="flex flex-col gap-1">
-          <p className="font-medium">How groups work</p>
-          <p>
-            Groups let some {v("customers")} see different hours or services. A GP practice might have
-            “Private patients” and “Medical card holders”: mark medical card holders as{" "}
-            <strong>restricted</strong>, then list them on the weekly hours kept for them. Restricted groups
-            only see hours that name them, and nobody can pick a restricted group for themselves — you assign
-            it on the {v("customer")}&apos;s profile.
-          </p>
-        </div>
-      </div>
+      <p className="mb-6 max-w-prose text-sm text-muted-foreground">
+        Groups let some {v("customers")} see different hours or services. A restricted group only sees hours
+        that name it, and only you can add someone to it, on their profile.
+      </p>
       {groups.isError ? (
         <ErrorState error={groups.error} onRetry={() => groups.refetch()} />
       ) : groups.isPending ? (

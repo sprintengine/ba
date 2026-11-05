@@ -1,10 +1,8 @@
 "use client";
 
-import { CalendarCheck2, Euro, Inbox, TrendingUp } from "lucide-react";
 import type { Booking, Overview } from "@/lib/api/types";
-import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
+import { usePermissions } from "@/lib/business/business-context";
 import { todayHint } from "@/lib/dashboard/overview";
-import { currencySymbol } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { StatCard } from "@/components/ui/stat";
@@ -22,11 +20,9 @@ export function OverviewStats({
   now: Date;
   loading: boolean;
 }) {
-  const { business } = useBusinessContext();
   const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
-  const symbol = currencySymbol(business.currency);
   return (
     <div
       className={cn(
@@ -37,7 +33,6 @@ export function OverviewStats({
       <StatCard
         label="Today"
         value={todays.length}
-        icon={<CalendarCheck2 />}
         loading={loading}
         // Not "A quiet day" before the bookings are in; a blank line keeps the tile's height.
         hint={loading ? "\u00a0" : todayHint(todays, now, fmt.time)}
@@ -45,7 +40,6 @@ export function OverviewStats({
       <StatCard
         label="Next 7 days"
         value={overview?.upcomingCount7d ?? 0}
-        icon={<TrendingUp />}
         loading={loading}
         hint={`Upcoming ${v("bookings")}`}
       />
@@ -53,7 +47,6 @@ export function OverviewStats({
       <StatCard
         label={v("bookings", { title: true })}
         value={overview?.bookings30d ?? 0}
-        icon={<Inbox />}
         loading={loading}
         hint="Booked in the last 30 days"
         // Without revenue there are three tiles: the third takes the phone's whole row rather than leaving a gap.
@@ -63,7 +56,6 @@ export function OverviewStats({
         <StatCard
           label="Revenue"
           value={fmt.money(overview?.revenueCents30d ?? 0)}
-          icon={symbol === "€" ? <Euro /> : <span className="text-sm font-semibold">{symbol}</span>}
           loading={loading}
           hint="Last 30 days, after refunds"
         />

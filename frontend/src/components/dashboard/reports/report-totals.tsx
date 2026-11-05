@@ -1,6 +1,5 @@
 "use client";
 
-import { BarChart3, CalendarX2, Receipt, TrendingUp, UserPlus, UserX } from "lucide-react";
 import type { ReportSummary } from "@/lib/api/types";
 import { percentOf } from "@/lib/dashboard/reports";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -29,43 +28,24 @@ export function ReportTotals({
       <StatCard
         label={v("bookings", { title: true })}
         value={t?.bookings ?? 0}
-        icon={<BarChart3 />}
         loading={loading}
         hint={t ? `${t.confirmed} confirmed` : undefined}
       />
       <StatCard
         label="Revenue"
         value={fmt.money(t?.revenueCents ?? 0)}
-        icon={<TrendingUp />}
         loading={loading}
         hint={t && days > 0 ? `${fmt.money(Math.round(t.revenueCents / days))} a day` : undefined}
       />
       <StatCard
         label="Cancelled"
         value={t?.cancelled ?? 0}
-        icon={<CalendarX2 />}
         loading={loading}
         hint={share(t?.cancelled ?? 0)}
       />
-      <StatCard
-        label="No-shows"
-        value={t?.noShows ?? 0}
-        icon={<UserX />}
-        loading={loading}
-        hint={share(t?.noShows ?? 0)}
-      />
-      <StatCard
-        label={`New ${v("customers")}`}
-        value={t?.newCustomers ?? 0}
-        icon={<UserPlus />}
-        loading={loading}
-      />
-      <StatCard
-        label="Refunded"
-        value={fmt.money(t?.refundedCents ?? 0)}
-        icon={<Receipt />}
-        loading={loading}
-      />
+      <StatCard label="No-shows" value={t?.noShows ?? 0} loading={loading} hint={share(t?.noShows ?? 0)} />
+      <StatCard label={`New ${v("customers")}`} value={t?.newCustomers ?? 0} loading={loading} />
+      <StatCard label="Refunded" value={fmt.money(t?.refundedCents ?? 0)} loading={loading} />
     </div>
   );
 }

@@ -2,14 +2,11 @@
 
 import { CalendarDays, CalendarPlus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
-import { useBusinessContext } from "@/lib/business/business-context";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
-import { dashboardHref } from "@/components/shells/dashboard-nav";
-import { ActionButton } from "@/components/ui/action-button";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingStatusBadge } from "@/components/ui/status-badge";
@@ -18,7 +15,6 @@ import { useFmt } from "../common";
 
 /** Today's bookings in order, with a "now" divider; past ones faded. */
 export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loading: boolean; now: Date }) {
-  const { business } = useBusinessContext();
   const { v } = useVocabulary();
   const fmt = useFmt();
   const { openBooking, openNewBooking } = useBookingActions();
@@ -28,15 +24,6 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2}>Today&apos;s {v("bookings")}</CardTitle>
-        <CardAction>
-          <ActionButton
-            variant="ghost"
-            size="sm"
-            href={dashboardHref(business.slug, "calendar")}
-            icon={<CalendarDays />}
-            label="Open calendar"
-          />
-        </CardAction>
       </CardHeader>
       <CardContent className="px-3 pb-3">
         {loading ? (
@@ -93,7 +80,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                     <Avatar name={b.customer.name} size="md" />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm font-medium">{b.customer.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
                         {b.service.name}
                         {b.option ? ` · ${b.option.name}` : ""}
                         {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}

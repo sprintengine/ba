@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Start", "Review", "Look", "Launch"] as const;
+const STEPS = ["Start", "Review", "Design", "Launch"] as const;
 
 /** Slim progress indicator for the onboarding wizard. */
 export function WizardProgress({ current, className }: { current: 0 | 1 | 2 | 3; className?: string }) {

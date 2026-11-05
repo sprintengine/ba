@@ -100,9 +100,9 @@ describe("OverviewView", () => {
   it("greets by first name and counts today's bookings that still stand", async () => {
     api();
     renderOverview();
-    expect(await screen.findByText(/2 appointments today/)).toBeInTheDocument();
+    expect(await screen.findByText(/^Next at /)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /, Avery$/ })).toBeInTheDocument();
-    expect(screen.getByText(/^Next at /)).toBeInTheDocument();
+    expect(screen.getByText("Today").parentElement?.parentElement).toHaveTextContent("2");
     expect(screen.queryByText("Cass Gone")).not.toBeInTheDocument();
     expect(screen.getByText("€1,234")).toBeInTheDocument();
     // Revenue counts every payment received, in person as well as online.
@@ -120,10 +120,6 @@ describe("OverviewView", () => {
       expect.stringMatching(/^15:00.*Follow-up · Long · Sam Rivers/),
     ]);
     expect(must(items[1])).toHaveTextContent(/Now · 13:00/);
-    expect(today.getByRole("link", { name: /Open calendar/ })).toHaveAttribute(
-      "href",
-      "/dashboard/lumen-physio/calendar",
-    );
     await user.click(today.getByRole("button", { name: /09:00.*Alex Morgan/ }));
     expect(await screen.findByRole("dialog", { name: "Alex Morgan" }, LOAD)).toBeInTheDocument();
   });
@@ -132,7 +128,7 @@ describe("OverviewView", () => {
     api({ data: { ...overview, today: [] }, pending: [] });
     const user = userEvent.setup();
     renderOverview();
-    expect(await screen.findByText(/No appointments today/)).toBeInTheDocument();
+    expect(await screen.findByText("A quiet day")).toBeInTheDocument();
     const today = await card("Today's appointments");
     expect(today.getByRole("heading", { name: "Nothing booked today" })).toBeInTheDocument();
     await user.click(today.getByRole("button", { name: "New appointment" }));
@@ -153,7 +149,7 @@ describe("OverviewView", () => {
     await expectNoAxeViolations(document.body);
     fail = false;
     await user.click(screen.getByRole("button", { name: /try again/i }));
-    expect(await screen.findByText(/2 appointments today/)).toBeInTheDocument();
+    expect(await screen.findByText(/^Next at /)).toBeInTheDocument();
   });
 
   it("keeps the figures it has when a later refresh fails", async () => {
@@ -165,7 +161,7 @@ describe("OverviewView", () => {
     });
     const overviewCalls = () => requests(calls).filter((r) => r.endsWith("/overview")).length;
     renderOverview();
-    expect(await screen.findByText(/2 appointments today/)).toBeInTheDocument();
+    expect(await screen.findByText(/^Next at /)).toBeInTheDocument();
     fail = true;
     // Coming back to the tab refetches.
     window.dispatchEvent(new Event("visibilitychange"));
@@ -191,7 +187,7 @@ describe("OverviewView", () => {
   it("hides the checklist from staff", async () => {
     api();
     renderOverview("staff");
-    await screen.findByText(/2 appointments today/);
+    await screen.findByText(/^Next at /);
     expect(screen.queryByText("Get set up")).not.toBeInTheDocument();
   });
 

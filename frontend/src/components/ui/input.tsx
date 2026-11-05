@@ -30,9 +30,19 @@ export type InputProps = Omit<React.ComponentProps<"input">, "size"> & {
   leading?: React.ReactNode;
   /** Element inside the right edge (e.g. a unit, clear button). */
   trailing?: React.ReactNode;
+  /** Sizes the box a `leading` or `trailing` element sits in, so the element stays beside the text. */
+  wrapperClassName?: string;
 };
 
-export function Input({ className, size = "md", leading, trailing, type = "text", ...rest }: InputProps) {
+export function Input({
+  className,
+  wrapperClassName,
+  size = "md",
+  leading,
+  trailing,
+  type = "text",
+  ...rest
+}: InputProps) {
   const props = useFieldControlProps(rest);
   const input = (
     <input
@@ -51,7 +61,7 @@ export function Input({ className, size = "md", leading, trailing, type = "text"
   );
   if (!leading && !trailing) return input;
   return (
-    <div className="relative flex w-full items-center">
+    <div className={cn("relative flex w-full items-center", wrapperClassName)}>
       {leading && (
         <span className="pointer-events-none absolute left-3 flex items-center text-sm text-subtle-foreground [&_svg]:size-4">
           {leading}

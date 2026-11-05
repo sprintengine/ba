@@ -45,7 +45,6 @@ export function PerDayCard({ data, loading }: { data: ReportSummary | undefined;
           <SegmentedControl
             size="sm"
             aria-label="Display"
-            collapseLabels="sm"
             value={asTable ? "table" : "chart"}
             onValueChange={(x) => setAsTable(x === "table")}
             options={[

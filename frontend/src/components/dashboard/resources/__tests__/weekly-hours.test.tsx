@@ -83,7 +83,7 @@ describe("WeeklyHours", () => {
     );
     expect(screen.getByText("Regular hours")).toBeInTheDocument();
     expect(screen.getByText("10 h 30 min a week")).toBeInTheDocument();
-    expect(saveButton()).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Save hours" })).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -264,7 +264,7 @@ describe("WeeklyHours", () => {
 
     await user.click(screen.getByRole("button", { name: "Discard" }));
     expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00");
-    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Discard" })).not.toBeInTheDocument();
   });
 
   it("copies a day to the weekdays with the keyboard", async () => {

@@ -138,7 +138,7 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     segment: "billing",
     label: "Billing",
     minRole: "owner",
-    description: "Your bookanything plan and invoices.",
+    description: "Your bookanything plan.",
   },
 ];
 

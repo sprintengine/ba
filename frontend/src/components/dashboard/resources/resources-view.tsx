@@ -109,7 +109,7 @@ export function ResourcesView() {
           <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
             <nav
               aria-label={v("resources", { title: true })}
-              className="flex gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+              className="flex snap-x gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
             >
               {list.map((r) => {
                 const active = selected?.id === r.id;
@@ -135,7 +135,8 @@ export function ResourcesView() {
                     </span>
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-medium">{r.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
+                      {/* On a phone the row is a strip of names: a second line would be cut anyway. */}
+                      <span className="truncate text-xs text-muted-foreground max-sm:hidden">
                         {!r.isActive
                           ? "Inactive"
                           : r.kind === "person"

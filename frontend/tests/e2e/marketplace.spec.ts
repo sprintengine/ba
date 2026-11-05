@@ -198,7 +198,7 @@ test("an owner creates an offer and it appears on explore and in booking", async
 test("a Free business sees the upgrade prompt for listing on the marketplace", async ({ page }) => {
   await signInAs(page, OWNER);
   await page.goto("/dashboard/cadence-music/settings/marketplace");
-  await expect(page.getByText("Get found by new students with Pro")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Included in the Pro and Business plans")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("link", { name: /See plans/ })).toBeVisible();
   await expect(page.getByRole("switch")).toBeDisabled();
 });
