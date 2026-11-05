@@ -33,23 +33,40 @@ const CUSTOMER = [
   },
 ];
 
-function Points({ points }: { points: { title: string; body: string }[] }) {
+/** The chores an owner hands over, in the owner's words. */
+const ASKS = ["Who hasn't paid this week?", "Close the 24th and tell everyone", "Add a Saturday class"];
+
+function Points({ points, asks }: { points: { title: string; body: string }[]; asks?: string[] }) {
   return (
-    <ul className="flex flex-col gap-6">
-      {points.map((p) => (
-        <li key={p.title}>
-          <h3 className="text-lg font-semibold tracking-tight">{p.title}</h3>
-          <p className="mt-1 text-base leading-[1.55] text-muted-foreground">{p.body}</p>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="flex flex-col gap-6">
+        {points.map((p) => (
+          <li key={p.title}>
+            <h3 className="text-lg font-semibold tracking-tight">{p.title}</h3>
+            <p className="mt-1 text-base leading-[1.55] text-muted-foreground">{p.body}</p>
+          </li>
+        ))}
+      </ul>
+      {asks && (
+        <ul className="mt-6 flex flex-wrap gap-2">
+          {asks.map((a) => (
+            <li
+              key={a}
+              className="rounded-full bg-surface px-3.5 py-2 text-sm font-medium ring-1 ring-border"
+            >
+              “{a}”
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
 /** Why it's different: the business can be run through an AI, and customers can book through theirs. */
 export function AiSection() {
   return (
-    <section id="ai" aria-labelledby="ai-title" className="scroll-mt-24 bg-surface-sunken py-24 sm:py-32">
+    <section id="ai" aria-labelledby="ai-title" className="scroll-mt-24 bg-surface-sunken py-20 sm:py-28">
       <PrismContainer>
         <AiScene
           heading={
@@ -63,7 +80,7 @@ export function AiSection() {
             />
           }
         >
-          {{ owner: <Points points={OWNER} />, customer: <Points points={CUSTOMER} /> }}
+          {{ owner: <Points points={OWNER} asks={ASKS} />, customer: <Points points={CUSTOMER} /> }}
         </AiScene>
         <Link
           href={BUSINESS_AI_HELP_PATH}
