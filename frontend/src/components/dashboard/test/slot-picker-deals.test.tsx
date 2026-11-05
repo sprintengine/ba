@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Availability } from "@/lib/api/types";
@@ -57,8 +58,8 @@ describe("dashboard SlotPicker deals", () => {
         onChange={() => {}}
       />,
     );
-    const afternoon = await screen.findByRole("radio", { name: /14:00/ });
-    expect(afternoon).toHaveTextContent("20% off");
-    expect(screen.getByRole("radio", { name: /10:00/ })).not.toHaveTextContent("off");
+    expect(await screen.findByRole("radio", { name: /10:00/ })).not.toHaveTextContent("off");
+    await userEvent.click(screen.getByRole("button", { name: /^Afternoon/ }));
+    expect(await screen.findByRole("radio", { name: /14:00/ })).toHaveTextContent("20% off");
   });
 });

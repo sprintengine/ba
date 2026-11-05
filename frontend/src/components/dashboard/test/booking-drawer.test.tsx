@@ -252,8 +252,8 @@ describe("BookingDrawer details", () => {
   it("explains a pending request and a cancellation", async () => {
     serve(bookingDetail({ status: "pending_approval", paymentStatus: "not_required" }));
     const { unmount } = renderDrawer();
-    expect(await screen.findByText(/needs your approval/)).toHaveTextContent(
-      "This appointment needs your approval. The patient is told once you approve or decline.",
+    expect(await screen.findByText(/is told once you approve or decline/)).toHaveTextContent(
+      "The patient is told once you approve or decline.",
     );
     unmount();
 

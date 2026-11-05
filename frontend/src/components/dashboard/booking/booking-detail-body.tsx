@@ -58,7 +58,7 @@ function StatusCallouts({ booking: b }: { booking: BookingDetail }) {
       {b.status === "held" && b.checkoutUrl && <PaymentLink booking={b} checkoutUrl={b.checkoutUrl} />}
       {b.status === "pending_approval" && (
         <Callout tone="warning" icon={<CalendarClock />}>
-          This {v("booking")} needs your approval. The {v("customer")} is told once you approve or decline.
+          The {v("customer")} is told once you approve or decline.
         </Callout>
       )}
       {b.status === "cancelled" && (
@@ -163,7 +163,7 @@ function Summary({ booking: b }: { booking: BookingDetail }) {
               className="flex min-w-0 items-center gap-2 hover:text-muted-foreground pointer-coarse:min-h-11"
             >
               <Mail className="size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
-              <span className="min-w-0 truncate">{b.customer.email}</span>
+              <span className="min-w-0 break-all">{b.customer.email}</span>
             </a>
           )}
           {b.customer.phone && (
