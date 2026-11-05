@@ -24,12 +24,22 @@ export function NotificationsPage() {
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const unread = list.data?.unreadCount ?? 0;
+  const me = useMe();
+  // Reached from the dashboard's bell as well: the team go back there, customers to their bookings.
+  const member = (me.data?.memberships.length ?? 0) > 0;
 
   return (
     <>
       <PageHeader
         title="Notifications"
-        description="You choose which of these are also emailed."
+        back={
+          member ? { href: "/dashboard", label: "Today" } : { href: "/my/bookings", label: "My bookings" }
+        }
+        description={
+          <a href="#email" className="underline-offset-2 hover:text-foreground hover:underline">
+            Choose what&rsquo;s emailed
+          </a>
+        }
         actions={
           unread > 0 ? (
             <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
@@ -82,7 +92,7 @@ function EmailSettings() {
     );
 
   return (
-    <Card variant="panel">
+    <Card id="email" variant="panel" className="scroll-mt-20">
       <CardHeader>
         <CardTitle>Email me about</CardTitle>
         <CardDescription>

@@ -81,7 +81,7 @@ export function CustomersList() {
       {customers.isError ? (
         <ErrorState headingLevel={2} error={customers.error} onRetry={() => customers.refetch()} />
       ) : !customers.isPending && items.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           {q ? (
             <EmptyState
               headingLevel={2}

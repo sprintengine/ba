@@ -69,7 +69,7 @@ export function GroupsSettings() {
       ) : groups.isPending ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             icon={<UsersRound />}
             title="No groups"

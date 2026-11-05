@@ -94,6 +94,7 @@ export function UserMenu({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             {theme === "dark" ? <Moon /> : theme === "light" ? <Sun /> : <Monitor />} Theme
+            <span className="ml-auto text-xs text-muted-foreground capitalize">{theme}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>

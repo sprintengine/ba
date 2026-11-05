@@ -39,7 +39,7 @@ export function BookingsResults({
 
   if (!paging.isPending && items.length === 0) {
     return (
-      <div className="border-y border-border">
+      <div>
         {filtered ? (
           <EmptyState
             headingLevel={2}

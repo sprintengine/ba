@@ -52,10 +52,13 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   onSelect={() => run(() => router.push(dashboardHref(business.slug, `customers/${c.id}`)))}
                 >
                   <Avatar name={c.name} size="xs" />
-                  <span className="truncate">{c.name}</span>
-                  <CommandShortcut className="truncate normal-case">
-                    {c.email ?? c.phone ?? ""}
-                  </CommandShortcut>
+                  {/* Phones stack them: side by side, both would be cut short. */}
+                  <span className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <span className="truncate">{c.name}</span>
+                    <CommandShortcut className="truncate normal-case max-sm:ml-0 max-sm:text-left">
+                      {c.email ?? c.phone ?? ""}
+                    </CommandShortcut>
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -73,14 +76,14 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   <span className="w-18 shrink-0 truncate font-mono text-2xs whitespace-nowrap text-subtle-foreground max-sm:hidden">
                     {b.reference}
                   </span>
-                  <span className="truncate">
+                  <span className="min-w-0 flex-1 truncate">
                     {b.customer.name} · {b.service.name}
                   </span>
-                  <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-subtle-foreground">
+                  <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-subtle-foreground max-sm:flex-col max-sm:items-end max-sm:gap-0.5">
                     <span className="tnum">
                       {fmt.date(b.start, "short")}, {fmt.time(b.start)}
                     </span>
-                    <BookingStatusBadge status={b.status} className="hidden sm:inline-flex" />
+                    <BookingStatusBadge status={b.status} />
                   </span>
                 </CommandItem>
               ))}

@@ -29,7 +29,7 @@ export function OffersPage({ previewDelay }: { previewDelay?: number } = {}) {
         title="Offers are for admins"
         description="Ask an owner or admin of this business to set up deals."
         backHref={dashboardHref(business.slug)}
-        backLabel="Back to overview"
+        backLabel="Back to Today"
       />
     );
   }
@@ -89,7 +89,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="flex flex-col gap-6 border-y border-border">
+        <div className="flex flex-col gap-6">
           <EmptyState
             headingLevel={2}
             icon={<BadgePercent />}

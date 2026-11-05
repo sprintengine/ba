@@ -57,7 +57,7 @@ export function NotificationBell({
     <span
       aria-hidden
       className={cn(
-        "flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[0.625rem] leading-none font-semibold text-background",
+        "flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-raised px-1 text-[0.625rem] leading-none font-semibold text-foreground ring-1 ring-border-strong",
         variant === "icon" && "absolute -top-0.5 -right-0.5",
         variant === "row" && "ml-auto",
         variant === "rail" && "absolute top-0.5 left-[calc(50%+0.25rem)]",
@@ -131,13 +131,20 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
       ) : (
         <NotificationList items={items.slice(0, 10)} onNavigate={onNavigate} compact />
       )}
-      <div className="border-t border-border-subtle px-3 py-2">
+      <div className="flex items-center justify-between gap-3 border-t border-border-subtle px-3 py-2 text-sm">
         <Link
           href={NOTIFICATIONS_PATH}
           onClick={onNavigate}
-          className="text-sm font-medium text-brand underline-offset-2 hover:underline"
+          className="font-medium text-brand underline-offset-2 hover:underline"
         >
-          See all and choose what&rsquo;s emailed
+          All notifications
+        </Link>
+        <Link
+          href={`${NOTIFICATIONS_PATH}#email`}
+          onClick={onNavigate}
+          className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          Email settings
         </Link>
       </div>
     </div>
@@ -155,6 +162,8 @@ export function NotificationList({
   compact?: boolean;
 }) {
   const markRead = useMarkNotificationRead();
+  // The business only tells them apart when there is more than one.
+  const several = new Set(items.map((n) => n.businessName).filter(Boolean)).size > 1;
   return (
     <ul className={cn("flex flex-col divide-y divide-border-subtle", compact && "max-h-96 overflow-y-auto")}>
       {items.map((n) => (
@@ -178,7 +187,7 @@ export function NotificationList({
               </span>
               {n.body && <span className="line-clamp-2 text-xs text-muted-foreground">{n.body}</span>}
               <span className="text-xs text-subtle-foreground">
-                {[n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
+                {[several && n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
               </span>
             </span>
           </Link>

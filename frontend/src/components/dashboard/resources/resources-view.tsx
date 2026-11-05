@@ -86,7 +86,7 @@ export function ResourcesView() {
           <Skeleton className="h-[28rem] rounded-xl" />
         </div>
       ) : list.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             headingLevel={2}
             icon={<Boxes />}

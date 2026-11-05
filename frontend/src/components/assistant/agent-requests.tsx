@@ -127,7 +127,7 @@ export function AgentRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             headingLevel={2}
             icon={<Bot />}

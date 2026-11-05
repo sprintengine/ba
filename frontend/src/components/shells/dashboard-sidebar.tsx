@@ -146,12 +146,7 @@ export function SidebarContent({
         {items.map((item) => {
           const href = business ? dashboardHref(business.slug, item.segment) : "#";
           const active = business ? isNavItemActive(item, business.slug, pathname) : false;
-          const label =
-            item.key === "overview"
-              ? "Today"
-              : item.vocabulary
-                ? v(item.vocabulary, { title: true })
-                : item.label;
+          const label = item.vocabulary ? v(item.vocabulary, { title: true }) : item.label;
           return (
             <Link
               key={item.key}

@@ -22,7 +22,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         title="Settings are for admins"
         description="Ask an owner or admin of this business to change settings."
         backHref={dashboardHref(business.slug)}
-        backLabel="Back to overview"
+        backLabel="Back to Today"
         inShell
       />
     );

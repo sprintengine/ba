@@ -109,7 +109,7 @@ export function QuestionsSettings() {
       ) : questions.isPending ? (
         <Skeleton className="h-48 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             icon={<MessageSquareText />}
             title="No questions"
