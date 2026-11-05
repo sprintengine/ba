@@ -19,8 +19,11 @@ export type ActionButtonProps = Omit<ButtonProps, "children" | "asChild"> & {
   icon: React.ReactNode;
   /** The words; shown from `collapse` up, and always the button's accessible name. */
   label: string;
-  /** Below this breakpoint the button is the glyph alone, square, with the label as a tooltip. Default `sm`. */
-  collapse?: keyof typeof QUERY;
+  /**
+   * Below this breakpoint the button is the glyph alone, square, with the label as a tooltip. Default `sm`.
+   * `false` keeps the words at every size: for a page's main action, where a glyph would have to explain itself.
+   */
+  collapse?: keyof typeof QUERY | false;
   /** Renders a link instead of a button (a Next link; `newTab` for a plain one that opens a new tab, e.g. "View site"). */
   href?: string;
   newTab?: boolean;
@@ -43,17 +46,17 @@ export function ActionButton({
   className,
   ...props
 }: ActionButtonProps) {
-  const collapsed = useMediaQuery(QUERY[collapse]);
+  const collapsed = useMediaQuery(collapse ? QUERY[collapse] : "not all");
   const content = (
     <>
       {icon}
-      <span className={LABEL[collapse]}>{label}</span>
+      <span className={collapse ? LABEL[collapse] : undefined}>{label}</span>
     </>
   );
   return (
     <Tooltip content={label} shortcut={shortcut} disabled={!collapsed && !shortcut}>
       {href ? (
-        <Button asChild className={cn(SQUARE[collapse], className)} {...props}>
+        <Button asChild className={cn(collapse && SQUARE[collapse], className)} {...props}>
           {newTab ? (
             <a href={href} target="_blank" rel="noopener">
               {content}
@@ -63,7 +66,7 @@ export function ActionButton({
           )}
         </Button>
       ) : (
-        <Button className={cn(SQUARE[collapse], className)} {...props}>
+        <Button className={cn(collapse && SQUARE[collapse], className)} {...props}>
           {content}
         </Button>
       )}

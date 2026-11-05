@@ -79,7 +79,7 @@ export function MarketingNav() {
                 <Link href="/sign-in">Sign in</Link>
               </Button>
               <Button asChild variant="primary" className="h-10 rounded-xl px-4 font-semibold">
-                <Link href="/sign-up">Start free</Link>
+                <Link href="/sign-up">Start for free</Link>
               </Button>
             </>
           )}

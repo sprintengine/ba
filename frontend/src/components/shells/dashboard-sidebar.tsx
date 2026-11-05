@@ -119,10 +119,6 @@ export function SidebarContent({
                 active
                   ? "bg-surface text-foreground shadow-xs ring-1 ring-border dark:bg-accent dark:ring-transparent"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                // In the rail the tile alone can be subtle: a bar on the edge marks the current page too.
-                collapsed &&
-                  active &&
-                  "before:absolute before:top-1/2 before:-left-2.5 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-foreground",
               )}
             >
               <item.icon

@@ -56,6 +56,7 @@ export function GroupsSettings() {
             onClick={() => editor.open(null)}
             icon={<Plus />}
             label="New group"
+            collapse={false}
           />
         }
       />

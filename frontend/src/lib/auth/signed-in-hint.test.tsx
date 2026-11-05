@@ -42,7 +42,7 @@ describe("MarketingNav", () => {
   it("renders without an auth provider and swaps Sign in for Dashboard when signed in", () => {
     render(<MarketingNav />);
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
-    expect(screen.getByRole("link", { name: "Start free" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Start for free" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /dashboard/i })).not.toBeInTheDocument();
 
     act(() => devSignIn({ sub: "dev_owner", email: "owner@bookanything.test", name: "Demo Owner" }));
