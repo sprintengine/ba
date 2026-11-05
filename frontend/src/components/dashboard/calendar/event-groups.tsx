@@ -52,7 +52,6 @@ export function SessionButton({
         <button
           type="button"
           data-event=""
-          aria-label={`${first.service.name}, ${time}, ${count}${waiting ? ", some waiting for approval" : ""}`}
           className={cn(
             CARD,
             CARD_RAISED,
@@ -61,7 +60,11 @@ export function SessionButton({
           )}
           style={{ ...pos, top, height: h, ...(waiting ? {} : serviceTint(first.service.color)) }}
         >
-          <span className={CARD_TEXT}>
+          {/* Read as one sentence; the lines on screen would run together (WCAG 2.5.3). */}
+          <span className="sr-only">
+            {`${first.service.name}, ${time}, ${count}${waiting ? ", some waiting for approval" : ""}`}
+          </span>
+          <span aria-hidden className={CARD_TEXT}>
             <span
               className={cn(
                 STUCK_NAME,
@@ -152,7 +155,6 @@ export function OverflowMarker({
         <button
           type="button"
           data-event=""
-          aria-label={`${title}, ${from} to ${until}`}
           className={cn(
             CARD,
             CARD_RAISED,
@@ -164,11 +166,13 @@ export function OverflowMarker({
             height: Math.max((e - s) * pxPerMin - 2, 22),
           }}
         >
+          <span className="sr-only">{`${title}, ${from} to ${until}`}</span>
           {/* The whole column: what's there and when. A lane beside other blocks: the count. */}
-          <span className={cn("tnum block truncate", !whole && "@max-[6rem]:hidden")}>
+          <span aria-hidden className={cn("tnum block truncate", !whole && "@max-[6rem]:hidden")}>
             {n} {v("booking", { count: n })}
           </span>
           <span
+            aria-hidden
             className={cn(
               "tnum block truncate text-2xs font-normal text-muted-foreground",
               !whole && "@max-[6rem]:hidden",
@@ -176,7 +180,11 @@ export function OverflowMarker({
           >
             {from}–{until}
           </span>
-          {!whole && <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>}
+          {!whole && (
+            <span aria-hidden className="tnum hidden text-center @max-[6rem]:block">
+              +{n}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent
