@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CalendarPlus,
   CalendarRange,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CircleSlash,
@@ -176,7 +177,7 @@ export function CalendarToolbar({
         )}
         {phone && viewControl}
         {/* Phones have the list in the tab bar. */}
-        <Button asChild variant="ghost" size="sm" className="max-sm:hidden">
+        <Button asChild variant="secondary" size="sm" className="max-sm:hidden">
           <Link href={dashboardHref(business.slug, "bookings")}>
             <List aria-hidden /> All {v("bookings")}
           </Link>
@@ -236,8 +237,11 @@ function DatePopover({
           type="button"
           className="-ml-1.5 min-w-0 rounded-md px-1.5 py-0.5 text-left text-lg font-semibold tracking-tight whitespace-nowrap transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-[1.375rem] sm:leading-8 pointer-coarse:min-h-11"
         >
-          <span className="hidden sm:inline">{title}</span>
-          <span className="sm:hidden">{shortTitle}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="hidden sm:inline">{title}</span>
+            <span className="sm:hidden">{shortTitle}</span>
+            <ChevronDown aria-hidden className="size-4 text-subtle-foreground" />
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-3">
