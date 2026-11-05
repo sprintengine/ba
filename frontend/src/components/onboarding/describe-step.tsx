@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Globe, Sparkles } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import { useAiBusinessDraft } from "@/lib/api/hooks";
 import { isApiError } from "@/lib/api/client";
 import type { BusinessSetup } from "@/lib/api/types";
@@ -198,7 +199,7 @@ export function DescribeStep({
             Nothing is published until you review it and click Create.
           </p>
           <Button type="submit" variant="primary" size="lg">
-            <Sparkles />
+            <AiIcon />
             Draft my setup
           </Button>
         </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bot, CircleCheck, Unplug } from "lucide-react";
+import { AiBadge } from "@/components/brand/logo";
 import {
   useAgentRequest,
   useAgentRequests,
@@ -45,9 +46,10 @@ export function AgentRequestCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Bot className="size-3.5" aria-hidden /> From {app} ·{" "}
-        {formatDateTime(action.createdAt, business.timezone, business.locale)}
+      <p>
+        <AiBadge>
+          From {app} · {formatDateTime(action.createdAt, business.timezone, business.locale)}
+        </AiBadge>
       </p>
       <ProposalView
         action={action}

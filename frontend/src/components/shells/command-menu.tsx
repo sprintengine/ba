@@ -2,17 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ExternalLink,
-  LogOut,
-  Moon,
-  Plus,
-  Sun,
-  Laptop,
-  CalendarPlus,
-  PanelsTopLeft,
-  Sparkles,
-} from "lucide-react";
+import { ExternalLink, LogOut, Moon, Plus, Sun, Laptop, CalendarPlus, PanelsTopLeft } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import type { Membership, MemberRole } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/context";
 import { permissionsFor } from "@/lib/business/permissions";
@@ -145,7 +136,7 @@ export function CommandMenu({
                 value="change site with ai"
                 onSelect={() => run(() => router.push(`${dashboardHref(slug, "site")}?tab=ai`))}
               >
-                <Sparkles /> Change site with AI
+                <AiIcon /> Change site with AI
               </CommandItem>
             </>
           )}
