@@ -6,6 +6,8 @@ import { AiSection } from "@/components/marketing/landing/home/ai";
 import { BookedSection } from "@/components/marketing/landing/home/booked";
 import { ClosingSection } from "@/components/marketing/landing/home/closing";
 import { Hero } from "@/components/marketing/landing/home/hero";
+import { MoneySection } from "@/components/marketing/landing/home/money";
+import { ProofSection } from "@/components/marketing/landing/home/proof";
 import { SetupSection } from "@/components/marketing/landing/home/setup";
 import { IndustriesSection } from "@/components/marketing/landing/industries";
 import { PricingTeaser } from "@/components/marketing/landing/pricing-teaser";
@@ -13,7 +15,7 @@ import { PricingTeaser } from "@/components/marketing/landing/pricing-teaser";
 export const metadata: Metadata = {
   title: { absolute: "bookanything: online booking for anything bookable" },
   description:
-    "Online booking your AI can run. Clients book and pay online and get reminders; you get one calendar for your staff, rooms and equipment. A flat price per location and 0% platform fee on payments.",
+    "Booking software your AI can run. Clients book and pay online, you get one calendar for your staff, rooms and equipment, and the money goes straight to your account with 0% platform fee.",
   alternates: { canonical: "/" },
 };
 
@@ -23,19 +25,20 @@ const FAQ: FaqItem[] = [
     answer: (
       <>
         <p>
-          We don&apos;t take a percentage of your bookings. Customers pay through Stripe into your own Stripe
-          account, and Stripe charges its standard card processing fee.
+          We don&apos;t take a percentage of your bookings. Customers pay through your payment provider into
+          your own account, and the provider charges its standard card processing fee.
         </p>
         <p>We make our money from the flat monthly plan for each location, and nothing else.</p>
       </>
     ),
   },
   {
-    question: "Do I need a Stripe account?",
+    question: "Which payment providers can I use?",
     answer: (
       <p>
-        Only to take payments online. You can connect one during setup and it takes a few minutes. Until then,
-        you can offer free bookings or have customers pay when they arrive.
+        Stripe, PayPal, Klarna, Mollie, Adyen and Revolut, with Apple Pay, Google Pay and every major card on
+        top. You only need one, and only to take payments online: connecting it takes a few minutes during
+        setup. Until then, you can offer free bookings or have customers pay when they arrive.
       </p>
     ),
   },
@@ -73,7 +76,16 @@ const FAQ: FaqItem[] = [
     answer: (
       <p>
         You do. You&apos;re the data controller for your customers; we process their data on your behalf to
-        run your bookings. Read the draft <Link href="/legal/privacy">privacy policy</Link> for the details.
+        run your bookings. Read the <Link href="/legal/privacy">privacy policy</Link> for the details.
+      </p>
+    ),
+  },
+  {
+    question: "Can my clients really book through their own AI assistant?",
+    answer: (
+      <p>
+        Yes. Their assistant sees the same times, prices and rules as your booking page, and returns a booking
+        card in the chat that they confirm and pay for. It lands on your calendar like any other booking.
       </p>
     ),
   },
@@ -94,10 +106,12 @@ export default function LandingPage() {
       <Hero />
       <BookedSection />
       <AiSection />
+      <MoneySection />
+      <ProofSection />
       <SetupSection />
       <IndustriesSection />
       <PricingTeaser />
-      <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-28 sm:pb-36">
+      <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-20 sm:pb-28">
         <PrismContainer className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
           <div>
             <p className="mb-3 text-[0.9375rem] font-semibold text-muted-foreground">FAQ</p>
