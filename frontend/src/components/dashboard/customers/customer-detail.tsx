@@ -104,7 +104,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </a>
             )}
             {group && <Badge tone="brand">{group.name}</Badge>}
-            {c.hasAccount && <Badge>Account</Badge>}
+            {c.hasAccount && <Badge tone="brand">Account</Badge>}
           </span>
         }
         actions={

@@ -56,7 +56,7 @@ describe("PoliciesSettings", () => {
     expect(screen.getByRole("heading", { name: "Appointment policies" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Minimum notice" })).toHaveTextContent("1 h");
     expect(screen.getByRole("textbox", { name: "How far ahead" })).toHaveValue("60");
-    expect(screen.getByRole("switch", { name: "Ask for a phone number" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "Require a phone number" })).not.toBeChecked();
     expect(screen.getByRole("combobox", { name: "Refund for late cancellations" })).toHaveTextContent(
       "No refund",
     );
@@ -92,7 +92,7 @@ describe("PoliciesSettings", () => {
     const refund = screen.getByRole("combobox", { name: "Refund for late cancellations" });
     await user.click(refund);
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "50%" }));
-    await user.click(screen.getByRole("switch", { name: "Ask for a phone number" }));
+    await user.click(screen.getByRole("switch", { name: "Require a phone number" }));
     const nextOnly = screen.getByRole("switch", { name: "Offer the next available time only" });
     expect(nextOnly).toHaveAccessibleDescription(/see the earliest time/);
     await user.click(nextOnly);

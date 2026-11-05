@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, UserPlus, Users } from "lucide-react";
 import type { Customer } from "@/lib/api/types";
 import { useCreateCustomer, useCustomerGroups, useInfiniteCustomers } from "@/lib/api/hooks";
-import { useCurrentBusiness } from "@/lib/business/business-context";
+import { useCurrentBusiness, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { PageContainer } from "@/components/ui/page-container";
@@ -37,6 +37,7 @@ const NO_CUSTOMERS: Customer[] = [];
 
 export function CustomersList() {
   const business = useCurrentBusiness();
+  const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
   const router = useRouter();
@@ -57,7 +58,11 @@ export function CustomersList() {
     <PageContainer size="wide">
       <PageHeader
         title={v("customers", { title: true })}
-        description={`Everyone who has booked with ${business.name}.`}
+        description={
+          perms.manageSettings
+            ? `Everyone who has booked with ${business.name}.`
+            : `Everyone who has booked with you.`
+        }
         actions={
           <ActionButton
             variant="primary"

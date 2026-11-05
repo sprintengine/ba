@@ -35,7 +35,8 @@ export function PendingApprovals({ today }: { today: string }) {
   if (pending.isPending || items.length === 0) return null;
 
   return (
-    <Card>
+    // On a phone, decisions come before the long list of today's bookings.
+    <Card className="max-lg:-order-1">
       <CardHeader>
         <CardTitle headingLevel={2} className="flex items-center gap-2">
           Waiting for approval <Badge tone="info">{more ? `${items.length}+` : items.length}</Badge>
@@ -62,10 +63,11 @@ export function PendingApprovals({ today }: { today: string }) {
             <button
               type="button"
               onClick={() => openBooking(b.id)}
-              className="flex min-w-40 flex-1 flex-col text-left"
+              className="flex min-w-56 flex-1 flex-col text-left"
             >
               <span className="truncate text-sm font-medium">{b.customer.name}</span>
-              <span className="tnum truncate text-xs text-muted-foreground">
+              {/* The time is what's being decided: it wraps rather than being cut short. */}
+              <span className="tnum text-xs text-muted-foreground">
                 {b.service.name} · {fmt.relDay(b.start)}, {fmt.time(b.start)}
               </span>
             </button>

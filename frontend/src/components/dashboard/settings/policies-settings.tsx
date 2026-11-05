@@ -52,7 +52,7 @@ export function PoliciesSettings() {
           <FormField<Policies, "minNoticeMinutes">
             name="minNoticeMinutes"
             label="Minimum notice"
-            help={`How close to the start someone can still book online. With 2 hours, a 10:00 slot disappears at 08:00.`}
+            help="How close to the start someone can still book online."
           >
             {(field) => (
               <Select value={String(field.value)} onValueChange={(x) => field.onChange(Number(x))}>
@@ -99,8 +99,8 @@ export function PoliciesSettings() {
           <FormField<Policies, "requireCustomerPhone">
             name="requireCustomerPhone"
             orientation="horizontal"
-            label="Ask for a phone number"
-            help="Makes phone required when people book online."
+            label="Require a phone number"
+            help="Off, phone is optional when people book online."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
           </FormField>

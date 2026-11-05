@@ -158,7 +158,7 @@ export function BillingSettings() {
             </div>
           )}
 
-          <div className="grid gap-4 xl:grid-cols-3">
+          <div id="plans" className="grid scroll-mt-20 gap-4 xl:grid-cols-3">
             {sorted.map((p) => {
               const current = p.plan === b!.plan;
               return (
@@ -251,9 +251,16 @@ function UsageMeter({ used, limit, label }: { used: number; limit: number; label
       </div>
       {pct >= 70 && (
         <p className="text-xs text-muted-foreground">
-          {pct >= 100
-            ? "Limit reached — new online bookings are paused until next month or an upgrade."
-            : "You're getting close to the free limit."}
+          {pct >= 100 ? (
+            <>
+              Limit reached. New online bookings are paused until next month or an upgrade.{" "}
+              <a href="#plans" className="font-medium text-foreground underline underline-offset-2">
+                See plans
+              </a>
+            </>
+          ) : (
+            "You're getting close to the free limit."
+          )}
         </p>
       )}
     </div>

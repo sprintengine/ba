@@ -13,11 +13,11 @@ export function OnboardingHeaderActions() {
   return (
     <>
       {hasBusiness && (
-        // A named glyph on phones, where the header has no room for the words.
         <ActionButton
           href="/dashboard"
           icon={<LayoutDashboard />}
-          label="Back to dashboard"
+          label="Dashboard"
+          collapse={false}
           variant="ghost"
           size="sm"
         />

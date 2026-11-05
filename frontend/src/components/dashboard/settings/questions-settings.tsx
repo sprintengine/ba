@@ -84,7 +84,7 @@ export function QuestionsSettings() {
       />
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          Asked after people pick a time. Name, email and phone are always collected.
+          Asked after people pick a time. Name and email are always asked for.
         </p>
         {(services.data?.length ?? 0) > 0 && (list.length > 0 || filter !== "all") && (
           <Select value={filter} onValueChange={setFilter}>

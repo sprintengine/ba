@@ -30,7 +30,7 @@ export function PerDayCard({ data, loading }: { data: ReportSummary | undefined;
         <CardTitle>
           {measure === "bookings" ? `${v("bookings", { title: true })} per day` : "Revenue per day"}
         </CardTitle>
-        <CardDescription>By the date of the {v("booking")}.</CardDescription>
+        <CardDescription>By the day the {v("booking")} takes place.</CardDescription>
         <CardAction wrap className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             size="sm"

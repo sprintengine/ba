@@ -136,7 +136,7 @@ export function AiAgentsSettings() {
       <div className="flex flex-col gap-6">
         <SettingsCard
           title="Who can use AI agents"
-          description={`Your team can manage ${business.name} from Claude, ChatGPT and other AI agents, with the same role they have here.`}
+          description="Agents act with the same role the person has here."
         >
           <RadioGroup
             aria-label="Who can use AI agents"
@@ -163,7 +163,7 @@ export function AiAgentsSettings() {
 
         <SettingsCard
           title="Approving changes"
-          description="An agent can only prepare a change. It goes ahead once the person using the agent approves it here on bookanything: the agent gives them a link. Tick the kinds of change an agent can make once the person says yes in their AI app instead."
+          description="By default, an agent prepares a change and the person approves it here, through a link. Tick what they can approve in their AI app instead."
         >
           <fieldset className="flex flex-col gap-3" disabled={!isOwner || update.isPending}>
             <legend className="sr-only">Changes that don&rsquo;t need approval here</legend>
