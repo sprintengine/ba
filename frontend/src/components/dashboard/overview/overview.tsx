@@ -34,16 +34,12 @@ export function OverviewView() {
   const overview = useOverview(business.id, today);
   const name = firstName(me.user.name);
   const todays = useMemo(() => todaysBookings(overview.data?.today ?? []), [overview.data]);
-  const todayCount =
-    todays.length === 0
-      ? `No ${v("bookings")} today`
-      : `${todays.length} ${v("booking", { count: todays.length })} today`;
 
   return (
     <PageContainer size="wide">
       <PageHeader
         title={`${greetingAt(now, business.timezone)}${name ? `, ${name}` : ""}`}
-        description={overview.data ? `${fmt.date(today, "long")} · ${todayCount}` : fmt.date(today, "long")}
+        description={fmt.date(today, "long")}
         actions={
           <>
             <Button asChild variant="secondary">

@@ -93,7 +93,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                     <Avatar name={b.customer.name} size="md" />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm font-medium">{b.customer.name}</span>
-                      <span className="truncate text-xs text-muted-foreground">
+                      <span className="line-clamp-2 text-xs text-muted-foreground">
                         {b.service.name}
                         {b.option ? ` · ${b.option.name}` : ""}
                         {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}
