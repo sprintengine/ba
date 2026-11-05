@@ -159,9 +159,10 @@ function ServiceRow({
         onClick={onEdit}
         className="flex min-w-0 flex-1 flex-col gap-1 text-left disabled:cursor-default"
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-medium">{s.name}</span>
-          {!s.isPublic && <Badge className="h-5">Private</Badge>}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 truncate text-sm font-medium">{s.name}</span>
+          {/* From sm up the Public switch says this. */}
+          {!s.isPublic && <Badge className="h-5 sm:hidden">Private</Badge>}
           {s.requiresApproval && (
             <Badge tone="info" className="h-5">
               Approval

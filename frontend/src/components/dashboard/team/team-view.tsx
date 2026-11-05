@@ -35,7 +35,7 @@ export function TeamView() {
     <PageContainer size="default">
       <PageHeader
         title="Team"
-        description="Invite people and choose what they can do."
+        description={perms.manageTeam ? "Invite people and choose what they can do." : "Who is on the team."}
         actions={
           perms.manageTeam && (
             <ActionButton

@@ -31,7 +31,6 @@ import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
 import { FormDialog } from "@/components/ui/form-dialog";
 import { NumberInput } from "@/components/ui/number-input";
-import { KIND_ICON } from "../common";
 
 /** Create or edit a resource (admins). */
 export function ResourceDialog({
@@ -108,12 +107,9 @@ export function ResourceDialog({
       <FormField<V, "kind"> name="kind" label="Type">
         {(field) => (
           <RadioCards value={field.value} onValueChange={field.onChange} columns={3}>
-            {RESOURCE_KINDS.map((k) => {
-              const Icon = KIND_ICON[k];
-              return (
-                <RadioCard key={k} value={k} icon={<Icon />} title={RESOURCE_KIND_TITLE[k]} className="p-3" />
-              );
-            })}
+            {RESOURCE_KINDS.map((k) => (
+              <RadioCard key={k} value={k} title={RESOURCE_KIND_TITLE[k]} className="p-3" />
+            ))}
           </RadioCards>
         )}
       </FormField>

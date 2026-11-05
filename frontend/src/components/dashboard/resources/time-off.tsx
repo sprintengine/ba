@@ -63,7 +63,7 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Holidays, appointments, one-off late nights. These override the weekly hours on that date.
+          One-off days off and extra hours. These override the weekly hours on that date.
         </p>
         {editable && (
           <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
