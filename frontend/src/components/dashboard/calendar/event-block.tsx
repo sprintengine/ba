@@ -283,6 +283,7 @@ export function OverflowMarker({
   endHour,
   formatTime,
   onSelect,
+  whole,
 }: {
   overflow: LaneOverflow<CalendarEvent>;
   top: (m: number) => number;
@@ -290,6 +291,8 @@ export function OverflowMarker({
   endHour: number;
   formatTime: (iso: string) => string;
   onSelect: (id: string) => void;
+  /** Stands for every booking in the overlap, so "more" would be wrong. */
+  whole?: boolean;
 }) {
   const { v } = useVocabulary();
   const s = Math.max(overflow.startMin, startHour * 60);
@@ -301,13 +304,14 @@ export function OverflowMarker({
   const n = bookings.length;
   const from = formatTime(bookings[0]?.start ?? overflow.events[0].item.start);
   const until = formatTime(bookings.at(-1)?.end ?? overflow.events[0].item.end);
+  const title = `${n}${whole ? "" : " more"} ${v("booking", { count: n })}`;
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           data-event=""
-          aria-label={`${n} more ${v("booking", { count: n })}, ${from} to ${until}`}
+          aria-label={`${title}, ${from} to ${until}`}
           className="@container absolute z-[5] overflow-hidden rounded-md border border-border bg-muted px-1.5 py-1 text-left text-xs leading-4 font-semibold text-foreground shadow-xs transition-colors outline-none hover:z-30 hover:border-border-strong focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:z-30"
           style={{
             ...lanePosition(overflow.lane, overflow.lanes),
@@ -316,23 +320,22 @@ export function OverflowMarker({
           }}
         >
           {/* The whole column: what's there and when. A lane beside other blocks: the count. */}
-          <span className="tnum block truncate @max-[6rem]:hidden">
+          <span className={cn("tnum block truncate", !whole && "@max-[6rem]:hidden")}>
             {n} {v("booking", { count: n })}
           </span>
-          <span className="tnum block truncate text-2xs font-normal text-muted-foreground @max-[6rem]:hidden">
+          <span
+            className={cn(
+              "tnum block truncate text-2xs font-normal text-muted-foreground",
+              !whole && "@max-[6rem]:hidden",
+            )}
+          >
             {from}–{until}
           </span>
-          <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>
+          {!whole && <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        aria-label={`${n} more ${v("booking", { count: n })}`}
-        className="max-h-96 w-72 overflow-y-auto p-1.5"
-      >
-        <p className="px-2 pt-1.5 pb-1.5 text-sm font-medium">
-          {n} more {v("booking", { count: n })}
-        </p>
+      <PopoverContent align="start" aria-label={title} className="max-h-96 w-72 overflow-y-auto p-1.5">
+        <p className="px-2 pt-1.5 pb-1.5 text-sm font-medium">{title}</p>
         <BookingList bookings={bookings} formatTime={formatTime} onSelect={onSelect} showTime />
       </PopoverContent>
     </Popover>

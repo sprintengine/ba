@@ -252,13 +252,20 @@ export type LaneOverflow<E> = {
  */
 export function capLanes<
   E extends { startMin: number; endMin: number; lane: number; lanes: number; cluster: number },
->(events: readonly E[], maxLanes: number): { shown: E[]; overflow: LaneOverflow<E>[] } {
+>(
+  events: readonly E[],
+  maxLanes: number,
+  { foldWhole = false }: { foldWhole?: boolean } = {},
+): { shown: E[]; overflow: LaneOverflow<E>[] } {
   const max = Math.max(1, Math.floor(maxLanes));
+  // Folding whole, a cluster that doesn't fit becomes one block across the column, with nothing left beside it.
+  const lane = foldWhole ? 0 : max - 1;
+  const lanes = foldWhole ? 1 : max;
   const shown: E[] = [];
   const hiddenByCluster = new Map<number, E[]>();
   for (const e of events) {
     if (e.lanes <= max) shown.push(e);
-    else if (e.lane < max - 1) shown.push({ ...e, lanes: max });
+    else if (!foldWhole && e.lane < max - 1) shown.push({ ...e, lanes: max });
     else {
       const list = hiddenByCluster.get(e.cluster);
       if (list) list.push(e);
@@ -274,7 +281,7 @@ export function capLanes<
         run.events.push(e);
         run.endMin = Math.max(run.endMin, e.endMin);
       } else {
-        run = { lane: max - 1, lanes: max, startMin: e.startMin, endMin: e.endMin, events: [e] };
+        run = { lane, lanes, startMin: e.startMin, endMin: e.endMin, events: [e] };
         overflow.push(run);
       }
     }

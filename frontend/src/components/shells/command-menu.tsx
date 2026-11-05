@@ -106,7 +106,8 @@ export function CommandMenu({
           ) : undefined
         }
       />
-      <CommandList className="max-h-[min(60vh,26rem)]">
+      {/* Live search results are mounted outside cmdk's own count, so it would call them "nothing". */}
+      <CommandList className="max-h-[min(60vh,26rem)] [&:has([cmdk-group]:not([hidden]))_[cmdk-empty]]:hidden">
         <CommandEmpty>Nothing found.</CommandEmpty>
         {extension?.({ search, close: () => onOpenChange(false) })}
         <CommandGroup heading="Actions">

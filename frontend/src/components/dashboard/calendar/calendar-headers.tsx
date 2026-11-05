@@ -10,13 +10,13 @@ import type { CalendarColumn } from "./use-calendar-data";
 
 /**
  * Minimum column width: resources get more room in day view than days in week view. A phone shows whole columns
- * (two people, or three days) beside the 3.5rem gutter, never a sliver of the next.
+ * (one person, or three days) beside the 3.5rem gutter, never a sliver of the next.
  */
 export const colMin = (view: CalendarMode) =>
   cn(
     "snap-start",
     view === "day"
-      ? "max-sm:min-w-[calc((100cqw-3.5rem)/2)] sm:min-w-36"
+      ? "max-sm:min-w-[calc(100cqw-3.5rem)] sm:min-w-36"
       : "max-sm:min-w-[calc((100cqw-3.5rem)/3)] sm:min-w-28",
   );
 

@@ -36,7 +36,7 @@ export function BookingsToolbar({
   setParams: (patch: UrlParamsPatch) => void;
   resources: Resource[];
   services: Service[];
-  /** Show "Reset" (something narrows the default view). */
+  /** Show "Clear filters" (something narrows the default view). */
   filtered: boolean;
   onReset: () => void;
 }) {
@@ -51,7 +51,7 @@ export function BookingsToolbar({
           className="sm:w-72"
           aria-label={`Search ${v("bookings")}`}
         />
-        <div className="-mx-4 flex scrollbar-none items-center gap-2 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-2">
           <RangeFilter filters={filters} setParams={setParams} />
           <StatusFilter
             value={filters.statuses}
@@ -101,7 +101,7 @@ export function BookingsToolbar({
           )}
           {filtered && (
             <Button size="sm" variant="ghost" onClick={onReset}>
-              Reset
+              Clear filters
             </Button>
           )}
         </div>

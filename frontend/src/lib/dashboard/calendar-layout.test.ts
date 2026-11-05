@@ -246,6 +246,16 @@ describe("groupSessions", () => {
 });
 
 describe("capLanes", () => {
+  it("folds a whole overlap into one block across the column, leaving nothing beside it", () => {
+    const at = (lane: number) => ({ startMin: 600, endMin: 660, lane, lanes: 3, cluster: 0 });
+    const lone = { startMin: 720, endMin: 780, lane: 0, lanes: 1, cluster: 1 };
+    const { shown, overflow } = capLanes([at(0), at(1), at(2), lone], 2, { foldWhole: true });
+    expect(shown).toEqual([lone]);
+    expect(overflow).toHaveLength(1);
+    expect(overflow[0]).toMatchObject({ lane: 0, lanes: 1, startMin: 600, endMin: 660 });
+    expect(overflow[0]?.events).toHaveLength(3);
+  });
+
   const ev = (id: string, startMin: number, endMin: number) => ({
     item: { id },
     startMin,
