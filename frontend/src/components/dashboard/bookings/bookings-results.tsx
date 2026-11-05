@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { CalendarPlus, CalendarSearch } from "lucide-react";
+import { CalendarPlus, Plus, CalendarSearch } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,7 @@ export function BookingsResults({
 
   if (!paging.isPending && items.length === 0) {
     return (
-      <div className="border-y border-border">
+      <div>
         {filtered ? (
           <EmptyState
             headingLevel={2}
@@ -55,7 +55,7 @@ export function BookingsResults({
             description={`${v("bookings", { title: true })} made on your booking page or added here show up in this list.`}
             action={
               <Button variant="primary" onClick={() => openNewBooking()}>
-                <CalendarPlus /> New {v("booking")}
+                <Plus /> New {v("booking")}
               </Button>
             }
           />

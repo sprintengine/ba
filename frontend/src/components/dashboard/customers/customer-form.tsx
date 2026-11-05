@@ -53,14 +53,12 @@ export function CustomerForm({
       <FormField<CustomerFormValues, "name"> name="name" label="Name" required>
         {(field) => <Input {...field} autoComplete="off" />}
       </FormField>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <FormField<CustomerFormValues, "email"> name="email" label="Email" optional className="sm:col-span-2">
-          {(field) => <Input {...field} type="email" autoComplete="off" />}
-        </FormField>
-        <FormField<CustomerFormValues, "phone"> name="phone" label="Phone" optional>
-          {(field) => <Input {...field} type="tel" autoComplete="off" />}
-        </FormField>
-      </div>
+      <FormField<CustomerFormValues, "email"> name="email" label="Email" optional>
+        {(field) => <Input {...field} type="email" autoComplete="off" />}
+      </FormField>
+      <FormField<CustomerFormValues, "phone"> name="phone" label="Phone" optional>
+        {(field) => <Input {...field} type="tel" autoComplete="off" />}
+      </FormField>
       {activeGroups.length > 0 && (
         <FormField<CustomerFormValues, "groupId">
           name="groupId"

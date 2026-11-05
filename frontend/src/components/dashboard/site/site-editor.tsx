@@ -48,7 +48,7 @@ export function SiteEditorPage() {
         title="The site is edited by owners and admins"
         description="Ask an owner or admin of this business to change the site."
         backHref={dashboardHref(business.slug)}
-        backLabel="Back to overview"
+        backLabel="Back to Today"
       />
     );
   }

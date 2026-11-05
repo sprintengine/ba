@@ -5,11 +5,10 @@ import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SwatchGroup } from "@/components/ui/swatch-group";
 import { Textarea } from "@/components/ui/textarea";
-import { Section } from "./section";
 
 export function BasicsSection({ categories }: { categories: string[] }) {
   return (
-    <Section title="Basics">
+    <div className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
         <FormField<V, "name"> name="name" label="Name" required>
           {(field) => <Input {...field} placeholder="e.g. Initial consultation" autoComplete="off" />}
@@ -22,7 +21,12 @@ export function BasicsSection({ categories }: { categories: string[] }) {
         >
           {(field) => (
             <>
-              <Input {...field} list="service-categories" autoComplete="off" />
+              <Input
+                {...field}
+                list="service-categories"
+                autoComplete="off"
+                className="[&::-webkit-calendar-picker-indicator]:opacity-0"
+              />
               <datalist id="service-categories">
                 {categories.map((c) => (
                   <option key={c} value={c} />
@@ -51,6 +55,6 @@ export function BasicsSection({ categories }: { categories: string[] }) {
           />
         )}
       </FormField>
-    </Section>
+    </div>
   );
 }

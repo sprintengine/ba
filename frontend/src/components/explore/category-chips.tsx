@@ -32,7 +32,8 @@ export function CategoryChips({
     <div
       role="group"
       aria-label="Categories"
-      className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto px-5 pb-1 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
+      // One line at every size, so the results start high; the chosen one is scrolled into view.
+      className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] px-5 pr-10 pb-1 [&::-webkit-scrollbar]:hidden"
     >
       <Chip active={value === null} onClick={() => onValueChange(null)} icon={<LayoutGrid />}>
         All
@@ -67,13 +68,14 @@ function Chip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
+      ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
       className={cn(
-        "inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-150 pointer-coarse:h-11",
+        "inline-flex h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-150 pointer-coarse:h-11",
         "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "[&_svg]:size-4 [&_svg]:shrink-0",
         active
-          ? "border-transparent bg-primary text-primary-foreground shadow-button"
-          : "border-border bg-surface text-muted-foreground shadow-xs hover:border-border-strong hover:text-foreground",
+          ? "border-transparent bg-primary text-primary-foreground"
+          : "border-border bg-surface text-muted-foreground hover:border-border-strong hover:text-foreground",
       )}
     >
       <span aria-hidden className="inline-flex">

@@ -44,7 +44,7 @@ export const PLAYFUL: SiteThemeDef = {
     border: "#f0ddc4",
     borderSubtle: "#f6e8d6",
     borderStrong: "#e2c9a8",
-    input: "#e2c9a8",
+    input: "#9f8b82",
   },
   dark: {
     background: "#15111e",
@@ -59,6 +59,6 @@ export const PLAYFUL: SiteThemeDef = {
     border: "#372d4a",
     borderSubtle: "#2c2440",
     borderStrong: "#4a3e61",
-    input: "#4a3e61",
+    input: "#726785",
   },
 };

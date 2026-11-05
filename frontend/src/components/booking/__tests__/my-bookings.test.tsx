@@ -139,7 +139,7 @@ describe("My bookings states", () => {
     });
     const { container } = renderPage({ past: [older, newer] });
     await screen.findAllByRole("article");
-    const headings = screen.getAllByRole("heading", { level: 2 });
+    const headings = screen.getAllByRole("heading", { level: 3 });
     expect(headings.map((h) => h.textContent)).toEqual(["Sports massage", "Initial assessment"]);
     expect(screen.getByRole("tab", { name: /Past/ })).toHaveAttribute("aria-selected", "true");
     expect(within(card("Sports massage")).getByRole("link", { name: "Book again" })).toHaveAttribute(
@@ -174,8 +174,9 @@ describe("a booking card", () => {
     const b = customerBooking({ option: { id: "o1", name: "60 minutes" } });
     const { container } = renderPage({ upcoming: [b] });
     const c = within(await screen.findByRole("article"));
-    expect(c.getByRole("heading", { level: 2 })).toHaveTextContent("Initial assessment · 60 minutes");
-    expect(c.getByText(/10:00.*11:00/)).toHaveTextContent("(1 h)");
+    expect(c.getByRole("heading", { level: 3 })).toHaveTextContent("Initial assessment · 60 minutes");
+    expect(c.getByText("10:00")).toBeInTheDocument();
+    expect(c.getByText("1 h")).toBeInTheDocument();
     expect(c.getByText("Alex Morgan")).toBeInTheDocument();
     expect(c.getByText("Unit 4, Lantern Quay, Dublin")).toBeInTheDocument();
     expect(c.getByText("Confirmed")).toBeInTheDocument();

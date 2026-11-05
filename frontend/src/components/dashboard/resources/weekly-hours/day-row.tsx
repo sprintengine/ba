@@ -147,7 +147,7 @@ function Timeline({
       ref={track}
       data-touch-exempt
       className={cn(
-        "relative h-8 overflow-hidden rounded-md bg-surface-sunken max-sm:col-span-full max-sm:row-start-2",
+        "relative h-8 overflow-hidden rounded-md bg-muted ring-1 ring-border ring-inset max-sm:col-span-full max-sm:row-start-2",
         editable && "cursor-copy",
       )}
       onClick={(e) => {
@@ -180,7 +180,7 @@ function Timeline({
           "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border px-2 text-2xs font-medium",
           invalid
             ? "border-danger-border bg-danger-soft text-danger-soft-foreground"
-            : "border-brand-border bg-brand-soft text-brand-soft-foreground dark:bg-brand/45 dark:text-foreground",
+            : "border-brand/60 bg-brand/30 text-foreground dark:bg-brand/45",
         );
         return (
           <div key={i} data-range="" className="absolute inset-y-0.5 rounded-sm bg-surface" style={style}>

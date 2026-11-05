@@ -78,7 +78,7 @@ export function BookingActionsBar({ booking: b, onDone }: { booking: Booking; on
             disabled={outcomeBusy}
             onClick={() => mark("completed")}
           >
-            <Check /> Completed
+            <Check /> Mark as completed
           </Button>
           <Button
             variant="secondary"
@@ -86,7 +86,7 @@ export function BookingActionsBar({ booking: b, onDone }: { booking: Booking; on
             disabled={outcomeBusy}
             onClick={() => mark("no_show")}
           >
-            <UserX /> No-show
+            <UserX /> Mark as no-show
           </Button>
         </>
       )}
@@ -128,7 +128,7 @@ export function BookingActionsBar({ booking: b, onDone }: { booking: Booking; on
   );
 }
 
-/** "Mark as no-show" / "Mark as completed" for a booking whose outcome is already recorded. */
+/** "Change to no-show" / "Change to completed" for a booking whose outcome is already recorded. */
 function CorrectOutcomeButton({
   to,
   loading,
@@ -144,11 +144,11 @@ function CorrectOutcomeButton({
     <Button variant="secondary" loading={loading} disabled={disabled} onClick={() => onClick(to)}>
       {to === "no_show" ? (
         <>
-          <UserX /> Mark as no-show
+          <UserX /> Change to no-show
         </>
       ) : (
         <>
-          <Check /> Mark as completed
+          <Check /> Change to completed
         </>
       )}
     </Button>

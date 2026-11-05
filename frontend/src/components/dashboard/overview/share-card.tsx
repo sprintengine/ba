@@ -25,7 +25,7 @@ export function ShareCard() {
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2} className="flex items-center gap-2">
-          Your booking page
+          Booking page
           {draft ? (
             <Badge tone="warning">Draft</Badge>
           ) : (
@@ -37,7 +37,9 @@ export function ShareCard() {
         <CardDescription>
           {draft
             ? "Only your team can see it until you publish."
-            : "Add the link to your website, Instagram or Google profile."}
+            : perms.manageSettings
+              ? "Add the link to your website, Instagram or Google profile."
+              : "The link customers use to book."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

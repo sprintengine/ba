@@ -20,7 +20,12 @@ import {
 } from "@/lib/dashboard/calendar";
 import { chosenResources, parseResourceChoice } from "@/lib/dashboard/calendar-resources";
 import { addDaysToPlainDate, todayInTz, type PlainDate } from "@/lib/format/datetime";
-import { mergeIntervals, openIntervalsForDate } from "@/lib/availability/windows";
+import {
+  blockedIntervalsForDate,
+  mergeIntervals,
+  openIntervalsForDate,
+  type BlockedInterval,
+} from "@/lib/availability/windows";
 import {
   groupByDate,
   layoutDay,
@@ -129,9 +134,28 @@ function useOpenHours(businessId: string, resources: Resource[], from: PlainDate
       ),
     [availability, closuresQ.data],
   );
+  // A stretch of time off only belongs to a column that is one resource; closures belong to every column.
+  const blockedFor = useCallback(
+    (resourceIds: string[], d: PlainDate): BlockedInterval[] => {
+      const [only, ...others] = resourceIds;
+      const own = only && others.length === 0 ? availability.get(only)?.overrides : undefined;
+      return blockedIntervalsForDate(own ?? [], closuresQ.data ?? [], d);
+    },
+    [availability, closuresQ.data],
+  );
   // isLoading, not isPending: a disabled query (no resources yet) is pending for ever.
-  return { openFor, pending: closuresQ.isLoading || availQ.some((q) => q.isLoading) };
+  return { openFor, blockedFor, pending: closuresQ.isLoading || availQ.some((q) => q.isLoading) };
 }
+
+/** Why a column has no open hours: said in the header, because an empty column looks like a free one. */
+export type ColumnOff = "closed" | "time-off" | "not-working";
+
+const columnOff = (open: MinuteInterval[], blocked: BlockedInterval[]): ColumnOff | null => {
+  if (open.length > 0) return null;
+  const whole = blocked.filter((b) => b.end - b.start >= 1440);
+  if (whole.some((b) => b.kind === "closed")) return "closed";
+  return whole.length > 0 ? "time-off" : "not-working";
+};
 
 /** One grid column: a resource on the date (day view) or a day of the week (week view). */
 export type CalendarColumn = {
@@ -141,6 +165,9 @@ export type CalendarColumn = {
   resource: Resource | null;
   bookings: Booking[];
   open: MinuteInterval[];
+  /** Closures and time off on this column, drawn differently from plain not-working hours. */
+  blocked: BlockedInterval[];
+  off: ColumnOff | null;
 };
 
 /**
@@ -178,34 +205,46 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
     const booked = new Set(bookings.flatMap((b) => b.resources.map((x) => x.id)));
     return [...shown, ...inactive.filter((r) => booked.has(r.id))];
   }, [choice.type, shown, inactive, bookings]);
-  const { openFor, pending: hoursPending } = useOpenHours(
-    business.id,
-    resources,
-    overridesFrom(from, todayInTz(business.timezone)),
-  );
+  const {
+    openFor,
+    blockedFor,
+    pending: hoursPending,
+  } = useOpenHours(business.id, resources, overridesFrom(from, todayInTz(business.timezone)));
 
   const columns = useMemo((): CalendarColumn[] => {
     if (view === "day") {
-      return columnsResources.map((r) => ({
-        key: r.id,
-        date,
-        resource: r,
-        bookings: bookings.filter((b) => b.resources.some((x) => x.id === r.id)),
-        open: openFor([r.id], date),
-      }));
+      return columnsResources.map((r) => {
+        const open = openFor([r.id], date);
+        const blocked = blockedFor([r.id], date);
+        return {
+          key: r.id,
+          date,
+          resource: r,
+          bookings: bookings.filter((b) => b.resources.some((x) => x.id === r.id)),
+          open,
+          blocked,
+          off: columnOff(open, blocked),
+        };
+      });
     }
     // By default a week is the whole business; a choice narrows it to the bookings of what was chosen.
     const narrowed = choice.type === "ids" || choice.type === "spaces";
     const ids = narrowed ? shown.map((r) => r.id) : resources.map((r) => r.id);
     const scoped = narrowed ? bookings.filter((b) => b.resources.some((x) => ids.includes(x.id))) : bookings;
     const byDate = groupByDate(scoped, business.timezone);
-    return days.map((d) => ({
-      key: d,
-      date: d,
-      resource: null,
-      bookings: byDate.get(d) ?? [],
-      open: openFor(ids, d),
-    }));
+    return days.map((d) => {
+      const open = openFor(ids, d);
+      const blocked = blockedFor(ids, d);
+      return {
+        key: d,
+        date: d,
+        resource: null,
+        bookings: byDate.get(d) ?? [],
+        open,
+        blocked,
+        off: columnOff(open, blocked),
+      };
+    });
   }, [
     view,
     columnsResources,
@@ -213,6 +252,7 @@ export function useCalendarData({ date, view, resourceId, showCancelled }: Calen
     date,
     bookings,
     openFor,
+    blockedFor,
     choice.type,
     shown,
     business.timezone,

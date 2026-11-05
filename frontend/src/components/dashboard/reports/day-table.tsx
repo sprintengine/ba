@@ -20,7 +20,8 @@ export function DayTable({ data }: { data: ReportSummary }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.byDay.map((d) => (
+          {/* Newest first: what just happened is what people come here for. */}
+          {data.byDay.toReversed().map((d) => (
             <TableRow key={d.date}>
               <TableCell className="h-9">{fmt.date(d.date, "dayMonthYear")}</TableCell>
               <TableCell align="right" className="h-9">

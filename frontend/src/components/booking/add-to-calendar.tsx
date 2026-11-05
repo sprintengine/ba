@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, Download } from "lucide-react";
+import { CalendarPlus, ChevronDown, Download } from "lucide-react";
 import type { CustomerBooking } from "@/lib/api/types";
 import { bookingCalendarEvent, downloadIcs, googleCalendarUrl } from "@/lib/booking/calendar-links";
 import { Button } from "@/components/ui/button";
@@ -16,20 +16,22 @@ export function AddToCalendar({
   booking,
   manageUrl,
   variant = "secondary",
+  size,
   className,
 }: {
   booking: CustomerBooking;
   manageUrl?: string | null;
   variant?: "secondary" | "ghost" | "soft";
+  size?: "sm";
   className?: string;
 }) {
   const event = bookingCalendarEvent(booking, manageUrl);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} className={className}>
-          <CalendarPlus />
+        <Button variant={variant} size={size} className={className}>
           Add to calendar
+          <ChevronDown aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

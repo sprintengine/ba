@@ -40,7 +40,6 @@ function EventBlock({ b, column }: { b: CalendarBooking; column: number }) {
         backgroundColor: `color-mix(in oklab, ${b.color} 14%, var(--surface))`,
       }}
     >
-      <span className="w-[3px] shrink-0" style={{ backgroundColor: b.color }} />
       <span className="flex min-w-0 flex-1 flex-col px-1.5 py-1">
         <span className="truncate pr-2 text-xs leading-4 font-semibold text-foreground">{b.customer}</span>
         <span className="truncate text-2xs leading-4 text-muted-foreground">

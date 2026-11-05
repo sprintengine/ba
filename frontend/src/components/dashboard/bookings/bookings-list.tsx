@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CalendarPlus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useInfiniteBookings, useResources, useServices } from "@/lib/api/hooks";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -65,7 +65,8 @@ export function BookingsList() {
           <ActionButton
             variant="primary"
             onClick={() => openNewBooking()}
-            icon={<CalendarPlus />}
+            icon={<Plus />}
+            collapse={false}
             label={`New ${v("booking")}`}
           />
         }

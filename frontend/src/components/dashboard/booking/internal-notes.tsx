@@ -28,11 +28,15 @@ export function InternalNotes({ booking }: { booking: BookingDetail }) {
   return (
     <PanelSection
       title="Internal notes"
-      action={dirty ? <span className="text-2xs text-subtle-foreground">Unsaved · ⌘↵ to save</span> : null}
+      action={
+        <span className="text-2xs text-subtle-foreground">
+          {dirty ? "Unsaved · ⌘↵ to save" : "Only your team sees these"}
+        </span>
+      }
     >
       <Textarea
         aria-label="Internal notes"
-        placeholder="Only your team can see these notes."
+        placeholder="Add a note"
         value={value}
         rows={2}
         onChange={(e) => setDraft(e.target.value)}

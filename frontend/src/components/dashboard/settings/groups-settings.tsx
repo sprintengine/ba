@@ -61,15 +61,15 @@ export function GroupsSettings() {
         }
       />
       <p className="mb-6 max-w-prose text-sm text-muted-foreground">
-        Groups let some {v("customers")} see different hours or services. A restricted group only sees hours
-        that name it, and only you can add someone to it, on their profile.
+        Members of a restricted group can book only the hours assigned to it. You add people to a group on
+        their profile.
       </p>
       {groups.isError ? (
         <ErrorState error={groups.error} onRetry={() => groups.refetch()} />
       ) : groups.isPending ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             icon={<UsersRound />}
             title="No groups"

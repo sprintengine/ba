@@ -25,6 +25,14 @@ export function chartTickInterval(days: number): number {
   return 0;
 }
 
+/**
+ * The days to label, counted back from the last with `interval` days skipped between labels: the newest day always
+ * has its date, because that is where a report's activity usually is.
+ */
+export function chartTicks(dates: readonly string[], interval: number): string[] {
+  return dates.filter((_, i) => (dates.length - 1 - i) % (interval + 1) === 0);
+}
+
 /** `part` as a whole percentage of `total`; `null` when there is no total. */
 export function percentOf(part: number, total: number): number | null {
   return total ? Math.round((part / total) * 100) : null;

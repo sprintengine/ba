@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { AvailabilityOverride, AvailabilityRule } from "@/lib/api/types";
-import { mergeIntervals, openIntervalsForDate, rangeError, subtractInterval } from "./windows";
+import {
+  blockedIntervalsForDate,
+  mergeIntervals,
+  openIntervalsForDate,
+  rangeError,
+  subtractInterval,
+} from "./windows";
 
 const rule = (p: Partial<AvailabilityRule>): AvailabilityRule => ({
   id: Math.random().toString(36),
@@ -120,5 +126,39 @@ describe("rangeError", () => {
     expect(rangeError("09:00", "09:00")).toBe("Ends before it starts");
     expect(rangeError("18:00", "00:00")).toBe("Ends at midnight: use 23:59");
     expect(rangeError("18:00", "24:00")).toBe("Ends at midnight: use 23:59");
+  });
+});
+
+describe("blockedIntervalsForDate", () => {
+  const off = (over: Partial<AvailabilityOverride>): AvailabilityOverride => ({
+    id: "x",
+    resourceId: "r1",
+    date: "2026-11-05",
+    isAvailable: false,
+    startTime: null,
+    endTime: null,
+    reason: null,
+    ...over,
+  });
+
+  it("names time off and closures apart, whole days included", () => {
+    const blocked = blockedIntervalsForDate(
+      [off({ id: "a", startTime: "09:00", endTime: "10:00", reason: "Dentist" })],
+      [off({ id: "b", resourceId: null })],
+      "2026-11-05",
+    );
+    expect(blocked).toEqual([
+      { kind: "time-off", reason: "Dentist", start: 540, end: 600 },
+      { kind: "closed", reason: null, start: 0, end: 1440 },
+    ]);
+  });
+
+  it("ignores extra hours and other dates", () => {
+    const blocked = blockedIntervalsForDate(
+      [off({ isAvailable: true }), off({ id: "c", date: "2026-11-06" })],
+      [],
+      "2026-11-05",
+    );
+    expect(blocked).toEqual([]);
   });
 });

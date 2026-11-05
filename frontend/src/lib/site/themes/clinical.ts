@@ -44,7 +44,7 @@ export const CLINICAL: SiteThemeDef = {
     border: "#d9e1e8",
     borderSubtle: "#e6ebf0",
     borderStrong: "#c3cdd7",
-    input: "#c3cdd7",
+    input: "#858f99",
   },
   dark: {
     background: "#0b1218",
@@ -59,6 +59,6 @@ export const CLINICAL: SiteThemeDef = {
     border: "#223040",
     borderSubtle: "#1a2632",
     borderStrong: "#2e3e4f",
-    input: "#2e3e4f",
+    input: "#606e7c",
   },
 };

@@ -132,7 +132,9 @@ export function OptionPicker({
           >
             <span className="truncate text-sm font-medium">{o.name}</span>
             <span className="tnum truncate text-xs text-muted-foreground">
-              {formatDuration(o.durationMinutes)} · {formatMoney(o.priceCents, "EUR")}
+              {/* An option named for its length ("30 minutes") shouldn't say it twice. */}
+              {/\d/.test(o.name) ? "" : `${formatDuration(o.durationMinutes)} · `}
+              {formatMoney(o.priceCents, "EUR")}
             </span>
           </button>
         ))}

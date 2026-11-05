@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { INDUSTRY_LIST } from "../industry-content";
 import { CalBlock, CAL_BOOKINGS, CAL_COLUMNS } from "./prism/face-calendar";
-import { BoPebble, LIGHT_BAR, LIGHT_LINE, Tile } from "./prism/face-parts";
+import { BoPebble, LIGHT_LINE, Tile } from "./prism/face-parts";
 import s from "./prism/prism.module.css";
 
 /** A pane of glass that tilts with the tile it sits in. */
@@ -57,8 +57,7 @@ export function MiniCalendar() {
 export function DoubleBooking() {
   return (
     <Pane className="flex w-[18rem] max-w-full flex-col gap-2.5 p-4">
-      <div className="relative rounded-[13px] bg-surface/80 py-3 pr-3.5 pl-4 text-[0.8125rem] shadow-(--prism-ring)">
-        <span className={cn("absolute top-[9px] bottom-[9px] left-1.5 w-[3px] rounded-[3px]", LIGHT_BAR)} />
+      <div className="relative rounded-[13px] bg-surface/80 px-3.5 py-3 text-[0.8125rem] shadow-(--prism-ring)">
         <b className="block font-semibold">10:00 · Shockwave</b>
         <span className="text-muted-foreground">Liam Byrne · with Sam</span>
       </div>

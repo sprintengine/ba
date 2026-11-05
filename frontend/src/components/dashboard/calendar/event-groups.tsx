@@ -158,7 +158,7 @@ export function OverflowMarker({
           className={cn(
             CARD,
             CARD_RAISED,
-            "@container border-border-strong bg-surface-raised px-2 py-1 text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
+            "@container border-border-strong bg-surface-raised text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
           )}
           style={{
             ...lanePosition(overflow.lane, overflow.lanes),
@@ -168,23 +168,22 @@ export function OverflowMarker({
         >
           <span className="sr-only">{`${title}, ${from} to ${until}`}</span>
           {/* The whole column: what's there and when. A lane beside other blocks: the count. */}
-          <span aria-hidden className={cn("tnum block truncate", !whole && "@max-[6rem]:hidden")}>
-            {n} {v("booking", { count: n })}
-          </span>
-          <span
-            aria-hidden
-            className={cn(
-              "tnum block truncate text-2xs font-normal text-muted-foreground",
-              !whole && "@max-[6rem]:hidden",
-            )}
-          >
-            {from}–{until}
-          </span>
-          {!whole && (
-            <span aria-hidden className="tnum hidden text-center @max-[6rem]:block">
-              +{n}
+          {/* Pinned like a booking's name: a long block scrolled to its middle must not read as an empty card. */}
+          <span aria-hidden className={CARD_TEXT}>
+            <span className={cn(STUCK_NAME, "tnum block truncate", !whole && "@max-[6rem]:hidden")}>
+              {n} {v("booking", { count: n })}
             </span>
-          )}
+            <span
+              className={cn(
+                STUCK_DETAIL,
+                "tnum block truncate text-xs font-normal text-muted-foreground",
+                !whole && "@max-[6rem]:hidden",
+              )}
+            >
+              {from}–{until}
+            </span>
+            {!whole && <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent

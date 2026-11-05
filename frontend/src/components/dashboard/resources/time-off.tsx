@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useController, useForm, useFormContext, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarOff, Clock, Plus, Trash2 } from "lucide-react";
+import { CalendarOff, Clock, Plus } from "lucide-react";
 import type { AvailabilityOverride, AvailabilityOverrideInput } from "@/lib/api/types";
 import {
   useClosures,
@@ -22,7 +22,6 @@ import { FormDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field } from "@/components/ui/field";
 import { applyApiErrors, FormField, FormRootError } from "@/components/ui/form";
-import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,7 +73,7 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
       <OverrideList
         items={upcoming}
         editable={editable}
-        empty={<p className="text-sm text-muted-foreground">Nothing planned.</p>}
+        empty={<p className="text-sm text-muted-foreground">No time off or extra hours.</p>}
       />
       <OverrideDialog
         open={adding}
@@ -104,9 +103,9 @@ export function Closures({ editable }: { editable: boolean }) {
     <section className="flex flex-col gap-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">Closed days</h2>
+          <h2 className="text-base font-semibold tracking-tight">Business closures</h2>
           <p className="text-sm text-muted-foreground">
-            When the whole business is closed — nobody can be booked.
+            When the whole business is closed, nobody can be booked.
           </p>
         </div>
         {editable && (
@@ -191,15 +190,17 @@ function OverrideList({
               </span>
             </span>
             {editable && (
-              <IconButton
-                label={`Remove ${fmt.date(o.date, "medium")}`}
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={`Remove ${fmt.date(o.date, "medium")}`}
                 loading={remove.isPending && remove.variables === o.id}
                 onClick={async () => {
                   await withToast(() => remove.mutateAsync(o.id), "Removed");
                 }}
               >
-                <Trash2 />
-              </IconButton>
+                Remove
+              </Button>
             )}
           </li>
         );

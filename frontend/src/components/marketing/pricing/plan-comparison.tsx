@@ -38,7 +38,7 @@ export function PlanComparison() {
         tabIndex={0}
         role="region"
         aria-label="Plan comparison"
-        className="relative scrollbar-thin overflow-x-auto rounded-2xl border border-border bg-surface shadow-xs"
+        className="relative scrollbar-thin overflow-x-auto rounded-2xl border border-border bg-surface shadow-xs max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] max-sm:pr-8"
       >
         <table className="w-full min-w-[34rem] table-fixed border-collapse text-sm">
           <caption className="sr-only">Features included in each plan</caption>

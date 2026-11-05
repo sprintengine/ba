@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  BadgePercent,
-  CircleAlert,
-  Loader,
-  MapPin,
-  MapPinOff,
-  Rocket,
-  Search,
-} from "lucide-react";
+import { ArrowUpRight, CircleAlert, Loader, MapPin, MapPinOff, Search } from "lucide-react";
 import type { MarketplaceSettings as Settings } from "@/lib/api/types";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useMarketplaceSettings, useUpdateMarketplaceSettings } from "@/lib/api/hooks";
@@ -78,7 +69,7 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {!eligible && <UpgradeCard message={planLimit} />}
+      {!eligible && <UpgradeNote message={planLimit} />}
       <SettingsCard
         title="Marketplace listing"
         description="People searching bookanything.ie/explore by service, place and time can find you and book straight away."
@@ -98,7 +89,11 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
         </Field>
         <Field
           label="Category"
-          help="The main thing people book with you. It decides where you appear in search."
+          help={
+            eligible
+              ? "The main thing people book with you. It decides where you appear in search."
+              : "You can choose this once your plan includes the marketplace."
+          }
           className="sm:max-w-xs"
         >
           <Select value={category} onValueChange={onCategory} disabled={!eligible || update.isPending}>
@@ -134,24 +129,19 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
   );
 }
 
-function UpgradeCard({ message }: { message: string | null }) {
+function UpgradeNote({ message }: { message: string | null }) {
   const { business } = useBusinessContext();
   return (
-    <div
-      role={message ? "alert" : undefined}
-      className="flex flex-col gap-4 rounded-xl border border-brand-border bg-brand-soft p-5 text-brand-soft-foreground sm:flex-row sm:items-center"
-    >
-      <Rocket className="size-5 shrink-0" aria-hidden />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="text-sm font-semibold">Included in the Pro and Business plans</p>
-        <p className="text-sm opacity-90">{message ?? "We don't take a cut of the bookings it brings in."}</p>
-      </div>
-      <Button asChild variant="primary" className="shrink-0 self-start sm:self-center">
-        <Link href={dashboardHref(business.slug, "settings/billing")}>
-          <BadgePercent /> See plans
-        </Link>
-      </Button>
-    </div>
+    <p role={message ? "alert" : undefined} className="text-sm text-muted-foreground">
+      <span className="font-medium text-foreground">Included in the Pro and Business plans.</span>{" "}
+      {message ?? "We don't take a cut of the bookings it brings in."}{" "}
+      <Link
+        href={dashboardHref(business.slug, "settings/billing")}
+        className="font-medium text-foreground underline underline-offset-2"
+      >
+        See plans
+      </Link>
+    </p>
   );
 }
 

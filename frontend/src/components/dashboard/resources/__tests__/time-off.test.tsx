@@ -55,9 +55,9 @@ describe("TimeOff", () => {
     const list = await screen.findByRole("list");
     const items = within(list).getAllByRole("listitem");
     expect(items.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/12 Oct 2026Day offAll day$/),
-      expect.stringMatching(/12 Oct 2026Unavailable10:00–12:00 · Dentist$/),
-      expect.stringMatching(/20 Oct 2026Extra hours18:00–20:00$/),
+      expect.stringMatching(/12 Oct 2026Day offAll day(Remove)?$/),
+      expect.stringMatching(/12 Oct 2026Unavailable10:00–12:00 · Dentist(Remove)?$/),
+      expect.stringMatching(/20 Oct 2026Extra hours18:00–20:00(Remove)?$/),
     ]);
     expect(screen.queryByText(/Old/)).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
@@ -75,7 +75,7 @@ describe("TimeOff", () => {
   it("says when nothing is planned", async () => {
     fakeResourcesApi({ resources: [resource()] });
     renderTimeOff();
-    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
+    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
   });
 
   it("removes an entry, naming it by date", async () => {
@@ -84,7 +84,7 @@ describe("TimeOff", () => {
     await user.click(await screen.findByRole("button", { name: "Remove 12 Oct 2026" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Removed"));
     expect(api.requests.some((r) => r.method === "DELETE" && r.path.endsWith("/overrides/o1"))).toBe(true);
-    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
+    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
   });
 
   it("says why a removal failed", async () => {

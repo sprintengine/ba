@@ -27,16 +27,14 @@ export function HelpArticle({
 }) {
   const toc = sections.map(({ id, title }) => ({ id, title }));
   return (
-    <Container className="pt-14 pb-24 sm:pt-20">
+    <Container className="pt-10 pb-24 sm:pt-12">
       <header className="max-w-3xl">
         <Eyebrow>Help</Eyebrow>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-display-sm">
-          {title}
-        </h1>
-        <p className="mt-5 text-lg text-muted-foreground">{lead}</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{title}</h1>
+        <p className="mt-3 text-base text-muted-foreground">{lead}</p>
       </header>
 
-      <div className="mt-14 grid gap-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16">
+      <div className="mt-10 grid gap-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16">
         <aside className="hidden lg:block">
           <div className="sticky top-24">
             <LegalToc items={toc} />

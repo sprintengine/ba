@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronUp, Clock, Lock, Shield, User, Users, Zap } from "lucide-react";
+import { ChevronUp, Shield } from "lucide-react";
 import type { PublicBusiness, PublicService } from "@/lib/api/types";
 import { formatDate, formatPrice, formatTime, zonedToIso } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -32,12 +32,11 @@ function useRows({ business, service, selection, steps }: SummaryProps) {
   const { option, addons } = chosenExtras(service, selection);
   const resource = resourceChoiceName(selection, service, v("resource"));
 
-  const rows: { step: StepId; icon: React.ReactNode; label: React.ReactNode; hint?: React.ReactNode }[] = [];
-  if (steps.includes("group") && group) rows.push({ step: "group", icon: <Users />, label: group.name });
+  const rows: { step: StepId; label: React.ReactNode; hint?: React.ReactNode }[] = [];
+  if (steps.includes("group") && group) rows.push({ step: "group", label: group.name });
   if (service)
     rows.push({
       step: "service",
-      icon: <Clock />,
       label: (
         <>
           {service.name}
@@ -46,96 +45,80 @@ function useRows({ business, service, selection, steps }: SummaryProps) {
       ),
       hint: addons.length > 0 ? `+ ${addons.map((a) => a.name).join(", ")}` : undefined,
     });
-  if (steps.includes("resource") && resource)
-    rows.push({ step: "resource", icon: <User />, label: resource });
+  if (steps.includes("resource") && resource) rows.push({ step: "resource", label: resource });
   if (selection.date && selection.time)
     rows.push({
       step: "time",
-      icon: <CalendarDays />,
       label: formatDate(selection.date, tz, "long", business.locale),
       hint: formatTime(zonedToIso(selection.date, selection.time, tz), tz, business.locale),
     });
   return rows;
 }
 
-/** Desktop sticky summary card. */
+/** What holds for every service: said once under the list, before there is a booking to summarise. */
+export function BookingPromises({ business, takesOnlinePayment }: SummaryProps) {
+  const { allowCustomerCancel, cancellationNoticeHours } = business.policies;
+  const hours = cancellationNoticeHours > 0 ? ` up to ${cancellationNoticeHours} hours before` : "";
+  return (
+    <p className="text-sm text-muted-foreground">
+      {[
+        "Live availability, confirmed by email",
+        allowCustomerCancel
+          ? `Change or cancel online${hours}`
+          : `Your details are only shared with ${business.name}`,
+        business.paymentsEnabled && takesOnlinePayment && "Secure payments",
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+    </p>
+  );
+}
+
+/** Desktop sticky summary. */
 export function BookingSummaryCard(props: SummaryProps) {
-  const { business, service, quote, onEdit, steps, takesOnlinePayment } = props;
+  const { business, service, quote, onEdit, steps } = props;
   const { v } = useVocabulary();
   const rows = useRows(props);
   const locale = business.locale;
   const cur = business.currency;
   return (
-    <aside
-      aria-label={`Your ${v("booking")}`}
-      className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm dark:bg-surface-raised"
-    >
-      <div className="border-b border-border-subtle px-5 py-4">
-        <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
-      </div>
-      {rows.length === 0 ? (
-        <div className="flex flex-col gap-4 px-5 py-5">
-          <ul className="flex flex-col gap-2.5 text-sm">
-            <li className="flex gap-2.5">
-              <Zap className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-              <span>Live availability, confirmed by email</span>
-            </li>
-            <li className="flex gap-2.5">
-              <Shield className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-              <span>
-                {business.policies.allowCustomerCancel
-                  ? `Change or cancel online${business.policies.cancellationNoticeHours > 0 ? ` up to ${business.policies.cancellationNoticeHours} hours before` : ""}`
-                  : "Your details are only shared with " + business.name}
+    <aside aria-label={`Your ${v("booking")}`} className="flex flex-col gap-3">
+      <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
+      <ul className="-mx-3 flex flex-col">
+        {rows.map((r) => {
+          const editable = !!onEdit && steps.includes(r.step);
+          const content = (
+            <>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-sm font-medium">{r.label}</span>
+                {r.hint && <span className="tnum text-xs text-muted-foreground">{r.hint}</span>}
               </span>
+              {editable && (
+                <span className="text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:opacity-100">
+                  Change
+                </span>
+              )}
+            </>
+          );
+          return (
+            <li key={r.step}>
+              {editable ? (
+                <button
+                  type="button"
+                  onClick={() => onEdit(r.step)}
+                  className="group flex min-h-11 w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  {content}
+                </button>
+              ) : (
+                <div className="flex items-start gap-3 px-3 py-2">{content}</div>
+              )}
             </li>
-            {business.paymentsEnabled && takesOnlinePayment && (
-              <li className="flex gap-2.5">
-                <Lock className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-                <span>Secure payments</span>
-              </li>
-            )}
-          </ul>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-0.5 p-2">
-          {rows.map((r) => {
-            const editable = !!onEdit && steps.includes(r.step);
-            const content = (
-              <>
-                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-soft-foreground [&_svg]:size-3.5">
-                  {r.icon}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-medium">{r.label}</span>
-                  {r.hint && <span className="tnum text-xs text-muted-foreground">{r.hint}</span>}
-                </span>
-                {editable && (
-                  <span className="text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 pointer-coarse:opacity-100">
-                    Change
-                  </span>
-                )}
-              </>
-            );
-            return (
-              <li key={r.step}>
-                {editable ? (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(r.step)}
-                    className="group flex min-h-11 w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    {content}
-                  </button>
-                ) : (
-                  <div className="flex items-start gap-3 px-3 py-2">{content}</div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+          );
+        })}
+      </ul>
       {quote && service && (
-        <div className="flex flex-col gap-3 border-t border-border-subtle bg-surface-sunken/60 px-5 py-4">
+        <div className="flex flex-col gap-3 border-t border-border-subtle pt-3">
           <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="summary" />
           {paymentModeCopy(quote, cur, locale) && (
             <p className="text-xs text-muted-foreground">{paymentModeCopy(quote, cur, locale)}</p>

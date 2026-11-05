@@ -33,7 +33,7 @@ export function ReportsView() {
         title="Reports are for admins"
         description="Ask an owner or admin for the numbers."
         backHref={dashboardHref(business.slug)}
-        backLabel="Back to overview"
+        backLabel="Back to Today"
       />
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Command as Cmdk } from "cmdk";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 import { DialogOverlay } from "./dialog";
@@ -117,6 +117,8 @@ export function CommandDialog({
             "fixed top-[14vh] left-1/2 z-50 w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-xl outline-none",
             // Phones: pinned to the top, the list sized to stay clear of the on-screen keyboard.
             "max-sm:top-[max(0.5rem,env(safe-area-inset-top))] max-sm:w-[calc(100vw-1rem)] max-sm:[&_[cmdk-list]]:max-h-[45dvh]",
+            // The list fades out at its foot, so a row cut by the edge reads as more to scroll, not as broken.
+            "[&_[cmdk-list]]:[mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] [&_[cmdk-list]]:pb-6",
             "animate-pop-in data-[state=closed]:animate-pop-out",
           )}
         >
@@ -124,6 +126,12 @@ export function CommandDialog({
           <Command label={label} filter={filter} loop>
             {children}
           </Command>
+          <DialogPrimitive.Close
+            aria-label="Close search"
+            className="absolute top-0.5 right-0.5 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4"
+          >
+            <X aria-hidden />
+          </DialogPrimitive.Close>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

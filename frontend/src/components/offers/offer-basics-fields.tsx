@@ -22,7 +22,7 @@ type V = OfferFormValues;
 export function BasicsFields() {
   const { v } = useVocabulary();
   return (
-    <FormSection title="Basics">
+    <div className="flex flex-col gap-5">
       <FormField<V, "name">
         name="name"
         label="Name"
@@ -43,7 +43,7 @@ export function BasicsFields() {
           />
         )}
       </FormField>
-    </FormSection>
+    </div>
   );
 }
 

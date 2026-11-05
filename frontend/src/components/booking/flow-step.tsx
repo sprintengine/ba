@@ -130,7 +130,6 @@ function chosenServiceView(flow: BookingFlowModel, service: PublicService, quote
     case "details":
       return {
         title: "Your details",
-        description: `So ${business.name} knows who's coming.`,
         content: <FlowDetailsStep flow={flow} />,
       };
     case "review":

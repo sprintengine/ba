@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import type { CustomerDetail } from "@/lib/api/types";
 import { BookingStatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -66,7 +67,8 @@ export function HistoryList({ bookings, onOpen }: HistoryProps) {
           >
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="tnum text-sm font-medium">
-                {fmt.date(b.start, "dayMonthYear")} · {fmt.range(b.start, b.end)}
+                {fmt.date(b.start, "dayMonthYear")} ·{" "}
+                <span className="whitespace-nowrap">{fmt.range(b.start, b.end)}</span>
               </span>
               <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                 <ColorDot color={b.service.color} />
@@ -82,6 +84,7 @@ export function HistoryList({ bookings, onOpen }: HistoryProps) {
                 {fmt.price(b.priceCents, b.currency)}
               </span>
             </span>
+            <ChevronRight aria-hidden className="size-4 shrink-0 text-subtle-foreground" />
           </button>
         </li>
       ))}

@@ -419,12 +419,12 @@ describe("Onboarding header actions", () => {
 
   it("offers the dashboard only to people who already have a business", () => {
     const { unmount } = renderActions();
-    expect(screen.queryByRole("link", { name: "Back to dashboard" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Account menu" })).toBeInTheDocument();
     unmount();
 
     api.memberships = [{ business: fixture() }];
     renderActions();
-    expect(screen.getByRole("link", { name: "Back to dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
   });
 });

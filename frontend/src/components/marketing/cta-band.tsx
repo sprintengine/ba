@@ -9,11 +9,14 @@ export function CtaBand({
   description = "Free to start, no card required. 0% platform fee on payments, always.",
   primary = { href: "/sign-up", label: "Start for free" },
   secondary = { href: "/pricing", label: "See pricing" },
+  variant = "brand",
 }: {
   title?: string;
   description?: string;
   primary?: { href: string; label: string };
   secondary?: { href: string; label: string } | null;
+  /** The main button. An industry page keeps its own colour; elsewhere it matches the nav's button. */
+  variant?: "brand" | "primary";
 }) {
   return (
     <section className="pt-4 pb-20 sm:pb-28" aria-labelledby="cta-title">
@@ -31,7 +34,7 @@ export function CtaBand({
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">{description}</p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild variant="brand" size="lg">
+            <Button asChild variant={variant} size="lg">
               <Link href={primary.href}>
                 {primary.label} <ArrowRight />
               </Link>

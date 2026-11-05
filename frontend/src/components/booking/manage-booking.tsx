@@ -64,18 +64,23 @@ export function ManageBookingPage({ token }: { token: string }) {
 
   if (booking.isError) {
     return (
-      <PublicBookingShell business={null}>
+      <PublicBookingShell business={null} width="wide">
         {booking.error.isNotFound ? (
           <EmptyState
             size="lg"
             headingLevel={1}
             icon={<LinkIcon />}
-            title="This link isn't valid anymore"
+            title="This booking link isn't valid"
             description="Manage links stop working after the appointment, or the link may be incomplete. Check the latest email from the business, or contact them directly."
             action={
-              <Button asChild variant="secondary">
-                <Link href="/my/bookings">Sign in to see your bookings</Link>
-              </Button>
+              <>
+                <Button asChild variant="primary">
+                  <Link href="/my/bookings">Sign in to see your bookings</Link>
+                </Button>
+                <Button asChild variant="secondary">
+                  <Link href="/">Back to home</Link>
+                </Button>
+              </>
             }
           />
         ) : (

@@ -69,8 +69,8 @@ export function ResourceDialog({
       returnFocusTo={returnFocusTo}
       form={form}
       title={resource ? `Edit ${resource.name}` : `Add a ${v("resource")}`}
-      description="A person, room or piece of equipment that services need."
-      submitLabel={resource ? "Save" : "Add"}
+      description={resource ? undefined : "A person, room or piece of equipment that services need."}
+      submitLabel={resource ? "Save changes" : "Add"}
       footerStart={
         resource ? (
           <ConfirmDialog
@@ -124,7 +124,7 @@ export function ResourceDialog({
       >
         {(field) => <Textarea {...field} rows={2} />}
       </FormField>
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="flex flex-col gap-5">
         <FormField<V, "color"> name="color" label="Colour">
           {(field) => (
             <SwatchGroup

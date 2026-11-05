@@ -91,7 +91,7 @@ export function OverviewScreen() {
                 {TODAY.map((b) => (
                   <li key={b.time} className="flex items-center gap-3 rounded-lg px-2 py-2.5">
                     <span className="tnum w-12 shrink-0 text-sm font-medium">{b.time}</span>
-                    <span className="h-8 w-0.5 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
+                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
                     <Avatar name={b.name} size="md" />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-sm font-medium">{b.name}</span>

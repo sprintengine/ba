@@ -98,7 +98,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
         )}
         {user && view.offerOtherAccount && (
           <Button
-            variant="ghost"
+            variant="secondary"
             onClick={() => signOut({ redirectUrl: signInUrl(`/invitations/${token}`) })}
           >
             Use a different account
@@ -112,29 +112,23 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
 function Panel({
   icon,
   title,
-  tone = "brand",
   children,
 }: {
   icon: React.ReactNode;
   title: string;
+  /** Kept by callers for the state they mean; every state now reads the same, in words. */
   tone?: "brand" | "success" | "warning";
   children: React.ReactNode;
 }) {
-  const toneClass = {
-    brand: "bg-brand-soft text-brand-soft-foreground border-brand-border",
-    success: "bg-success-soft text-success-soft-foreground border-success-border",
-    warning: "bg-warning-soft text-warning-soft-foreground border-warning-border",
-  }[tone];
   return (
-    <div className="mx-auto flex max-w-md animate-rise flex-col items-center py-16 text-center">
-      <span
-        className={`mb-5 flex size-12 items-center justify-center rounded-2xl border ${toneClass}`}
-        aria-hidden
-      >
+    <div className="mx-auto flex max-w-md animate-rise flex-col items-center gap-4 px-6 py-24 text-center">
+      <span className="text-subtle-foreground [&_svg]:size-6" aria-hidden>
         {icon}
       </span>
-      <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
-      <div className="mt-2 flex flex-col items-center text-muted-foreground">{children}</div>
+      <div className="flex flex-col items-center gap-1">
+        <h1 className="text-lg font-semibold tracking-tight text-balance">{title}</h1>
+        <div className="flex flex-col items-center text-sm text-muted-foreground">{children}</div>
+      </div>
     </div>
   );
 }

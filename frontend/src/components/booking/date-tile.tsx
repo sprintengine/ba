@@ -17,7 +17,7 @@ export function DateTile({
   timeZone: string;
   /** "md" on My bookings cards, "lg" on the manage page (hidden on phones). */
   size: keyof typeof SIZES;
-  /** Faded for cancelled and past bookings. */
+  /** Neutral for cancelled and past bookings, and still readable. */
   muted?: boolean;
 }) {
   const s = SIZES[size];
@@ -27,10 +27,14 @@ export function DateTile({
       className={cn(
         "flex shrink-0 flex-col items-center overflow-hidden rounded-xl border border-border text-center",
         s.box,
-        muted && "opacity-60",
       )}
     >
-      <span className="w-full bg-primary py-0.5 text-2xs font-semibold tracking-wide text-primary-foreground uppercase">
+      <span
+        className={cn(
+          "w-full py-0.5 text-2xs font-semibold tracking-wide uppercase",
+          muted ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground",
+        )}
+      >
         {formatDate(date, timeZone, "weekday")}
       </span>
       <span className={cn("tnum leading-tight font-semibold", s.day)}>{Number(date.slice(8))}</span>

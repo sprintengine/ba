@@ -32,7 +32,7 @@ export function TeamView() {
   const people = (resources.data ?? []).filter((r) => r.kind === "person" && r.isActive);
 
   return (
-    <PageContainer size="default">
+    <PageContainer size="wide">
       <PageHeader
         title="Team"
         description={perms.manageTeam ? "Invite people and choose what they can do." : "Who is on the team."}

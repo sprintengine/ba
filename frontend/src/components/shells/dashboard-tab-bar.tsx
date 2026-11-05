@@ -41,17 +41,12 @@ export function DashboardTabBar({
       aria-label="Quick navigation"
       data-dashboard-tab-bar=""
       hidden={keyboardOpen}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background px-1 pb-[env(safe-area-inset-bottom)] sm:hidden"
     >
       <ul className="grid h-(--tab-bar-height) grid-cols-5">
         {items.map((item) => {
           const active = slug !== null && isNavItemActive(item, slug, pathname);
-          const label =
-            item.key === "overview"
-              ? "Today"
-              : item.vocabulary
-                ? v(item.vocabulary, { title: true })
-                : item.label;
+          const label = item.vocabulary ? v(item.vocabulary, { title: true }) : item.label;
           return (
             <li key={item.key} className="flex min-w-0">
               <Link

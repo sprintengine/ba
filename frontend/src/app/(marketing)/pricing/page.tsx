@@ -208,6 +208,7 @@ export default function PricingPage() {
       </Section>
 
       <CtaBand
+        variant="primary"
         title="Start on Free and upgrade when you're busy."
         description="Free covers up to 100 bookings a month, and you don't need a card to sign up."
         secondary={{ href: "/#features", label: "See features" }}

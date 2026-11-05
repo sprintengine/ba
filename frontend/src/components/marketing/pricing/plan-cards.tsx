@@ -47,7 +47,7 @@ export function PlanCards() {
           </div>
           <Button
             asChild
-            variant={plan.highlight ? "brand" : "secondary"}
+            variant={plan.highlight ? "primary" : "secondary"}
             size="lg"
             block
             className="relative mt-7"

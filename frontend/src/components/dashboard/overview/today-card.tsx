@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, CalendarPlus, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, ChevronDown, Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
+import { groupSessions } from "@/lib/dashboard/calendar-layout";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Avatar } from "@/components/ui/avatar";
@@ -22,9 +24,12 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
   const fmt = useFmt();
   const { openBooking, openNewBooking } = useBookingActions();
   const business = useCurrentBusiness();
+  const router = useRouter();
+  const calendarAt = `/dashboard/${business.slug}/calendar`;
   const [showDone, setShowDone] = useState(false);
   const done = bookings.filter((b) => new Date(b.end) <= now);
-  const shown = showDone ? bookings : bookings.filter((b) => new Date(b.end) > now);
+  // A class's attendees are one line: six identical rows would say less than "6 booked".
+  const shown = groupSessions(showDone ? bookings : bookings.filter((b) => new Date(b.end) > now));
   const nowIndex = shown.findIndex((b) => new Date(b.start) > now);
 
   return (
@@ -59,7 +64,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
             description={`New ${v("bookings")} show up here as they come in.`}
             action={
               <Button size="sm" variant="secondary" onClick={() => openNewBooking()}>
-                <CalendarPlus /> New {v("booking")}
+                <Plus /> New {v("booking")}
               </Button>
             }
           />
@@ -81,14 +86,15 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                 </button>
               </li>
             )}
-            {shown.map((b, i) => {
+            {shown.map(({ id, bookings: [b, ...rest] }, i) => {
               const past = new Date(b.end) <= now;
+              const group = rest.length > 0;
               return (
-                <li key={b.id}>
+                <li key={id}>
                   {i === nowIndex && i > 0 && <NowDivider label={`Now · ${fmt.time(now.toISOString())}`} />}
                   <button
                     type="button"
-                    onClick={() => openBooking(b.id)}
+                    onClick={() => (group ? router.push(calendarAt) : openBooking(b.id))}
                     className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     {/* Past ones are marked by a muted time, not a faded row (that drops the text below 4.5:1). */}
@@ -105,12 +111,20 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                       className="size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: b.service.color }}
                     />
-                    <Avatar name={b.customer.name} size="md" />
+                    {group ? (
+                      <span className="tnum flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {rest.length + 1}
+                      </span>
+                    ) : (
+                      <Avatar name={b.customer.name} size="md" />
+                    )}
                     <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-medium">{b.customer.name}</span>
+                      <span className="truncate text-sm font-medium">
+                        {group ? b.service.name : b.customer.name}
+                      </span>
                       <span className="line-clamp-2 text-xs text-muted-foreground">
-                        {b.service.name}
-                        {b.option ? ` · ${b.option.name}` : ""}
+                        {group ? `${rest.length + 1} booked` : b.service.name}
+                        {!group && b.option ? ` · ${b.option.name}` : ""}
                         {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}
                       </span>
                     </span>

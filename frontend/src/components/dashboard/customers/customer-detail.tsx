@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Download, Mail, MoreHorizontal, Phone, ShieldAlert, Trash2 } from "lucide-react";
+import { Download, Mail, MoreHorizontal, Phone, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { useCustomer, useCustomerGroups, useUpdateCustomer } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -104,7 +104,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
               </a>
             )}
             {group && <Badge tone="brand">{group.name}</Badge>}
-            {c.hasAccount && <Badge>Account</Badge>}
+            {c.hasAccount && <Badge tone="brand">Account</Badge>}
           </span>
         }
         actions={
@@ -133,13 +133,13 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 openNewBooking({ customer: { id: c.id, name: c.name, email: c.email, phone: c.phone } })
               }
             >
-              <CalendarPlus /> New {v("booking")}
+              <Plus /> New {v("booking")}
             </Button>
           </>
         }
       />
 
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-6">
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <MiniStat label={v("bookings", { title: true })} value={String(c.bookingCount)} />
@@ -227,7 +227,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-xs leading-4 text-muted-foreground">{label}</span>
-      <span className="tnum text-base font-semibold tracking-tight sm:text-lg">{value}</span>
+      <span className="tnum text-sm font-semibold tracking-tight whitespace-nowrap sm:text-lg">{value}</span>
     </div>
   );
 }

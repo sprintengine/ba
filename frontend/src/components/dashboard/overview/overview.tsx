@@ -2,13 +2,14 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { CalendarDays, CalendarPlus } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { useOverview } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { firstName, todaysBookings } from "@/lib/dashboard/overview";
 import { greetingAt, todayInTz } from "@/lib/format/datetime";
 import { useNow } from "@/lib/hooks/use-now";
 import { useVocabulary } from "@/lib/vocabulary";
+import { PlanLimitNotice } from "./plan-limit-notice";
 import { ErrorState } from "@/components/common/feedback";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export function OverviewView() {
               </Link>
             </Button>
             <Button variant="primary" onClick={() => openNewBooking()}>
-              <CalendarPlus /> New {v("booking")}
+              <Plus /> New {v("booking")}
             </Button>
           </>
         }
@@ -60,14 +61,18 @@ export function OverviewView() {
       ) : (
         <div className="flex flex-col gap-6">
           <OverviewRelease />
+          {perms.manageBilling && <PlanLimitNotice />}
           <OverviewStats overview={overview.data} todays={todays} now={now} loading={overview.isPending} />
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <TodayCard bookings={todays} loading={overview.isPending} now={now} />
-            <div className="flex flex-col gap-6">
-              {perms.manageSettings && overview.data && <SetupChecklist items={overview.data.checklist} />}
-              <PendingApprovals today={today} />
-              <ShareCard />
-            </div>
+            {/* Waits for the data: on a phone this column sits under Today, which grows once its bookings arrive. */}
+            {overview.data && (
+              <div className="flex flex-col gap-6">
+                {perms.manageSettings && <SetupChecklist items={overview.data.checklist} />}
+                <PendingApprovals today={today} />
+                <ShareCard />
+              </div>
+            )}
           </div>
         </div>
       )}

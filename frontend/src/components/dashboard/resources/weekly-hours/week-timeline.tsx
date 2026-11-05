@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { DayRow, ROW_GRID } from "./day-row";
 
 /** Hours between axis labels: fewer labels on a longer day. */
-const labelStep = (hours: number) => (hours <= 12 ? 2 : hours <= 18 ? 3 : 4);
+const labelStep = (hours: number) => (hours <= 8 ? 2 : hours <= 18 ? 3 : 4);
 
 /**
  * The week at a glance: a row per day on one shared time axis, so working hours read and compare across days as

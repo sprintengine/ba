@@ -23,7 +23,6 @@ import {
   servicesLabel,
   whoLabel,
 } from "@/lib/releases/text";
-import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { withToast } from "@/components/common/with-toast";
 import { ActionButton } from "@/components/ui/action-button";
@@ -53,7 +52,6 @@ const UPCOMING_ROWS = 8;
 /** Settings → Release schedules (§21): the schedules, and the next releases with one-off changes. */
 export function ReleaseSettings() {
   const business = useCurrentBusiness();
-  const { v } = useVocabulary();
   const schedules = useReleaseSchedules(business.id);
   const services = useServices(business.id);
   const groups = useCustomerGroups(business.id);
@@ -66,41 +64,30 @@ export function ReleaseSettings() {
       <SettingsHeader
         segment="release-schedules"
         actions={
-          // With no schedules yet, the empty state below carries this action.
-          list.length > 0 && (
-            <ActionButton
-              size="sm"
-              variant="primary"
-              onClick={() => editor.open(null)}
-              icon={<Plus />}
-              label="New schedule"
-              collapse={false}
-              disabled={bookable.length === 0}
-            />
-          )
+          <ActionButton
+            size="sm"
+            variant="primary"
+            onClick={() => editor.open(null)}
+            icon={<Plus />}
+            label="New schedule"
+            collapse={false}
+            disabled={bookable.length === 0}
+          />
         }
       />
       <p className="mb-6 max-w-prose text-sm text-muted-foreground">
-        A schedule keeps each day closed to online booking until it opens: the day before at 17:00, say. Your
-        team can always book any free time, and {v("customers")} see when a closed day opens.
+        For example, the day before at 17:00. Your team can always book any free time.
       </p>
       {schedules.isError ? (
         <ErrorState error={schedules.error} onRetry={() => schedules.refetch()} />
       ) : schedules.isPending || services.isPending ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           <EmptyState
             icon={<CalendarClock />}
             title="No release schedules"
-            description={`Every day can be booked as far ahead as your policies allow. Add a schedule to open days at a set time.`}
-            action={
-              bookable.length > 0 ? (
-                <Button size="sm" variant="primary" onClick={() => editor.open(null)}>
-                  <Plus /> New schedule
-                </Button>
-              ) : undefined
-            }
+            description="Every day can be booked as far ahead as your policies allow."
           />
         </div>
       ) : (

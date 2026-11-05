@@ -20,8 +20,8 @@ import {
 
 export type CalendarEvent = PositionedEvent<SessionEntry<Booking>>;
 
-const HATCH = (color: string) =>
-  `repeating-linear-gradient(135deg, color-mix(in oklab, ${color} var(--event-hatch), transparent) 0 1px, transparent 1px 7px)`;
+/** The legend's neutral hatch: preparation is time taken, not more of the service's colour. */
+const HATCH = "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 7px)";
 
 /** A booking (or a session of several) on the grid: its buffers (hatched), and the block, clipped to the visible hours. */
 export function EventBlock({
@@ -56,28 +56,15 @@ export function EventBlock({
   const pos = lanePosition(p.lane, p.lanes);
   const bufferBefore = Math.max(p.blockStartMin, lo);
   const bufferAfter = Math.min(p.blockEndMin, hi);
-  const color = entry.bookings[0].service.color;
   const place = placeOf(entry.bookings[0], columnResourceId);
 
   return (
     <>
       {p.blockStartMin < p.startMin && (
-        <BufferHatch
-          pos={pos}
-          color={color}
-          top={top(bufferBefore)}
-          height={(s - bufferBefore) * pxPerMin}
-          edge="top"
-        />
+        <BufferHatch pos={pos} top={top(bufferBefore)} height={(s - bufferBefore) * pxPerMin} edge="top" />
       )}
       {p.blockEndMin > p.endMin && (
-        <BufferHatch
-          pos={pos}
-          color={color}
-          top={top(e)}
-          height={(bufferAfter - e) * pxPerMin}
-          edge="bottom"
-        />
+        <BufferHatch pos={pos} top={top(e)} height={(bufferAfter - e) * pxPerMin} edge="bottom" />
       )}
       {entry.bookings.length === 1 ? (
         <EventButton
@@ -116,13 +103,11 @@ function placeOf(b: Booking, columnResourceId: string | undefined): string {
 /** Preparation time blocked before or after a booking. */
 function BufferHatch({
   pos,
-  color,
   top,
   height,
   edge,
 }: {
   pos: Position;
-  color: string;
   top: number;
   height: number;
   edge: "top" | "bottom";
@@ -131,7 +116,7 @@ function BufferHatch({
     <div
       aria-hidden
       className={cn("absolute", edge === "top" ? "rounded-t-lg" : "rounded-b-lg")}
-      style={{ ...pos, top, height, backgroundImage: HATCH(color) }}
+      style={{ ...pos, top, height, backgroundImage: HATCH }}
     />
   );
 }
@@ -172,7 +157,7 @@ function detailRows({
   const service = `${b.service.name}${b.option ? ` (${b.option.name})` : ""}`;
   if (lines === 2) {
     if (status) return [{ kind: "status", text: `${status} · ${start}` }];
-    return [{ kind: "detail", text: `${time} · ${!compact && place ? place : service}` }];
+    return [{ kind: "detail", text: compact ? `${start} · ${service}` : `${time} · ${place || service}` }];
   }
   const rows: DetailRow[] = compact
     ? [
@@ -208,7 +193,7 @@ function EventButton({
   const lines = linesFor(h);
   const time = `${formatTime(b.start)}–${formatTime(b.end)}`;
   const { waiting, cancelled, noShow, status } = cardState(b.status, look.label);
-  const tint = b.status === "completed" ? "9%" : undefined;
+  const tint = b.status === "completed" ? "var(--event-tint-done)" : undefined;
   return (
     <button
       type="button"

@@ -210,7 +210,7 @@ export function Calendar({
                         isSelected
                           ? "bg-primary text-primary-foreground shadow-button"
                           : isDisabled
-                            ? "cursor-not-allowed text-subtle-foreground/70"
+                            ? "cursor-not-allowed text-subtle-foreground"
                             : "text-foreground hover:bg-accent active:scale-95",
                         isToday &&
                           !isSelected &&
@@ -265,7 +265,7 @@ function NavButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30 pointer-coarse:size-11"
+      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 pointer-coarse:size-11"
     >
       {children}
     </button>

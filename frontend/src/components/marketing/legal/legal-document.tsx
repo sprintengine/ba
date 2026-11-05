@@ -31,31 +31,27 @@ export function LegalDocument({
 }) {
   const toc = sections.map(({ id, title }) => ({ id, title }));
   return (
-    <Container className="pt-14 pb-24 sm:pt-20">
+    <Container className="pt-10 pb-24 sm:pt-12">
       <header className="max-w-3xl">
         <Eyebrow>Legal</Eyebrow>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-display-sm">{title}</h1>
-        <p className="mt-5 text-lg text-muted-foreground">{summary}</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <p className="mt-3 text-base text-muted-foreground">{summary}</p>
       </header>
 
       <div
         role="note"
         aria-label="Draft notice"
-        className="mt-10 flex max-w-3xl gap-4 rounded-2xl border border-warning-border bg-warning-soft p-5 text-warning-soft-foreground sm:p-6"
+        className="mt-6 flex max-w-3xl gap-3 rounded-lg bg-warning-soft px-4 py-3 text-sm leading-6 text-warning-soft-foreground"
       >
-        <TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden />
-        <div className="text-sm leading-6">
-          <p className="font-semibold">Draft: not legally binding</p>
-          <p className="mt-1">
-            This is a working draft published for transparency while bookanything is in development. It has
-            not been reviewed by a solicitor, is incomplete, and does not form an agreement or create any
-            rights or obligations. Items marked <span className="font-semibold">[To be confirmed]</span> will
-            be completed before launch.
-          </p>
-        </div>
+        <TriangleAlert className="mt-1 size-4 shrink-0" aria-hidden />
+        <p>
+          <span className="font-semibold">Draft, not legally binding.</span> It hasn&rsquo;t been reviewed by
+          a solicitor and creates no rights or obligations. Items marked{" "}
+          <span className="font-semibold">[To be confirmed]</span> will be completed before launch.
+        </p>
       </div>
 
-      <div className="mt-14 grid gap-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16">
+      <div className="mt-10 grid gap-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16">
         <aside className="hidden lg:block">
           <div className="sticky top-24">
             <LegalToc items={toc} />

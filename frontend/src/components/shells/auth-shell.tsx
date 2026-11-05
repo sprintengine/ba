@@ -58,7 +58,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           aria-hidden
           className="absolute -top-40 -right-40 size-[36rem] rounded-full bg-[radial-gradient(circle,var(--color-iris-300)_0%,transparent_65%)] opacity-40 blur-3xl dark:opacity-20"
         />
-        <div className="relative flex flex-1 flex-col justify-end gap-10 p-12 xl:p-16">
+        <div className="relative flex flex-1 flex-col justify-center gap-10 p-12 xl:p-16">
           <div className="flex max-w-md flex-col gap-3">
             <h2 className="text-3xl font-semibold tracking-tight text-balance">
               Let clients book and pay online without ringing you.

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, UserPlus, Users } from "lucide-react";
 import type { Customer } from "@/lib/api/types";
 import { useCreateCustomer, useCustomerGroups, useInfiniteCustomers } from "@/lib/api/hooks";
-import { useCurrentBusiness } from "@/lib/business/business-context";
+import { useCurrentBusiness, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { PageContainer } from "@/components/ui/page-container";
@@ -37,6 +37,7 @@ const NO_CUSTOMERS: Customer[] = [];
 
 export function CustomersList() {
   const business = useCurrentBusiness();
+  const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
   const router = useRouter();
@@ -57,7 +58,11 @@ export function CustomersList() {
     <PageContainer size="wide">
       <PageHeader
         title={v("customers", { title: true })}
-        description={`Everyone who has booked with ${business.name}.`}
+        description={
+          perms.manageSettings
+            ? `Everyone who has booked with ${business.name}.`
+            : `Everyone who has booked with you.`
+        }
         actions={
           <ActionButton
             variant="primary"
@@ -81,7 +86,7 @@ export function CustomersList() {
       {customers.isError ? (
         <ErrorState headingLevel={2} error={customers.error} onRetry={() => customers.refetch()} />
       ) : !customers.isPending && items.length === 0 ? (
-        <div className="border-y border-border">
+        <div>
           {q ? (
             <EmptyState
               headingLevel={2}
@@ -148,8 +153,8 @@ export function CustomersList() {
                   ))
                 : items.map((c) => (
                     <TableRow key={c.id} interactive onClick={() => router.push(href(c))}>
-                      {/* Phones: the name column takes what's left and truncates, so a long email can't push
-                          the count off the edge. */}
+                      {/* Phones: the name column takes what's left and a long email wraps, so it is never cut
+                          short and can't push the count off the edge. */}
                       <TableCell className="max-md:w-full max-md:max-w-0">
                         <Link
                           href={href(c)}
@@ -158,15 +163,15 @@ export function CustomersList() {
                         >
                           <Avatar name={c.name} size="md" />
                           <span className="flex min-w-0 flex-col">
-                            <span className="flex min-w-0 items-center gap-2 font-medium">
+                            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                               <span className="truncate">{c.name}</span>
                               {c.hasAccount && (
-                                <Badge tone="brand" className="h-5 shrink-0 max-sm:hidden">
+                                <Badge tone="brand" className="h-5 shrink-0">
                                   Account
                                 </Badge>
                               )}
                             </span>
-                            <span className="truncate text-xs text-muted-foreground md:hidden">
+                            <span className="text-xs [overflow-wrap:anywhere] text-muted-foreground md:hidden">
                               {c.email ?? c.phone ?? ""}
                             </span>
                           </span>

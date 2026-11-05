@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarClock, CalendarX2, Clock, CreditCard, Hourglass, MapPin, UserRound } from "lucide-react";
+import { CreditCard, DoorOpen, Hourglass, MapPin, UserRound } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
 import {
   useCancelMyBooking,
@@ -20,15 +20,7 @@ import {
   showsPaymentStatus,
 } from "@/lib/booking/booking";
 import { formatCountdown } from "@/lib/booking/copy";
-import {
-  formatDate,
-  formatDuration,
-  formatMoney,
-  formatRelativeDay,
-  formatTime,
-  formatTimeRange,
-  toPlainDate,
-} from "@/lib/format";
+import { formatDate, formatDuration, formatMoney, formatTime, timeZoneLabel } from "@/lib/format";
 import { useCountdown } from "@/lib/hooks/use-now";
 import { isBlockingStatus, isReleasedStatus } from "@/lib/status";
 import { BusinessThemeProvider } from "@/lib/theme/business-theme";
@@ -48,7 +40,6 @@ import { BookingStatusBadge } from "@/components/ui/status-badge";
 import { toast } from "@/components/ui/toast";
 import { AddToCalendar } from "./add-to-calendar";
 import { CancelBookingDialog } from "./cancel-booking";
-import { DateTile } from "./date-tile";
 import { CustomerPaymentBadge } from "./payment-badge";
 import { ReschedulePanel, useRescheduleState } from "./reschedule";
 
@@ -83,46 +74,33 @@ export function MyBookingCard({
 
   return (
     <BusinessThemeProvider primaryColor={b.business.branding.primaryColor}>
-      <article
-        ref={card}
-        className={cn(
-          "group relative overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-shadow hover:shadow-sm dark:bg-surface-raised",
-          inactive && "bg-surface/60",
-        )}
-      >
-        <div className="flex gap-4 p-4 sm:gap-5 sm:p-5">
-          <DateTile
-            date={toPlainDate(b.start, b.timezone)}
-            timeZone={b.timezone}
-            size="md"
-            muted={inactive}
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <CardHeading booking={b} />
-            <CardFacts booking={b} inactive={inactive} />
-            {awaitingPayment && (
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-warning-soft-foreground">
-                <Hourglass className="size-3.5" aria-hidden />
-                Held for <span className="tnum font-medium">{formatCountdown(remaining)}</span>. Pay now to
-                confirm it.
-              </p>
-            )}
-          </div>
+      <article ref={card} className="flex gap-4 py-4 sm:gap-6">
+        <CardTime booking={b} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <CardHeading booking={b} inactive={inactive} />
+          <CardFacts booking={b} inactive={inactive} />
+          {awaitingPayment && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-warning-soft-foreground">
+              <Hourglass className="size-3.5" aria-hidden />
+              Held for <span className="tnum font-medium">{formatCountdown(remaining)}</span>. Pay now to
+              confirm it.
+            </p>
+          )}
+          {inactive ? (
+            <div className="mt-1 -ml-2.5">
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/${b.business.slug}`}>Book again</Link>
+              </Button>
+            </div>
+          ) : (
+            <CardActions
+              booking={b}
+              awaitingPayment={awaitingPayment}
+              onReschedule={() => setRescheduleOpen(true)}
+              onCancel={() => setCancelOpen(true)}
+            />
+          )}
         </div>
-        {inactive ? (
-          <div className="flex items-center gap-2 border-t border-border-subtle px-4 py-2.5 sm:px-5">
-            <Button asChild variant="ghost" size="sm">
-              <Link href={`/${b.business.slug}`}>Book again</Link>
-            </Button>
-          </div>
-        ) : (
-          <CardActions
-            booking={b}
-            awaitingPayment={awaitingPayment}
-            onReschedule={() => setRescheduleOpen(true)}
-            onCancel={() => setCancelOpen(true)}
-          />
-        )}
       </article>
       <CancelBookingDialog
         booking={b}
@@ -147,17 +125,52 @@ export function MyBookingCard({
   );
 }
 
-/** Business link, status badges and the service. */
-function CardHeading({ booking: b }: { booking: CustomerBooking }) {
+/** The time, the first thing looked for: in the business's zone, and named when that isn't the visitor's own. */
+function CardTime({ booking: b }: { booking: CustomerBooking }) {
+  const [elsewhere, setElsewhere] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only check after hydration
+    setElsewhere(Intl.DateTimeFormat().resolvedOptions().timeZone !== b.timezone);
+  }, [b.timezone]);
   return (
-    <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+    <div className="tnum flex w-14 shrink-0 flex-col sm:w-16">
+      <span className="text-base font-semibold tracking-tight">{formatTime(b.start, b.timezone)}</span>
+      {elsewhere && <span className="text-xs text-muted-foreground">{timeZoneLabel(b.timezone)}</span>}
+      <span className="text-xs text-muted-foreground">{formatDuration(bookingMinutes(b))}</span>
+    </div>
+  );
+}
+
+/** The service and its status; the payment too, unless the booking is over and it no longer applies. */
+function CardHeading({ booking: b, inactive }: { booking: CustomerBooking; inactive: boolean }) {
+  const payment = showsPaymentStatus(b) && !(inactive && b.paymentStatus === "pay_at_venue");
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <h3 className="text-base font-semibold tracking-tight">
+        {b.service.name}
+        {b.option && <span className="font-normal text-muted-foreground"> · {b.option.name}</span>}
+      </h3>
+      <span className="flex flex-wrap gap-1.5">
+        <BookingStatusBadge status={b.status} />
+        {payment && <CustomerPaymentBadge booking={b} />}
+      </span>
+    </div>
+  );
+}
+
+/** Where and with whom, and what is left to pay at the appointment after a deposit (not once it's over). */
+function CardFacts({ booking: b, inactive }: { booking: CustomerBooking; inactive: boolean }) {
+  const place = shortAddress(b.business.address);
+  const people = b.resources.map((r) => r.name).join(" · ");
+  const balance = inactive ? null : balanceDueCents(b);
+  // A room or a piece of equipment isn't a person.
+  const WithIcon = b.resources.some((r) => r.kind === "person") ? UserRound : DoorOpen;
+  return (
+    <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <li>
         <Link
           href={`/${b.business.slug}`}
-          className={cn(
-            "inline-flex min-w-0 items-center gap-2 text-sm text-muted-foreground hover:text-foreground",
-            touchHitArea,
-          )}
+          className={cn("inline-flex min-w-0 items-center gap-2 hover:text-foreground", touchHitArea)}
         >
           <BusinessTile
             name={b.business.name}
@@ -167,42 +180,10 @@ function CardHeading({ booking: b }: { booking: CustomerBooking }) {
           />
           <span className="truncate">{b.business.name}</span>
         </Link>
-        <span className="flex w-full flex-wrap gap-1.5 sm:ml-auto sm:w-auto">
-          <BookingStatusBadge status={b.status} />
-          {showsPaymentStatus(b) && <CustomerPaymentBadge booking={b} />}
-        </span>
-      </div>
-      <h2 className="text-base font-semibold tracking-tight">
-        {b.service.name}
-        {b.option && <span className="font-normal text-muted-foreground"> · {b.option.name}</span>}
-      </h2>
-    </>
-  );
-}
-
-/**
- * When (and how long), with whom, where, and what is left to pay at the appointment after a deposit (not once it
- * has passed or been cancelled).
- */
-function CardFacts({ booking: b, inactive }: { booking: CustomerBooking; inactive: boolean }) {
-  const tz = b.timezone;
-  const place = shortAddress(b.business.address);
-  const people = b.resources.map((r) => r.name).join(" · ");
-  const balance = inactive ? null : balanceDueCents(b);
-  return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-      <li className="tnum flex items-start gap-1.5">
-        <Clock className="mt-[3px] size-3.5 shrink-0" aria-hidden />
-        <span>
-          {formatRelativeDay(b.start, tz)} · {formatTimeRange(b.start, b.end, tz)}{" "}
-          <span className="whitespace-nowrap text-subtle-foreground">
-            ({formatDuration(bookingMinutes(b))})
-          </span>
-        </span>
       </li>
       {people && (
         <li className="flex items-center gap-1.5">
-          <UserRound className="size-3.5" aria-hidden /> {people}
+          <WithIcon className="size-3.5" aria-hidden /> {people}
         </li>
       )}
       {place && (
@@ -245,24 +226,31 @@ function CardActions({
     }
   };
   return (
-    <div className="flex flex-wrap items-center gap-1 border-t border-border-subtle bg-surface-sunken/60 px-3 py-2.5 sm:gap-2 sm:px-5 sm:py-3">
-      {awaitingPayment && (
-        <Button variant="primary" className="max-sm:px-2.5" loading={pay.isPending} onClick={onPay}>
-          <CreditCard /> Pay now{due > 0 ? ` · ${formatMoney(due, b.currency)}` : ""}
-        </Button>
+    <>
+      <div className="mt-1 -ml-2.5 flex flex-wrap items-center gap-1">
+        {awaitingPayment && (
+          <Button variant="primary" size="sm" loading={pay.isPending} onClick={onPay}>
+            <CreditCard /> Pay now{due > 0 ? ` · ${formatMoney(due, b.currency)}` : ""}
+          </Button>
+        )}
+        {b.status !== "held" && <AddToCalendar booking={b} variant="ghost" size="sm" />}
+        {b.canReschedule && (
+          <Button variant="ghost" size="sm" onClick={onReschedule}>
+            Reschedule
+          </Button>
+        )}
+        {b.canCancel && (
+          <Button variant="danger-ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+      </div>
+      {accepted && !b.canCancel && !b.canReschedule && (
+        <p className="text-xs text-muted-foreground">
+          This one can&rsquo;t be changed online. Contact {b.business.name} if your plans change.
+        </p>
       )}
-      {b.status !== "held" && <AddToCalendar booking={b} variant="ghost" className="max-sm:px-2.5" />}
-      {b.canReschedule && (
-        <Button variant="ghost" className="max-sm:px-2.5" onClick={onReschedule}>
-          <CalendarClock /> Reschedule
-        </Button>
-      )}
-      {b.canCancel && (
-        <Button variant="danger-ghost" className="ml-auto max-sm:px-2.5" onClick={onCancel}>
-          <CalendarX2 /> Cancel
-        </Button>
-      )}
-    </div>
+    </>
   );
 }
 

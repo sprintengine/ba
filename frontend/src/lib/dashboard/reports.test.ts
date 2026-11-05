@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   chartTickInterval,
+  chartTicks,
   isEmptyReport,
   parseReportParams,
   percentOf,
@@ -98,5 +99,18 @@ describe("rankings", () => {
       "c",
       "a",
     ]);
+  });
+});
+
+describe("chartTicks", () => {
+  const dates = ["2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"];
+
+  it("always labels the last day, counting back from it", () => {
+    expect(chartTicks(dates, 1)).toEqual(["2026-11-01", "2026-11-03", "2026-11-05"]);
+    expect(chartTicks(dates, 2)).toEqual(["2026-11-02", "2026-11-05"]);
+  });
+
+  it("labels every day when nothing is skipped", () => {
+    expect(chartTicks(dates, 0)).toEqual(dates);
   });
 });

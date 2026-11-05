@@ -29,7 +29,7 @@ export function OffersPage({ previewDelay }: { previewDelay?: number } = {}) {
         title="Offers are for admins"
         description="Ask an owner or admin of this business to set up deals."
         backHref={dashboardHref(business.slug)}
-        backLabel="Back to overview"
+        backLabel="Back to Today"
       />
     );
   }
@@ -63,7 +63,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
   );
 
   return (
-    <PageContainer size="default">
+    <PageContainer size="wide">
       <PageHeader
         title="Offers"
         description="Deals that fill quiet times. They're applied automatically when people book online — never more than one per booking."
@@ -89,7 +89,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="flex flex-col gap-6 border-y border-border">
+        <div className="flex flex-col gap-6">
           <EmptyState
             headingLevel={2}
             icon={<BadgePercent />}
@@ -97,7 +97,8 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
             description={`Turn empty slots into ${v("bookings")}.`}
             action={newButton}
           />
-          <ul className="grid gap-3 border-t border-border-subtle px-5 py-5 sm:grid-cols-3">
+          <h3 className="text-sm font-medium">Offers people often start with</h3>
+          <ul className="-mt-3 grid gap-3 sm:grid-cols-3">
             <Idea icon={<Clock3 />} title="Off-peak" text="e.g. 20% off Tuesday and Wednesday afternoons." />
             <Idea
               icon={<Hourglass />}
@@ -134,10 +135,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
 function Idea({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
     <li className="flex gap-3">
-      <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-soft-foreground [&_svg]:size-4"
-        aria-hidden
-      >
+      <span className="mt-0.5 shrink-0 text-subtle-foreground [&_svg]:size-4" aria-hidden>
         {icon}
       </span>
       <span className="flex flex-col gap-0.5">

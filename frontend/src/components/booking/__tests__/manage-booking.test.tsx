@@ -80,7 +80,7 @@ describe("ManageBookingPage loading and errors", () => {
   it("explains an invalid link and offers to sign in", async () => {
     const { container } = renderPage(apiError(404, "NOT_FOUND", "Not found."));
     expect(
-      await screen.findByRole("heading", { level: 1, name: "This link isn't valid anymore" }),
+      await screen.findByRole("heading", { level: 1, name: "This booking link isn't valid" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in to see your bookings" })).toHaveAttribute(
       "href",

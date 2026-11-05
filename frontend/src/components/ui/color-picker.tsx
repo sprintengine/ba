@@ -74,7 +74,7 @@ export function ColorPicker({
           aria-label="Hex colour"
           leading={
             <span
-              className="size-3.5 rounded-full shadow-[inset_0_0_0_1px_oklch(0_0_0/0.15)]"
+              className="size-3.5 rounded-full ring-1 ring-input"
               style={{ backgroundColor: normalized }}
             />
           }

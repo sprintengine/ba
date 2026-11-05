@@ -18,7 +18,7 @@ export default function DashboardNotFound() {
       description="This page doesn't exist or has moved."
       action={
         <Button asChild variant="primary">
-          <Link href={dashboardHref(business.slug)}>Back to overview</Link>
+          <Link href={dashboardHref(business.slug)}>Back to Today</Link>
         </Button>
       }
     />

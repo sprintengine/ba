@@ -49,7 +49,7 @@ describe("BookingFilterBar", () => {
 
   it("picks a date range from its sheet, which closes once chosen", async () => {
     const bar = renderBar();
-    fireEvent.press(await screen.findByLabelText("Date range: Upcoming"));
+    fireEvent.press(await screen.findByLabelText("Date range: From today"));
     const sheet = await screen.findByTestId("range-sheet");
     expect(within(sheet).getByTestId("range-upcoming")).toBeChecked();
     fireEvent.press(within(sheet).getByTestId("range-next7"));

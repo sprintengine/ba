@@ -9,6 +9,7 @@ import {
   useNotificationSettings,
   useUpdateNotificationSettings,
 } from "@/lib/api/hooks";
+import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,12 +25,22 @@ export function NotificationsPage() {
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const unread = list.data?.unreadCount ?? 0;
+  const me = useMe();
+  // Reached from the dashboard's bell as well: the team go back there, customers to their bookings.
+  const member = (me.data?.memberships.length ?? 0) > 0;
 
   return (
     <>
       <PageHeader
         title="Notifications"
-        description="You choose which of these are also emailed."
+        back={
+          member ? { href: "/dashboard", label: "Today" } : { href: "/my/bookings", label: "My bookings" }
+        }
+        description={
+          <a href="#email" className="underline-offset-2 hover:text-foreground hover:underline">
+            Choose what&rsquo;s emailed
+          </a>
+        }
         actions={
           unread > 0 ? (
             <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
@@ -39,7 +50,7 @@ export function NotificationsPage() {
         }
       />
       <div className="flex flex-col gap-6">
-        <Card variant="panel" className="overflow-hidden">
+        <div className={cn(list.data?.items.length && "border-y border-border")}>
           {list.isError ? (
             <ErrorState headingLevel={2} error={list.error} onRetry={() => list.refetch()} />
           ) : list.isPending ? (
@@ -52,12 +63,12 @@ export function NotificationsPage() {
               headingLevel={2}
               icon={<Bell />}
               title="Nothing yet"
-              description="When something needs your attention, like a change your AI agent wants you to approve, it shows up here."
+              description="Anything that needs your attention shows up here."
             />
           ) : (
             <NotificationList items={list.data.items} />
           )}
-        </Card>
+        </div>
         <EmailSettings />
       </div>
     </>
@@ -82,12 +93,12 @@ function EmailSettings() {
     );
 
   return (
-    <Card variant="panel">
+    <Card id="email" className="scroll-mt-20">
       <CardHeader>
         <CardTitle>Email me about</CardTitle>
         <CardDescription>
-          Sent to {me.data?.user.email ?? "your account email"}, a minute later, unless you&rsquo;ve opened it
-          here by then.
+          Sent to {me.data?.user.email ?? "your account email"} a minute later, unless you&rsquo;ve opened it
+          here.
         </CardDescription>
       </CardHeader>
       <CardContent>

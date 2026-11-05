@@ -64,6 +64,29 @@ function ruleAppliesOn(
   );
 }
 
+/** Time taken out of a day on purpose: the business closed, or one resource's time off. */
+export type BlockedInterval = MinuteInterval & { kind: "closed" | "time-off"; reason: string | null };
+
+/**
+ * The closures and time off on a date, so the calendar can say why a stretch is unavailable (anything else outside
+ * the opening windows is simply not working hours). An entry with no times takes the whole day.
+ */
+export function blockedIntervalsForDate(
+  overrides: readonly AvailabilityOverride[],
+  closures: readonly AvailabilityOverride[],
+  date: PlainDate,
+): BlockedInterval[] {
+  const seen = new Map([...overrides, ...closures].map((o) => [o.id, o]));
+  return [...seen.values()]
+    .filter((o) => o.date === date && !o.isAvailable)
+    .map((o) => ({
+      kind: o.resourceId === null ? "closed" : "time-off",
+      reason: o.reason,
+      start: o.startTime && o.endTime ? timeToMinutes(o.startTime) : 0,
+      end: o.startTime && o.endTime ? endMinutes(o.endTime) : 1440,
+    }));
+}
+
 /**
  * Opening windows for one resource on one date (all audiences — the calendar
  * shows when the resource works, regardless of who may book those hours).

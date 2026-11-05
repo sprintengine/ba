@@ -46,8 +46,10 @@ export function ConsentSkeleton() {
 /** Unknown app or unregistered redirect: explain and stop. Never redirects anywhere. */
 export function InvalidAuthorizeRequest({ message }: { message: string }) {
   return (
-    <Card variant="panel" className="rounded-2xl">
+    <div>
       <EmptyState
+        size="lg"
+        headingLevel={1}
         icon={<CircleAlert />}
         title="This connection link isn't valid"
         description={
@@ -64,7 +66,7 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
           </Button>
         }
       />
-    </Card>
+    </div>
   );
 }
 
@@ -74,8 +76,10 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
  */
 export function NoBusinessToConnect({ message }: { message: string }) {
   return (
-    <Card variant="panel" className="rounded-2xl">
+    <div>
       <EmptyState
+        size="lg"
+        headingLevel={1}
         icon={<Store />}
         title="There's no business to connect"
         description={message}
@@ -85,7 +89,7 @@ export function NoBusinessToConnect({ message }: { message: string }) {
           </Button>
         }
       />
-    </Card>
+    </div>
   );
 }
 

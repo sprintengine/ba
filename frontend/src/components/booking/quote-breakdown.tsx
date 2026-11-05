@@ -23,14 +23,18 @@ export function QuoteBreakdown({
   const row = cn("flex justify-between gap-3", summary && "items-baseline");
   return (
     <dl className="flex flex-col gap-1.5 text-sm">
-      {quote.lines.map((l, i) => (
-        <div key={i} className={row}>
-          <dt className={cn("text-muted-foreground", summary && "min-w-0 truncate")}>{l.label}</dt>
-          <dd className={cn("tnum", summary && "shrink-0")}>{formatPrice(l.cents, currency, { locale })}</dd>
-        </div>
-      ))}
+      {/* One line would only repeat the total under it. */}
+      {(quote.lines.length > 1 || quote.deal || !summary) &&
+        quote.lines.map((l, i) => (
+          <div key={i} className={row}>
+            <dt className={cn("text-muted-foreground", summary && "min-w-0 truncate")}>{l.label}</dt>
+            <dd className={cn("tnum", summary && "shrink-0")}>
+              {formatPrice(l.cents, currency, { locale })}
+            </dd>
+          </div>
+        ))}
       {quote.deal && <DealLine deal={quote.deal} currency={currency} locale={locale} />}
-      <div className={cn(row, "mt-1 border-t border-border-subtle", summary ? "pt-2.5" : "pt-2")}>
+      <div className={cn(row, !summary && "mt-1 border-t border-border-subtle pt-2")}>
         <dt className="font-medium">
           Total
           {summary && (

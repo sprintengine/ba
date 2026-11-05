@@ -46,7 +46,7 @@ describe("marketplace settings", () => {
     const { container } = renderDashboard(<MarketplaceSettings />);
     const toggle = await screen.findByRole("switch", { name: /list on the bookanything marketplace/i });
     expect(toggle).toBeDisabled();
-    expect(screen.getByText("Included in the Pro and Business plans")).toBeInTheDocument();
+    expect(screen.getByText("Included in the Pro and Business plans.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /see plans/i })).toHaveAttribute(
       "href",
       "/dashboard/lumen-physio/settings/billing",

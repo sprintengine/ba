@@ -111,7 +111,7 @@ describe("ResourcesView", () => {
     expect(items[1]).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { level: 2, name: "Jo Park" })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /^Edit Monday: / })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Closed days" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Business closures" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -190,7 +190,7 @@ describe("ResourcesView", () => {
 
     expect(await screen.findByText(/View only/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Closed days" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Business closures" })).not.toBeInTheDocument();
     expect(await screen.findByRole("group", { name: "Monday" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Edit Monday/ })).not.toBeInTheDocument();
   });

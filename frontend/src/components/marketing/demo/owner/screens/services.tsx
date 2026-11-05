@@ -15,7 +15,7 @@ function ServiceRow({ s }: { s: DemoService }) {
         s.fresh && "bg-brand-soft/70",
       )}
     >
-      <span className="h-10 w-1 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+      <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="truncate text-sm font-medium">{s.name}</span>
         <span className="tnum flex items-center gap-x-2 text-xs text-muted-foreground">

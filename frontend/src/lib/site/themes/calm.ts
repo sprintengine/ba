@@ -50,7 +50,7 @@ export const CALM: SiteThemeDef = {
     border: "#e3d7c6",
     borderSubtle: "#ece3d6",
     borderStrong: "#d3c4af",
-    input: "#d3c4af",
+    input: "#938777",
   },
   dark: {
     background: "#15120e",
@@ -65,6 +65,6 @@ export const CALM: SiteThemeDef = {
     border: "#342c23",
     borderSubtle: "#2a241d",
     borderStrong: "#443a2f",
-    input: "#443a2f",
+    input: "#736a5f",
   },
 };

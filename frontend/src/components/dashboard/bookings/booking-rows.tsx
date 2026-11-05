@@ -7,9 +7,15 @@ import { BookingStatusBadge, PaymentStatusBadge } from "@/components/ui/status-b
 import { TableCell, TableRow } from "@/components/ui/table";
 import { ColorDot, useFmt } from "../common";
 
+/** A free booking has nothing to say about payment: the price already reads "Free". */
+function BookingPayment({ booking: b, className }: { booking: Booking; className?: string }) {
+  if (b.priceCents === 0 && b.paymentStatus === "not_required") return null;
+  return <PaymentStatusBadge status={b.paymentStatus} className={className} />;
+}
+
 /**
- * A booking in the desktop table; Enter/Space or a click opens it. Payment shows from iPad landscape up, who it is
- * with from xl, and the reference only from 2xl, so the table fits its box at 1440px.
+ * A booking in the desktop table; Enter/Space or a click opens it. Who it is with has its own column from xl and sits
+ * under the service below that; the reference shows only from 2xl, so the table fits its box at 1440px.
  */
 export function BookingRow({ booking: b, onOpen }: { booking: Booking; onOpen: () => void }) {
   const fmt = useFmt();
@@ -37,9 +43,16 @@ export function BookingRow({ booking: b, onOpen }: { booking: Booking; onOpen: (
       <TableCell>
         <span className="flex min-w-0 items-center gap-2">
           <ColorDot color={b.service.color} />
-          <span className="max-w-56 truncate">
-            {b.service.name}
-            {b.option && <span className="text-muted-foreground"> · {b.option.name}</span>}
+          <span className="flex min-w-0 flex-col">
+            <span className="max-w-56 truncate">
+              {b.service.name}
+              {b.option && <span className="text-muted-foreground"> · {b.option.name}</span>}
+            </span>
+            {b.resources.length > 0 && (
+              <span className="max-w-56 truncate text-xs text-muted-foreground xl:hidden">
+                {b.resources.map((r) => r.name).join(", ")}
+              </span>
+            )}
           </span>
         </span>
       </TableCell>
@@ -54,7 +67,7 @@ export function BookingRow({ booking: b, onOpen }: { booking: Booking; onOpen: (
         <BookingStatusBadge status={b.status} />
       </TableCell>
       <TableCell>
-        <PaymentStatusBadge status={b.paymentStatus} />
+        <BookingPayment booking={b} />
       </TableCell>
       <TableCell align="right" className="whitespace-nowrap">
         {fmt.price(b.priceCents, b.currency)}
@@ -86,10 +99,12 @@ export function MobileRow({ booking: b, onOpen }: { booking: Booking; onOpen: ()
             </span>
           </span>
           <span className="flex items-center justify-between gap-2">
-            <span className="truncate text-xs text-muted-foreground">{b.service.name}</span>
+            <span className="truncate text-xs text-muted-foreground">
+              {[b.service.name, ...b.resources.map((r) => r.name)].join(" · ")}
+            </span>
             <span className="flex shrink-0 items-center gap-1.5">
               {/* From iPad portrait up there is room for the payment too. */}
-              <PaymentStatusBadge status={b.paymentStatus} className="hidden sm:inline-flex" />
+              <BookingPayment booking={b} className="hidden sm:inline-flex" />
               <BookingStatusBadge status={b.status} />
             </span>
           </span>

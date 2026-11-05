@@ -75,23 +75,12 @@ function StatusCallouts({ booking: b }: { booking: BookingDetail }) {
   );
 }
 
-/** One line of the summary: a label, what it says, and anything to do about it. */
-function SummaryRow({
-  label,
-  action,
-  children,
-}: {
-  label: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+/** One line of the summary: a label and what it says. */
+function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 py-2.5">
       <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
-      <dd className="flex min-w-0 flex-1 items-start gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
-        {action}
-      </dd>
+      <dd className="flex min-w-0 flex-1 flex-col gap-1">{children}</dd>
     </div>
   );
 }
@@ -144,14 +133,7 @@ function Summary({ booking: b }: { booking: BookingDetail }) {
             </span>
           </SummaryRow>
         )}
-        <SummaryRow
-          label={v("customer", { title: true })}
-          action={
-            <Button asChild variant="link" size="xs" className="text-xs">
-              <Link href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</Link>
-            </Button>
-          }
-        >
+        <SummaryRow label={v("customer", { title: true })}>
           {group && (
             <Badge tone="brand" className="w-fit">
               {group.name}
@@ -163,7 +145,7 @@ function Summary({ booking: b }: { booking: BookingDetail }) {
               className="flex min-w-0 items-center gap-2 hover:text-muted-foreground pointer-coarse:min-h-11"
             >
               <Mail className="size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
-              <span className="min-w-0 break-all">{b.customer.email}</span>
+              <span className="min-w-0 [overflow-wrap:anywhere]">{b.customer.email}</span>
             </a>
           )}
           {b.customer.phone && (
@@ -177,6 +159,9 @@ function Summary({ booking: b }: { booking: BookingDetail }) {
           {!b.customer.email && !b.customer.phone && (
             <span className="text-muted-foreground">No contact details</span>
           )}
+          <Button asChild variant="link" size="xs" className="w-fit px-0 text-xs">
+            <Link href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</Link>
+          </Button>
         </SummaryRow>
       </dl>
       <p className="text-xs text-subtle-foreground">

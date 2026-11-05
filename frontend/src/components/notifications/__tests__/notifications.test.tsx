@@ -90,7 +90,7 @@ describe("NotificationBell", () => {
     await userEvent.click(bell);
     const link = await screen.findByRole("link", { name: /claude wants to: cancel 1 appointment/i });
     expect(link).toHaveAttribute("href", "/dashboard/lumen-physio/approvals/a1");
-    expect(within(link).getByText(/lumen physiotherapy · 5 min ago/i)).toBeInTheDocument();
+    expect(within(link).getByText(/5 min ago/i)).toBeInTheDocument();
     await expectNoAxeViolations(container.ownerDocument.body);
     await userEvent.click(link);
     await waitFor(() => expect(calls(fetchMock)).toContain("POST /v1/me/notifications/n1/read"));

@@ -95,7 +95,9 @@ export function FormDialog<V extends FieldValues>({
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           <DialogBody className={cn("flex flex-col gap-5", bodyClassName)}>{children}</DialogBody>
-          <DialogFooter className={cn(props.footerStart !== undefined && "sm:justify-between")}>
+          <DialogFooter
+            className={cn(props.footerStart !== undefined && "max-sm:flex-col-reverse sm:justify-between")}
+          >
             <FormActions {...props} onCancel={() => shell.requestOpenChange(false)} />
           </DialogFooter>
         </Form>
