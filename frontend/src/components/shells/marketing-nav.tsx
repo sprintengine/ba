@@ -110,7 +110,7 @@ function MobileMenu({
 }) {
   return (
     <Dialog.Portal>
-      <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in" />
+      <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[7px] data-[state=closed]:animate-fade-out data-[state=open]:animate-fade-in" />
       <Dialog.Content
         aria-describedby={undefined}
         className="fixed inset-x-3.5 top-3.5 z-50 flex max-h-[calc(100dvh-1.75rem)] flex-col overflow-hidden rounded-[22px] border border-(--glass-overlay-border) bg-surface-raised/95 shadow-xl backdrop-blur-2xl backdrop-saturate-150 outline-none data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in max-[760px]:inset-x-2.5 max-[760px]:top-2.5 max-[760px]:max-h-[calc(100dvh-1.25rem)] sm:left-auto sm:w-[26rem]"
