@@ -188,7 +188,7 @@ export function BillingSettings() {
                   </ul>
                   {p.plan !== "free" && !current && (
                     <Button
-                      variant={p.plan === "pro" ? "primary" : "secondary"}
+                      variant="secondary"
                       loading={
                         subscribed
                           ? portal.isPending

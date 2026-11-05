@@ -66,28 +66,23 @@ export function ReleaseSettings() {
       <SettingsHeader
         segment="release-schedules"
         actions={
-          <ActionButton
-            size="sm"
-            variant="primary"
-            onClick={() => editor.open(null)}
-            icon={<Plus />}
-            label="New schedule"
-            disabled={bookable.length === 0}
-          />
+          // With no schedules yet, the empty state below carries this action.
+          list.length > 0 && (
+            <ActionButton
+              size="sm"
+              variant="primary"
+              onClick={() => editor.open(null)}
+              icon={<Plus />}
+              label="New schedule"
+              disabled={bookable.length === 0}
+            />
+          )
         }
       />
-      <div className="mb-6 flex gap-3 rounded-xl border border-info-border bg-info-soft px-4 py-3.5 text-sm text-info-soft-foreground">
-        <CalendarClock className="mt-0.5 size-4 shrink-0" />
-        <div className="flex flex-col gap-1">
-          <p className="font-medium">How releases work</p>
-          <p>
-            A schedule keeps each day closed to online booking until it opens: the day before at 17:00, say,
-            or a whole week every Friday night. Change one day&apos;s release here or from the calendar — open
-            it now, move it, or hold it until you&apos;re ready. Your team can always book any free time, and{" "}
-            {v("customers")} see when a closed day opens.
-          </p>
-        </div>
-      </div>
+      <p className="mb-6 max-w-prose text-sm text-muted-foreground">
+        A schedule keeps each day closed to online booking until it opens: the day before at 17:00, say. Your
+        team can always book any free time, and {v("customers")} see when a closed day opens.
+      </p>
       {schedules.isError ? (
         <ErrorState error={schedules.error} onRetry={() => schedules.refetch()} />
       ) : schedules.isPending || services.isPending ? (

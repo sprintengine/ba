@@ -85,7 +85,7 @@ export function QuestionsSettings() {
         <p className="text-sm text-muted-foreground">
           Asked after people pick a time. Name, email and phone are always collected.
         </p>
-        {(services.data?.length ?? 0) > 0 && (
+        {(services.data?.length ?? 0) > 0 && (list.length > 0 || filter !== "all") && (
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger size="sm" className="w-full sm:w-48 sm:shrink-0" aria-label="Filter by service">
               <SelectValue />

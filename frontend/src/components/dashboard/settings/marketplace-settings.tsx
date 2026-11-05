@@ -15,7 +15,6 @@ import {
 import type { MarketplaceSettings as Settings } from "@/lib/api/types";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useMarketplaceSettings, useUpdateMarketplaceSettings } from "@/lib/api/hooks";
-import { useVocabulary } from "@/lib/vocabulary";
 import { useBusinessContext } from "@/lib/business/business-context";
 import { ErrorState } from "@/components/common/feedback";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
@@ -88,9 +87,7 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
           orientation="horizontal"
           label="List on the bookanything marketplace"
           help={
-            eligible
-              ? "Commission-free: bookings from the marketplace cost you nothing extra."
-              : "Available on the Pro and Business plans."
+            eligible ? "Commission-free: bookings from the marketplace cost you nothing extra." : undefined
           }
         >
           <Switch
@@ -104,7 +101,7 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
           help="The main thing people book with you. It decides where you appear in search."
           className="sm:max-w-xs"
         >
-          <Select value={category} onValueChange={onCategory} disabled={update.isPending}>
+          <Select value={category} onValueChange={onCategory} disabled={!eligible || update.isPending}>
             <SelectTrigger>
               <SelectValue placeholder="Choose a category" />
             </SelectTrigger>
@@ -139,7 +136,6 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
 
 function UpgradeCard({ message }: { message: string | null }) {
   const { business } = useBusinessContext();
-  const { v } = useVocabulary();
   return (
     <div
       role={message ? "alert" : undefined}
@@ -147,11 +143,8 @@ function UpgradeCard({ message }: { message: string | null }) {
     >
       <Rocket className="size-5 shrink-0" aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="text-sm font-semibold">Get found by new {v("customers")} with Pro</p>
-        <p className="text-sm opacity-90">
-          {message ??
-            "Marketplace listing is included in the Pro and Business plans. We don't take a cut of the bookings it brings in."}
-        </p>
+        <p className="text-sm font-semibold">Included in the Pro and Business plans</p>
+        <p className="text-sm opacity-90">{message ?? "We don't take a cut of the bookings it brings in."}</p>
       </div>
       <Button asChild variant="primary" className="shrink-0 self-start sm:self-center">
         <Link href={dashboardHref(business.slug, "settings/billing")}>

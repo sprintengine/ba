@@ -46,7 +46,7 @@ describe("marketplace settings", () => {
     const { container } = renderDashboard(<MarketplaceSettings />);
     const toggle = await screen.findByRole("switch", { name: /list on the bookanything marketplace/i });
     expect(toggle).toBeDisabled();
-    expect(screen.getByText("Get found by new patients with Pro")).toBeInTheDocument();
+    expect(screen.getByText("Included in the Pro and Business plans")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /see plans/i })).toHaveAttribute(
       "href",
       "/dashboard/lumen-physio/settings/billing",
@@ -60,7 +60,7 @@ describe("marketplace settings", () => {
     const { container } = renderDashboard(<MarketplaceSettings />);
     const toggle = await screen.findByRole("switch", { name: /list on the bookanything marketplace/i });
     expect(toggle).toBeEnabled();
-    expect(screen.queryByText("Get found by new patients with Pro")).not.toBeInTheDocument();
+    expect(screen.queryByText("Included in the Pro and Business plans")).not.toBeInTheDocument();
     expect(screen.getByText(/commission-free/i)).toBeInTheDocument();
     await user.click(toggle);
     await waitFor(() => expect(puts).toEqual([{ listed: true, category: "physio" }]));
