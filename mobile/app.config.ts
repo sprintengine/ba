@@ -148,7 +148,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "expo-notifications",
         {
-          // Android's status bar and notification icon: white on transparent (the symbol), tinted `color`.
+          // Android's status bar and notification icon: white on transparent (the rings), tinted `color`.
           icon: "./assets/images/notification-icon.png",
           color: "#5b4ae0",
           defaultChannel: "default",
