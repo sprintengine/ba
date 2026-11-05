@@ -49,7 +49,7 @@ describe("MyBookingsList", () => {
     const { onOpen } = setup();
     const card = await screen.findByTestId("booking-BA-UP0001");
     expect(card.props.accessibilityLabel).toMatch(
-      /^Initial assessment, Extended with Lumen Physiotherapy\. Wednesday,? 7 October, 09:00 – 10:00\. Confirmed\. Partly refunded$/,
+      /^Initial assessment, Extended with Lumen Physiotherapy\. Wednesday,? 7 October, 09:00–10:00\. Confirmed\. Partly refunded$/,
     );
     fireEvent.press(card);
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: "b1" }));

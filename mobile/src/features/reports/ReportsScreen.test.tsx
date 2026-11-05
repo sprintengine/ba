@@ -191,7 +191,7 @@ describe("Reports", () => {
     const table = screen.getByTestId("reports-table");
     expect(within(table).getByTestId("row-2026-09-01")).toHaveProp(
       "accessibilityLabel",
-      "Tue 1 Sept 2026: 2 appointments, €90",
+      "Tue, 1 Sept 2026: 2 appointments, €90",
     );
     expect(within(table).getByTestId("row-2026-09-02")).toHaveTextContent(/0.*€0/);
     expect(within(table).getByTestId("row-2026-09-03")).toHaveTextContent(/5.*€2,500/);
@@ -209,8 +209,8 @@ describe("Reports", () => {
 
     fireEvent.press(screen.getByTestId("reports-chart-plot"), { nativeEvent: { locationX: 250 } });
     const tooltip = screen.getByTestId("reports-chart-tooltip");
-    expect(tooltip).toHaveTextContent("5 appointmentsThu 3 Sept 2026");
-    expect(chart).toHaveProp("accessibilityValue", { text: "Thu 3 Sept 2026: 5 appointments" });
+    expect(tooltip).toHaveTextContent("5 appointmentsThu, 3 Sept 2026");
+    expect(chart).toHaveProp("accessibilityValue", { text: "Thu, 3 Sept 2026: 5 appointments" });
     // Pressing it again (or outside the plot) hides it.
     fireEvent.press(screen.getByTestId("reports-chart-plot"), { nativeEvent: { locationX: 250 } });
     expect(screen.queryByTestId("reports-chart-tooltip")).toBeNull();
@@ -218,18 +218,18 @@ describe("Reports", () => {
     expect(screen.queryByTestId("reports-chart-tooltip")).toBeNull();
 
     fireEvent(chart, "accessibilityAction", { nativeEvent: { actionName: "increment" } });
-    expect(chart).toHaveProp("accessibilityValue", { text: "Tue 1 Sept 2026: 2 appointments" });
+    expect(chart).toHaveProp("accessibilityValue", { text: "Tue, 1 Sept 2026: 2 appointments" });
     fireEvent(chart, "accessibilityAction", { nativeEvent: { actionName: "increment" } });
-    expect(chart).toHaveProp("accessibilityValue", { text: "Wed 2 Sept 2026: 0 appointments" });
+    expect(chart).toHaveProp("accessibilityValue", { text: "Wed, 2 Sept 2026: 0 appointments" });
     fireEvent(chart, "accessibilityAction", { nativeEvent: { actionName: "decrement" } });
     fireEvent(chart, "accessibilityAction", { nativeEvent: { actionName: "decrement" } });
-    expect(chart).toHaveProp("accessibilityValue", { text: "Tue 1 Sept 2026: 2 appointments" });
+    expect(chart).toHaveProp("accessibilityValue", { text: "Tue, 1 Sept 2026: 2 appointments" });
 
     // Switching the measure clears the selection.
     fireEvent.press(screen.getByRole("tab", { name: "Revenue" }));
     expect(chart.props.accessibilityValue).toBeUndefined();
     fireEvent(chart, "accessibilityAction", { nativeEvent: { actionName: "decrement" } });
-    expect(chart).toHaveProp("accessibilityValue", { text: "Thu 3 Sept 2026: €2,500" });
+    expect(chart).toHaveProp("accessibilityValue", { text: "Thu, 3 Sept 2026: €2,500" });
   });
 
   it("says when there's nothing in the period", async () => {

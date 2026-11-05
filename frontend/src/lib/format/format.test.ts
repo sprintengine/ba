@@ -81,9 +81,7 @@ describe("datetime", () => {
     // 08:00Z is 09:00 in Dublin (IST, UTC+1) and 04:00 in New York.
     expect(formatTime("2026-10-01T08:00:00Z", tz)).toBe("09:00");
     expect(formatTime("2026-10-01T08:00:00Z", "America/New_York")).toBe("04:00");
-    expect(formatTimeRange("2026-10-01T09:00:00+01:00", "2026-10-01T09:45:00+01:00", tz)).toBe(
-      "09:00 – 09:45",
-    );
+    expect(formatTimeRange("2026-10-01T09:00:00+01:00", "2026-10-01T09:45:00+01:00", tz)).toBe("09:00–09:45");
   });
   it("formats plain dates without timezone drift", () => {
     expect(formatDate("2026-10-01", "Pacific/Auckland", "medium")).toBe("1 Oct 2026");

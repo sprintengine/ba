@@ -160,14 +160,14 @@ export function formatTime(instant: string | Date, timeZone: string, locale = DE
   return dtf(locale, timeZone, { hour: "2-digit", minute: "2-digit" }).format(d);
 }
 
-/** "09:00 – 09:45" */
+/** "09:00–09:45" */
 export function formatTimeRange(
   start: string,
   end: string,
   timeZone: string,
   locale = DEFAULT_LOCALE,
 ): string {
-  return `${formatTime(start, timeZone, locale)} – ${formatTime(end, timeZone, locale)}`;
+  return `${formatTime(start, timeZone, locale)}–${formatTime(end, timeZone, locale)}`;
 }
 
 export type DateStyle =
@@ -193,11 +193,13 @@ export function formatDate(
   style: DateStyle = "medium",
   locale = DEFAULT_LOCALE,
 ): string {
+  // English drops the comma once a year is added; keep one way of writing a day.
+  const steady = (text: string) => (style === "dayMonthYear" ? text.replace(/^(\p{L}+) /u, "$1, ") : text);
   if (typeof value === "string" && isPlainDate(value)) {
-    return dtf(locale, "UTC", DATE_STYLES[style]).format(plainDateToUtcDate(value));
+    return steady(dtf(locale, "UTC", DATE_STYLES[style]).format(plainDateToUtcDate(value)));
   }
   const d = typeof value === "string" ? parseISO(value) : value;
-  return dtf(locale, timeZone, DATE_STYLES[style]).format(d);
+  return steady(dtf(locale, timeZone, DATE_STYLES[style]).format(d));
 }
 
 /** "Thu, 1 Oct, 09:00" */
