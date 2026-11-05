@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUp, Globe, Sparkles, Wand2 } from "lucide-react";
+import { ArrowUp, Globe, Wand2 } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useEditSite, useGenerateSite, useSiteVersions } from "@/lib/api/hooks";
