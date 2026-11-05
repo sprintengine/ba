@@ -18,8 +18,22 @@ const ALL_ELEMENTS = ["app", "ui", "shared", "feature", "lib", "test-support"];
 const FEATURE_ENTRY_POINTS = {
   ai: ["credits.tsx"],
   assistant: ["bo-character.tsx", "dictation.tsx", "proposal-card.tsx"],
-  booking: ["booking-flow.tsx", "portal-style-picker.tsx"],
-  dashboard: ["common.tsx"],
+  // The home page's demo draws the real steps and calendar on sample data, and loads them as its own chunk.
+  booking: [
+    "booking-flow.tsx",
+    "manage-hero.tsx",
+    "portal-style-picker.tsx",
+    "review-step.tsx",
+    "slot-grid.tsx",
+    "steps.tsx",
+    "week-strip.tsx",
+  ],
+  dashboard: [
+    "calendar/calendar-grid.tsx",
+    "calendar/calendar-headers.tsx",
+    "calendar/event-card.tsx",
+    "common.tsx",
+  ],
   marketing: ["section.tsx", "legal/legal-toc.tsx"],
   notifications: ["notification-bell.tsx"],
   oauth: ["server-url-field.tsx"],

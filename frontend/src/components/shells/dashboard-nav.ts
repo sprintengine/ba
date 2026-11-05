@@ -21,6 +21,11 @@ import {
   type DashboardSectionKey,
 } from "@/lib/dashboard/nav";
 
+/** A rail item: glyph over its label. */
+export const railClass =
+  "relative flex w-16 flex-col items-center gap-1 rounded-lg px-0.5 pt-2 pb-1.5 text-xs leading-4 font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4.5 [&_svg]:shrink-0";
+export const railIdle = "text-muted-foreground hover:bg-accent hover:text-foreground";
+
 /** The platform-agnostic model (sections, settings, roles) lives in lib, shared with the mobile app. */
 export * from "@/lib/dashboard/nav";
 
