@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { minutesToTime, timeToMinutes, toTimeOfDay, todayInTz, type PlainDate } from "@/lib/format/datetime";
@@ -53,14 +53,28 @@ export function CalendarView() {
   // Scroll to "now" (or opening time) when the day changes.
   const scroller = useRef<HTMLDivElement>(null);
   const scrolledFor = useRef<string | null>(null);
+  const [moreRight, setMoreRight] = useState(false);
+  const syncMoreRight = useCallback(() => {
+    const el = scroller.current;
+    if (el) setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
   const { ready, days, firstOpen } = data;
   useEffect(() => {
     const key = `${view}-${date}`;
     if (!ready || !scroller.current || scrolledFor.current === key) return;
     scrolledFor.current = key;
-    const target = days.includes(today) ? nowMinute - 90 : firstOpen - 30;
+    // Before opening time, today starts at the working day too, not on empty hours.
+    const target = Math.max(firstOpen - 30, days.includes(today) ? nowMinute - 90 : 0);
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * HOUR_PX);
   }, [ready, view, date, days, today, nowMinute, firstOpen, startHour]);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(syncMoreRight);
+    observer.observe(el);
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
+    return () => observer.disconnect();
+  }, [syncMoreRight, ready]);
 
   const { loading } = data;
 
@@ -93,75 +107,85 @@ export function CalendarView() {
         />
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
-          <div
-            ref={scroller}
-            // Keyboard users scroll the grid too (it is a scroll container, not just its content).
-            tabIndex={0}
-            role="region"
-            aria-label="Calendar"
-            // At most the screen's height, but no taller than the day: a short day on a tall iPad leaves no blank well.
-            className="relative max-h-[calc(100dvh-var(--tab-bar-height,0px)-env(safe-area-inset-bottom)-16rem)] min-h-[420px] scrollbar-thin overflow-auto overscroll-contain sm:max-h-[calc(100dvh-14.5rem)] xl:max-h-[calc(100dvh-11.5rem)]"
-          >
-            <div className="flex min-w-full" style={{ width: "max-content" }}>
-              <div className="flex min-w-full flex-col">
-                <CalendarHeaderRow
-                  columns={columns}
-                  view={view}
-                  today={today}
-                  loading={data.resourcesQ.isPending}
-                  onOpenDay={(d) => setParams({ view: null, date: d })}
-                />
-                <CalendarReleases days={days} view={view} today={today} columnClass={colMin(view)} />
-                {/* Grid (dimmed while a new day or week loads over the previous one's bookings) */}
-                <div
-                  className={cn("flex transition-opacity", data.updating && "opacity-60")}
-                  aria-busy={data.updating || undefined}
-                >
-                  <div className="sticky left-0 z-20 bg-surface">
-                    <TimeGutter
-                      startHour={startHour}
-                      endHour={endHour}
-                      formatHour={formatHour}
-                      nowMinute={days.includes(today) ? nowMinute : null}
-                    />
+          <div className="relative min-h-0">
+            <div
+              ref={scroller}
+              onScroll={syncMoreRight}
+              // Keyboard users scroll the grid too (it is a scroll container, not just its content).
+              tabIndex={0}
+              role="region"
+              aria-label="Calendar"
+              // At most the screen's height, but no taller than the day: a short day on a tall iPad leaves no blank well.
+              className="@container relative max-h-[calc(100dvh-var(--tab-bar-height,0px)-env(safe-area-inset-bottom)-16rem)] min-h-[420px] snap-x scroll-pl-14 scrollbar-thin overflow-auto overscroll-contain sm:max-h-[calc(100dvh-14.5rem)] xl:max-h-[calc(100dvh-11.5rem)]"
+            >
+              <div className="flex min-w-full" style={{ width: "max-content" }}>
+                <div className="flex min-w-full flex-col">
+                  <CalendarHeaderRow
+                    columns={columns}
+                    view={view}
+                    today={today}
+                    loading={data.resourcesQ.isPending}
+                    onOpenDay={(d) => setParams({ view: null, date: d })}
+                  />
+                  <CalendarReleases days={days} view={view} today={today} columnClass={colMin(view)} />
+                  {/* Grid (dimmed while a new day or week loads over the previous one's bookings) */}
+                  <div
+                    className={cn("flex transition-opacity", data.updating && "opacity-60")}
+                    aria-busy={data.updating || undefined}
+                  >
+                    <div className="sticky left-0 z-20 bg-surface">
+                      <TimeGutter
+                        startHour={startHour}
+                        endHour={endHour}
+                        formatHour={formatHour}
+                        nowMinute={days.includes(today) ? nowMinute : null}
+                      />
+                    </div>
+                    {loading
+                      ? Array.from({ length: Math.max(columns.length, 3) }, (_, i) => (
+                          <div
+                            key={i}
+                            className={cn("flex-1 border-l border-border p-2", colMin(view))}
+                            style={{ height: (endHour - startHour) * HOUR_PX }}
+                          >
+                            <Skeleton className="mt-16 h-16 w-full rounded-md" />
+                            <Skeleton className="mt-24 h-24 w-5/6 rounded-md" />
+                          </div>
+                        ))
+                      : columns.map((c) => (
+                          <div key={c.key} className={cn("flex flex-1", colMin(view))}>
+                            <DayColumn
+                              date={c.date}
+                              timeZone={business.timezone}
+                              bookings={c.bookings}
+                              open={c.open}
+                              startHour={startHour}
+                              endHour={endHour}
+                              nowMinute={c.date === today ? nowMinute : null}
+                              compact={view === "week"}
+                              formatTime={fmt.time}
+                              onSelectBooking={openBooking}
+                              onCreate={createAt}
+                              resourceId={c.resource?.id}
+                              label={
+                                c.resource
+                                  ? `${c.resource.name}, ${fmt.date(c.date, "long")}`
+                                  : fmt.date(c.date, "long")
+                              }
+                            />
+                          </div>
+                        ))}
                   </div>
-                  {loading
-                    ? Array.from({ length: Math.max(columns.length, 3) }, (_, i) => (
-                        <div
-                          key={i}
-                          className={cn("flex-1 border-l border-border p-2", colMin(view))}
-                          style={{ height: (endHour - startHour) * HOUR_PX }}
-                        >
-                          <Skeleton className="mt-16 h-16 w-full rounded-md" />
-                          <Skeleton className="mt-24 h-24 w-5/6 rounded-md" />
-                        </div>
-                      ))
-                    : columns.map((c) => (
-                        <div key={c.key} className={cn("flex flex-1", colMin(view))}>
-                          <DayColumn
-                            date={c.date}
-                            timeZone={business.timezone}
-                            bookings={c.bookings}
-                            open={c.open}
-                            startHour={startHour}
-                            endHour={endHour}
-                            nowMinute={c.date === today ? nowMinute : null}
-                            compact={view === "week"}
-                            formatTime={fmt.time}
-                            onSelectBooking={openBooking}
-                            onCreate={createAt}
-                            resourceId={c.resource?.id}
-                            label={
-                              c.resource
-                                ? `${c.resource.name}, ${fmt.date(c.date, "long")}`
-                                : fmt.date(c.date, "long")
-                            }
-                          />
-                        </div>
-                      ))}
                 </div>
               </div>
             </div>
+            {/* The columns past the right edge: whole columns leave no sliver to hint at them. */}
+            {moreRight && (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 z-40 w-5 bg-gradient-to-l from-foreground/10 to-transparent"
+              />
+            )}
           </div>
           <CalendarFooter count={data.count} updating={data.bookingsQ.isFetching} />
         </div>
