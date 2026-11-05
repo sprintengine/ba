@@ -32,7 +32,7 @@ export function CategoryChips({
     <div
       role="group"
       aria-label="Categories"
-      className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
+      className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto px-5 pb-1 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
     >
       <Chip active={value === null} onClick={() => onValueChange(null)} icon={<LayoutGrid />}>
         All

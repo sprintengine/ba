@@ -54,9 +54,9 @@ export function DetailsStep({
         </p>
       )}
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <FormField<DetailsValues, "name"> name="name" label="Full name" required className="sm:col-span-2">
-          {(field) => <Input {...field} size="lg" autoComplete="name" placeholder="Alex Morgan" />}
+      <div className="flex flex-col gap-5">
+        <FormField<DetailsValues, "name"> name="name" label="Full name" required>
+          {(field) => <Input {...field} size="lg" autoComplete="name" />}
         </FormField>
         <FormField<DetailsValues, "email">
           name="email"
@@ -64,16 +64,7 @@ export function DetailsStep({
           required
           help="We'll send your confirmation and a link to manage it here."
         >
-          {(field) => (
-            <Input
-              {...field}
-              size="lg"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-            />
-          )}
+          {(field) => <Input {...field} size="lg" type="email" inputMode="email" autoComplete="email" />}
         </FormField>
         <FormField<DetailsValues, "phone">
           name="phone"
