@@ -25,7 +25,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
       <CardHeader>
         <CardTitle headingLevel={2}>Today&apos;s {v("bookings")}</CardTitle>
       </CardHeader>
-      <CardContent className="px-3 pb-3">
+      <CardContent className="-mx-2 pb-3">
         {loading ? (
           <div className="flex flex-col gap-2 px-2" aria-busy>
             {Array.from({ length: 4 }, (_, i) => (
@@ -74,7 +74,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                     </span>
                     <span
                       aria-hidden
-                      className="h-8 w-0.5 shrink-0 rounded-full"
+                      className="size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: b.service.color }}
                     />
                     <Avatar name={b.customer.name} size="md" />

@@ -79,7 +79,7 @@ export function ServicesList() {
           ))}
         </div>
       ) : all.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface shadow-xs">
+        <div className="border-y border-border">
           <EmptyState
             headingLevel={2}
             icon={<Sparkles />}
@@ -99,7 +99,7 @@ export function ServicesList() {
           {groups.entries.map(([cat, list]) => (
             <section key={cat || "all"} className="flex flex-col gap-2">
               {cat && <h2 className="px-1 text-sm font-medium text-muted-foreground">{cat}</h2>}
-              <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+              <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
                 {list.map((s) => (
                   <ServiceRow key={s.id} service={s} canEdit={perms.manageServices} onEdit={() => open(s)} />
                 ))}
@@ -158,7 +158,7 @@ function ServiceRow({
         !s.isActive && "opacity-70",
       )}
     >
-      <span aria-hidden className="h-10 w-1 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
       <button
         type="button"
         disabled={!canEdit}

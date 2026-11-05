@@ -89,7 +89,7 @@ export function ReleaseSettings() {
       ) : schedules.isPending || services.isPending ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface shadow-xs">
+        <div className="border-y border-border">
           <EmptyState
             icon={<CalendarClock />}
             title="No release schedules"

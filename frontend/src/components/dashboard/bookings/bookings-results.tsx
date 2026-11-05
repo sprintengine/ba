@@ -39,7 +39,7 @@ export function BookingsResults({
 
   if (!paging.isPending && items.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-surface shadow-xs">
+      <div className="border-y border-border">
         {filtered ? (
           <EmptyState
             headingLevel={2}
@@ -73,7 +73,7 @@ export function BookingsResults({
         tabIndex={0}
         role="region"
         aria-label="Results"
-        className="relative max-h-[calc(100dvh-15rem)] scrollbar-thin overflow-auto rounded-xl border border-border bg-surface shadow-xs"
+        className="relative max-h-[calc(100dvh-15rem)] scrollbar-thin overflow-auto border-y border-border"
       >
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-surface-sunken/95 backdrop-blur-sm">
@@ -108,7 +108,7 @@ export function BookingsResults({
   return (
     <>
       {/* Phone and iPad portrait list */}
-      <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+      <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
         {paging.isPending
           ? Array.from({ length: 6 }, (_, i) => <MobileSkeletonRow key={i} />)
           : items.map((b) => <MobileRow key={b.id} booking={b} onOpen={() => openBooking(b.id)} />)}

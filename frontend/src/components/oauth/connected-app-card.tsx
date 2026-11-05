@@ -29,7 +29,7 @@ export function ConnectedAppCard({ app, timeZone }: { app: ConnectedApp; timeZon
   }
 
   return (
-    <Card className="flex-row items-start gap-4 p-4 sm:p-5">
+    <Card variant="panel" className="flex-row items-start gap-4 p-4 sm:p-5">
       <Avatar name={app.name} size="lg" shape="square" />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex flex-col gap-1">

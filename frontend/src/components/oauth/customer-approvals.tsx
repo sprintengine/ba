@@ -131,7 +131,7 @@ export function CustomerRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <Card>
+        <Card variant="panel">
           <EmptyState
             headingLevel={2}
             icon={<Bot />}

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "./skeleton";
 
 /**
- * KPI tile.
+ * A figure with its label, flat on the page.
  *   <StatCard label="Bookings (30d)" value="128" delta={{ value: "+12%", trend: "up" }} hint="vs previous 30 days" />
  */
 export function StatCard({
@@ -33,12 +33,7 @@ export function StatCard({
       : (delta.trend === "up") === (delta.positiveIsGood ?? true)
     : null;
   return (
-    <div
-      className={cn(
-        "flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-xs",
-        className,
-      )}
-    >
+    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
       <div className="flex items-center justify-between gap-2">
         {/* One line, so tiles in a row keep their figures level when a label is too long for a narrow tile. */}
         <span
@@ -53,7 +48,7 @@ export function StatCard({
         <Skeleton className="h-8 w-24" />
       ) : (
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tracking-tight">{value}</span>
+          <span className="tnum text-2xl font-semibold tracking-tight">{value}</span>
           {delta && (
             <span
               className={cn(

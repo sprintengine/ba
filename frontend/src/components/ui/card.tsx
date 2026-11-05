@@ -1,20 +1,26 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Card — the default container for grouped content.
+ * Card — a titled section of a page.
  *   <Card><CardHeader><CardTitle/><CardDescription/><CardAction/></CardHeader><CardContent/><CardFooter/></Card>
- * `interactive` adds hover elevation (for clickable cards; wrap with <Link> or pass asChild patterns).
+ * By default it is flat: a hairline over the section and nothing round it, so pages read as one sheet. `variant="panel"`
+ * is the boxed version, for what stands alone on a bare page (sign-in and consent, customer pages). `interactive` adds
+ * hover elevation to a panel (for clickable cards; wrap with <Link> or pass asChild patterns).
  */
 export function Card({
   className,
+  variant = "section",
   interactive,
   ...props
-}: React.ComponentProps<"div"> & { interactive?: boolean }) {
+}: React.ComponentProps<"div"> & { variant?: "section" | "panel"; interactive?: boolean }) {
   return (
     <div
       data-slot="card"
+      data-variant={variant}
       className={cn(
-        "flex min-w-0 flex-col rounded-xl border border-border bg-surface text-foreground shadow-xs",
+        "group/card flex min-w-0 flex-col text-foreground",
+        variant === "section" && "border-t border-border",
+        variant === "panel" && "rounded-xl border border-border bg-surface shadow-xs",
         interactive &&
           "transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-px hover:border-border-strong hover:shadow-md",
         className,
@@ -28,7 +34,7 @@ export function CardHeader({ className, ...props }: React.ComponentProps<"div">)
   return (
     <div
       className={cn(
-        "@container/card-header grid auto-rows-min grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 px-5 pt-5 pb-3 has-[+[data-slot=card-footer]]:pb-5",
+        "@container/card-header grid auto-rows-min grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1 pt-4 pb-3 group-data-[variant=panel]/card:px-5 group-data-[variant=panel]/card:pt-5 has-[+[data-slot=card-footer]]:pb-5",
         className,
       )}
       {...props}
@@ -79,7 +85,15 @@ export function CardAction({ className, wrap, ...props }: React.ComponentProps<"
 }
 
 export function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return <div className={cn("px-5 pb-5 first:pt-5", className)} {...props} />;
+  return (
+    <div
+      className={cn(
+        "pb-6 group-data-[variant=panel]/card:px-5 group-data-[variant=panel]/card:pb-5 first:pt-4 group-data-[variant=panel]/card:first:pt-5",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -87,7 +101,7 @@ export function CardFooter({ className, ...props }: React.ComponentProps<"div">)
     <div
       data-slot="card-footer"
       className={cn(
-        "mt-auto flex items-center gap-2 rounded-b-xl border-t border-border-subtle bg-surface-sunken/60 px-5 py-3",
+        "mt-auto flex items-center gap-2 border-t border-border-subtle py-3 group-data-[variant=panel]/card:rounded-b-xl group-data-[variant=panel]/card:bg-surface-sunken/60 group-data-[variant=panel]/card:px-5",
         className,
       )}
       {...props}

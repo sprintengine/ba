@@ -69,7 +69,7 @@ export function GroupsSettings() {
       ) : groups.isPending ? (
         <Skeleton className="h-40 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface shadow-xs">
+        <div className="border-y border-border">
           <EmptyState
             icon={<UsersRound />}
             title="No groups"
@@ -77,7 +77,7 @@ export function GroupsSettings() {
           />
         </div>
       ) : (
-        <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+        <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
           {list.map((g) => (
             <li key={g.id} className="flex items-center gap-3 px-4 py-3">
               <div className="flex min-w-0 flex-1 flex-col">
