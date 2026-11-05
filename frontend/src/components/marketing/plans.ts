@@ -35,7 +35,7 @@ export const PLANS: Plan[] = [
       "100 bookings a month",
       "Unlimited staff",
       "Unlimited appointment types",
-      "Your own AI assistant, included",
+      "Connect your own assistant, included (our built-in one runs on paid credits)",
       "Plug booking into your own site",
       "0% platform fee on payments",
     ],

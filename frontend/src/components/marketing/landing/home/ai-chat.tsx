@@ -69,9 +69,14 @@ function Chrome({ title, children }: { title: string; children: React.ReactNode 
   );
 }
 
-function Mine({ children }: { children: React.ReactNode }) {
+function Mine({ children, theirs = false }: { children: React.ReactNode; theirs?: boolean }) {
   return (
-    <p className="ml-10 self-end rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-sm text-primary-foreground">
+    <p
+      className={cn(
+        "ml-10 self-end rounded-2xl rounded-br-md px-3.5 py-2 text-sm",
+        theirs ? "bg-muted text-foreground" : "bg-primary text-primary-foreground",
+      )}
+    >
       {children}
     </p>
   );
@@ -83,21 +88,21 @@ export function OwnerChat({ step }: { step: number }) {
     {
       id: "friday",
       name: "get_calendar",
-      label: "Looking at Friday's calendar",
+      label: "Looking at Friday’s calendar",
       status: step === 0 ? "running" : "done",
-      summary: "Looked at Friday's calendar",
+      summary: "Looked at Friday’s calendar",
     },
   ];
   return (
     <Chrome title="Your assistant">
       <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden px-4 pt-3 text-sm leading-6">
-        <Mine>Who hasn&apos;t paid this week?</Mine>
+        <Mine>Who hasn’t paid this week?</Mine>
         <p>Everyone but Jo Hayes. €70 is due for Thursday.</p>
-        <Mine>Sam&apos;s off on Friday afternoon. Can you sort out their bookings?</Mine>
+        <Mine>Sam’s off on Friday afternoon. Can you sort out their bookings?</Mine>
         <ToolActivityList tools={tools} />
         {step >= 1 && (
           <div className="flex animate-rise flex-col gap-3">
-            <p>Aoife is free for all three. Here&apos;s what I&apos;d change.</p>
+            <p>Aoife is free for all three. Here’s what I’d change.</p>
             <ProposalView
               action={step >= 3 ? MOVED : MOVE}
               confirm={{ mutate: noop, isPending: step === 2 }}
@@ -127,9 +132,9 @@ export function ClientChat({ step }: { step: number }) {
   return (
     <Chrome title="Their assistant">
       <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden px-4 pt-3 text-sm leading-6">
-        <Mine>Is there a physio near Lantern Quay I can book online?</Mine>
+        <Mine theirs>Is there a physio near Lantern Quay I can book online?</Mine>
         <p>Lumen Physiotherapy, Unit 4, Lantern Quay. They take bookings here in the chat.</p>
-        <Mine>Book me a follow-up on Thursday, any time after 3.</Mine>
+        <Mine theirs>Book me a follow-up on Thursday, any time after 3.</Mine>
         <p className="flex items-center gap-2 text-muted-foreground">
           <Check className="size-4" aria-hidden /> Checked times at Lumen Physiotherapy
         </p>
@@ -184,9 +189,7 @@ export function ClientChat({ step }: { step: number }) {
               </span>
             </div>
             {step >= 3 && (
-              <p className="animate-fade-in">
-                It&apos;s on their calendar, and a reminder is set for Wednesday.
-              </p>
+              <p className="animate-fade-in">It’s on their calendar, and a reminder is set for Wednesday.</p>
             )}
           </div>
         )}

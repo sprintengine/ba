@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PLANS, TALK_TO_US } from "../plans";
 
-export function PlanCards() {
+/** The plans, the same on the home page and the pricing page. */
+export function PlanCards({ heading: Heading = "h2" }: { heading?: "h2" | "h3" }) {
   return (
     <ul className="grid gap-4 lg:grid-cols-3">
       {PLANS.map((plan) => (
@@ -16,7 +17,7 @@ export function PlanCards() {
           )}
         >
           <div className="relative flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">{plan.name}</h2>
+            <Heading className="text-lg font-semibold tracking-tight">{plan.name}</Heading>
             {plan.highlight && (
               <span className="rounded-md bg-primary px-2 py-0.5 text-2xs font-semibold text-primary-foreground">
                 {plan.badge}
@@ -37,7 +38,7 @@ export function PlanCards() {
                 <>
                   until
                   <br />
-                  you&apos;re busy
+                  you’re busy
                 </>
               )}
             </span>
@@ -83,8 +84,8 @@ export function PlanNotes() {
         .
       </p>
       <p>
-        Your own AI assistant is included on every plan. Our built-in assistant is a paid add-on, sold as
-        monthly credits.
+        Connecting your own assistant is included on every plan. Our built-in assistant is a paid add-on, sold
+        as monthly credits.
       </p>
     </div>
   );

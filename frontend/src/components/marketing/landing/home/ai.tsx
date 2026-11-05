@@ -9,11 +9,11 @@ type Point = { title: string; body: string };
 const OWNER: Point[] = [
   {
     title: "Run the whole business by asking",
-    body: "Move bookings, change your hours, add a service, see who hasn't paid. If you can do it in the app, your assistant can do it for you.",
+    body: "Move bookings, change your hours, add a service, see who hasn’t paid. If you can do it in the app, your assistant can do it for you.",
   },
   {
-    title: "Bring your own AI assistant",
-    body: "Connect ChatGPT, Claude, Grok or any other assistant in a few clicks. It's included on every plan. No assistant yet? You can add ours with monthly credits.",
+    title: "Connect your own assistant, included",
+    body: "It takes a few clicks, and it’s included on every plan. No assistant yet? Ours runs on paid monthly credits.",
   },
   {
     title: "You stay in charge",
@@ -22,8 +22,8 @@ const OWNER: Point[] = [
 ];
 const CUSTOMER: Point[] = [
   {
-    title: "Clients can book through their AI too",
-    body: "They ask their own assistant for a time with you, and it books it.",
+    title: "Their AI can book and pay too",
+    body: "Clients ask their own assistant for a time with you, and it books it.",
   },
   {
     title: "Same times and prices as your booking page",
@@ -35,17 +35,12 @@ const CUSTOMER: Point[] = [
   },
 ];
 
-/** The first point leads, at reading size; the others sit beside it. */
 function Points({ points }: { points: Point[] }) {
   return (
     <ul className="grid gap-x-10 gap-y-5 lg:grid-cols-3">
-      {points.map((p, i) => (
+      {points.map((p) => (
         <li key={p.title}>
-          {i === 0 ? (
-            <h3 className="text-xl leading-tight font-semibold tracking-tight">{p.title}</h3>
-          ) : (
-            <h4 className="text-base font-semibold tracking-tight">{p.title}</h4>
-          )}
+          <h3 className="text-lg leading-tight font-semibold tracking-tight">{p.title}</h3>
           <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground">{p.body}</p>
         </li>
       ))}
@@ -66,7 +61,7 @@ export function AiSection() {
               title="Use the AI you already have."
               lit="Ask it to run your business"
               dot
-              lead="Connect ChatGPT, Claude, Grok or any other assistant, included on every plan. Your clients can book through their own assistants too."
+              lead="It works with ChatGPT, Claude, Grok or any other assistant. Chase payments, move bookings and change your hours by asking."
             />
           }
           footer={
