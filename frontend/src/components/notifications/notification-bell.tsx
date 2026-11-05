@@ -71,7 +71,12 @@ export function NotificationBell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {variant === "rail" ? (
-          <button type="button" aria-label={label} className={cn("relative", className)}>
+          // The name has to hold the word on screen (WCAG 2.5.3).
+          <button
+            type="button"
+            aria-label={`Alerts: ${label.toLowerCase()}`}
+            className={cn("relative", className)}
+          >
             <Bell strokeWidth={1.75} />
             <span>Alerts</span>
             {badge}
