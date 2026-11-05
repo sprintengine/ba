@@ -47,7 +47,7 @@ export function MarketingNav() {
   }, [pathname]);
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-3.5 z-50 flex justify-center pr-[max(0.875rem,env(safe-area-inset-right))] pl-[max(0.875rem,env(safe-area-inset-left))] max-[760px]:top-2.5 max-[760px]:pr-[max(0.625rem,env(safe-area-inset-right))] max-[760px]:pl-[max(0.625rem,env(safe-area-inset-left))]">
+    <header className="pointer-events-none fixed inset-x-0 top-3.5 z-50 flex justify-center pr-[max(0.875rem,env(safe-area-inset-right))] pl-[max(0.875rem,env(safe-area-inset-left))] before:pointer-events-none before:fixed before:inset-x-0 before:top-0 before:-z-10 before:h-[5.5rem] before:[mask-image:linear-gradient(black_45%,transparent)] before:backdrop-blur-[10px] max-[760px]:top-2.5 max-[760px]:pr-[max(0.625rem,env(safe-area-inset-right))] max-[760px]:pl-[max(0.625rem,env(safe-area-inset-left))]">
       <div className={cn(PILL, "pointer-events-auto")}>
         <HomeLink />
         <nav aria-label="Main" className="mx-auto hidden items-center gap-1 lg:flex">

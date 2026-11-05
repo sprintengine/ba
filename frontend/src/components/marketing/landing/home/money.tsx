@@ -4,8 +4,8 @@ import { LogoMarquee } from "./logo-marquee";
 
 const WAYS = [
   { icon: CreditCard, title: "Pay in full", body: "Paid when they book, so no-shows don't cost you." },
-  { icon: HandCoins, title: "Take a deposit", body: "Hold the time with part of the price." },
-  { icon: Banknote, title: "Pay on the day", body: "Free to book, and paid when they arrive." },
+  { icon: HandCoins, title: "Take a deposit", body: "They pay part now to hold the time." },
+  { icon: Banknote, title: "Pay on the day", body: "Nothing to pay until they arrive." },
   { icon: Repeat, title: "Memberships and packs", body: "Sell a block of sessions or a monthly plan." },
 ];
 
@@ -35,7 +35,7 @@ export function MoneySection() {
           label="Payments"
           title="The money goes straight to you."
           lit="We take 0%."
-          lead="Connect the payment provider you already use, or pick one. Clients pay it directly, into your own account."
+          lead="Clients pay into your own account, through the payment provider you already use or one you pick."
         />
         <div className="mt-12 sm:mt-14">
           <div className="flex flex-col justify-center gap-3 rounded-2xl border border-border bg-surface p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-10">
@@ -44,7 +44,11 @@ export function MoneySection() {
               className="size-5 shrink-0 text-subtle-foreground max-sm:rotate-90 sm:mt-9"
               aria-hidden
             />
-            <Stop label="We take" value="€0.00" note="No cut, on any plan. Your money never touches us." />
+            <Stop
+              label="We take"
+              value="€0.00"
+              note="No cut, on any plan. Your money never passes through us."
+            />
             <ArrowRight
               className="size-5 shrink-0 text-subtle-foreground max-sm:rotate-90 sm:mt-9"
               aria-hidden
@@ -52,7 +56,7 @@ export function MoneySection() {
             <Stop
               label="Your account"
               value="€60.00"
-              note="Less your provider's own card fee, on their payout days."
+              note="Minus your provider's usual card fee, paid out on their usual days."
             />
           </div>
         </div>

@@ -25,10 +25,10 @@ const FAQ: FaqItem[] = [
     answer: (
       <>
         <p>
-          We don&apos;t take a percentage of your bookings. Customers pay through your payment provider into
-          your own account, and the provider charges its standard card processing fee.
+          We don&apos;t take a percentage of your bookings. Clients pay into your own account through your
+          payment provider, and the provider charges its usual card fee.
         </p>
-        <p>We make our money from the flat monthly plan for each location, and nothing else.</p>
+        <p>We make our money from the monthly plan for each location.</p>
       </>
     ),
   },
@@ -36,9 +36,9 @@ const FAQ: FaqItem[] = [
     question: "Which payment providers can I use?",
     answer: (
       <p>
-        Stripe, PayPal, Klarna, Mollie, Adyen and Revolut, with Apple Pay, Google Pay and every major card on
-        top. You only need one, and only to take payments online: connecting it takes a few minutes during
-        setup. Until then, you can offer free bookings or have customers pay when they arrive.
+        Stripe, PayPal, Klarna, Mollie, Adyen and Revolut, plus Apple Pay, Google Pay and all the main cards.
+        You only need one, and only if you want to take payments online. It takes a few minutes to connect.
+        Until then, clients can book for free or pay when they arrive.
       </p>
     ),
   },
@@ -46,18 +46,28 @@ const FAQ: FaqItem[] = [
     question: "Do my customers need to create an account?",
     answer: (
       <p>
-        No. Customers can book as guests and manage their booking from the link in their confirmation email.
-        If they do create an account, they can see all their bookings with every business in one place.
+        No. Clients can book without an account and change their booking from the link in their email. If they
+        do make an account, they can see all their bookings in one place.
       </p>
     ),
   },
   {
-    question: "How does AI setup work, and what does it see?",
+    question: "Do I need to pay for AI?",
     answer: (
       <p>
-        You describe your business, or paste your website address, and AI drafts your services, prices,
-        opening hours, team, rooms and booking questions. You check all of it before anything goes live.
-        Answers to questions you mark as sensitive are never sent to an AI model.
+        No. Everything works without AI. If you already pay for an assistant like ChatGPT, Claude or Grok,
+        connecting it is included on every plan. Our built-in assistant is optional and sold as monthly
+        credits.
+      </p>
+    ),
+  },
+  {
+    question: "How does the AI setup work, and what does it see?",
+    answer: (
+      <p>
+        You describe your business, or paste your website, and AI drafts your services, prices, hours, team,
+        rooms and booking questions. You check all of it before anything goes live. Answers you mark as
+        private are never sent to an AI.
       </p>
     ),
   },
@@ -65,9 +75,8 @@ const FAQ: FaqItem[] = [
     question: "My business isn't a physio, car wash, music school or GP. Will it work?",
     answer: (
       <p>
-        Very likely. Every business is set up from the same parts: services with options and add-ons, people,
-        rooms and equipment, customer groups and your own questions. The four industries are just starting
-        templates. Describe your business and we&apos;ll draft a setup for it.
+        Very likely. If you work by appointment, it will fit. The four templates are only starting points.
+        Describe your business and we&apos;ll draft a setup for it.
       </p>
     ),
   },
@@ -75,8 +84,8 @@ const FAQ: FaqItem[] = [
     question: "Who owns my customers' data?",
     answer: (
       <p>
-        You do. You&apos;re the data controller for your customers; we process their data on your behalf to
-        run your bookings. Read the <Link href="/legal/privacy">privacy policy</Link> for the details.
+        You do. We only use your clients&apos; details to run your bookings. The{" "}
+        <Link href="/legal/privacy">privacy policy</Link> has the full story.
       </p>
     ),
   },
@@ -84,8 +93,8 @@ const FAQ: FaqItem[] = [
     question: "Can my clients really book through their own AI assistant?",
     answer: (
       <p>
-        Yes. Their assistant sees the same times, prices and rules as your booking page, and returns a booking
-        card in the chat that they confirm and pay for. It lands on your calendar like any other booking.
+        Yes. Their assistant sees the same times and prices as your booking page. They confirm and pay in the
+        chat, and it lands on your calendar like any other booking.
       </p>
     ),
   },
@@ -119,10 +128,10 @@ export default function LandingPage() {
               id="faq-title"
               className="text-[clamp(2rem,3.4vw,3rem)] leading-[1.04] font-semibold tracking-[-0.04em] text-balance"
             >
-              Questions we <span className="text-prism">get asked.</span>
+              Common <span className="text-prism">questions.</span>
             </h2>
             <p className="mt-4 text-base leading-[1.6] text-muted-foreground">
-              Can&apos;t find what you&apos;re looking for? Email{" "}
+              Something else? Email{" "}
               <a
                 className="font-medium text-foreground underline underline-offset-4 hover:decoration-2"
                 href="mailto:hello@bookanything.ie"

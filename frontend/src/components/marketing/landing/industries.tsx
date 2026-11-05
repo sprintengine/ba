@@ -8,13 +8,13 @@ export function IndustriesSection() {
       <PrismContainer>
         <PrismHeading
           id="industries-title"
-          label="Industries"
+          label="Templates"
           title="Start from a template"
           lit="for your kind of business."
-          lead="Each one comes with typical services, prices and booking questions that you can change. Or skip the template and describe what you do."
+          lead="Each one comes with the usual services, prices and booking questions, and you can change any of them. Or skip it and just describe what you do."
         />
         <div className="mt-14 sm:mt-16">
-          <IndustryCards />
+          <IndustryCards swipe />
         </div>
       </PrismContainer>
     </section>

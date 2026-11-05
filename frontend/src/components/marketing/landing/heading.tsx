@@ -46,11 +46,7 @@ export function PrismHeading({
         )}
       >
         {title}
-        {lit && (
-          <>
-            <br className="max-sm:hidden" /> <span className="text-prism">{lit}</span>
-          </>
-        )}
+        {lit && <span className="block text-prism">{lit}</span>}
       </h2>
       {lead && (
         <p className="mt-5 max-w-[36rem] text-base leading-[1.6] text-muted-foreground sm:text-lg">{lead}</p>

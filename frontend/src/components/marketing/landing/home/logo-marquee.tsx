@@ -3,7 +3,7 @@
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
-import { PAYMENT_LOGOS, type PaymentLogo } from "./payment-logos";
+import { NAMED_PROVIDERS, PAYMENT_LOGOS, type PaymentLogo } from "./payment-logos";
 import s from "./logo-marquee.module.css";
 
 function Logo({ logo }: { logo: PaymentLogo }) {
@@ -28,6 +28,25 @@ function Logo({ logo }: { logo: PaymentLogo }) {
   );
 }
 
+function Named({ name }: { name: string }) {
+  return (
+    <li className="shrink-0 text-[1.3125rem] font-semibold tracking-[-0.02em] text-foreground/80">{name}</li>
+  );
+}
+
+function Run() {
+  return (
+    <>
+      {PAYMENT_LOGOS.map((l) => (
+        <Logo key={l.name} logo={l} />
+      ))}
+      {NAMED_PROVIDERS.map((n) => (
+        <Named key={n} name={n} />
+      ))}
+    </>
+  );
+}
+
 /**
  * The payment brands, drifting across the page; hover stops them. The second run of the same logos is what makes the
  * loop seamless, so it is hidden from assistive tech. With reduced motion it is one still row.
@@ -39,15 +58,11 @@ export function LogoMarquee({ className }: { className?: string }) {
     <div className={cn(s.marquee, still && s.still, className)}>
       <div className={s.track}>
         <ul aria-label="Payment providers" className={s.run}>
-          {PAYMENT_LOGOS.map((l) => (
-            <Logo key={l.name} logo={l} />
-          ))}
+          <Run />
         </ul>
         {!still && (
           <ul aria-hidden className={s.run}>
-            {PAYMENT_LOGOS.map((l) => (
-              <Logo key={l.name} logo={l} />
-            ))}
+            <Run />
           </ul>
         )}
       </div>

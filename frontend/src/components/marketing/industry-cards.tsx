@@ -19,12 +19,26 @@ const OTHERS = [
 ];
 
 /** Grid of launch-industry cards, each themed in its example business's colour. */
-export function IndustryCards({ exclude, showOther = true }: { exclude?: string; showOther?: boolean }) {
+export function IndustryCards({
+  exclude,
+  showOther = true,
+  swipe = false,
+}: {
+  exclude?: string;
+  showOther?: boolean;
+  /** On a phone, one row to swipe through instead of a long stack. */
+  swipe?: boolean;
+}) {
   const list = INDUSTRY_LIST.filter((c) => c.slug !== exclude);
   return (
     <div className="grid gap-4">
       <div
-        className={cn("grid gap-4 sm:grid-cols-2", list.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3")}
+        className={cn(
+          "grid gap-4 sm:grid-cols-2",
+          list.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
+          swipe &&
+            "max-sm:-mx-4 max-sm:flex max-sm:snap-x max-sm:snap-mandatory max-sm:scroll-px-4 max-sm:scrollbar-none max-sm:overflow-x-auto max-sm:px-4 max-sm:*:w-[82%] max-sm:*:shrink-0 max-sm:*:snap-start",
+        )}
       >
         {list.map((c) => (
           <IndustryCard key={c.slug} content={c} />
@@ -34,12 +48,11 @@ export function IndustryCards({ exclude, showOther = true }: { exclude?: string;
         <div className="flex flex-col gap-6 rounded-2xl border border-dashed border-border-strong bg-surface-sunken/50 p-6 sm:p-7 lg:flex-row lg:items-center">
           <div className="flex flex-1 flex-col gap-3">
             <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight">
-              <Sparkles className="size-4 text-brand" /> Anything else that runs on appointments
+              <Sparkles className="size-4 text-brand" /> Don&apos;t see your business?
             </h3>
             <p className="max-w-xl text-sm text-muted-foreground">
-              Most appointment businesses fit the same pieces: services with options and add-ons, people,
-              rooms and equipment, group sessions and booking questions. Describe your business and AI puts a
-              setup together for you to check.
+              If you work by appointment, it will fit. Describe your business and we&apos;ll draft a setup for
+              you to check.
             </p>
             <ul className="mt-1 flex flex-wrap gap-1.5">
               {OTHERS.map((o) => (
@@ -98,7 +111,7 @@ function IndustryCard({ content: c }: { content: IndustryContent }) {
           ))}
         </ul>
         <span className="relative border-t border-border-subtle px-5 py-3 text-sm font-medium text-brand">
-          See how it works
+          See an example
         </span>
       </Link>
     </BusinessThemeProvider>
