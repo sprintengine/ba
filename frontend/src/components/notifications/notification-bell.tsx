@@ -60,7 +60,7 @@ export function NotificationBell({
         "flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground px-1 text-[0.625rem] leading-none font-semibold text-background",
         variant === "icon" && "absolute -top-0.5 -right-0.5",
         variant === "row" && "ml-auto",
-        variant === "rail" && "absolute top-0.5 right-1.5",
+        variant === "rail" && "absolute top-0.5 left-[calc(50%+0.25rem)]",
       )}
     >
       {countLabel(unread)}

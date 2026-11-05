@@ -126,9 +126,7 @@ export function ResourcesView() {
                     }
                     className={cn(
                       "flex min-w-52 snap-start items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-w-0",
-                      active
-                        ? "border-transparent bg-accent"
-                        : "border-transparent hover:bg-accent/60",
+                      active ? "border-transparent bg-accent" : "border-transparent hover:bg-accent/60",
                       !r.isActive && "opacity-60",
                     )}
                   >

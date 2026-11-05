@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   CalendarCheck,
-  CalendarPlus,
   CalendarRange,
   ChevronDown,
   ChevronLeft,
@@ -11,6 +10,7 @@ import {
   CircleSlash,
   Columns3,
   List,
+  Plus,
 } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -128,7 +128,7 @@ export function CalendarToolbar({
           variant="primary"
           size="sm"
           onClick={onNew}
-          icon={<CalendarPlus />}
+          icon={<Plus />}
           label={`New ${v("booking")}`}
           shortcut="N"
         />
