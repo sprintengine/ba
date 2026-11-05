@@ -4,23 +4,30 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { ArrowRight, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { EXAMPLE_CARDS, photoSrc, photoSrcSet, type ExampleCard, type ExampleSlug } from "./cards";
 
 const load = () => import("./example-dialog").then((m) => m.ExampleDialog);
 /** The calendar, its fixtures and the dialog come with the first card opened, not with the page. */
 const ExampleDialog = dynamic(load, { ssr: false });
 
+/** How many a phone shows before "See more". */
+const ON_A_PHONE = 2;
+
 function Card({
   card,
   onOpen,
   buttonRef,
+  className,
 }: {
   card: ExampleCard;
   onOpen: () => void;
   buttonRef: (el: HTMLButtonElement | null) => void;
+  className?: string;
 }) {
   return (
-    <li>
+    <li className={className}>
       <button
         ref={buttonRef}
         type="button"
@@ -60,14 +67,17 @@ function Card({
 export function BusinessExamples() {
   const [card, setCard] = useState<ExampleCard | null>(null);
   const [open, setOpen] = useState(false);
+  const [more, setMore] = useState(false);
+  const fold = more ? undefined : "max-sm:hidden";
   const buttons = useRef<Partial<Record<ExampleSlug, HTMLButtonElement | null>>>({});
   return (
     <>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {EXAMPLE_CARDS.map((c) => (
+        {EXAMPLE_CARDS.map((c, i) => (
           <Card
             key={c.slug}
             card={c}
+            className={i < ON_A_PHONE ? undefined : fold}
             buttonRef={(el) => {
               buttons.current[c.slug] = el;
             }}
@@ -77,12 +87,14 @@ export function BusinessExamples() {
             }}
           />
         ))}
-        <li className="flex flex-col justify-between gap-6 rounded-2xl bg-surface-sunken p-6 sm:p-7">
+        <li
+          className={cn("flex flex-col justify-between gap-6 rounded-2xl bg-surface-sunken p-6 sm:p-7", fold)}
+        >
           <div>
             <h3 className="text-[1.375rem] leading-tight font-semibold tracking-tight">Yours next.</h3>
             <p className="mt-2 text-sm leading-normal text-muted-foreground">
-              If you work by appointment, it fits. Describe your business and we&apos;ll draft your
-              appointment types, staff and hours for you to check.
+              If you work by appointment, it fits. Describe your business and we’ll draft your appointment
+              types, staff and hours for you to check.
             </p>
           </div>
           <Link
@@ -94,6 +106,11 @@ export function BusinessExamples() {
           </Link>
         </li>
       </ul>
+      {!more && (
+        <Button variant="secondary" size="lg" block className="mt-4 sm:hidden" onClick={() => setMore(true)}>
+          See more examples
+        </Button>
+      )}
       {card && (
         <ExampleDialog
           card={card}
