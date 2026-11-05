@@ -1,0 +1,50 @@
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation: drift 44s linear infinite;
+}
+.marquee:hover .track {
+  animation-play-state: paused;
+}
+
+/* Each run carries its own trailing gap, so moving by one run lands on an identical picture. */
+.run {
+  display: flex;
+  flex: none;
+  min-width: 100vw;
+  align-items: center;
+  justify-content: space-around;
+  gap: clamp(3rem, 7vw, 6rem);
+  padding-right: clamp(3rem, 7vw, 6rem);
+}
+
+.still .track {
+  width: auto;
+  animation: none;
+}
+.still .run {
+  min-width: 0;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-right: 0;
+  gap: 2rem 3rem;
+}
+
+@keyframes drift {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+}
