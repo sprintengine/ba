@@ -38,7 +38,7 @@ export function CalendarHeaderRow({
 }) {
   return (
     <div className="sticky top-0 z-30 flex border-b border-border bg-surface/95 backdrop-blur-sm">
-      <div className="sticky left-0 z-10 w-14 shrink-0 bg-surface/95" />
+      <div className="sticky left-0 z-10 w-14 shrink-0 bg-surface" />
       {loading
         ? Array.from({ length: 3 }, (_, i) => (
             <div
