@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useController, useForm, useFormContext, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarOff, Clock, Plus, SunMedium, Trash2 } from "lucide-react";
+import { CalendarOff, Clock, Plus, Trash2 } from "lucide-react";
 import type { AvailabilityOverride, AvailabilityOverrideInput } from "@/lib/api/types";
 import {
   useClosures,
@@ -74,14 +74,7 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
       <OverrideList
         items={upcoming}
         editable={editable}
-        empty={
-          <EmptyState
-            size="sm"
-            icon={<SunMedium />}
-            title="Nothing planned"
-            description="No time off or extra hours coming up."
-          />
-        }
+        empty={<p className="text-sm text-muted-foreground">Nothing planned.</p>}
       />
       <OverrideDialog
         open={adding}
@@ -133,12 +126,14 @@ export function Closures({ editable }: { editable: boolean }) {
           items={upcoming}
           editable={editable}
           empty={
-            <EmptyState
-              size="sm"
-              icon={<CalendarOff />}
-              title="No closures planned"
-              description="Add bank holidays or a team day out."
-            />
+            <div className="rounded-xl border border-dashed border-border-strong">
+              <EmptyState
+                size="sm"
+                icon={<CalendarOff />}
+                title="No closures planned"
+                description="Add bank holidays or a team day out."
+              />
+            </div>
           }
         />
       )}
@@ -167,8 +162,7 @@ function OverrideList({
   const business = useCurrentBusiness();
   const fmt = useFmt();
   const remove = useDeleteOverride(business.id);
-  if (items.length === 0)
-    return <div className="rounded-xl border border-dashed border-border-strong">{empty}</div>;
+  if (items.length === 0) return empty;
   return (
     <ul className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface dark:bg-surface-raised">
       {items.map((o) => {

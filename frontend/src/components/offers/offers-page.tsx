@@ -94,7 +94,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
             headingLevel={2}
             icon={<BadgePercent />}
             title="No offers yet"
-            description={`Turn empty slots into ${v("bookings")}. The best deal for the ${v("customer")} is applied to the price automatically.`}
+            description={`Turn empty slots into ${v("bookings")}.`}
             action={newButton}
           />
           <ul className="grid gap-3 border-t border-border-subtle px-5 py-5 sm:grid-cols-3">

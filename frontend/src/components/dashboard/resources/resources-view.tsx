@@ -110,7 +110,7 @@ export function ResourcesView() {
           <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
             <nav
               aria-label={v("resources", { title: true })}
-              className="flex snap-x gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+              className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
             >
               {list.map((r) => {
                 const active = selected?.id === r.id;
@@ -120,8 +120,12 @@ export function ResourcesView() {
                     type="button"
                     onClick={() => select(r.id)}
                     aria-current={active ? "true" : undefined}
+                    // On phones this is a sideways strip: the one on show stays in view.
+                    ref={
+                      active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "start" }) : undefined
+                    }
                     className={cn(
-                      "flex min-w-52 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-w-0",
+                      "flex min-w-52 snap-start items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-w-0",
                       active
                         ? "border-border bg-surface shadow-xs dark:bg-surface-raised"
                         : "border-transparent hover:bg-accent/60",
