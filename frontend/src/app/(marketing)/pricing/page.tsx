@@ -236,7 +236,7 @@ export default function PricingPage() {
               <>
                 Anything else? Email{" "}
                 <a
-                  className="text-brand underline underline-offset-4 hover:decoration-2"
+                  className="font-medium text-foreground underline underline-offset-4 hover:decoration-2"
                   href="mailto:hello@bookanything.ie"
                 >
                   hello@bookanything.ie

@@ -34,7 +34,8 @@ export function MoneySection() {
           id="payments-title"
           label="Payments"
           title="The money goes straight to you."
-          lit="We take 0%."
+          lit="We take 0%"
+          dot
           lead="Clients pay into your own account, through the payment provider you already use or one you pick."
         />
         <div className="mt-12 sm:mt-14">

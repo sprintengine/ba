@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PrismDot } from "../heading";
 import { ThreadField } from "./thread-field";
 
 /** The close: the outcome in one line, with the threads coming together on the button. */
@@ -26,7 +27,8 @@ export function ClosingSection() {
           id="cta-title"
           className="mx-auto max-w-4xl text-[clamp(2.75rem,6.4vw,5.75rem)] leading-[0.98] font-semibold tracking-[-0.05em] text-balance"
         >
-          Fewer calls. Home on time.
+          Fewer calls. Home on time
+          <PrismDot />
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-[1.5] text-muted-foreground sm:text-xl">
           Have your booking page live this afternoon, and let it take the bookings tonight.
@@ -45,7 +47,7 @@ export function ClosingSection() {
           </Button>
         </div>
         <p className="mt-5 text-[0.9375rem] text-muted-foreground">
-          Free for up to 100 bookings a month, no card needed. We never take a cut of your payments.
+          Free for 100 bookings a month, no card needed. We never take a cut of your payments.
         </p>
       </div>
     </section>

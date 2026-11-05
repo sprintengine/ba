@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button";
 import { INDUSTRIES } from "./industries";
 
 const LINKS = [
-  { href: "/#product", label: "Product" },
-  { href: "/#features", label: "Features" },
+  { href: "/#product", label: "How it works" },
+  { href: "/#ai", label: "AI" },
   { href: "/#industries", label: "Examples" },
   { href: "/pricing", label: "Pricing" },
 ];

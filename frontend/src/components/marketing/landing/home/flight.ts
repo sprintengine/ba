@@ -1,8 +1,10 @@
+import { PRISM } from "@/components/brand/logo";
+
 /** The prism inks, from the phone's end of the thread to the calendar's. */
 export const THREAD_GRADIENT_STOPS: [string, string][] = [
-  ["0", "#1d9bd1"],
-  ["0.5", "#5b4ae0"],
-  ["1", "#e0702f"],
+  ["0", PRISM[0]],
+  ["0.5", PRISM[1]],
+  ["1", PRISM[2]],
 ];
 
 const DURATION = 1250;

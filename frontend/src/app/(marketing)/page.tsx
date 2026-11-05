@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
-import { PrismContainer } from "@/components/marketing/landing/heading";
+import { PrismContainer, PrismThread } from "@/components/marketing/landing/heading";
 import { AiSection } from "@/components/marketing/landing/home/ai";
 import { BookedSection } from "@/components/marketing/landing/home/booked";
 import { ClosingSection } from "@/components/marketing/landing/home/closing";
@@ -116,9 +116,10 @@ export default function LandingPage() {
       <BookedSection />
       <AiSection />
       <MoneySection />
+      <IndustriesSection />
       <ProofSection />
       <SetupSection />
-      <IndustriesSection />
+      <PrismThread />
       <PricingTeaser />
       <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-20 sm:pb-28">
         <PrismContainer className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">

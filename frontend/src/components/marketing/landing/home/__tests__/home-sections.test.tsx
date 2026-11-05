@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiSection } from "../ai";
+import { HeroRings } from "../hero-rings";
 import { LogoMarquee } from "../logo-marquee";
 import { MoneySection } from "../money";
 import { ProofSection } from "../proof";
@@ -47,6 +48,14 @@ describe("the AI section's promise", () => {
   });
 });
 
+describe("the hero's rings", () => {
+  it("shows the plain mark where WebGL isn't available", () => {
+    const { container } = render(<HeroRings phone={{ current: null }} />);
+    expect(container.querySelector("canvas")).not.toBeInTheDocument();
+    expect(container.querySelector("svg")).toBeInTheDocument();
+  });
+});
+
 describe("the logo marquee", () => {
   it("hides the repeated run from assistive tech", () => {
     const { container } = render(<LogoMarquee />);
@@ -70,9 +79,10 @@ describe("the logo marquee", () => {
 });
 
 describe("what the page may claim", () => {
-  it("keeps the proof to our own testing, and says it isn't customers", () => {
+  it("keeps the proof to the working examples and a labelled simulation", () => {
     const { container } = render(<ProofSection />);
-    expect(container.textContent).toMatch(/bots, not customers/);
+    expect(container.textContent).toMatch(/simulated bookings/i);
+    expect(screen.getByRole("link", { name: "See the examples" })).toHaveAttribute("href", "#industries");
     expect(container.textContent).not.toMatch(/database|race/i);
     expect(container.textContent).not.toMatch(/trusted by|uptime|99\.\d/i);
   });

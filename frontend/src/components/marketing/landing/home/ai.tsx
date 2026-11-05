@@ -64,7 +64,8 @@ export function AiSection() {
               id="ai-title"
               label="AI"
               title="Use the AI you already have."
-              lit="Ask it to run your business."
+              lit="Ask it to run your business"
+              dot
               lead="Connect ChatGPT, Claude, Grok or any other assistant, included on every plan. Your clients can book through their own assistants too."
             />
           }
