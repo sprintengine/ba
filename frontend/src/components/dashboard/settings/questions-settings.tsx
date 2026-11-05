@@ -29,7 +29,7 @@ import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
 import { SensitiveMark } from "../common";
 import { QuestionDialog } from "./question-dialog";
-import { SettingsHeader } from "./settings-common";
+import { SettingGroup, SettingItem, SettingList, SettingsHeader } from "./settings-common";
 
 export function QuestionsSettings() {
   const business = useCurrentBusiness();
@@ -67,113 +67,127 @@ export function QuestionsSettings() {
     }
   };
 
+  const newQuestion = (
+    <ActionButton
+      size="sm"
+      variant="primary"
+      onClick={() => editor.open(null)}
+      icon={<Plus />}
+      label="New question"
+      collapse={false}
+    />
+  );
+
   return (
     <>
-      <SettingsHeader
-        segment="questions"
-        actions={
-          <ActionButton
-            size="sm"
-            variant="primary"
-            onClick={() => editor.open(null)}
-            icon={<Plus />}
-            label="New question"
-            collapse={false}
-          />
-        }
-      />
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          Asked after people pick a time. Name and email are always asked for.
-        </p>
-        {(services.data?.length ?? 0) > 0 && (list.length > 0 || filter !== "all") && (
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger size="sm" className="w-full sm:w-48 sm:shrink-0" aria-label="Filter by service">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="all">Every question</SelectItem>
-              <SelectItem value="global">Asked for all services</SelectItem>
-              <SelectSeparator />
-              {services.data!.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+      <SettingsHeader segment="questions" lede actions={all.length > 0 && newQuestion} />
       {questions.isError ? (
         <ErrorState error={questions.error} onRetry={() => questions.refetch()} />
       ) : questions.isPending ? (
-        <Skeleton className="h-48 rounded-xl" />
-      ) : list.length === 0 ? (
-        <div>
-          <EmptyState
-            icon={<MessageSquareText />}
-            title="No questions"
-            description="Ask for what you need to prepare — a vehicle registration, an instrument, the reason for a visit."
-          />
-        </div>
+        <Skeleton className="h-48 rounded-2xl" />
       ) : (
-        <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
-          {list.map((q) => (
-            <li key={q.id} className="flex items-center gap-3 px-4 py-3">
-              {filter === "all" && (
-                <div className="flex flex-col">
-                  <IconButton
-                    size="xs"
-                    label={`Move “${q.label}” up`}
-                    tooltip={false}
-                    disabled={update.isPending || all[0]?.id === q.id}
-                    onClick={() => move(q, -1)}
-                  >
-                    <ArrowUp />
-                  </IconButton>
-                  <IconButton
-                    size="xs"
-                    label={`Move “${q.label}” down`}
-                    tooltip={false}
-                    disabled={update.isPending || all[all.length - 1]?.id === q.id}
-                    onClick={() => move(q, 1)}
-                  >
-                    <ArrowDown />
-                  </IconButton>
-                </div>
-              )}
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
-                  {q.label}
-                  {q.required && <Badge className="h-5">Required</Badge>}
-                  {q.sensitive && <SensitiveMark />}
-                  {!q.isActive && <Badge className="h-5">Off</Badge>}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {KIND_LABEL[q.kind]}
-                  {q.kind === "select" ? `: ${q.options.join(", ")}` : ""} · {serviceName(q.serviceId)}
-                </span>
-              </div>
-              <IconButton label={`Edit “${q.label}”`} onClick={() => editor.open(q)}>
-                <Pencil />
-              </IconButton>
-              <ConfirmDialog
-                trigger={
-                  <IconButton label={`Delete “${q.label}”`}>
-                    <Trash2 />
-                  </IconButton>
-                }
-                title="Delete this question?"
-                description={`Answers already given stay on past ${v("bookings")}.`}
-                confirmLabel="Delete"
-                destructive
-                onConfirm={async () => {
-                  await withToast(() => remove.mutateAsync(q.id), "Question deleted");
-                }}
-              />
-            </li>
-          ))}
-        </ul>
+        <SettingGroup
+          title="Your questions"
+          description="Asked after people pick a time. Name and email are always asked for."
+          action={
+            (services.data?.length ?? 0) > 0 &&
+            (list.length > 0 || filter !== "all") && (
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger size="sm" className="w-full sm:w-48" aria-label="Filter by service">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="all">Every question</SelectItem>
+                  <SelectItem value="global">Asked for all services</SelectItem>
+                  <SelectSeparator />
+                  {services.data!.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          }
+        >
+          {list.length === 0 ? (
+            <EmptyState
+              headingLevel={4}
+              icon={<MessageSquareText />}
+              title="No questions"
+              description="Ask for what you need to prepare: a vehicle registration, an instrument, the reason for a visit."
+              action={all.length === 0 && newQuestion}
+            />
+          ) : (
+            <SettingList>
+              {list.map((q) => (
+                <SettingItem
+                  key={q.id}
+                  dimmed={!q.isActive}
+                  leading={
+                    filter === "all" && (
+                      <div className="-ml-1.5 flex flex-col">
+                        <IconButton
+                          size="xs"
+                          label={`Move “${q.label}” up`}
+                          tooltip={false}
+                          disabled={update.isPending || all[0]?.id === q.id}
+                          onClick={() => move(q, -1)}
+                        >
+                          <ArrowUp />
+                        </IconButton>
+                        <IconButton
+                          size="xs"
+                          label={`Move “${q.label}” down`}
+                          tooltip={false}
+                          disabled={update.isPending || all[all.length - 1]?.id === q.id}
+                          onClick={() => move(q, 1)}
+                        >
+                          <ArrowDown />
+                        </IconButton>
+                      </div>
+                    )
+                  }
+                  title={q.label}
+                  chips={
+                    <>
+                      {q.required && <Badge className="h-5">Required</Badge>}
+                      {q.sensitive && <SensitiveMark />}
+                      {!q.isActive && <Badge className="h-5">Off</Badge>}
+                    </>
+                  }
+                  meta={
+                    <span className="truncate text-[0.8125rem] leading-5 text-muted-foreground">
+                      {KIND_LABEL[q.kind]}
+                      {q.kind === "select" ? `: ${q.options.join(", ")}` : ""} · {serviceName(q.serviceId)}
+                    </span>
+                  }
+                  actions={
+                    <>
+                      <IconButton label={`Edit “${q.label}”`} onClick={() => editor.open(q)}>
+                        <Pencil />
+                      </IconButton>
+                      <ConfirmDialog
+                        trigger={
+                          <IconButton label={`Delete “${q.label}”`}>
+                            <Trash2 />
+                          </IconButton>
+                        }
+                        title="Delete this question?"
+                        description={`Answers already given stay on past ${v("bookings")}.`}
+                        confirmLabel="Delete"
+                        destructive
+                        onConfirm={async () => {
+                          await withToast(() => remove.mutateAsync(q.id), "Question deleted");
+                        }}
+                      />
+                    </>
+                  }
+                />
+              ))}
+            </SettingList>
+          )}
+        </SettingGroup>
       )}
       {editor.current && (
         <QuestionDialog
