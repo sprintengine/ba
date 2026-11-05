@@ -128,7 +128,7 @@ export function CommandDialog({
           </Command>
           <DialogPrimitive.Close
             aria-label="Close search"
-            className="absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:size-9 [&_svg]:size-4"
+            className="absolute top-0.5 right-0.5 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4"
           >
             <X aria-hidden />
           </DialogPrimitive.Close>
