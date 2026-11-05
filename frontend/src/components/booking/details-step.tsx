@@ -39,12 +39,7 @@ export function DetailsStep({
       // A field focused for its error clears the sticky header and, on phones, the bottom bar.
       className="gap-6 [&_:is(input,textarea,button)]:scroll-mt-20 [&_:is(input,textarea,button)]:scroll-mb-32"
     >
-      {signedInAs ? (
-        <p className="truncate text-sm text-muted-foreground">
-          Booking as{" "}
-          <span className="font-medium text-foreground">{signedInAs.name || signedInAs.email}</span>
-        </p>
-      ) : (
+      {!signedInAs && (
         <p className="text-sm text-muted-foreground">
           Have an account?{" "}
           <Link href={signInHref} className="font-medium text-brand underline-offset-4 hover:underline">
@@ -99,11 +94,7 @@ export function DetailsStep({
       )}
 
       <div className="border-t border-border-subtle pt-6">
-        <FormField<DetailsValues, "notes">
-          name="notes"
-          label={`Anything ${businessName} should know?`}
-          optional
-        >
+        <FormField<DetailsValues, "notes"> name="notes" label="Anything we should know?" optional>
           {(field) => <Textarea {...field} rows={3} placeholder="Access notes, preferences…" />}
         </FormField>
       </div>

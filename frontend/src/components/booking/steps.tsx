@@ -50,8 +50,7 @@ export function StepHeader({
             </button>
           </>
         )}
-        {/* The progress bar shows this; screen readers still hear it. */}
-        <span className="sr-only" aria-live="polite">
+        <span className="ml-auto" aria-live="polite">
           Step {index + 1}
           {total !== null && ` of ${total}`}
         </span>
@@ -163,7 +162,7 @@ export function ServiceStep({
       {groups.map((g) => (
         <section key={g.category ?? "all"} className="flex flex-col gap-2.5">
           {g.category && <h3 className="text-sm font-medium text-muted-foreground">{g.category}</h3>}
-          <ul className="flex flex-col gap-2.5">
+          <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
             {g.services.map((s) => (
               <li key={s.id}>
                 <ServiceCard
@@ -214,12 +213,11 @@ function ServiceCard({
       onClick={onSelect}
       aria-pressed={selected}
       className={cn(
-        "group relative flex w-full items-center gap-4 overflow-hidden rounded-xl border bg-surface p-4 text-left shadow-xs transition-[border-color,box-shadow,transform] duration-150 outline-none sm:p-5 dark:bg-surface-raised",
-        "hover:border-border-strong hover:shadow-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/25 active:scale-[0.995]",
-        selected ? "border-primary shadow-[0_0_0_1px_var(--primary)]" : "border-border",
+        "group relative flex w-full items-center gap-4 px-3 py-3.5 text-left transition-colors duration-150 outline-none",
+        "hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+        selected && "bg-accent",
       )}
     >
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-start justify-between gap-3">
           <span className="text-[0.9375rem] leading-6 font-semibold tracking-tight">{s.name}</span>

@@ -187,10 +187,7 @@ describe("DetailsStep validation", () => {
     expect(screen.getByText("For reminders or if plans change.")).toBeInTheDocument();
     await user.type(screen.getByRole("textbox", { name: /Full name/ }), "Alex Morgan");
     await user.type(screen.getByRole("textbox", { name: /^Email/ }), "alex.morgan@example.com");
-    await user.type(
-      screen.getByRole("textbox", { name: /Anything Lumen Physiotherapy should know/ }),
-      "Ground floor please",
-    );
+    await user.type(screen.getByRole("textbox", { name: /Anything we should know/ }), "Ground floor please");
     // Enter in the notes is a new line, not a submit.
     await user.keyboard("{Enter}");
     expect(onSubmit).not.toHaveBeenCalled();
@@ -324,12 +321,12 @@ describe("DetailsStep account", () => {
 
   it("says who is booking when signed in", () => {
     renderDetails({ signedInAs: { name: "Alex Morgan", email: "alex.morgan@example.com" } });
-    expect(screen.getByText(/Booking as/)).toHaveTextContent("Booking as Alex Morgan");
+    expect(screen.queryByText(/Have an account/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
   });
 
   it("falls back to the email for an account without a name", () => {
     renderDetails({ signedInAs: { name: null, email: "alex.morgan@example.com" } });
-    expect(screen.getByText(/Booking as/)).toHaveTextContent(/^Booking as alex.morgan@example.com$/);
+    expect(screen.queryByText(/Have an account/)).not.toBeInTheDocument();
   });
 });

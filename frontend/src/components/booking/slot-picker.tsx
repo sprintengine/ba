@@ -106,7 +106,6 @@ export function SlotPicker({
             isDateLocked={isDateLocked}
             aria-label="Choose a date"
           />
-          <TimezoneNote timeZone={timeZone} className="mt-4 pl-2" />
         </div>
 
         {/* Phone week strip */}
@@ -128,6 +127,7 @@ export function SlotPicker({
         />
 
         <div className="flex min-w-0 flex-col gap-4">
+          <TimezoneNote timeZone={timeZone} className="text-xs" />
           {availability.isError && !availability.days.size ? (
             <ErrorState
               error={availability.error}
@@ -302,7 +302,6 @@ function DayTimes({
           onMonthChange={onMonthChange}
         />
       )}
-      <TimezoneNote timeZone={timeZone} className="@[25rem]:hidden" />
     </>
   );
 }

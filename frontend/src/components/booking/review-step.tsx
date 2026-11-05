@@ -10,7 +10,7 @@ import type { BookingAlert } from "@/lib/booking/errors";
 import type { Quote } from "@/lib/booking/quote";
 import { ANY_RESOURCE, chosenExtras, resourceChoiceName, type Selection } from "@/lib/booking/selection";
 import type { StepId } from "@/lib/booking/steps";
-import { formatDate, formatDuration, formatTimeRange, zonedToIso } from "@/lib/format";
+import { formatDate, formatDuration, formatTimeRange, timeZoneLabel, zonedToIso } from "@/lib/format";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Badge } from "@/components/ui/badge";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
@@ -108,7 +108,7 @@ function WhenSection({
       </p>
       <p className="tnum text-sm text-muted-foreground">
         {formatTimeRange(start, bookingEnd(start, quote.durationMinutes), tz, business.locale)} ·{" "}
-        {formatDuration(quote.durationMinutes)}
+        {formatDuration(quote.durationMinutes)} · {timeZoneLabel(tz)}
       </p>
     </Section>
   );

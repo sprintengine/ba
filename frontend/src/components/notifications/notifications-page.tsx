@@ -9,6 +9,7 @@ import {
   useNotificationSettings,
   useUpdateNotificationSettings,
 } from "@/lib/api/hooks";
+import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +50,7 @@ export function NotificationsPage() {
         }
       />
       <div className="flex flex-col gap-6">
-        <Card variant="panel" className="overflow-hidden">
+        <div className={cn(list.data?.items.length && "border-y border-border")}>
           {list.isError ? (
             <ErrorState headingLevel={2} error={list.error} onRetry={() => list.refetch()} />
           ) : list.isPending ? (
@@ -67,7 +68,7 @@ export function NotificationsPage() {
           ) : (
             <NotificationList items={list.data.items} />
           )}
-        </Card>
+        </div>
         <EmailSettings />
       </div>
     </>
@@ -92,12 +93,12 @@ function EmailSettings() {
     );
 
   return (
-    <Card id="email" variant="panel" className="scroll-mt-20">
+    <Card id="email" className="scroll-mt-20">
       <CardHeader>
         <CardTitle>Email me about</CardTitle>
         <CardDescription>
-          Sent to {me.data?.user.email ?? "your account email"}, a minute later, unless you&rsquo;ve opened it
-          here by then.
+          Sent to {me.data?.user.email ?? "your account email"} a minute later, unless you&rsquo;ve opened it
+          here.
         </CardDescription>
       </CardHeader>
       <CardContent>

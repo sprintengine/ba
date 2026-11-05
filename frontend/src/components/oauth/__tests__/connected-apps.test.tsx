@@ -81,7 +81,7 @@ describe("Connected apps", () => {
     fakeApi([]);
     renderWithProviders(<ConnectedAppsPage />);
     expect(await screen.findByText("No connected apps")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /use bookanything in your ai assistant/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /how to connect an assistant/i })).toHaveAttribute(
       "href",
       "/help/ai-assistant",
     );

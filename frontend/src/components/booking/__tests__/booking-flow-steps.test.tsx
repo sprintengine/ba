@@ -181,7 +181,7 @@ describe("choosing what to book", () => {
       /At your address.*Request to book/,
     );
     // Before anything is chosen, the summary sells the basics.
-    expect(within(summary()).getByText("Secure payments")).toBeInTheDocument();
+    expect(screen.getByText(/Secure payments/)).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -400,7 +400,7 @@ describe("paying and confirming", () => {
     await pickTime(u, "2026-10-01");
     expect(screen.getByRole("textbox", { name: /Full name/ })).toHaveValue("Rowan Example");
     expect(screen.getByRole("textbox", { name: /^Email/ })).toHaveValue("rowan@example.test");
-    expect(screen.getByText(/Booking as/)).toHaveTextContent("Rowan Example");
+    expect(screen.queryByText(/Have an account/)).not.toBeInTheDocument();
   });
 });
 
@@ -513,7 +513,7 @@ describe("mobile summary", () => {
     expect(bar).toHaveTextContent("Sports massage€40");
     await u.click(bar);
     const drawer = await screen.findByRole("dialog", { name: "Your appointment" });
-    expect(within(drawer).getByText("Sports massage · 30 minutes")).toBeInTheDocument();
+    expect(within(drawer).getByText("Sports massage")).toBeInTheDocument();
     await u.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });

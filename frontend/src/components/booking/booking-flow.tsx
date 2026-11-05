@@ -6,7 +6,7 @@ import type { StepId } from "@/lib/booking/steps";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { BookingSummaryCard, MobileSummaryBar } from "./booking-summary";
+import { BookingPromises, BookingSummaryCard, MobileSummaryBar } from "./booking-summary";
 import { FlowStep, flowStepAction } from "./flow-step";
 import { StepProgress } from "./steps";
 import { useBookingAgentTools } from "./use-booking-agent-tools";
@@ -43,34 +43,36 @@ export function BookingFlow({
   };
 
   const reviewing = flow.step === "review";
+  // Until something is chosen there is nothing to summarise, so the list takes one easy column.
+  const single = reviewing || !flow.service;
   // Container queries, not viewport breakpoints: from an iPad mini's width up there is room for the summary
   // beside the steps (the action sticks to the bottom of the steps); narrower it is the phone layout, with the
   // summary and the action in a bottom bar.
   return (
-    <div className="@container">
+    <div className={cn("@container", single && "mx-auto w-full max-w-2xl")}>
       {/* The header keeps the business's name; past the first step the steps get the room. */}
       {intro && flow.stepIndex === 0 && intro}
       <div
         className={cn(
           "grid gap-8",
           // The review step is the summary: a card beside it would say everything again.
-          reviewing
-            ? "mx-auto w-full max-w-2xl"
-            : "@2xl:grid-cols-[minmax(0,1fr)_16rem] @2xl:gap-6 @4xl:grid-cols-[minmax(0,1fr)_21rem] @4xl:gap-12",
+          !single &&
+            "@2xl:grid-cols-[minmax(0,1fr)_16rem] @2xl:gap-6 @4xl:grid-cols-[minmax(0,1fr)_17rem] @4xl:gap-10",
         )}
       >
         <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @2xl:pb-0">
           <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />
           <FlowStep flow={flow} />
+          {!flow.service && <BookingPromises {...summaryProps} />}
           {action && (
             <div className="sticky bottom-0 z-10 -mx-2 hidden justify-end border-t border-border-subtle bg-background px-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] @2xl:flex">
               {action}
             </div>
           )}
         </div>
-        {!reviewing && (
+        {!single && (
           <div className="hidden @2xl:block">
-            <div className="sticky top-24">
+            <div className="sticky top-24 border-l border-border pl-6">
               <BookingSummaryCard {...summaryProps} />
             </div>
           </div>

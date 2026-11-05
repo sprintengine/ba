@@ -6,6 +6,7 @@ import { CalendarHeart, Plug } from "lucide-react";
 import { useMe, useMyBookings } from "@/lib/api/hooks";
 import type { CustomerBooking } from "@/lib/api/types";
 import { businessesIn, sortByStart } from "@/lib/booking/booking";
+import { formatRelativeDay, toPlainDate, toTimeOfDay } from "@/lib/format";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
 import { ErrorState } from "@/components/common/feedback";
 import { BusinessTile } from "@/components/shells/business-tile";
@@ -74,7 +75,7 @@ export function MyBookingsPage() {
             Upcoming {bookings.data && <Count n={bookings.data.upcoming.length} />}
           </TabsTrigger>
           <TabsTrigger value="past">
-            Past {bookings.data && <Count n={bookings.data.past.length} />}
+            Past and cancelled {bookings.data && <Count n={bookings.data.past.length} />}
           </TabsTrigger>
         </TabsList>
         {/* The tab's panel (its trigger's aria-controls points here). */}
@@ -101,6 +102,25 @@ export function MyBookingsPage() {
       </Tabs>
     </>
   );
+}
+
+const relativeDay = (b: CustomerBooking) => formatRelativeDay(b.start, b.timezone);
+
+/**
+ * Bookings by the day they happen, each day in the order its times read: a list spanning businesses in several
+ * timezones would otherwise look shuffled.
+ */
+function byDay(bookings: CustomerBooking[]) {
+  const days = new Map<string, CustomerBooking[]>();
+  for (const b of bookings) {
+    const day = toPlainDate(b.start, b.timezone);
+    days.set(day, [...(days.get(day) ?? []), b]);
+  }
+  const readOrder = (b: CustomerBooking) => toTimeOfDay(b.start, b.timezone);
+  return [...days].map(([day, list]) => ({
+    day,
+    bookings: list.sort((x, y) => readOrder(x).localeCompare(readOrder(y))),
+  }));
 }
 
 function Count({ n }: { n: number }) {
@@ -168,19 +188,24 @@ function BookingList({
   const requested = agentRequest ? sorted.findIndex((b) => b.id === agentRequest.bookingId) + 1 : 0;
   const shown = sorted.slice(0, Math.max(limit, requested));
   return (
-    <div className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-3">
-        {shown.map((b) => (
-          <li key={b.id}>
-            <MyBookingCard
-              booking={b}
-              past={tab === "past"}
-              agentAction={agentRequest?.bookingId === b.id ? agentRequest.action : null}
-              onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
-            />
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col gap-8">
+      {byDay(shown).map(({ day, bookings }) => (
+        <section key={day}>
+          <h2 className="pb-2 text-sm font-semibold">{bookings[0] && relativeDay(bookings[0])}</h2>
+          <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
+            {bookings.map((b) => (
+              <li key={b.id}>
+                <MyBookingCard
+                  booking={b}
+                  past={tab === "past"}
+                  agentAction={agentRequest?.bookingId === b.id ? agentRequest.action : null}
+                  onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
       {shown.length < sorted.length && (
         <Button variant="secondary" className="self-center" onClick={() => setLimit(limit + PAGE_SIZE)}>
           Show more ({sorted.length - shown.length} left)

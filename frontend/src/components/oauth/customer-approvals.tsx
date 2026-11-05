@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bot, CircleCheck, Unplug } from "lucide-react";
+import { BookOpen, Bot, CircleCheck, Plug, Unplug } from "lucide-react";
 import { qk } from "@/lib/api/query-keys";
 import {
   useApproveMyAgentRequest,
@@ -15,7 +15,7 @@ import { formatDateTime } from "@/lib/format";
 import { AI_HELP_PATH, CONNECTED_APPS_PATH } from "@/lib/oauth/app-url";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { ActionButton } from "@/components/ui/action-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -121,9 +121,13 @@ export function CustomerRequestsPage() {
         title="Approvals"
         description="What your AI assistants asked to book, move or cancel for you, and whether it went ahead."
         actions={
-          <Button asChild variant="secondary">
-            <Link href={CONNECTED_APPS_PATH}>Connected apps</Link>
-          </Button>
+          <ActionButton
+            href={CONNECTED_APPS_PATH}
+            icon={<Plug />}
+            label="Connected apps"
+            variant="ghost"
+            collapse={false}
+          />
         }
       />
       {requests.isError ? (
@@ -131,19 +135,21 @@ export function CustomerRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <Card variant="panel">
+        <div>
           <EmptyState
             headingLevel={2}
             icon={<Bot />}
             title="Nothing to approve"
-            description="Anything waiting for your OK appears here."
+            description="Anything your assistant asks you to confirm appears here."
             action={
               <Button asChild variant="secondary">
-                <Link href={AI_HELP_PATH}>Use bookanything in your AI assistant</Link>
+                <Link href={AI_HELP_PATH}>
+                  <BookOpen /> How to connect an assistant
+                </Link>
               </Button>
             }
           />
-        </Card>
+        </div>
       ) : (
         <div className="flex flex-col gap-8">
           {waiting.length > 0 && (

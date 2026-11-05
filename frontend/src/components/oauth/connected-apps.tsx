@@ -8,7 +8,6 @@ import { AI_HELP_PATH } from "@/lib/oauth/app-url";
 import { viewerTimeZone } from "@/lib/oauth/format";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +35,7 @@ export function ConnectedAppsPage() {
           ))}
         </div>
       ) : apps.data.length === 0 ? (
-        <Card variant="panel">
+        <div>
           <EmptyState
             headingLevel={2}
             icon={<Plug />}
@@ -45,12 +44,12 @@ export function ConnectedAppsPage() {
             action={
               <Button asChild variant="secondary">
                 <Link href={AI_HELP_PATH}>
-                  <BookOpen /> Use bookanything in your AI assistant
+                  <BookOpen /> How to connect an assistant
                 </Link>
               </Button>
             }
           />
-        </Card>
+        </div>
       ) : (
         <>
           <ul className="flex flex-col gap-3">
@@ -66,7 +65,7 @@ export function ConnectedAppsPage() {
           <p className="mt-6 text-sm text-muted-foreground">
             Want to add another assistant?{" "}
             <Link href={AI_HELP_PATH} className="text-brand underline-offset-4 hover:underline">
-              Use bookanything in your AI assistant
+              How to connect an assistant
             </Link>
           </p>
         </>
