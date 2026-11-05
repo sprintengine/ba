@@ -2,57 +2,35 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The bookanything mark: the two o's of "book" drawn as two interlocked rings, the size and weight of the word's own
- * o, with one prism gradient across both, and the word ends in a lit full stop. The letters are Geist SemiBold set
- * tight, converted to outlines so the site doesn't load the font. The rings are strokes, each cut where it goes under
- * the other. At the small weight there's no room for a weave: the rings sit further apart, so both counters stay open.
- * The full stop belongs to the word, not the symbol. One colour on buttons; the prism on the logo and the AI badge.
+ * The bookanything mark: the two o's of "book" drawn as one continuous line, an infinity with two true o's in it, each
+ * the size and weight of the word's own o, in one prism gradient, and the word ends in a lit full stop. The letters are
+ * Geist SemiBold set tight, converted to outlines so the site doesn't load the font. The line is a stroke: the same
+ * drawing at every size, with a heavier cut for the small spots. The full stop belongs to the word, not the symbol.
+ * One colour on buttons; the prism on the logo and the AI badge.
  */
 export const PRISM = ["#2fb1e8", "#7a6af0", "#ff8a55"] as const;
 
-/** Stroke widths: the letters' own weight, and heavier cuts that hold at small sizes. */
-export const WEIGHT = { display: 108, text: 122, small: 170 } as const;
+/** Stroke widths: the letters' own weight, and a heavier cut that holds at small sizes. */
+export const WEIGHT = { display: 108, text: 122, small: 160 } as const;
 type Weight = keyof typeof WEIGHT;
-/** The clear space either side of the ring that passes over. */
-export const WEAVE_GAP = 14;
 
-type RingPaths = { left: string; right: string; cutLeft: string; cutRight: string };
-
-/** The rings in their box, for the symbol on its own. */
-const SYMBOL = {
-  width: 877.0,
+/** The line in its box, for the symbol on its own: out of the crossing, round one o, back through it, round the other. */
+export const SYMBOL = {
+  width: 1087.0,
   height: 620.0,
-  rings: {
-    left: "M85.0 310.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0Z",
-    right: "M375.0 310.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0Z",
-    cutLeft: "M590.0 85.1A208.5 225.0 0 0 0 375.0 310.0",
-    cutRight: "M287.0 534.9A208.5 225.0 0 0 0 502.0 310.0",
-  } satisfies RingPaths,
-  /** The small cut, in a box of its own: the same height, wider. */
-  small: {
-    width: 987.0,
-    line: "M85.0 310.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0ZM485.0 310.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0Z",
-  },
-  /** Round one ring and then the other, in one go, for the loader. */
-  thread:
-    "M438.5 148.3A208.5 225.0 0 1 0 438.5 471.7A208.5 225.0 0 0 0 438.5 148.3A208.5 225.0 0 1 1 438.5 471.7A208.5 225.0 0 0 1 438.5 148.3",
+  line: "M543.5 310.0C616.2 202.2 643.5 85.0 793.5 85.0C908.7 85.0 1002.0 185.7 1002.0 310.0C1002.0 434.3 908.7 535.0 793.5 535.0C643.5 535.0 616.2 417.8 543.5 310.0C470.8 202.2 443.5 85.0 293.5 85.0C178.3 85.0 85.0 185.7 85.0 310.0C85.0 434.3 178.3 535.0 293.5 535.0C443.5 535.0 470.8 417.8 543.5 310.0Z",
 };
 
-/** The word: every letter but the o's, the rings that take their place, and the full stop, on one baseline. */
+/** The word: every letter but the o's, the line that takes their place, and the full stop, on one baseline. */
 export const WORD = {
-  width: 6095.0,
+  width: 6305.0,
   height: 878,
-  ringsLeft: 620,
-  ringsRight: 1435.0,
-  dot: { cx: 6013.0, cy: 636, r: 80 },
+  lineLeft: 613,
+  lineRight: 1652,
+  dot: { cx: 6223.0, cy: 636, r: 80 },
   letters:
-    "M357 722Q301 722 259 698Q217 674 195 631L192 710H70V0H198V252Q219 216 260.5 190Q302 164 357 164Q426 164 476.5 198.5Q527 233 554.5 295.5Q582 358 582 443Q582 528 554.5 590.5Q527 653 476.5 687.5Q426 722 357 722ZM328 618Q383 618 416 571.5Q449 525 449 443Q449 360 416.5 314Q384 268 329 268Q267 268 232.5 314Q198 360 198 443Q198 525 232.5 571.5Q267 618 328 618ZM1504 710V0H1632V417L1851 176H2009L1800 398L2016 710H1872L1716 474L1632 563V710ZM2205 722Q2121 722 2070 684Q2019 646 2019 576Q2019 507 2062 468Q2105 429 2193 412L2370 377Q2370 263 2267 263Q2221 263 2194 284.5Q2167 306 2158 346L2028 340Q2044 256 2106 210Q2168 164 2267 164Q2381 164 2439.5 221.5Q2498 279 2498 386V580Q2498 601 2505.5 609Q2513 617 2528 617H2545V710Q2528 714 2498 714Q2455 714 2425 696Q2395 678 2387 629V628Q2367 670 2318.5 696Q2270 722 2205 722ZM2231 629Q2295 629 2332.5 592Q2370 555 2370 494V464L2232 492Q2189 501 2170.5 518.5Q2152 536 2152 564Q2152 629 2231 629ZM2598 710V176H2714L2717 267Q2739 212 2781.5 188Q2824 164 2877 164Q2965 164 3012 220.5Q3059 277 3059 367V710H2931V408Q2931 340 2910.5 304Q2890 268 2838 268Q2786 268 2756 304Q2726 340 2726 408V710ZM3175 860V761H3243Q3269 761 3281.5 753Q3294 745 3301 726L3316 689H3279L3088 176H3221L3355 569L3483 176H3616L3407 766Q3389 816 3356.5 838Q3324 860 3266 860ZM3869 710Q3789 710 3751.5 673.5Q3714 637 3714 557V275H3630V176H3714V51H3842V176H3983V275H3842V545Q3842 583 3858.5 597Q3875 611 3908 611H3983V710ZM4039 710V0H4167V247Q4189 205 4229 184.5Q4269 164 4319 164Q4408 164 4454 220.5Q4500 277 4500 367V710H4372V398Q4372 268 4281 268Q4228 268 4197.5 302Q4167 336 4167 401V710ZM4604 710V176H4732V710ZM4602 105V-9H4735V105ZM4849 710V176H4965L4968 267Q4990 212 5032.5 188Q5075 164 5128 164Q5216 164 5263 220.5Q5310 277 5310 367V710H5182V408Q5182 340 5161.5 304Q5141 268 5089 268Q5037 268 5007 304Q4977 340 4977 408V710ZM5635 872Q5530 872 5470 830Q5410 788 5392 720L5524 711Q5534 742 5558.5 758.5Q5583 775 5635 775Q5694 775 5726 748.5Q5758 722 5758 666V598Q5739 637 5697 660.5Q5655 684 5603 684Q5537 684 5485.5 651.5Q5434 619 5405 560.5Q5376 502 5376 425Q5376 348 5405 289.5Q5434 231 5484.5 197.5Q5535 164 5601 164Q5658 164 5700 190Q5742 216 5762 259V176H5887V663Q5887 766 5818 819Q5749 872 5635 872ZM5633 584Q5690 584 5724.5 541.5Q5759 499 5759 424Q5760 350 5725.5 307Q5691 264 5633 264Q5574 264 5541.5 307.5Q5509 351 5509 424Q5509 497 5542.5 540.5Q5576 584 5633 584Z",
-  rings: {
-    left: "M674.0 443.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0Z",
-    right: "M964.0 443.0a208.5 225.0 0 1 1 417.0 0a208.5 225.0 0 1 1 -417.0 0Z",
-    cutLeft: "M1179.0 218.1A208.5 225.0 0 0 0 964.0 443.0",
-    cutRight: "M876.0 667.9A208.5 225.0 0 0 0 1091.0 443.0",
-  } satisfies RingPaths,
+    "M357 722Q301 722 259 698Q217 674 195 631L192 710H70V0H198V252Q219 216 260.5 190Q302 164 357 164Q426 164 476.5 198.5Q527 233 554.5 295.5Q582 358 582 443Q582 528 554.5 590.5Q527 653 476.5 687.5Q426 722 357 722ZM328 618Q383 618 416 571.5Q449 525 449 443Q449 360 416.5 314Q384 268 329 268Q267 268 232.5 314Q198 360 198 443Q198 525 232.5 571.5Q267 618 328 618ZM1714 710V0H1842V417L2061 176H2219L2010 398L2226 710H2082L1926 474L1842 563V710ZM2415 722Q2331 722 2280 684Q2229 646 2229 576Q2229 507 2272 468Q2315 429 2403 412L2580 377Q2580 263 2477 263Q2431 263 2404 284.5Q2377 306 2368 346L2238 340Q2254 256 2316 210Q2378 164 2477 164Q2591 164 2649.5 221.5Q2708 279 2708 386V580Q2708 601 2715.5 609Q2723 617 2738 617H2755V710Q2738 714 2708 714Q2665 714 2635 696Q2605 678 2597 629V628Q2577 670 2528.5 696Q2480 722 2415 722ZM2441 629Q2505 629 2542.5 592Q2580 555 2580 494V464L2442 492Q2399 501 2380.5 518.5Q2362 536 2362 564Q2362 629 2441 629ZM2808 710V176H2924L2927 267Q2949 212 2991.5 188Q3034 164 3087 164Q3175 164 3222 220.5Q3269 277 3269 367V710H3141V408Q3141 340 3120.5 304Q3100 268 3048 268Q2996 268 2966 304Q2936 340 2936 408V710ZM3385 860V761H3453Q3479 761 3491.5 753Q3504 745 3511 726L3526 689H3489L3298 176H3431L3565 569L3693 176H3826L3617 766Q3599 816 3566.5 838Q3534 860 3476 860ZM4079 710Q3999 710 3961.5 673.5Q3924 637 3924 557V275H3840V176H3924V51H4052V176H4193V275H4052V545Q4052 583 4068.5 597Q4085 611 4118 611H4193V710ZM4249 710V0H4377V247Q4399 205 4439 184.5Q4479 164 4529 164Q4618 164 4664 220.5Q4710 277 4710 367V710H4582V398Q4582 268 4491 268Q4438 268 4407.5 302Q4377 336 4377 401V710ZM4814 710V176H4942V710ZM4812 105V-9H4945V105ZM5059 710V176H5175L5178 267Q5200 212 5242.5 188Q5285 164 5338 164Q5426 164 5473 220.5Q5520 277 5520 367V710H5392V408Q5392 340 5371.5 304Q5351 268 5299 268Q5247 268 5217 304Q5187 340 5187 408V710ZM5845 872Q5740 872 5680 830Q5620 788 5602 720L5734 711Q5744 742 5768.5 758.5Q5793 775 5845 775Q5904 775 5936 748.5Q5968 722 5968 666V598Q5949 637 5907 660.5Q5865 684 5813 684Q5747 684 5695.5 651.5Q5644 619 5615 560.5Q5586 502 5586 425Q5586 348 5615 289.5Q5644 231 5694.5 197.5Q5745 164 5811 164Q5868 164 5910 190Q5952 216 5972 259V176H6097V663Q6097 766 6028 819Q5959 872 5845 872ZM5843 584Q5900 584 5934.5 541.5Q5969 499 5969 424Q5970 350 5935.5 307Q5901 264 5843 264Q5784 264 5751.5 307.5Q5719 351 5719 424Q5719 497 5752.5 540.5Q5786 584 5843 584Z",
+  line: "M1132.5 443.0C1205.2 335.2 1232.5 218.0 1382.5 218.0C1497.7 218.0 1591.0 318.7 1591.0 443.0C1591.0 567.3 1497.7 668.0 1382.5 668.0C1232.5 668.0 1205.2 550.8 1132.5 443.0C1059.8 335.2 1032.5 218.0 882.5 218.0C767.3 218.0 674.0 318.7 674.0 443.0C674.0 567.3 767.3 668.0 882.5 668.0C1032.5 668.0 1059.8 550.8 1132.5 443.0Z",
 };
 
 function Prism({ id, x1, x2 }: { id: string; x1: number; x2: number }) {
@@ -62,58 +40,6 @@ function Prism({ id, x1, x2 }: { id: string; x1: number; x2: number }) {
         <stop key={color} offset={i / (PRISM.length - 1)} stopColor={color} />
       ))}
     </linearGradient>
-  );
-}
-
-/** The two rings, woven: each hides the stretch where the other passes over it. */
-function WovenRings({
-  id,
-  rings,
-  stroke,
-  strokeWidth,
-  width,
-  height,
-}: {
-  id: string;
-  rings: RingPaths;
-  stroke: string;
-  strokeWidth: number;
-  width: number;
-  height: number;
-}) {
-  const sides = [
-    ["left", rings.left, rings.cutLeft],
-    ["right", rings.right, rings.cutRight],
-  ] as const;
-  return (
-    <>
-      <defs>
-        {sides.map(([side, , cut]) => (
-          <mask
-            key={side}
-            id={`${id}-${side}`}
-            maskUnits="userSpaceOnUse"
-            x={0}
-            y={0}
-            width={width}
-            height={height}
-          >
-            <rect width={width} height={height} fill="#fff" />
-            <path d={cut} fill="none" stroke="#000" strokeWidth={strokeWidth + 2 * WEAVE_GAP} />
-          </mask>
-        ))}
-      </defs>
-      {sides.map(([side, ring]) => (
-        <path
-          key={side}
-          d={ring}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          mask={`url(#${id}-${side})`}
-        />
-      ))}
-    </>
   );
 }
 
@@ -132,12 +58,9 @@ export function LogoMark({
   ...props
 }: React.ComponentProps<"svg"> & MarkProps & { title?: string }) {
   const id = useId();
-  const small = weight === "small";
-  const width = small ? SYMBOL.small.width : SYMBOL.width;
-  const stroke = mono ? "currentColor" : `url(#${id})`;
   return (
     <svg
-      viewBox={`0 0 ${width} ${SYMBOL.height}`}
+      viewBox={`0 0 ${SYMBOL.width} ${SYMBOL.height}`}
       role="img"
       aria-label={title}
       className={cn("h-5 w-auto shrink-0", className)}
@@ -145,26 +68,20 @@ export function LogoMark({
     >
       {!mono && (
         <defs>
-          <Prism id={id} x1={0} x2={width} />
+          <Prism id={id} x1={0} x2={SYMBOL.width} />
         </defs>
       )}
-      {small ? (
-        <path d={SYMBOL.small.line} fill="none" stroke={stroke} strokeWidth={WEIGHT.small} />
-      ) : (
-        <WovenRings
-          id={id}
-          rings={SYMBOL.rings}
-          stroke={stroke}
-          strokeWidth={WEIGHT[weight]}
-          width={width}
-          height={SYMBOL.height}
-        />
-      )}
+      <path
+        d={SYMBOL.line}
+        fill="none"
+        stroke={mono ? "currentColor" : `url(#${id})`}
+        strokeWidth={WEIGHT[weight]}
+      />
     </svg>
   );
 }
 
-/** The word, in the text colour with the rings and the full stop lit. Size it by height. */
+/** The word, in the text colour with the line and the full stop lit. Size it by height. */
 export function Wordmark({
   className,
   mono = false,
@@ -183,37 +100,35 @@ export function Wordmark({
     >
       {!mono && (
         <defs>
-          <Prism id={id} x1={WORD.ringsLeft} x2={WORD.ringsRight} />
+          <Prism id={id} x1={WORD.lineLeft} x2={WORD.lineRight} />
           <Prism id={`${id}-dot`} x1={cx - r} x2={cx + r} />
         </defs>
       )}
       <path d={WORD.letters} fill="currentColor" />
-      <WovenRings
-        id={id}
-        rings={WORD.rings}
+      <path
+        d={WORD.line}
+        fill="none"
         stroke={mono ? "currentColor" : `url(#${id})`}
         strokeWidth={WEIGHT[weight]}
-        width={WORD.width}
-        height={WORD.height}
       />
       <circle cx={cx} cy={cy} r={r} fill={mono ? "currentColor" : `url(#${id}-dot)`} />
     </svg>
   );
 }
 
-/** Marks something an assistant did or drafted: the rings in the prism, small, beside the words. */
+/** Marks something an assistant did or drafted: the symbol in the prism, small, beside the words. */
 export function AiBadge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
-      <LogoMark className="h-3.5 w-auto" aria-hidden title="" />
+      <LogoMark className="h-3 w-auto" weight="small" aria-hidden title="" />
       {children}
     </span>
   );
 }
 
-/** The rings on a button that hands something to an assistant: one colour, in the button's text colour. */
+/** The symbol on a button that hands something to an assistant: one colour, in the button's text colour. */
 export function AiIcon({ className }: { className?: string }) {
-  return <LogoMark className={cn("h-3.5! w-auto!", className)} mono aria-hidden title="" />;
+  return <LogoMark className={cn("h-3! w-auto!", className)} mono weight="small" aria-hidden title="" />;
 }
 
 /** The logo, at the sizes the shells use. */
@@ -235,7 +150,7 @@ export function Logo({
 }
 
 /**
- * Waiting on a page or a whole section: a thread of light runs round the rings. With reduced motion it is the still
+ * Waiting on a page or a whole section: a thread of light runs along the infinity. With reduced motion it is the still
  * symbol. Decorative: the caller says what's loading. Not for inline spinners.
  */
 export function LogoLoader({ className }: { className?: string }) {
@@ -251,9 +166,9 @@ export function LogoLoader({ className }: { className?: string }) {
       <defs>
         <Prism id={id} x1={0} x2={SYMBOL.width} />
       </defs>
-      <path d={SYMBOL.thread} stroke="var(--border)" />
+      <path d={SYMBOL.line} stroke="var(--border)" />
       <path
-        d={SYMBOL.thread}
+        d={SYMBOL.line}
         pathLength={100}
         stroke={`url(#${id})`}
         strokeLinecap="round"
