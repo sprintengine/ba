@@ -21,6 +21,8 @@ import type { MyBookingsAgentRequest } from "./my-bookings-agent-tools";
 import { useMyBookingsAgentTools } from "./use-my-bookings-agent-tools";
 
 type Tab = "upcoming" | "past";
+/** Bookings shown at first, and added by "Show more". */
+const PAGE_SIZE = 20;
 
 export function MyBookingsPage() {
   const { params, setParams } = useUrlParams();
@@ -51,7 +53,13 @@ export function MyBookingsPage() {
         title="My bookings"
         description="Everything you've booked on bookanything, in one place."
         actions={
-          <ActionButton href="/my/connected-apps" icon={<Plug />} label="Connected apps" variant="ghost" />
+          <ActionButton
+            href="/my/connected-apps"
+            icon={<Plug />}
+            label="Connected apps"
+            variant="ghost"
+            collapse={false}
+          />
         }
       />
       {me.data && me.data.pendingInvitations.length > 0 && (
@@ -82,6 +90,7 @@ export function MyBookingsPage() {
             </div>
           ) : (
             <BookingList
+              key={tab}
               tab={tab}
               items={tab === "upcoming" ? bookings.data.upcoming : bookings.data.past}
               past={bookings.data.past}
@@ -113,6 +122,7 @@ function BookingList({
   /** The customer closed the dialog of `request`. */
   onAgentRequestDone: (request: MyBookingsAgentRequest) => void;
 }) {
+  const [limit, setLimit] = useState(PAGE_SIZE);
   if (items.length === 0) {
     const previous = businessesIn(past, 4);
     return (
@@ -155,18 +165,28 @@ function BookingList({
     );
   }
   const sorted = sortByStart(items, tab);
+  // An agent's request can point at any booking, so the list always reaches it.
+  const requested = agentRequest ? sorted.findIndex((b) => b.id === agentRequest.bookingId) + 1 : 0;
+  const shown = sorted.slice(0, Math.max(limit, requested));
   return (
-    <ul className="flex flex-col gap-3">
-      {sorted.map((b) => (
-        <li key={b.id}>
-          <MyBookingCard
-            booking={b}
-            past={tab === "past"}
-            agentAction={agentRequest?.bookingId === b.id ? agentRequest.action : null}
-            onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-3">
+        {shown.map((b) => (
+          <li key={b.id}>
+            <MyBookingCard
+              booking={b}
+              past={tab === "past"}
+              agentAction={agentRequest?.bookingId === b.id ? agentRequest.action : null}
+              onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
+            />
+          </li>
+        ))}
+      </ul>
+      {shown.length < sorted.length && (
+        <Button variant="secondary" className="self-center" onClick={() => setLimit(limit + PAGE_SIZE)}>
+          Show more ({sorted.length - shown.length} left)
+        </Button>
+      )}
+    </div>
   );
 }

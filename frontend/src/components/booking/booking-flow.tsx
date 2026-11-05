@@ -5,6 +5,7 @@ import type { PublicBusiness, PublicService } from "@/lib/api/types";
 import type { StepId } from "@/lib/booking/steps";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import { BookingSummaryCard, MobileSummaryBar } from "./booking-summary";
 import { FlowStep, flowStepAction } from "./flow-step";
 import { StepProgress } from "./steps";
@@ -23,7 +24,7 @@ export function BookingFlow({
 }: {
   business: PublicBusiness;
   services: PublicService[];
-  /** Business introduction; hidden on small screens after the first step to save space. */
+  /** Business introduction, on the first step only. */
   intro?: React.ReactNode;
 }) {
   const flow = useBookingFlow(business, services);
@@ -41,13 +42,23 @@ export function BookingFlow({
     onEdit: (s: StepId) => flow.goTo(s),
   };
 
+  const reviewing = flow.step === "review";
   // Container queries, not viewport breakpoints: from an iPad mini's width up there is room for the summary
   // beside the steps (the action sticks to the bottom of the steps); narrower it is the phone layout, with the
   // summary and the action in a bottom bar.
   return (
     <div className="@container">
-      {intro && <div className={flow.stepIndex > 0 ? "@max-2xl:hidden" : undefined}>{intro}</div>}
-      <div className="grid gap-8 @2xl:grid-cols-[minmax(0,1fr)_16rem] @2xl:gap-6 @4xl:grid-cols-[minmax(0,1fr)_21rem] @4xl:gap-12">
+      {/* The header keeps the business's name; past the first step the steps get the room. */}
+      {intro && flow.stepIndex === 0 && intro}
+      <div
+        className={cn(
+          "grid gap-8",
+          // The review step is the summary: a card beside it would say everything again.
+          reviewing
+            ? "mx-auto w-full max-w-2xl"
+            : "@2xl:grid-cols-[minmax(0,1fr)_16rem] @2xl:gap-6 @4xl:grid-cols-[minmax(0,1fr)_21rem] @4xl:gap-12",
+        )}
+      >
         <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @2xl:pb-0">
           <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />
           <FlowStep flow={flow} />
@@ -57,18 +68,15 @@ export function BookingFlow({
             </div>
           )}
         </div>
-        <div className="hidden @2xl:block">
-          <div className="sticky top-24">
-            <BookingSummaryCard {...summaryProps} />
+        {!reviewing && (
+          <div className="hidden @2xl:block">
+            <div className="sticky top-24">
+              <BookingSummaryCard {...summaryProps} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
-      <MobileSummaryBar
-        {...summaryProps}
-        action={action}
-        actionOnly={flow.step === "review"}
-        className="@2xl:hidden"
-      />
+      <MobileSummaryBar {...summaryProps} action={action} actionOnly={reviewing} className="@2xl:hidden" />
       {flow.submit.redirecting && <RedirectOverlay />}
     </div>
   );
