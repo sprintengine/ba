@@ -71,10 +71,10 @@ export function NotificationBell({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {variant === "rail" ? (
-          // The name has to hold the word on screen (WCAG 2.5.3).
+          // The name holds what's on screen, word and count, in that order (WCAG 2.5.3).
           <button
             type="button"
-            aria-label={`Alerts: ${label.toLowerCase()}`}
+            aria-label={unread > 0 ? `Alerts ${countLabel(unread)}, unread notifications` : "Alerts"}
             className={cn("relative", className)}
           >
             <Bell strokeWidth={1.75} />
