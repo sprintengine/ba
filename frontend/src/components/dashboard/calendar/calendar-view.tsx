@@ -18,6 +18,9 @@ import { DayColumn, TimeGutter } from "./calendar-grid";
 import { CalendarHeaderRow, colMin } from "./calendar-headers";
 import { CalendarToolbar } from "./calendar-toolbar";
 import { HOUR_PX } from "./grid-scale";
+
+/** The time gutter's width (`w-14`): the columns scroll under it. */
+const HOUR_GUTTER_PX = 56;
 import { useCalendarData } from "./use-calendar-data";
 import { useCalendarKeyboard } from "./use-calendar-keyboard";
 import { useCalendarUrl } from "./use-calendar-url";
@@ -66,6 +69,10 @@ export function CalendarView() {
     // Before opening time, today starts at the working day too, not on empty hours.
     const target = Math.max(firstOpen - 30, days.includes(today) ? nowMinute - 90 : 0);
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * HOUR_PX);
+    // Where the week doesn't fit, it opens on today rather than on Monday.
+    const column =
+      view === "week" ? scroller.current.querySelectorAll("[role=group]")[days.indexOf(today)] : null;
+    if (column instanceof HTMLElement) scroller.current.scrollLeft = column.offsetLeft - HOUR_GUTTER_PX;
   }, [ready, view, date, days, today, nowMinute, firstOpen, startHour]);
   useEffect(() => {
     const el = scroller.current;
@@ -208,10 +215,26 @@ function CalendarFooter({ count, updating }: { count: number; updating: boolean 
     >
       <span className="tnum">
         {updating ? "Updating…" : `${count} ${v("booking", { count })}`} ·{" "}
-        {business.timezone.replace(/_/g, " ")}
+        {business.timezone.split("/").at(-1)?.replace(/_/g, " ")}
       </span>
       <span className="hidden pointer-coarse:inline">Tap a free time to book</span>
-      <span className="hidden sm:inline pointer-coarse:hidden">Click a free time to book</span>
+      <span className="hidden gap-3 sm:flex pointer-coarse:hidden">
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden className="size-3 rounded-sm border border-dashed border-border-strong" />
+          Not confirmed yet
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden
+            className="size-3 rounded-sm"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 3px)",
+            }}
+          />
+          Preparation time
+        </span>
+      </span>
     </div>
   );
 }

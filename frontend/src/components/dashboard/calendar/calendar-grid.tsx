@@ -78,9 +78,9 @@ const onEmptyGrid = (e: React.MouseEvent<HTMLElement>) => {
   return e.currentTarget.contains(target) && !target.closest("[data-event]");
 };
 
-/** The narrowest a block may get before overlapping bookings fold into "+N" (day view, week view). */
+/** The narrowest a block may get before overlapping bookings fold (day view, week view). */
 const MIN_LANE_PX = 72;
-const MIN_LANE_PX_WEEK = 72;
+const MIN_LANE_PX_WEEK = 120;
 
 type ColumnProps = {
   date: PlainDate;
@@ -137,7 +137,11 @@ export const DayColumn = memo(function DayColumn({
   }, []);
   const maxLanes =
     width > 0 ? Math.max(1, Math.floor(width / (compact ? MIN_LANE_PX_WEEK : MIN_LANE_PX))) : Infinity;
-  const { shown, overflow } = useMemo(() => capLanes(positioned, maxLanes), [positioned, maxLanes]);
+  // A week is for seeing how busy each day is: at every width, overlaps that don't fit read "9 bookings".
+  const { shown, overflow } = useMemo(
+    () => capLanes(positioned, maxLanes, { foldWhole: compact }),
+    [positioned, maxLanes, compact],
+  );
   const [hover, setHover] = useState<number | null>(null);
   const top = (m: number) => (m - startHour * 60) * PX_PER_MIN;
   const height = (endHour - startHour) * HOUR_PX;
@@ -211,6 +215,7 @@ export const DayColumn = memo(function DayColumn({
           endHour={endHour}
           formatTime={formatTime}
           onSelect={onSelectBooking}
+          whole={compact}
         />
       ))}
 
