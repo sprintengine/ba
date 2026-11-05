@@ -11,10 +11,10 @@ export function WorkedExample() {
   const c = workedExampleCosts();
   const columns = [
     {
-      title: "Per-seat scheduling tool",
+      title: "Per-person booking software",
       month: eur(c.perSeat.month),
       year: `${eur(c.perSeat.year)} a year`,
-      working: `${e.teamSize} seats × ${eur(e.perSeatEur)}`,
+      working: `${e.teamSize} people × ${eur(e.perSeatEur)}`,
     },
     {
       title: "Commission marketplace",
@@ -26,7 +26,7 @@ export function WorkedExample() {
       title: "bookanything Pro",
       month: eur(c.bookanything.month),
       year: `${eur(c.bookanything.year)} a year`,
-      working: "1 location, whole team, 0% platform fee",
+      working: "Everyone included, 0% platform fee",
       us: true,
     },
   ];

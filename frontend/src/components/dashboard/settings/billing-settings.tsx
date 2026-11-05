@@ -32,7 +32,7 @@ const FALLBACK_PRICES: BillingPrice[] = [
     amountCents: 1200,
     currency: "EUR",
     interval: "month",
-    features: ["Unlimited bookings", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
+    features: ["1,000 bookings a month", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
   },
   {
     plan: "business",

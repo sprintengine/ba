@@ -41,7 +41,7 @@ val PLAN_PRICES = listOf(
     ),
     PlanPrice(
         Plan.PRO.wire, Plan.PRO.displayName, 1200, "EUR", "month",
-        listOf("Unlimited bookings", "Unlimited team members", "SMS reminders at cost", "Remove the bookanything badge"),
+        listOf("1,000 bookings a month", "Unlimited team members", "SMS reminders at cost", "Remove the bookanything badge"),
     ),
     PlanPrice(
         Plan.BUSINESS.wire, Plan.BUSINESS.displayName, 3900, "EUR", "month",

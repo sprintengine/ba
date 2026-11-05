@@ -13,7 +13,7 @@ const FALLBACK: Record<Plan, { name: string; features: string[] }> = {
   },
   pro: {
     name: "Pro",
-    features: ["Unlimited bookings", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
+    features: ["1,000 bookings a month", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
   },
   business: {
     name: "Business",

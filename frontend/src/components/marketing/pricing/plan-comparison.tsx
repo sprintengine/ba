@@ -51,7 +51,7 @@ export function PlanComparison() {
                 <th key={p.key} scope="col" className="px-2 py-4 text-center sm:px-4">
                   <span className="block text-sm font-semibold">{p.name}</span>
                   <span className="tnum block text-xs font-normal text-muted-foreground">
-                    {p.price ? `€${p.price} / location / month` : "€0"}
+                    {p.price ? `€${p.price} / month` : "€0"}
                   </span>
                 </th>
               ))}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { PLANS } from "../plans";
+import { PLANS, TALK_TO_US } from "../plans";
 
 export function PlanCards() {
   return (
@@ -19,7 +19,7 @@ export function PlanCards() {
             <h2 className="text-lg font-semibold tracking-tight">{plan.name}</h2>
             {plan.highlight && (
               <span className="rounded-md bg-primary px-2 py-0.5 text-2xs font-semibold text-primary-foreground">
-                Recommended
+                {plan.badge}
               </span>
             )}
           </div>
@@ -29,15 +29,15 @@ export function PlanCards() {
             <span className="pb-1 text-sm leading-tight text-muted-foreground">
               {plan.price ? (
                 <>
-                  per location
+                  per business
                   <br />
                   per month
                 </>
               ) : (
                 <>
-                  free
+                  until
                   <br />
-                  forever
+                  you&apos;re busy
                 </>
               )}
             </span>
@@ -65,5 +65,27 @@ export function PlanCards() {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** What every plan shares and where the plans end, under the cards. */
+export function PlanNotes() {
+  return (
+    <div className="flex flex-col gap-1 text-center text-sm text-muted-foreground">
+      <p>
+        More than 10,000 bookings a month?{" "}
+        <a
+          href={TALK_TO_US}
+          className="focus-ring rounded-sm font-medium text-foreground underline underline-offset-4 hover:decoration-2"
+        >
+          Talk to us
+        </a>
+        .
+      </p>
+      <p>
+        Your own AI assistant is included on every plan. Our built-in assistant is a paid add-on, sold as
+        monthly credits.
+      </p>
+    </div>
   );
 }

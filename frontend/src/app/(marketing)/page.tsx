@@ -28,7 +28,7 @@ const FAQ: FaqItem[] = [
           We don&apos;t take a percentage of your bookings. Clients pay into your own account through your
           payment provider, and the provider charges its usual card fee.
         </p>
-        <p>We make our money from the monthly plan for each location.</p>
+        <p>We make our money from monthly plans, once you&apos;re busy.</p>
       </>
     ),
   },
