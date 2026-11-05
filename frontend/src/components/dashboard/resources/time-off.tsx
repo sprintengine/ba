@@ -164,7 +164,7 @@ function OverrideList({
   const remove = useDeleteOverride(business.id);
   if (items.length === 0) return empty;
   return (
-    <ul className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface dark:bg-surface-raised">
+    <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
       {items.map((o) => {
         const kind = overrideKind(o);
         return (

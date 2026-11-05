@@ -368,7 +368,7 @@ function PathChoice({
 
 function Note({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-border bg-surface-sunken/60 p-4">
+    <div className="flex gap-3">
       <span className="text-brand [&_svg]:size-4.5">{icon}</span>
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-medium">{title}</span>
