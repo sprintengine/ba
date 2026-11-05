@@ -44,7 +44,7 @@ export function BusinessStrip({
               // On small windows the tabs scroll sideways: keep the current one in view.
               ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
               className={cn(
-                "-mb-px inline-flex h-10 shrink-0 snap-start items-center border-b-2 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:h-11",
+                "-mb-px inline-flex h-10 shrink-0 snap-start items-center justify-center border-b-2 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:h-11 pointer-coarse:min-w-11",
                 active
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
@@ -59,7 +59,7 @@ export function BusinessStrip({
         href={`/${slug}`}
         target="_blank"
         rel="noopener"
-        className="mb-px inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground max-sm:hidden"
+        className="mb-px inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground max-sm:hidden pointer-coarse:h-11"
       >
         <ExternalLink className="size-4" />
         {viewLabel}
