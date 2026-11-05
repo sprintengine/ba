@@ -300,6 +300,7 @@
   --info-soft: #eaf3fc;
   --info-soft-foreground: #175c9e;
   --info-border: #c3dcf4;
+  --event-tint: 17%;
   --chart-1: #5b4ae0;
   --chart-2: #e0702f;
   --chart-3: #1d9bd1;
@@ -432,6 +433,7 @@
   --info-soft: rgba(90, 169, 240, 0.14);
   --info-soft-foreground: #a3cef7;
   --info-border: rgba(90, 169, 240, 0.32);
+  --event-tint: 26%;
   --chart-1: #7a6af0;
   --chart-2: #e06a2a;
   --chart-3: #1f95cc;
