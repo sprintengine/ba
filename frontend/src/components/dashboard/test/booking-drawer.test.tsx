@@ -212,7 +212,7 @@ describe("BookingDrawer details", () => {
       "tel:+353 1 234 5678",
     );
     expect(screen.getByText(/Follow-up/)).toHaveTextContent("Follow-up · Long");
-    expect(screen.getByText(/Hot stones/)).toHaveTextContent("+ Hot stones (15 min)");
+    expect(screen.getByText(/Hot stones/)).toHaveTextContent("Hot stones (15 min)");
     expect(screen.getByText(/Blocks 10 min before and 5 min after/)).toBeInTheDocument();
     expect(screen.getByText(/Booked via booking page on/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Note from the patient" })).toBeInTheDocument();

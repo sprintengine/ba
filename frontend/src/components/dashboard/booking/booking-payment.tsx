@@ -39,7 +39,7 @@ export function PaymentSection({ booking: b }: { booking: BookingDetail }) {
   }
   return (
     <PanelSection title="Payment">
-      <dl className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-3.5 text-sm dark:bg-surface-raised">
+      <dl className="flex flex-col divide-y divide-border-subtle border-y border-border-subtle text-sm">
         <PriceRow booking={b} />
         {hasDeposit && <MoneyRow label="Deposit" value={money(b.depositCents ?? 0)} />}
         {b.amountPaidCents > 0 && <MoneyRow label="Paid" value={money(b.amountPaidCents)} />}
