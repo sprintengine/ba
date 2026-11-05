@@ -154,7 +154,8 @@
 /*
  * ---------- story beats: a face as a pane of glass in the page ----------
  * Drawn at its design size (--fw × --fh, phones --pw × --ph) and scaled down to fit its column. tan(atan2(a, b)) is
- * a / b as a plain number: CSS can't otherwise divide one length by another.
+ * a / b as a plain number: CSS can't otherwise divide one length by another. --mw is the measured width
+ * (useMeasuredWidth): Safari 26 gets 100cqw wrong in a scale.
  */
 .card {
   --cw: var(--fw);
@@ -172,7 +173,7 @@
   }
 }
 .cardFit {
-  --k: min(1, tan(atan2(100cqw, var(--cw))));
+  --k: min(1, tan(atan2(var(--mw, 100cqw), var(--cw))));
   height: calc(var(--ch) * var(--k));
 }
 .card .st {

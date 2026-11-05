@@ -10,6 +10,7 @@ import { CalendarFace } from "./face-calendar";
 import { faceVars } from "./face-parts";
 import { PhoneFace } from "./face-phone";
 import { BoFace, OwnAssistantFace, PaymentFace, ReminderFace, TodayFace } from "./faces";
+import { FitCard } from "./fit-card";
 import s from "./prism.module.css";
 
 type Beat = {
@@ -136,10 +137,10 @@ export function StoryBeats() {
                 )}
               </Reveal>
               <Reveal delay={0.08} aria-hidden>
-                <div className={s.card} style={faceVars(b.index)}>
+                <FitCard style={faceVars(b.index)}>
                   <div aria-hidden className={s.glow} />
                   <div className={s.cardFit}>{b.face}</div>
-                </div>
+                </FitCard>
               </Reveal>
             </PrismContainer>
           </section>

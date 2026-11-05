@@ -11,6 +11,7 @@ import s from "./demo.module.css";
 import { BrowserChrome, PhoneChrome } from "./frames";
 import { finalState, type DemoChapter } from "./types";
 import { locateTarget, useDemoPlayer } from "./use-demo-player";
+import { useMeasuredWidth } from "./use-measured-width";
 
 /**
  * Reduced motion, but only once hydrated: the server can't know the preference, so the first client render must
@@ -121,6 +122,7 @@ export function DemoStage<S>({
   // it (the assistant's character reads the motion preference) can disagree with the server's HTML, and only then
   // loads its chunk (the screens and their dependencies), not straight after the page.
   const near = useNear(outer);
+  useMeasuredWidth(outer);
   const [paused, setPaused] = useState(false);
   const fullWidth = width + FRAME_EXTRA[frame].w;
   const fullHeight = height + FRAME_EXTRA[frame].h;
