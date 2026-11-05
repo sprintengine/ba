@@ -128,7 +128,7 @@ export default async function IndustryPage({ params }: Props) {
               ].map((x) => (
                 <div key={x.term} className="rounded-xl border border-border bg-surface p-3.5 shadow-xs">
                   <dt className="text-2xs text-subtle-foreground">{x.term}</dt>
-                  <dd className="mt-1 truncate text-sm font-medium">{x.value}</dd>
+                  <dd className="mt-1 text-sm font-medium [overflow-wrap:anywhere]">{x.value}</dd>
                 </div>
               ))}
             </dl>

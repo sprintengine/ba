@@ -15,7 +15,7 @@ type SearchResult = ReturnType<typeof useMarketplaceSearch>;
 /** A way out of an empty result, e.g. "Clear filters" or "Widen to 50 km". */
 export type EmptySuggestion = { label: string; onSelect: () => void };
 
-const GRID = "grid gap-3 sm:gap-4 @2xl:grid-cols-2";
+const GRID = "grid gap-3 sm:gap-4 @4xl:grid-cols-2";
 
 /** Results list: skeletons, errors (incl. rate limiting and bad filters), empty state and "Show more". */
 export function ExploreResults({

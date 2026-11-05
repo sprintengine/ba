@@ -122,7 +122,7 @@ export const PLAN_COMPARISON: ComparisonGroup[] = [
     rows: [
       { label: "AI setup from a description or website", values: [true, true, true] },
       { label: "AI usage included", values: ["Starter", "More", "Most"] },
-      { label: "Bookable by AI assistants", values: ["Coming soon", "Coming soon", "Coming soon"] },
+      { label: "Bookable by AI assistants", values: [true, true, true] },
     ],
   },
   {

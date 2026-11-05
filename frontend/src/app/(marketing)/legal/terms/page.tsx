@@ -224,7 +224,7 @@ export default function TermsPage() {
   return (
     <LegalDocument
       title="Terms of Service"
-      summary="The agreement between bookanything and the businesses that use it to take bookings."
+      summary="Draft terms between bookanything and the businesses that use it to take bookings."
       sections={SECTIONS}
       related={{ href: "/legal/privacy", label: "Privacy Policy" }}
     />

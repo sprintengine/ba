@@ -53,21 +53,16 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
             </h3>
             {price && <p className="tnum shrink-0 pt-0.5 text-sm font-semibold whitespace-nowrap">{price}</p>}
           </div>
-          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <CategoryIcon category={category.key} className="size-3.5 text-brand" />
               {category.label}
             </span>
             {place && (
-              <>
-                <span aria-hidden className="text-subtle-foreground">
-                  ·
-                </span>
-                <span className="tnum inline-flex items-center gap-1">
-                  <MapPin aria-hidden className="size-3.5 text-subtle-foreground" />
-                  {place}
-                </span>
-              </>
+              <span className="tnum inline-flex items-center gap-1">
+                <MapPin aria-hidden className="size-3.5 text-subtle-foreground" />
+                {place}
+              </span>
             )}
           </p>
         </div>

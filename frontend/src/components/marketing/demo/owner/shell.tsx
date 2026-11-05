@@ -26,7 +26,7 @@ import { BUSINESS, type Route } from "./state";
 
 /** The sidebar as the physio sees it (their vocabulary: Appointments, Clients, Therapists). */
 const NAV: { key: string; label: string; icon: typeof LayoutGrid; route?: Route }[] = [
-  { key: "overview", label: "Overview", icon: LayoutGrid, route: "overview" },
+  { key: "overview", label: "Today", icon: LayoutGrid, route: "overview" },
   { key: "calendar", label: "Calendar", icon: CalendarDays, route: "calendar" },
   { key: "bookings", label: "Appointments", icon: CalendarCheck2 },
   { key: "customers", label: "Clients", icon: Users },

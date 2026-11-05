@@ -6,7 +6,7 @@ import { ListingCardSkeleton } from "./listing-card";
 export function ExploreHero({ title, description }: { title: string; description: string }) {
   return (
     <section className="relative overflow-hidden border-b border-border-subtle">
-      <Container className="relative flex flex-col gap-2 pt-8 pb-6 lg:pt-10 lg:pb-8">
+      <Container className="relative flex flex-col gap-2 pt-6 pb-4 lg:pt-8 lg:pb-5">
         <h1 className="max-w-3xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h1>
         <p className="max-w-2xl text-base text-muted-foreground">{description}</p>
       </Container>
