@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { PRISM, WEIGHT, WORD } from "@/components/brand/logo";
+import { PRISM, WEAVE_GAP, WEIGHT, WORD } from "@/components/brand/logo";
 
 /** Social card size shared by every marketing `opengraph-image`. */
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -11,6 +11,12 @@ export const OG_SIZE = { width: 1200, height: 630 };
 const FONTS = join(process.cwd(), "src/components/marketing/fonts");
 
 // Fixed brand values (ImageResponse can't read CSS variables). Prism: graphite ink, iris accent, prism light.
+/** The logo's rings, written out: the renderer behind ImageResponse takes only plain elements inside an svg. */
+const RING_SIDES = [
+  ["left", WORD.rings.left, WORD.rings.cutLeft],
+  ["right", WORD.rings.right, WORD.rings.cutRight],
+] as const;
+
 const INK = "#0f1012";
 const MUTED = "#50565f";
 const IRIS = "#5b4ae0";
@@ -84,8 +90,8 @@ export async function renderOgCard({
             <linearGradient
               id="line"
               gradientUnits="userSpaceOnUse"
-              x1={WORD.lineLeft}
-              x2={WORD.lineRight}
+              x1={WORD.ringsLeft}
+              x2={WORD.ringsRight}
               y1={0}
               y2={0}
             >
@@ -93,9 +99,33 @@ export async function renderOgCard({
                 <stop key={color} offset={i / (PRISM.length - 1)} stopColor={color} />
               ))}
             </linearGradient>
+            {RING_SIDES.map(([side, , cut]) => (
+              <mask
+                key={side}
+                id={side}
+                maskUnits="userSpaceOnUse"
+                x={0}
+                y={0}
+                width={WORD.width}
+                height={WORD.height}
+              >
+                <rect width={WORD.width} height={WORD.height} fill="#fff" />
+                <path d={cut} fill="none" stroke="#000" strokeWidth={WEIGHT.display + 2 * WEAVE_GAP} />
+              </mask>
+            ))}
           </defs>
           <path d={WORD.letters} fill={INK} />
-          <path d={WORD.line} fill="none" stroke="url(#line)" strokeWidth={WEIGHT.display} />
+          {RING_SIDES.map(([side, ring]) => (
+            <path
+              key={side}
+              d={ring}
+              fill="none"
+              stroke="url(#line)"
+              strokeWidth={WEIGHT.display}
+              mask={`url(#${side})`}
+            />
+          ))}
+          <circle cx={WORD.dot.cx} cy={WORD.dot.cy} r={WORD.dot.r} fill={PRISM[1]} />
         </svg>
         {eyebrow && (
           <div
