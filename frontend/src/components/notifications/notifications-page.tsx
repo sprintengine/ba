@@ -29,7 +29,7 @@ export function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        description="What happened that you should know about. You always see them here; you choose which are also emailed."
+        description="You choose which of these are also emailed."
         actions={
           unread > 0 ? (
             <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>

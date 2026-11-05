@@ -113,7 +113,7 @@ export function DashboardRoot({ Chrome, children }: { Chrome: DashboardChrome; c
       return (
         <NoAccess
           title="Business not found"
-          description={`You're not a member of a business at “${boot.slug}”. It may have moved, or you may be signed in with a different account.`}
+          description={`Nothing at “${boot.slug}” for this account. It may have moved, or you may be signed in with a different account.`}
         />
       );
     case "no-access":
