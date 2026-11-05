@@ -1,32 +1,26 @@
 import { PrismContainer, PrismHeading } from "../heading";
 import { BookedSceneLoader } from "./booked-scene-loader";
 
-/** What the product does, in one picture: the client's phone, then the business's calendar. */
+/** What the product does, in one picture: the business's calendar, with a client's booking arriving on it. */
 export function BookedSection() {
   return (
-    <section id="product" aria-labelledby="product-title" className="scroll-mt-20 pt-4 pb-24 sm:pb-32">
+    <section id="product" aria-labelledby="product-title" className="scroll-mt-20 pb-24 sm:pb-32">
       <PrismContainer>
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
+        <BookedSceneLoader>
           <PrismHeading
             id="product-title"
             align="left"
             className="max-w-none"
             label="How it works"
-            title="They book on their phone."
-            lit="You see it on your calendar."
+            title="Your day, on one calendar."
+            lit="Bookings arrive while you work."
+            lead="Clients pick a free time and pay online. It lands on your calendar, paid, with the reminder already set. No phone calls, nothing to type in."
           />
-          <p className="text-base leading-[1.6] text-muted-foreground sm:text-lg lg:pb-1">
-            Clients pick a free time and pay online, and it shows up on your calendar straight away. No phone
-            calls, nothing to type in.
-          </p>
-        </div>
-        <div className="mt-8 sm:mt-10 lg:mt-8">
-          <BookedSceneLoader />
-        </div>
+        </BookedSceneLoader>
         <p className="sr-only">
-          A client picks a follow-up treatment on their phone, chooses 15:30 and pays €60. The booking leaves
-          the phone and lands straight away on the business&apos;s calendar, in Sam&apos;s column. The phone
-          is a working demo.
+          The calendar shows a clinic’s afternoon across three people. A client books a follow-up treatment at
+          15:30 on their phone and pays €60, and the booking lands straight away in Sam’s column. The phone is
+          a working demo.
         </p>
       </PrismContainer>
     </section>

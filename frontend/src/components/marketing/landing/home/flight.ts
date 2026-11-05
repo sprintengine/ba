@@ -34,8 +34,10 @@ export function flight(el: HTMLElement, scene: HTMLElement, from: DOMRect, to: B
   const b = { x: to.left + to.width / 2, y: to.top + to.height / 2 };
   const middle = { x: from.left - s.left + from.width / 2, y: from.top - s.top + from.height / 2 };
   const across = Math.abs(b.x - middle.x) > Math.abs(b.y - middle.y);
-  // It leaves by the booking's own edge, on the side it's going: the right beside a calendar, the foot above one.
-  const a = across ? { x: from.right - s.left, y: middle.y } : { x: middle.x, y: from.bottom - s.top };
+  // It leaves by the booking's own edge, on the side it's going.
+  const a = across
+    ? { x: (b.x > middle.x ? from.right : from.left) - s.left, y: middle.y }
+    : { x: middle.x, y: (b.y > middle.y ? from.bottom : from.top) - s.top };
   const c = across
     ? { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - 0.16 * Math.abs(b.x - a.x) }
     : { x: Math.max(a.x, b.x) + 70, y: (a.y + b.y) / 2 };

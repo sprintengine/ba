@@ -7,7 +7,8 @@ import type { AiSide } from "./ai-scene";
 import { ClientChat, OwnerChat } from "./ai-chat";
 import { CalendarPane, fitCalendar } from "./calendar-pane";
 import { BOOKED_SERVICE, CLIENT, dayEntries, demoDay, FRIDAY, movedFriday } from "./fixture";
-import { CalendarNotice, SCENE_CALENDAR, SCENE_GRID } from "./scene-parts";
+import { BrowserWindow } from "./browser-window";
+import { CalendarNotice, SCENE_CALENDAR, SCENE_GRID, SCENE_WINDOW } from "./scene-parts";
 import { useScene } from "./use-scene";
 import { useSize } from "./use-size";
 
@@ -51,29 +52,23 @@ export function AiStage({ side, paused }: { side: AiSide; paused: boolean }) {
       <div ref={phoneRef} aria-hidden inert className={cn(!owner && "lg:order-2")}>
         <Chat step={step} />
       </div>
-      <div
-        ref={calendar}
-        aria-hidden
-        inert
-        className={cn(
-          SCENE_CALENDAR,
-          "relative flex min-w-0 overflow-hidden rounded-2xl bg-background shadow-[0_40px_80px_-40px_rgb(0_0_0/0.3)] ring-1 ring-border",
-        )}
-      >
-        <CalendarPane
-          date={date}
-          entries={entries}
-          nowMinute={null}
-          lead={owner && done && fit.columns < 2 ? "aoife" : undefined}
-          {...fit}
-        />
-        {done &&
-          (owner ? (
-            <CalendarNotice title="Three bookings moved" detail="Each client has been told" />
-          ) : (
-            <CalendarNotice title="New booking, paid €60" detail="Rory Kane, through their AI" />
-          ))}
-      </div>
+      <BrowserWindow className={SCENE_WINDOW}>
+        <div ref={calendar} className={cn(SCENE_CALENDAR, "relative flex min-w-0 overflow-hidden")}>
+          <CalendarPane
+            date={date}
+            entries={entries}
+            nowMinute={null}
+            lead={owner && done && fit.columns < 2 ? "aoife" : undefined}
+            {...fit}
+          />
+          {done &&
+            (owner ? (
+              <CalendarNotice title="Three bookings moved" detail="Each client has been told" />
+            ) : (
+              <CalendarNotice title="New booking, paid €60" detail="Rory Kane, through their AI" />
+            ))}
+        </div>
+      </BrowserWindow>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { PrismContainer, PrismDot } from "../heading";
  */
 export function Hero() {
   return (
-    <section aria-labelledby="hero-title" className="pt-24 pb-8 sm:pt-28 sm:pb-10 lg:pt-32 lg:pb-12">
+    <section aria-labelledby="hero-title" className="pt-24 pb-8 sm:pt-28 sm:pb-10 lg:pt-24 lg:pb-10">
       <PrismContainer className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-end lg:gap-14">
         <div>
           <p className="mb-5 text-[0.9375rem] font-semibold text-muted-foreground">
@@ -17,7 +17,7 @@ export function Hero() {
           </p>
           <h1
             id="hero-title"
-            className="text-[clamp(3rem,6.2vw,5.5rem)] leading-[0.96] font-semibold tracking-[-0.05em] text-balance"
+            className="text-[clamp(3rem,6.2vw,5rem)] leading-[0.96] font-semibold tracking-[-0.05em] text-balance"
           >
             Booking software your AI can run
             <PrismDot />

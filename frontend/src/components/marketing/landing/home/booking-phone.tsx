@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CalendarDays, Clock, Lock, MapPin, RotateCw } from "lucide-react";
+import { CalendarDays, ChevronLeft, Clock, Ellipsis, Lock, MapPin } from "lucide-react";
 import { quote } from "@/lib/booking/quote";
 import { EMPTY_SELECTION } from "@/lib/booking/selection";
 import {
@@ -117,7 +117,7 @@ function Confirmed({ demo }: { demo: BookingDemo }) {
   return (
     <div className="flex flex-col gap-5">
       <ManageHeroBanner
-        hero={{ kind: "confirmed", title: "You're booked and paid", tone: "success" }}
+        hero={{ kind: "confirmed", title: "You’re booked and paid", tone: "success" }}
         booking={booking}
         knowsBusiness
         remaining={null}
@@ -157,15 +157,30 @@ function Confirmed({ demo }: { demo: BookingDemo }) {
   );
 }
 
-/** Safari's bar at the foot of the phone: the page's own address. */
+const GLASS = "bg-white/85 shadow-[0_1px_8px_rgb(0_0_0/0.12)] ring-[0.5px] ring-black/10";
+
+/** Safari's floating bar at the foot of the phone: back, the address, and more. */
 function BrowserBar() {
   return (
-    <div className="flex h-[3.25rem] shrink-0 items-center gap-3 bg-background px-4 pb-1" aria-hidden>
-      <span className="flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full bg-muted text-[0.8125rem] font-medium text-foreground/80">
-        <Lock className="size-3 text-muted-foreground" />
-        <span className="truncate">bookanything.ie/lumen-physio</span>
+    <div
+      className="flex h-[3.25rem] shrink-0 items-center gap-2 bg-background px-3 pb-1 text-black"
+      aria-hidden
+    >
+      <span className={cn("grid size-11 shrink-0 place-items-center rounded-full", GLASS)}>
+        <ChevronLeft className="size-5.5" strokeWidth={2} />
       </span>
-      <RotateCw className="size-4 text-muted-foreground" />
+      <span
+        className={cn(
+          "flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-full text-[0.9375rem]",
+          GLASS,
+        )}
+      >
+        <Lock className="size-3 text-black/50" strokeWidth={2.5} />
+        <span className="truncate">bookanything.ie</span>
+      </span>
+      <span className={cn("grid size-11 shrink-0 place-items-center rounded-full", GLASS)}>
+        <Ellipsis className="size-5.5" strokeWidth={2} />
+      </span>
     </div>
   );
 }

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
+import { BrowserWindow } from "./browser-window";
 import { IPhone } from "./iphone";
-import { SCENE_CALENDAR, SCENE_GRID, SceneToggle } from "./scene-parts";
+import { SCENE_CALENDAR, SCENE_GRID, SCENE_WINDOW, SceneToggle } from "./scene-parts";
 
 export type AiSide = "owner" | "customer";
 
@@ -20,7 +21,9 @@ function Poster() {
   return (
     <div className={SCENE_GRID}>
       <IPhone time="15:14" />
-      <div className={`${SCENE_CALENDAR} rounded-2xl bg-background ring-1 ring-border`} />
+      <BrowserWindow className={SCENE_WINDOW}>
+        <div className={SCENE_CALENDAR} />
+      </BrowserWindow>
     </div>
   );
 }
