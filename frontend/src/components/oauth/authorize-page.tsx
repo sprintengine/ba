@@ -36,7 +36,7 @@ function AuthorizeFromQuery() {
   const request = useMemo(() => parseAuthorizeQuery(search), [search]);
   const returnPath = authorizeReturnPath(search);
   if (!request.clientId) {
-    return <InvalidAuthorizeRequest message="This link is incomplete." />;
+    return <InvalidAuthorizeRequest message="Part of the link is missing." />;
   }
   return <AuthorizeCheck request={request} returnPath={returnPath} />;
 }
