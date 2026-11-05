@@ -29,8 +29,7 @@ export function AddToCalendar({
       <DropdownMenuTrigger asChild>
         <Button variant={variant} className={className}>
           <CalendarPlus />
-          <span className="max-sm:hidden">Add to calendar</span>
-          <span className="sm:hidden">Calendar</span>
+          Add to calendar
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

@@ -78,6 +78,7 @@ export function QuestionsSettings() {
             onClick={() => editor.open(null)}
             icon={<Plus />}
             label="New question"
+            collapse={false}
           />
         }
       />

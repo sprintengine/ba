@@ -71,12 +71,10 @@ export function BookingSummaryCard(props: SummaryProps) {
       className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm dark:bg-surface-raised"
     >
       <div className="border-b border-border-subtle px-5 py-4">
-        <p className="text-xs font-medium text-subtle-foreground">Your {v("booking")}</p>
-        <p className="mt-0.5 truncate text-base font-semibold tracking-tight">{business.name}</p>
+        <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
       </div>
       {rows.length === 0 ? (
         <div className="flex flex-col gap-4 px-5 py-5">
-          <p className="text-sm text-muted-foreground">Choose a service to get started.</p>
           <ul className="flex flex-col gap-2.5 text-sm">
             <li className="flex gap-2.5">
               <Zap className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
@@ -86,14 +84,14 @@ export function BookingSummaryCard(props: SummaryProps) {
               <Shield className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
               <span>
                 {business.policies.allowCustomerCancel
-                  ? `Change or cancel online${business.policies.cancellationNoticeHours > 0 ? ` up to ${business.policies.cancellationNoticeHours}h before` : ""}`
+                  ? `Change or cancel online${business.policies.cancellationNoticeHours > 0 ? ` up to ${business.policies.cancellationNoticeHours} hours before` : ""}`
                   : "Your details are only shared with " + business.name}
               </span>
             </li>
             {business.paymentsEnabled && takesOnlinePayment && (
               <li className="flex gap-2.5">
                 <Lock className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-                <span>Secure payments, straight to {business.name}</span>
+                <span>Secure payments</span>
               </li>
             )}
           </ul>

@@ -74,6 +74,7 @@ export function ReleaseSettings() {
               onClick={() => editor.open(null)}
               icon={<Plus />}
               label="New schedule"
+              collapse={false}
               disabled={bookable.length === 0}
             />
           )

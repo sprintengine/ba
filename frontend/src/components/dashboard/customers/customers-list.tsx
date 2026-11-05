@@ -64,6 +64,7 @@ export function CustomersList() {
             onClick={() => setAdding(true)}
             icon={<UserPlus />}
             label={`Add ${v("customer")}`}
+            collapse={false}
           />
         }
       />

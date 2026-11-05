@@ -43,6 +43,7 @@ export function TeamView() {
               onClick={() => setInviting(true)}
               icon={<UserPlus />}
               label="Invite"
+              collapse={false}
             />
           )
         }

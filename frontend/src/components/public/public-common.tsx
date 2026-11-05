@@ -23,6 +23,7 @@ export function PublicAccountLink({ returnPath }: { returnPath: string }) {
       href="/my/bookings"
       icon={<CalendarCheck2 />}
       label="My bookings"
+      collapse={false}
       variant="ghost"
       size="sm"
     />
@@ -31,6 +32,7 @@ export function PublicAccountLink({ returnPath }: { returnPath: string }) {
       href={`/sign-in?redirect_url=${encodeURIComponent(returnPath)}`}
       icon={<CircleUserRound />}
       label="Sign in"
+      collapse={false}
       variant="ghost"
       size="sm"
     />

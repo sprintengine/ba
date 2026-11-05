@@ -60,7 +60,13 @@ export function ServicesList() {
         description="What people can book, how long it takes and what it costs."
         actions={
           perms.manageServices && (
-            <ActionButton variant="primary" onClick={() => open(null)} icon={<Plus />} label="New service" />
+            <ActionButton
+              variant="primary"
+              onClick={() => open(null)}
+              icon={<Plus />}
+              label="New service"
+              collapse={false}
+            />
           )
         }
       />

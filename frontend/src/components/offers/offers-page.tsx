@@ -75,6 +75,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
               disabled={services.isPending}
               icon={<Plus />}
               label="New offer"
+              collapse={false}
             />
           )
         }

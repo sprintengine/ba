@@ -181,10 +181,7 @@ describe("choosing what to book", () => {
       /At your address.*Request to book/,
     );
     // Before anything is chosen, the summary sells the basics.
-    expect(within(summary()).getByText("Choose a service to get started.")).toBeInTheDocument();
-    expect(
-      within(summary()).getByText("Secure payments, straight to Lumen Physiotherapy"),
-    ).toBeInTheDocument();
+    expect(within(summary()).getByText("Secure payments")).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 

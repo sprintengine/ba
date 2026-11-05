@@ -69,6 +69,7 @@ export function ResourcesView() {
               onClick={() => editor.open(null)}
               icon={<Plus />}
               label={`Add ${v("resource")}`}
+              collapse={false}
             />
           )
         }
