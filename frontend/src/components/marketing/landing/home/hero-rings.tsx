@@ -55,7 +55,6 @@ export function HeroRings({
     if (!box || !el) return;
     const rings = createRings(el);
     if (!rings) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPlain(true);
       return;
     }

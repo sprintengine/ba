@@ -96,7 +96,7 @@ export function createRings(canvas: HTMLCanvasElement): Rings | null {
   const vertex = shader(gl, gl.VERTEX_SHADER, VERTEX);
   const fragment = shader(gl, gl.FRAGMENT_SHADER, FRAGMENT);
   const program = gl.createProgram();
-  if (!vertex || !fragment || !program) return null;
+  if (!vertex || !fragment) return null;
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
   gl.linkProgram(program);
