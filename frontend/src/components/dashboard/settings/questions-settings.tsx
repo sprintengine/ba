@@ -109,7 +109,7 @@ export function QuestionsSettings() {
       ) : questions.isPending ? (
         <Skeleton className="h-48 rounded-xl" />
       ) : list.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface shadow-xs">
+        <div className="border-y border-border">
           <EmptyState
             icon={<MessageSquareText />}
             title="No questions"
@@ -117,7 +117,7 @@ export function QuestionsSettings() {
           />
         </div>
       ) : (
-        <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+        <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
           {list.map((q) => (
             <li key={q.id} className="flex items-center gap-3 px-4 py-3">
               {filter === "all" && (

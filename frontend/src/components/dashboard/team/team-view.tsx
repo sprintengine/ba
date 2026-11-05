@@ -55,7 +55,7 @@ export function TeamView() {
           <ul
             aria-label="Team members"
             aria-busy={team.isPending || undefined}
-            className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs"
+            className="flex flex-col divide-y divide-border-subtle border-y border-border"
           >
             {team.isPending
               ? Array.from({ length: 3 }, (_, i) => (

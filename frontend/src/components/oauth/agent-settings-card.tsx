@@ -41,7 +41,7 @@ export function AgentSettingsCard() {
   };
 
   return (
-    <Card>
+    <Card variant="panel">
       <CardHeader>
         <CardTitle>Approving what your AI apps do</CardTitle>
         <CardDescription>

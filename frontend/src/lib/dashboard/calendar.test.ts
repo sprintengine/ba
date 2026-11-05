@@ -85,6 +85,6 @@ describe("eventAppearance", () => {
   });
 
   it("carries the status label and tone", () => {
-    expect(eventAppearance("pending_approval")).toMatchObject({ label: "Needs approval", tone: "info" });
+    expect(eventAppearance("pending_approval")).toMatchObject({ label: "Needs approval", tone: "warning" });
   });
 });

@@ -189,9 +189,7 @@ function CustomerNote({ notes }: { notes: string | null }) {
   if (!notes) return null;
   return (
     <PanelSection title={`Note from the ${v("customer")}`}>
-      <p className="rounded-lg border-l-2 border-border-strong bg-surface-sunken px-3 py-2 text-sm whitespace-pre-wrap">
-        {notes}
-      </p>
+      <p className="rounded-lg bg-surface-sunken px-3 py-2 text-sm whitespace-pre-wrap">{notes}</p>
     </PanelSection>
   );
 }

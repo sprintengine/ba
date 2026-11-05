@@ -11,7 +11,7 @@ export const DrawerClose = Vaul.Close;
 export function DrawerContent({ className, children, ...props }: React.ComponentProps<typeof Vaul.Content>) {
   return (
     <Vaul.Portal>
-      <Vaul.Overlay className="fixed inset-0 z-50 bg-overlay" />
+      <Vaul.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[7px]" />
       <Vaul.Content
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-border bg-surface-raised shadow-xl outline-none",

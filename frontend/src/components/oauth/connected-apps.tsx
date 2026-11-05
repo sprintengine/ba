@@ -36,7 +36,7 @@ export function ConnectedAppsPage() {
           ))}
         </div>
       ) : apps.data.length === 0 ? (
-        <Card>
+        <Card variant="panel">
           <EmptyState
             headingLevel={2}
             icon={<Plug />}

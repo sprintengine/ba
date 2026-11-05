@@ -45,7 +45,7 @@ export const DialogPortal = DialogPrimitive.Portal;
 
 /** Overlay styles, shared with AlertDialog-based ConfirmDialog. */
 export const overlayStyles =
-  "fixed inset-0 z-50 animate-fade-in bg-overlay backdrop-blur-[2px] data-[state=closed]:animate-fade-out";
+  "fixed inset-0 z-50 animate-fade-in bg-overlay backdrop-blur-[7px] data-[state=closed]:animate-fade-out";
 
 export function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return <DialogPrimitive.Overlay className={cn(overlayStyles, className)} {...props} />;

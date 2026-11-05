@@ -53,7 +53,7 @@ export function ConsentCard({
   }
 
   return (
-    <Card className="animate-rise rounded-2xl shadow-sm">
+    <Card variant="panel" className="animate-rise rounded-2xl shadow-sm">
       <CardContent className="flex flex-col gap-6 p-6 sm:p-8">
         <header className="flex flex-col items-center gap-5 text-center">
           <div className="flex items-center gap-3" aria-hidden>

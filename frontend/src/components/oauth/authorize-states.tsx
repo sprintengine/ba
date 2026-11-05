@@ -11,7 +11,13 @@ import { Spinner } from "@/components/ui/spinner";
 /** Matches the consent card's layout while the request is checked. */
 export function ConsentSkeleton() {
   return (
-    <Card className="rounded-2xl" role="status" aria-busy aria-label="Loading connection request">
+    <Card
+      variant="panel"
+      className="rounded-2xl"
+      role="status"
+      aria-busy
+      aria-label="Loading connection request"
+    >
       <CardContent className="flex flex-col items-center gap-6 p-6 sm:p-8">
         <div className="flex items-center gap-3">
           <Skeleton className="size-14 rounded-[28%]" />
@@ -40,7 +46,7 @@ export function ConsentSkeleton() {
 /** Unknown app or unregistered redirect: explain and stop. Never redirects anywhere. */
 export function InvalidAuthorizeRequest({ message }: { message: string }) {
   return (
-    <Card className="rounded-2xl">
+    <Card variant="panel" className="rounded-2xl">
       <EmptyState
         icon={<CircleAlert />}
         title="This connection link isn't valid"
@@ -68,7 +74,7 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
  */
 export function NoBusinessToConnect({ message }: { message: string }) {
   return (
-    <Card className="rounded-2xl">
+    <Card variant="panel" className="rounded-2xl">
       <EmptyState
         icon={<Store />}
         title="There's no business to connect"

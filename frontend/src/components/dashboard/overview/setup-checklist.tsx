@@ -24,7 +24,7 @@ export function SetupChecklist({ items }: { items: { key: ChecklistKey; done: bo
           {progress.done} of {progress.total} done
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3 px-3 pb-3">
+      <CardContent className="-mx-2 flex flex-col gap-3 pb-3">
         <div
           className="mx-2 h-1.5 overflow-hidden rounded-full bg-muted"
           role="progressbar"

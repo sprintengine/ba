@@ -53,7 +53,7 @@ export function PendingApprovals({ today }: { today: string }) {
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="flex flex-col px-3 pb-3">
+      <CardContent className="-mx-2 flex flex-col pb-3">
         {items.map((b) => (
           <div
             key={b.id}

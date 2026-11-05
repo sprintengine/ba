@@ -39,7 +39,7 @@ export function NotificationsPage() {
         }
       />
       <div className="flex flex-col gap-6">
-        <Card className="overflow-hidden">
+        <Card variant="panel" className="overflow-hidden">
           {list.isError ? (
             <ErrorState headingLevel={2} error={list.error} onRetry={() => list.refetch()} />
           ) : list.isPending ? (
@@ -82,7 +82,7 @@ function EmailSettings() {
     );
 
   return (
-    <Card>
+    <Card variant="panel">
       <CardHeader>
         <CardTitle>Email me about</CardTitle>
         <CardDescription>

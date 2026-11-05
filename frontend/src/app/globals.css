@@ -3,11 +3,11 @@
 /*
  * bookanything design tokens
  * ──────────────────────────
- * Brand: Prism (one typeface, Figtree; graphite ink; a deep iris accent; a decorative
+ * Brand: Prism (one typeface, Figtree; warm ink on a warm paper page; a deep iris accent; a decorative
  * prism spectrum that only ever appears as light, never as text). Source of truth:
  * the brand kit's tokens (bookanything-brand/prism-kit/tokens).
  *
- * 1. Raw palette (@theme): cool graphite `gray`, the `iris` brand ramp, the decorative
+ * 1. Raw palette (@theme): warm `gray`, the `iris` brand ramp, the decorative
  *    `prism` spectrum, and black/white. Tailwind's default colour palette is DISABLED on purpose —
  *    use semantic tokens (bg-surface, text-muted-foreground, border-border …),
  *    not `bg-indigo-500`.
@@ -30,24 +30,24 @@
   --color-white: #fff;
   --color-black: #000;
 
-  /* Cool graphite neutrals. */
+  /* Warm paper neutrals. */
   --color-gray-0: #ffffff;
-  --color-gray-25: #f6f7f9;
-  --color-gray-50: #f1f2f4;
-  --color-gray-100: #eef0f3;
-  --color-gray-150: #e8eaee;
-  --color-gray-200: #e2e4e8;
-  --color-gray-300: #cfd3d9;
-  --color-gray-400: #b0b5bd;
-  --color-gray-500: #8f959f;
-  --color-gray-600: #61676f;
-  --color-gray-700: #3b3f46;
-  --color-gray-800: #2a2d33;
-  --color-gray-850: #212328;
-  --color-gray-900: #1a1c20;
-  --color-gray-925: #131418;
-  --color-gray-950: #0f1012;
-  --color-gray-975: #0c0d0f;
+  --color-gray-25: #fbfaf6;
+  --color-gray-50: #f4f1ea;
+  --color-gray-100: #efebe2;
+  --color-gray-150: #e9e4d8;
+  --color-gray-200: #e4dfd3;
+  --color-gray-300: #d3cdbf;
+  --color-gray-400: #b5af9f;
+  --color-gray-500: #928c7d;
+  --color-gray-600: #6a665b;
+  --color-gray-700: #4b483f;
+  --color-gray-800: #2f2c25;
+  --color-gray-850: #25231e;
+  --color-gray-900: #1b1a16;
+  --color-gray-925: #141310;
+  --color-gray-950: #16140f;
+  --color-gray-975: #0c0b09;
 
   /* Iris — the bookanything accent: a deep violet drawn from the prism spectrum. 600 is the brand:
      white text on it and it as text on the page both keep 4.5:1. */
@@ -72,7 +72,7 @@
   /* One typeface: codes, URLs and hex values are Figtree with tabular figures, not a second family. */
   --font-mono: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 
-  --text-2xs: 0.6875rem;
+  --text-2xs: 0.75rem;
   --text-2xs--line-height: 1rem;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.125rem;
@@ -249,23 +249,23 @@
 [data-mode="light"] {
   color-scheme: light;
 
-  --background: #f6f7f9;
-  --foreground: #0f1012;
+  --background: #fbfaf6;
+  --foreground: #16140f;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-sunken: #f1f2f4;
-  --muted: #eef0f3;
-  --muted-foreground: #4a5059;
-  --subtle-foreground: #585e67;
-  --accent: #eef0f3;
-  --accent-foreground: #0f1012;
-  --border: #dcdfe4;
-  --border-subtle: #e6e8ec;
-  --border-strong: #cfd3d9;
-  --input: #cfd3d9;
-  --overlay: rgba(15, 16, 18, 0.32);
-  --primary: #0f1012;
-  --primary-hover: #2a2d33;
+  --surface-sunken: #f4f1ea;
+  --muted: #efebe2;
+  --muted-foreground: #4b483f;
+  --subtle-foreground: #5f5b50;
+  --accent: #efebe2;
+  --accent-foreground: #16140f;
+  --border: #e4dfd3;
+  --border-subtle: #ece8dd;
+  --border-strong: #d3cdbf;
+  --input: #cbc5b6;
+  --overlay: rgba(32, 29, 22, 0.22);
+  --primary: #16140f;
+  --primary-hover: #2f2c25;
   --primary-foreground: #ffffff;
   --brand: #5b4ae0;
   --brand-hover: #4a3ac8;
@@ -286,9 +286,9 @@
   --success-border: #bde3cc;
   --warning: #e9a23b;
   --warning-foreground: #2b1d05;
-  --warning-soft: #fff5e3;
-  --warning-soft-foreground: #8a5300;
-  --warning-border: #f3d7a1;
+  --warning-soft: #fdf0d9;
+  --warning-soft-foreground: #7f4c00;
+  --warning-border: #f0d6a4;
   --danger: #cf3437;
   --danger-hover: #b42a2d;
   --danger-foreground: #ffffff;
@@ -307,23 +307,23 @@
   --chart-5: #b98800;
   --chart-6: #16a17a;
   --chart-7: #2f5fc4;
-  --chart-grid: #eceef1;
-  --chart-axis: #cfd3d9;
-  --elev-xs: 0 1px 2px 0 rgba(15, 16, 18, 0.05);
-  --elev-sm: 0 0 0 0.5px rgba(15, 16, 18, 0.06), 0 1px 3px 0 rgba(15, 16, 18, 0.07);
+  --chart-grid: #ece8dd;
+  --chart-axis: #d3cdbf;
+  --elev-xs: 0 1px 2px 0 rgba(32, 29, 22, 0.05);
+  --elev-sm: 0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 1px 3px 0 rgba(32, 29, 22, 0.07);
   --elev-md:
-    0 0 0 0.5px rgba(15, 16, 18, 0.06), 0 8px 16px -8px rgba(30, 30, 60, 0.14),
-    0 2px 4px -2px rgba(15, 16, 18, 0.05);
+    0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 8px 16px -8px rgba(58, 48, 28, 0.14),
+    0 2px 4px -2px rgba(32, 29, 22, 0.05);
   --elev-lg:
-    0 0 0 0.5px rgba(15, 16, 18, 0.06), 0 24px 40px -20px rgba(30, 30, 60, 0.22),
-    0 6px 12px -6px rgba(15, 16, 18, 0.06);
+    0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 24px 40px -20px rgba(58, 48, 28, 0.22),
+    0 6px 12px -6px rgba(32, 29, 22, 0.06);
   --elev-xl:
-    0 0 0 0.5px rgba(15, 16, 18, 0.07), 0 40px 72px -32px rgba(30, 30, 60, 0.32),
-    0 10px 20px -10px rgba(15, 16, 18, 0.08);
+    0 0 0 0.5px rgba(32, 29, 22, 0.07), 0 40px 72px -32px rgba(58, 48, 28, 0.32),
+    0 10px 20px -10px rgba(32, 29, 22, 0.08);
   --elev-button:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 1px 2px 0 rgba(15, 16, 18, 0.2),
-    0 8px 18px -10px rgba(15, 16, 18, 0.5);
-  --elev-inset: inset 0 1px 2px 0 rgba(15, 16, 18, 0.06);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 1px 2px 0 rgba(32, 29, 22, 0.2),
+    0 8px 18px -10px rgba(32, 29, 22, 0.5);
+  --elev-inset: inset 0 1px 2px 0 rgba(32, 29, 22, 0.06);
 
   /* Decorative prism light (see @theme). */
   --prism-gradient: linear-gradient(90deg, #8fd8f2 0%, #bfaeff 50%, #ffbf9c 100%);
@@ -337,7 +337,7 @@
     #ffbf9c,
     rgba(255, 255, 255, 0.95)
   );
-  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fbfbfc 0%, #f1f2f5 55%, #e6e8ec 100%);
+  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fcfbf8 0%, #f4f1ea 55%, #e9e4d8 100%);
 
   /* ---- glass recipes (light). Use: background: var(--glass-bg); backdrop-filter: var(--glass-backdrop);
      border: 1px solid var(--glass-border); box-shadow: var(--glass-highlight), var(--glass-shadow); */
@@ -347,15 +347,15 @@
   --glass-surface-border: rgba(255, 255, 255, 0.85);
   --glass-surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --glass-surface-shadow:
-    0 0 0 0.5px rgba(15, 16, 18, 0.08), 0 8px 16px -10px rgba(30, 30, 60, 0.14),
-    0 28px 48px -28px rgba(30, 30, 60, 0.32);
+    0 0 0 0.5px rgba(32, 29, 22, 0.08), 0 8px 16px -10px rgba(58, 48, 28, 0.14),
+    0 28px 48px -28px rgba(58, 48, 28, 0.32);
   --glass-surface-backdrop: blur(var(--glass-surface-blur)) saturate(var(--glass-surface-saturate));
-  --glass-chrome-bg: rgba(250, 250, 251, 0.62);
+  --glass-chrome-bg: rgba(251, 250, 246, 0.62);
   --glass-chrome-blur: 20px;
   --glass-chrome-saturate: 1.6;
   --glass-chrome-border: rgba(255, 255, 255, 0.9);
   --glass-chrome-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --glass-chrome-shadow: 0 0 0 0.5px rgba(15, 16, 18, 0.06), 0 10px 30px -18px rgba(15, 16, 18, 0.22);
+  --glass-chrome-shadow: 0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 10px 30px -18px rgba(32, 29, 22, 0.22);
   --glass-chrome-backdrop: blur(var(--glass-chrome-blur)) saturate(var(--glass-chrome-saturate));
   --glass-overlay-bg: rgba(255, 255, 255, 0.8);
   --glass-overlay-blur: 28px;
@@ -363,8 +363,8 @@
   --glass-overlay-border: rgba(255, 255, 255, 0.95);
   --glass-overlay-highlight: inset 0 1px 0 rgba(255, 255, 255, 1);
   --glass-overlay-shadow:
-    0 0 0 0.5px rgba(15, 16, 18, 0.08), 0 8px 20px -12px rgba(15, 16, 18, 0.16),
-    0 32px 72px -28px rgba(15, 16, 18, 0.34);
+    0 0 0 0.5px rgba(32, 29, 22, 0.08), 0 8px 20px -12px rgba(32, 29, 22, 0.16),
+    0 32px 72px -28px rgba(32, 29, 22, 0.34);
   --glass-overlay-backdrop: blur(var(--glass-overlay-blur)) saturate(var(--glass-overlay-saturate));
   /* default glass = surface */
   --glass-bg: var(--glass-surface-bg);
@@ -381,24 +381,24 @@
 [data-mode="dark"] {
   color-scheme: dark;
 
-  --background: #0c0d0f;
-  --foreground: #f2f3f5;
-  --surface: #131418;
-  --surface-raised: #1a1c20;
-  --surface-sunken: #08090b;
-  --muted: #1c1e23;
-  --muted-foreground: #bcc1c8;
-  --subtle-foreground: #a6acb5;
-  --accent: #212328;
-  --accent-foreground: #f2f3f5;
-  --border: #30343b;
-  --border-subtle: #272a30;
-  --border-strong: #454a52;
-  --input: #41454d;
-  --overlay: rgba(0, 0, 0, 0.6);
-  --primary: #f2f3f5;
-  --primary-hover: #d8dbe0;
-  --primary-foreground: #0f1012;
+  --background: #1b1a16;
+  --foreground: #f3f1ea;
+  --surface: #211f1b;
+  --surface-raised: #25231e;
+  --surface-sunken: #141310;
+  --muted: #2a2822;
+  --muted-foreground: #cdc9bd;
+  --subtle-foreground: #aaa598;
+  --accent: #2f2d27;
+  --accent-foreground: #f3f1ea;
+  --border: #37342d;
+  --border-subtle: #2d2b25;
+  --border-strong: #4a463d;
+  --input: #4f4b41;
+  --overlay: rgba(8, 7, 5, 0.46);
+  --primary: #f3f1ea;
+  --primary-hover: #dcd8cc;
+  --primary-foreground: #16140f;
   --brand: #a99bff;
   --brand-hover: #bcb1ff;
   --brand-foreground: #0f1012;
@@ -439,8 +439,8 @@
   --chart-5: #b08300;
   --chart-6: #13a079;
   --chart-7: #4677e0;
-  --chart-grid: #1f2126;
-  --chart-axis: #363a41;
+  --chart-grid: #2a2822;
+  --chart-axis: #403d35;
   --elev-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --elev-sm: 0 0 0 0.5px rgba(255, 255, 255, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.4);
   --elev-md:
@@ -457,9 +457,9 @@
     0 8px 18px -10px rgba(0, 0, 0, 0.6);
   --elev-inset: inset 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 
-  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #1a1c21 0%, #0f1013 55%, #08090b 100%);
+  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #211f1b 0%, #141310 55%, #0c0b09 100%);
 
-  --glass-surface-bg: rgba(32, 34, 40, 0.55);
+  --glass-surface-bg: rgba(37, 35, 30, 0.55);
   --glass-surface-blur: 18px;
   --glass-surface-saturate: 1.5;
   --glass-surface-border: rgba(255, 255, 255, 0.09);
@@ -467,14 +467,14 @@
   --glass-surface-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.5), 0 8px 16px -10px rgba(0, 0, 0, 0.4), 0 28px 48px -28px rgba(0, 0, 0, 0.6);
   --glass-surface-backdrop: blur(var(--glass-surface-blur)) saturate(var(--glass-surface-saturate));
-  --glass-chrome-bg: rgba(20, 21, 25, 0.64);
+  --glass-chrome-bg: rgba(27, 26, 22, 0.64);
   --glass-chrome-blur: 20px;
   --glass-chrome-saturate: 1.4;
   --glass-chrome-border: rgba(255, 255, 255, 0.08);
   --glass-chrome-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-chrome-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 10px 30px -18px rgba(0, 0, 0, 0.6);
   --glass-chrome-backdrop: blur(var(--glass-chrome-blur)) saturate(var(--glass-chrome-saturate));
-  --glass-overlay-bg: rgba(28, 30, 35, 0.82);
+  --glass-overlay-bg: rgba(37, 35, 30, 0.82);
   --glass-overlay-blur: 28px;
   --glass-overlay-saturate: 1.6;
   --glass-overlay-border: rgba(255, 255, 255, 0.1);

@@ -89,7 +89,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="flex flex-col gap-6 rounded-xl border border-border bg-surface shadow-xs">
+        <div className="flex flex-col gap-6 border-y border-border">
           <EmptyState
             headingLevel={2}
             icon={<BadgePercent />}
@@ -112,7 +112,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
           </ul>
         </div>
       ) : (
-        <ul className="flex flex-col divide-y divide-border-subtle overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+        <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
           {list.map((o) => (
             <OfferCard key={o.id} offer={o} services={allServices} today={today} onEdit={() => open(o)} />
           ))}

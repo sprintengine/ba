@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, BellOff, CheckCheck } from "lucide-react";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/lib/api/hooks";
 import type { AppNotification } from "@/lib/api/types";
+import { DEFAULT_LOCALE } from "@/lib/format/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
@@ -23,7 +24,7 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   if (hours < 24) return `${hours} h ago`;
   const days = Math.round(hours / 24);
   if (days < 7) return days === 1 ? "Yesterday" : `${days} days ago`;
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString(DEFAULT_LOCALE, { day: "numeric", month: "short" });
 }
 
 const PANEL_TITLE_ID = "notifications-panel-title";

@@ -58,7 +58,7 @@ function AuthorizeCheck({ request, returnPath }: { request: AuthorizeRequest; re
       return <NoBusinessToConnect message={errorMessage(check.error)} />;
     }
     return (
-      <Card className="rounded-2xl">
+      <Card variant="panel" className="rounded-2xl">
         <ErrorState
           error={check.error}
           title="We couldn't load this request"

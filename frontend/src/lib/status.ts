@@ -13,7 +13,7 @@ export const BOOKING_STATUS: Record<BookingStatus, StatusMeta> = {
   held: { label: "Awaiting payment", tone: "warning", description: "Slot is held while the customer pays." },
   pending_approval: {
     label: "Needs approval",
-    tone: "info",
+    tone: "warning",
     description: "Waiting for the business to approve.",
   },
   confirmed: { label: "Confirmed", tone: "success", description: "Booked and confirmed." },
