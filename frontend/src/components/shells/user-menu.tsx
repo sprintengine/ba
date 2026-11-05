@@ -30,7 +30,7 @@ export function UserMenu({
   variant?: "avatar" | "row";
   collapsed?: boolean;
   align?: "start" | "end";
-  side?: "top" | "bottom";
+  side?: "top" | "bottom" | "right";
 }) {
   const { user, signOut, mode } = useAuth();
   const { theme, setTheme } = useThemeChoice();

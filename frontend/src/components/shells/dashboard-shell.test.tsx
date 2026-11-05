@@ -70,23 +70,18 @@ function renderShell(props: Partial<React.ComponentProps<typeof DashboardShell>>
 const sidebarNav = () => must(screen.getAllByRole("navigation", { name: "Dashboard" })[0], "sidebar nav");
 
 describe("DashboardShell", () => {
-  it("lays out the sidebar navigation in the business vocabulary, marking the current page", async () => {
+  it("lays out the five rail items in the business vocabulary, marking the current page", async () => {
     const { container } = renderShell();
     const nav = within(sidebarNav());
     expect(nav.getAllByRole("link").map((a) => a.textContent)).toEqual([
-      "Overview",
+      "Today",
       "Calendar",
-      "Appointments",
       "Patients",
-      "Services",
-      "Offers",
-      "Therapists",
-      "Team",
+      "Business",
       "Reports",
-      "Settings",
     ]);
     expect(nav.getByRole("link", { name: "Calendar" })).toHaveAttribute("aria-current", "page");
-    expect(nav.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
+    expect(nav.getByRole("link", { name: "Today" })).not.toHaveAttribute("aria-current");
     expect(nav.getByRole("link", { name: "Calendar" })).toHaveAttribute(
       "href",
       "/dashboard/lumen-physio/calendar",
@@ -95,10 +90,46 @@ describe("DashboardShell", () => {
     await expectNoAxeViolations(container);
   });
 
+  it("keeps Calendar lit on the bookings list", () => {
+    pathname = "/dashboard/lumen-physio/bookings";
+    renderShell();
+    expect(within(sidebarNav()).getByRole("link", { name: "Calendar" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  it("gathers the set-up pages under Business, with a strip to move between them", () => {
+    pathname = "/dashboard/lumen-physio/team";
+    renderShell();
+    const rail = within(sidebarNav());
+    expect(rail.getByRole("link", { name: "Business" })).toHaveAttribute("aria-current", "page");
+    expect(rail.getByRole("link", { name: "Business" })).toHaveAttribute(
+      "href",
+      "/dashboard/lumen-physio/services",
+    );
+    const strip = within(screen.getByRole("navigation", { name: "Business" }));
+    expect(strip.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Services",
+      "Offers",
+      "Therapists",
+      "Team",
+      "Settings",
+    ]);
+    expect(strip.getByRole("link", { name: "Team" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "View booking page" })).toHaveAttribute("href", "/lumen-physio");
+  });
+
+  it("shows no Business strip on other pages", () => {
+    renderShell();
+    expect(screen.queryByRole("navigation", { name: "Business" })).not.toBeInTheDocument();
+  });
+
   it("shows the site builder and View site only where business websites are on", () => {
+    pathname = "/dashboard/lumen-physio/services";
     renderShell({ business: { ...current, sitesEnabled: true } });
-    const nav = within(sidebarNav());
-    expect(nav.getByRole("link", { name: "Site" })).toHaveAttribute("href", "/dashboard/lumen-physio/site");
+    const strip = within(screen.getByRole("navigation", { name: "Business" }));
+    expect(strip.getByRole("link", { name: "Site" })).toHaveAttribute("href", "/dashboard/lumen-physio/site");
     expect(screen.getByRole("link", { name: "View site" })).toHaveAttribute("href", "/lumen-physio");
   });
 
@@ -134,53 +165,13 @@ describe("DashboardShell", () => {
   it("opens the command menu from the sidebar's search and the mobile bar", async () => {
     const user = userEvent.setup();
     renderShell();
-    await user.click(screen.getByRole("button", { name: /Search…/ }));
+    const [rail, bar] = screen.getAllByRole("button", { name: "Search" });
+    await user.click(must(rail, "rail search"));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.click(must(bar, "top bar search"));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("collapses the sidebar with ⌘\\ and the button, keeping every control named", async () => {
-    const user = userEvent.setup();
-    const { container } = renderShell();
-    await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
-    expect(window.localStorage.getItem("bookanything.sidebarCollapsed")).toBe("1");
-    const nav = within(sidebarNav());
-    expect(nav.getByRole("link", { name: "Calendar" })).toHaveAttribute("aria-current", "page");
-    expect(nav.getAllByRole("link").every((a) => a.textContent === "")).toBe(true);
-    expect(screen.getByRole("link", { name: "View booking page" })).toHaveAttribute("href", "/lumen-physio");
-    expect(screen.getByRole("button", { name: "Lumen Physiotherapy, switch business" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Account menu" })).toHaveLength(2);
-    await expectNoAxeViolations(container);
-
-    fireEvent.keyDown(window, { key: "\\", metaKey: true });
-    expect(await screen.findByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
-    expect(window.localStorage.getItem("bookanything.sidebarCollapsed")).toBe("0");
-  });
-
-  it("restores a collapsed sidebar", async () => {
-    window.localStorage.setItem("bookanything.sidebarCollapsed", "1");
-    renderShell();
-    expect(await screen.findByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
-  });
-
-  it("starts collapsed in a small window with a mouse, and keeps a saved choice", async () => {
-    setScreen(1100);
-    const first = renderShell();
-    expect(await screen.findByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
-    first.unmount();
-
-    setScreen(1100, "coarse");
-    const touch = renderShell();
-    expect(await screen.findByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
-    touch.unmount();
-
-    setScreen(1100);
-    window.localStorage.setItem("bookanything.sidebarCollapsed", "0");
-    renderShell();
-    expect(await screen.findByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
   });
 
   it("opens the full navigation from the phone tab bar's More, and closes it on navigation", async () => {
@@ -189,7 +180,7 @@ describe("DashboardShell", () => {
     renderShell();
     await user.click(screen.getByRole("button", { name: "More" }));
     const sheet = await screen.findByRole("dialog", { name: "Navigation" });
-    expect(within(sheet).getByRole("link", { name: "Overview" })).toBeInTheDocument();
+    expect(within(sheet).getByRole("link", { name: "Today" })).toBeInTheDocument();
     await expectNoAxeViolations(document.body);
     await user.click(within(sheet).getByRole("button", { name: /Search…/ }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Navigation" })).not.toBeInTheDocument());
@@ -210,7 +201,7 @@ describe("DashboardShell", () => {
     renderShell();
     const bar = within(screen.getByRole("navigation", { name: "Quick navigation" }));
     expect(bar.getAllByRole("link").map((a) => a.textContent)).toEqual([
-      "Overview",
+      "Today",
       "Calendar",
       "Appointments",
       "Patients",
@@ -235,22 +226,12 @@ describe("DashboardShell", () => {
     await waitFor(() => expect(bar).toBeVisible());
   });
 
-  it("is a named glyph rail on iPad portrait whose expand control lays the labelled navigation over the page", async () => {
+  it("keeps the labelled rail on iPad portrait", () => {
     setScreen(820, "coarse");
-    const user = userEvent.setup();
     renderShell();
     const rail = within(sidebarNav());
     expect(rail.getByRole("link", { name: "Calendar" })).toHaveAttribute("aria-current", "page");
-    expect(rail.getAllByRole("link").every((a) => a.textContent === "")).toBe(true);
-    expect(screen.queryByRole("button", { name: "Collapse sidebar" })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Expand sidebar" }));
-    const sheet = await screen.findByRole("dialog", { name: "Navigation" });
-    expect(within(sheet).getByRole("link", { name: "Patients" })).toBeInTheDocument();
-    // The rail stays a rail (the content keeps its width) and the preference is untouched.
-    expect(window.localStorage.getItem("bookanything.sidebarCollapsed")).toBeNull();
-    await user.click(within(sheet).getByRole("button", { name: "Close navigation" }));
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Navigation" })).not.toBeInTheDocument());
+    expect(rail.getAllByRole("link").every((a) => a.textContent !== "")).toBe(true);
   });
 
   it("switches business from the switcher menu", async () => {
@@ -271,12 +252,12 @@ describe("DashboardShell", () => {
   it("renders skeleton chrome while the business loads, without a command menu", async () => {
     const user = userEvent.setup();
     renderShell({ business: null });
-    expect(within(sidebarNav()).getByRole("link", { name: "Overview" })).toHaveAttribute("href", "#");
+    expect(within(sidebarNav()).getByRole("link", { name: "Today" })).toHaveAttribute("href", "#");
     await user.keyboard("{Meta>}k{/Meta}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("pins a floating element, with room kept for it at the foot of the sidebar rather than over the page", () => {
+  it("pins a floating element, with room kept for it at the foot of the rail rather than over the page", () => {
     const { container } = renderShell({ floating: <button type="button">Ask Bo</button> });
     expect(screen.getByRole("button", { name: "Ask Bo" })).toBeInTheDocument();
     expect(container.querySelector("aside")?.className).toMatch(/\bpb-\[calc\(4rem/);
@@ -312,10 +293,10 @@ describe("UserMenu", () => {
     expect(auth.signOut).toHaveBeenCalledWith({ redirectUrl: "/" });
   });
 
-  it("is keyboard operable from the sidebar row", async () => {
+  it("is keyboard operable from the rail", async () => {
     const user = userEvent.setup();
     renderShell();
-    const row = screen.getByRole("button", { name: /Avery Morgan.*owner@example\.test/ });
+    const row = must(screen.getAllByRole("button", { name: "Account menu" })[0], "rail account");
     row.focus();
     await user.keyboard("{Enter}");
     const menu = await screen.findByRole("menu");
