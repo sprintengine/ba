@@ -85,10 +85,14 @@ describe("dashboard SlotPicker", () => {
         .getAllByRole("radio")
         .map((r) => r.textContent),
     ).toEqual(["10:003 left"]);
-    expect(screen.getByRole("radiogroup", { name: "Afternoon times" })).toBeInTheDocument();
-    expect(screen.getByRole("radiogroup", { name: "Evening times" })).toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: /09:00/ })).not.toBeInTheDocument();
     await expectNoAxeViolations(document.body);
+    // One part of the day at a time, each with how many times it has.
+    expect(screen.getByRole("button", { name: /^Morning/ })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: /^Afternoon/ }));
+    expect(screen.getByRole("radiogroup", { name: "Afternoon times" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /^Evening/ }));
+    expect(screen.getByRole("radiogroup", { name: "Evening times" })).toBeInTheDocument();
   });
 
   it("is one tab stop per period; arrows, Home and End move and choose", async () => {

@@ -114,12 +114,17 @@ describe("OverviewView", () => {
     const user = userEvent.setup();
     renderOverview();
     const today = await card("Today's appointments");
+    // What's ahead comes first; finished ones fold into a line above it.
+    await today.findByRole("button", { name: /^15:00/ });
+    expect(today.queryByRole("button", { name: /09:00.*Alex Morgan/ })).not.toBeInTheDocument();
+    await user.click(today.getByRole("button", { name: "1 finished earlier today" }));
     const items = await today.findAllByRole("listitem");
     expect(items.map((li) => li.querySelector("button")?.textContent)).toEqual([
+      "1 finished earlier today",
       expect.stringMatching(/^09:00.*Alex Morgan/),
       expect.stringMatching(/^15:00.*Follow-up · Long · Sam Rivers/),
     ]);
-    expect(must(items[1])).toHaveTextContent(/Now · 13:00/);
+    expect(must(items[2])).toHaveTextContent(/Now · 13:00/);
     await user.click(today.getByRole("button", { name: /09:00.*Alex Morgan/ }));
     expect(await screen.findByRole("dialog", { name: "Alex Morgan" }, LOAD)).toBeInTheDocument();
   });
