@@ -94,9 +94,14 @@ export function ParticleInfinity({
       if (t) at(t.clientX, t.clientY);
     };
     const gone = () => particles.point(null);
+    const lifted = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") gone();
+    };
     const quiet = { passive: true };
     window.addEventListener("pointermove", pointer, quiet);
     window.addEventListener("pointerdown", pointer, quiet);
+    window.addEventListener("pointerup", lifted, quiet);
+    window.addEventListener("pointercancel", lifted, quiet);
     window.addEventListener("touchmove", finger, quiet);
     window.addEventListener("touchend", gone, quiet);
     window.addEventListener("touchcancel", gone, quiet);
@@ -112,6 +117,8 @@ export function ParticleInfinity({
       document.removeEventListener("visibilitychange", sync);
       window.removeEventListener("pointermove", pointer);
       window.removeEventListener("pointerdown", pointer);
+      window.removeEventListener("pointerup", lifted);
+      window.removeEventListener("pointercancel", lifted);
       window.removeEventListener("touchmove", finger);
       window.removeEventListener("touchend", gone);
       window.removeEventListener("touchcancel", gone);
