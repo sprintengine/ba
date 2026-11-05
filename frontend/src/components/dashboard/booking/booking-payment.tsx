@@ -19,18 +19,34 @@ export function PaymentSection({ booking: b }: { booking: BookingDetail }) {
   const due = amountDue(b);
   // The booking's own currency: it was priced in it, whatever the business's currency is now.
   const money = (cents: number) => fmt.money(cents, { currency: b.currency });
+  const hasDeposit = b.depositCents !== null && b.depositCents > 0;
+  const hasDue = due > 0 && b.paymentStatus !== "not_required";
+  const canMarkPaid = canMarkPaidInPerson(b) && due > 0;
+  // Just a price needs no heading or card round it.
+  if (
+    !hasDeposit &&
+    !hasDue &&
+    !canMarkPaid &&
+    !b.amountPaidCents &&
+    !b.amountRefundedCents &&
+    !b.payments.length
+  ) {
+    return (
+      <dl className="text-sm">
+        <PriceRow booking={b} />
+      </dl>
+    );
+  }
   return (
     <PanelSection title="Payment">
       <dl className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-3.5 text-sm dark:bg-surface-raised">
         <PriceRow booking={b} />
-        {b.depositCents !== null && b.depositCents > 0 && (
-          <MoneyRow label="Deposit" value={money(b.depositCents)} />
-        )}
+        {hasDeposit && <MoneyRow label="Deposit" value={money(b.depositCents ?? 0)} />}
         {b.amountPaidCents > 0 && <MoneyRow label="Paid" value={money(b.amountPaidCents)} />}
         {b.amountRefundedCents > 0 && (
           <MoneyRow label="Refunded" value={`−${money(b.amountRefundedCents)}`} />
         )}
-        {due > 0 && b.paymentStatus !== "not_required" && (
+        {hasDue && (
           <MoneyRow
             label={b.paymentStatus === "pay_at_venue" ? "Due at venue" : "Outstanding"}
             value={money(due)}
@@ -38,7 +54,7 @@ export function PaymentSection({ booking: b }: { booking: BookingDetail }) {
           />
         )}
       </dl>
-      {canMarkPaidInPerson(b) && due > 0 && <MarkPaidInPerson booking={b} amount={money(due)} />}
+      {canMarkPaid && <MarkPaidInPerson booking={b} amount={money(due)} />}
       {b.payments.length > 0 && <PaymentList payments={b.payments} />}
     </PanelSection>
   );

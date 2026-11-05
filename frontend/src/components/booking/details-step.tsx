@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Lock, UserRound } from "lucide-react";
+import { Lock } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,14 +40,10 @@ export function DetailsStep({
       className="gap-6 [&_:is(input,textarea,button)]:scroll-mt-20 [&_:is(input,textarea,button)]:scroll-mb-32"
     >
       {signedInAs ? (
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-sunken/60 px-4 py-3 text-sm">
-          <UserRound className="size-4 text-subtle-foreground" aria-hidden />
-          <span className="min-w-0 truncate text-muted-foreground">
-            Booking as{" "}
-            <span className="font-medium text-foreground">{signedInAs.name || signedInAs.email}</span>
-            {signedInAs.name && <span> · {signedInAs.email}</span>}
-          </span>
-        </div>
+        <p className="truncate text-sm text-muted-foreground">
+          Booking as{" "}
+          <span className="font-medium text-foreground">{signedInAs.name || signedInAs.email}</span>
+        </p>
       ) : (
         <p className="text-sm text-muted-foreground">
           Have an account?{" "}

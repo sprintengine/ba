@@ -403,7 +403,7 @@ describe("paying and confirming", () => {
     await pickTime(u, "2026-10-01");
     expect(screen.getByRole("textbox", { name: /Full name/ })).toHaveValue("Rowan Example");
     expect(screen.getByRole("textbox", { name: /^Email/ })).toHaveValue("rowan@example.test");
-    expect(screen.getByText(/Booking as/)).toHaveTextContent("Rowan Example · rowan@example.test");
+    expect(screen.getByText(/Booking as/)).toHaveTextContent("Rowan Example");
   });
 });
 
