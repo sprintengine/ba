@@ -20,7 +20,15 @@ export function SettingsHeader({ segment, actions }: { segment: string; actions?
     SETTINGS_NAV.find((x) => x.segment === segment)!,
     v,
   );
-  return <SectionHeader title={s.label} description={s.description} actions={actions} className="pb-5" />;
+  // The selected tab beside this already names the section; the heading stays for screen readers.
+  return (
+    <SectionHeader
+      title={<span className="sr-only">{s.label}</span>}
+      description={s.description}
+      actions={actions}
+      className="pb-5"
+    />
+  );
 }
 
 /** A settings card: title, plain-language description, fields, optional footer (save bar). */

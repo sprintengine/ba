@@ -28,8 +28,8 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
 
 const PANEL_TITLE_ID = "notifications-panel-title";
 
-/** "3", or "9+" past nine. */
-const countLabel = (n: number) => (n > 9 ? "9+" : String(n));
+/** "3", or "99+" past 99. */
+const countLabel = (n: number) => (n > 99 ? "99+" : String(n));
 
 /**
  * The bell (§22): what happened that the person should know, newest first, with an unread count. Checks every half
@@ -51,7 +51,7 @@ export function NotificationBell({
   const [open, setOpen] = useState(false);
   const list = useNotifications();
   const unread = list.data?.unreadCount ?? 0;
-  // The badge's own text ("9+" past nine) is in the name, as a control's visible text must be (WCAG 2.5.3).
+  // The badge's own text ("99+" past 99) is in the name, as a control's visible text must be (WCAG 2.5.3).
   const label = unread > 0 ? `Notifications, ${countLabel(unread)} unread` : "Notifications";
 
   const badge = unread > 0 && (

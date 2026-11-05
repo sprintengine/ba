@@ -34,7 +34,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div className="flex flex-col gap-8 lg:flex-row">
         <nav
           aria-label="Settings"
-          className="-mx-1 flex scrollbar-none gap-1 overflow-x-auto px-1 max-lg:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] max-lg:pr-10 lg:sticky lg:top-8 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:self-start lg:px-0"
+          className="-mx-1 flex snap-x snap-mandatory scroll-pl-1 scrollbar-none gap-1 overflow-x-auto px-1 max-lg:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] max-lg:pr-10 lg:sticky lg:top-8 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:self-start lg:px-0"
         >
           {items.map((item) => {
             const href = dashboardHref(business.slug, `settings/${item.segment}`);
@@ -47,7 +47,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                 // On phones the sections scroll sideways: keep the current one in view.
                 ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest" }) : undefined}
                 className={cn(
-                  "inline-flex shrink-0 items-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:h-11",
+                  "inline-flex shrink-0 snap-start items-center rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors pointer-coarse:h-11",
                   active
                     ? "bg-accent text-foreground"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",

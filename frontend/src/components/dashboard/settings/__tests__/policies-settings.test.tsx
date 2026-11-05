@@ -94,7 +94,7 @@ describe("PoliciesSettings", () => {
     await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "50%" }));
     await user.click(screen.getByRole("switch", { name: "Ask for a phone number" }));
     const nextOnly = screen.getByRole("switch", { name: "Offer the next available time only" });
-    expect(nextOnly).toHaveAccessibleDescription(/patients are offered the earliest one/);
+    expect(nextOnly).toHaveAccessibleDescription(/see the earliest time/);
     await user.click(nextOnly);
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 

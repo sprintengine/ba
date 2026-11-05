@@ -159,7 +159,7 @@ export function GeneralSettings() {
             name="published"
             orientation="horizontal"
             label="Published"
-            help="When off, your booking page is hidden from the public and only your team can preview it."
+            help="Your booking page is public. Turned off, only your team can preview it."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
           </FormField>

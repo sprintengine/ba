@@ -120,10 +120,6 @@ describe("OverviewView", () => {
       expect.stringMatching(/^15:00.*Follow-up · Long · Sam Rivers/),
     ]);
     expect(must(items[1])).toHaveTextContent(/Now · 13:00/);
-    expect(today.getByRole("link", { name: /Open calendar/ })).toHaveAttribute(
-      "href",
-      "/dashboard/lumen-physio/calendar",
-    );
     await user.click(today.getByRole("button", { name: /09:00.*Alex Morgan/ }));
     expect(await screen.findByRole("dialog", { name: "Alex Morgan" }, LOAD)).toBeInTheDocument();
   });

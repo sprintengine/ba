@@ -8,7 +8,7 @@ import { checklistProgress, checklistSteps, type ChecklistStep } from "@/lib/das
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** "Get set up": progress and the remaining steps (links), until everything is done. */
 export function SetupChecklist({ items }: { items: { key: ChecklistKey; done: boolean }[] }) {
@@ -23,9 +23,6 @@ export function SetupChecklist({ items }: { items: { key: ChecklistKey; done: bo
         <CardDescription>
           {progress.done} of {progress.total} done
         </CardDescription>
-        <CardAction>
-          <span className="tnum text-sm font-semibold text-brand">{progress.percent}%</span>
-        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-3 pb-3">
         <div

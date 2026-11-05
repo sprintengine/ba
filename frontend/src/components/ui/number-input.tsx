@@ -69,7 +69,8 @@ export function NumberInput({
     <Input
       inputMode={mode === "decimal" ? "decimal" : "numeric"}
       autoComplete="off"
-      className={cn("tnum", className)}
+      className={cn("tnum", !unit && className)}
+      wrapperClassName={unit ? className : undefined}
       {...props}
       trailing={unit ? <span className="text-xs text-subtle-foreground">{unit}</span> : undefined}
       value={draft ?? display(value)}

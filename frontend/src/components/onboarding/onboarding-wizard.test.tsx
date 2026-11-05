@@ -127,7 +127,7 @@ vi.mock("@/lib/api/hooks", () => ({
     data: { provider: "dev", connected: true, chargesEnabled: true, detailsSubmitted: true },
   }),
   useConnectPayments: () => ({ mutateAsync: api.connect, isPending: false }),
-  // "Look" step: the booking page's style, or the site where websites are on.
+  // "Design" step: the booking page's style, or the site where websites are on.
   useBusiness: () => ({
     data: {
       ...SAMPLE_BUSINESS,
@@ -218,7 +218,7 @@ describe("OnboardingWizard", () => {
       must((await screen.findAllByRole("button", { name: "Create business" }))[0], "Create button"),
     );
     expect(await screen.findByRole("heading", { name: "Your booking page" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Setup progress" })).toHaveTextContent("Look");
+    expect(screen.getByRole("navigation", { name: "Setup progress" })).toHaveTextContent("Design");
     await user.click(screen.getByRole("radio", { name: /^Editorial/ }));
     await user.click(screen.getByRole("button", { name: /Use this style/ }));
 

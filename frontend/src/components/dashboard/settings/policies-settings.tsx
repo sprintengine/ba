@@ -92,7 +92,7 @@ export function PoliciesSettings() {
             name="nextAvailableOnly"
             orientation="horizontal"
             label="Offer the next available time only"
-            help={`Instead of a calendar of every free time, ${v("customers")} are offered the earliest one and can ask for a later one, one at a time. Your team still sees everything.`}
+            help={`${v("customers", { title: true })} see the earliest time and can ask for a later one. Your team still sees everything.`}
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
           </FormField>
@@ -100,7 +100,7 @@ export function PoliciesSettings() {
             name="requireCustomerPhone"
             orientation="horizontal"
             label="Ask for a phone number"
-            help="Makes phone required when people book online — handy for text reminders or last-minute changes."
+            help="Makes phone required when people book online."
           >
             {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
           </FormField>
