@@ -120,7 +120,7 @@ export function AgentRequestsPage() {
     <PageContainer size="default">
       <PageHeader
         title="Approvals"
-        description="Changes your AI agents asked to make, and whether they went ahead."
+        description="What your AI agents asked to change here, and what happened."
       />
       {requests.isError ? (
         <ErrorState headingLevel={2} error={requests.error} onRetry={() => requests.refetch()} />

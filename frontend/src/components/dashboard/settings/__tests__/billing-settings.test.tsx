@@ -112,8 +112,8 @@ describe("BillingSettings", () => {
     expect(screen.getByText("40 / 100")).toBeInTheDocument();
     expect(screen.queryByText(/getting close/)).not.toBeInTheDocument();
     expect(screen.getByText("Free forever for small businesses.")).toBeInTheDocument();
-    expect(planNames()).toEqual(["Free", "Pro", "Business"]);
-    expect(screen.getByText("Current")).toBeInTheDocument();
+    // The plan you're on is the card above; the list is what you can move to.
+    expect(planNames()).toEqual(["Pro", "Business"]);
     expect(screen.getByRole("button", { name: "Upgrade to Pro" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Upgrade to Business" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Manage subscription/ })).not.toBeInTheDocument();
@@ -206,6 +206,6 @@ describe("BillingSettings", () => {
     api({ info: () => billing({ prices: [] }) });
     renderDashboard(<BillingSettings />);
     expect(await screen.findByText("Unlimited bookings")).toBeInTheDocument();
-    expect(planNames()).toEqual(["Free", "Pro", "Business"]);
+    expect(planNames()).toEqual(["Pro", "Business"]);
   });
 });

@@ -64,18 +64,15 @@ export function ReleaseSettings() {
       <SettingsHeader
         segment="release-schedules"
         actions={
-          // With no schedules yet, the empty state below carries this action.
-          list.length > 0 && (
-            <ActionButton
-              size="sm"
-              variant="primary"
-              onClick={() => editor.open(null)}
-              icon={<Plus />}
-              label="New schedule"
-              collapse={false}
-              disabled={bookable.length === 0}
-            />
-          )
+          <ActionButton
+            size="sm"
+            variant="primary"
+            onClick={() => editor.open(null)}
+            icon={<Plus />}
+            label="New schedule"
+            collapse={false}
+            disabled={bookable.length === 0}
+          />
         }
       />
       <p className="mb-6 max-w-prose text-sm text-muted-foreground">
@@ -90,14 +87,7 @@ export function ReleaseSettings() {
           <EmptyState
             icon={<CalendarClock />}
             title="No release schedules"
-            description={`Every day can be booked as far ahead as your policies allow. Add a schedule to open days at a set time.`}
-            action={
-              bookable.length > 0 ? (
-                <Button size="sm" variant="primary" onClick={() => editor.open(null)}>
-                  <Plus /> New schedule
-                </Button>
-              ) : undefined
-            }
+            description="Every day can be booked as far ahead as your policies allow."
           />
         </div>
       ) : (

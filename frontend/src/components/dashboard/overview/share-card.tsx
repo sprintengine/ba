@@ -37,7 +37,9 @@ export function ShareCard() {
         <CardDescription>
           {draft
             ? "Only your team can see it until you publish."
-            : "Add the link to your website, Instagram or Google profile."}
+            : perms.manageSettings
+              ? "Add the link to your website, Instagram or Google profile."
+              : "The link customers use to book."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

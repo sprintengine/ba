@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import type { CustomerDetail } from "@/lib/api/types";
 import { BookingStatusBadge } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -83,6 +84,7 @@ export function HistoryList({ bookings, onOpen }: HistoryProps) {
                 {fmt.price(b.priceCents, b.currency)}
               </span>
             </span>
+            <ChevronRight aria-hidden className="size-4 shrink-0 text-subtle-foreground" />
           </button>
         </li>
       ))}

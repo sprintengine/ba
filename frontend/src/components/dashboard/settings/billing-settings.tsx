@@ -59,6 +59,7 @@ export function BillingSettings() {
   const prices = b?.prices.length ? b.prices : FALLBACK_PRICES;
   const order: Plan[] = ["free", "pro", "business"];
   const sorted = [...prices].sort((x, y) => order.indexOf(x.plan) - order.indexOf(y.plan));
+  const others = sorted.filter((p) => p.plan !== billing.data?.plan);
   // A live subscription changes plan in Stripe's portal: the backend refuses a second checkout (BillingRoutes).
   const subscribed = !!b && b.plan !== "free" && LIVE_STATUSES.includes(b.status);
   const openPortal = () => go(() => portal.mutateAsync({ returnUrl: currentPageUrl() }));
@@ -124,7 +125,11 @@ export function BillingSettings() {
                 <Button variant="secondary" loading={portal.isPending} onClick={() => void openPortal()}>
                   Manage subscription and invoices
                 </Button>
-              ) : undefined
+              ) : (
+                <Button asChild variant="secondary">
+                  <a href="#plans">See plans</a>
+                </Button>
+              )
             }
           >
             {b!.usage.limit !== null ? (
@@ -158,61 +163,49 @@ export function BillingSettings() {
             </div>
           )}
 
-          <div id="plans" className="grid scroll-mt-20 gap-4 xl:grid-cols-3">
-            {sorted.map((p) => {
-              const current = p.plan === b!.plan;
-              return (
-                <div
-                  key={p.plan}
-                  className={cn(
-                    "flex flex-col gap-4 rounded-xl border bg-surface p-5 shadow-xs",
-                    current ? "border-brand-border ring-1 ring-brand-border" : "border-border",
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{p.name ?? p.plan}</span>
-                    {current && <Badge tone="brand">Current</Badge>}
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="tnum text-3xl font-semibold tracking-tight">
-                      {formatMoney(p.amountCents, p.currency)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">/ {p.interval}</span>
-                  </div>
-                  <ul className="flex flex-1 flex-col gap-2">
-                    {(p.features ?? []).map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  {p.plan !== "free" && !current && (
-                    <Button
-                      variant="secondary"
-                      loading={
-                        subscribed
-                          ? portal.isPending
-                          : checkout.isPending && checkout.variables.plan === p.plan
-                      }
-                      onClick={() =>
-                        subscribed
-                          ? void openPortal()
-                          : void go(() =>
-                              checkout.mutateAsync({
-                                plan: p.plan as "pro" | "business",
-                                returnUrl: currentPageUrl(),
-                              }),
-                            )
-                      }
-                    >
-                      {b!.plan === "free"
-                        ? `Upgrade to ${p.name ?? p.plan}`
-                        : `Switch to ${p.name ?? p.plan}`}
-                    </Button>
-                  )}
+          {/* The plan you're on is the card above; these are the ones to move to. */}
+          <div id="plans" className="grid scroll-mt-20 gap-4 sm:grid-cols-2">
+            {others.map((p) => (
+              <div
+                key={p.plan}
+                className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5"
+              >
+                <span className="text-sm font-semibold">{p.name ?? p.plan}</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="tnum text-3xl font-semibold tracking-tight">
+                    {formatMoney(p.amountCents, p.currency)}
+                  </span>
+                  <span className="text-sm text-muted-foreground">/ {p.interval}</span>
                 </div>
-              );
-            })}
+                <ul className="flex flex-1 flex-col gap-2">
+                  {(p.features ?? []).map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                {p.plan !== "free" && (
+                  <Button
+                    variant="secondary"
+                    loading={
+                      subscribed ? portal.isPending : checkout.isPending && checkout.variables.plan === p.plan
+                    }
+                    onClick={() =>
+                      subscribed
+                        ? void openPortal()
+                        : void go(() =>
+                            checkout.mutateAsync({
+                              plan: p.plan as "pro" | "business",
+                              returnUrl: currentPageUrl(),
+                            }),
+                          )
+                    }
+                  >
+                    {b!.plan === "free" ? `Upgrade to ${p.name ?? p.plan}` : `Switch to ${p.name ?? p.plan}`}
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
           <p className="text-xs text-muted-foreground">
             Prices exclude VAT. Priced per location, not per seat. Cancel any time.
@@ -251,16 +244,9 @@ function UsageMeter({ used, limit, label }: { used: number; limit: number; label
       </div>
       {pct >= 70 && (
         <p className="text-xs text-muted-foreground">
-          {pct >= 100 ? (
-            <>
-              Limit reached. New online bookings are paused until next month or an upgrade.{" "}
-              <a href="#plans" className="font-medium text-foreground underline underline-offset-2">
-                See plans
-              </a>
-            </>
-          ) : (
-            "You're getting close to the free limit."
-          )}
+          {pct >= 100
+            ? "Limit reached. New online bookings are paused until next month or an upgrade."
+            : "You're getting close to the free limit."}
         </p>
       )}
     </div>

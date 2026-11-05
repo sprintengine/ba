@@ -53,7 +53,7 @@ export function SwatchGroup({
           value={swatch}
           aria-label={swatch}
           className={cn(
-            "relative flex shrink-0 items-center justify-center rounded-full ring-1 ring-border-strong transition-transform duration-150 hover:scale-110 pointer-coarse:size-10",
+            "relative flex shrink-0 items-center justify-center rounded-full ring-1 ring-input transition-transform duration-150 hover:scale-110 pointer-coarse:size-10",
             "ring-offset-2 ring-offset-background outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "data-[state=checked]:ring-2 data-[state=checked]:ring-foreground",
             SIZE[size],
