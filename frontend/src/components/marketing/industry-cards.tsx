@@ -96,7 +96,6 @@ function IndustryCard({ content: c }: { content: IndustryContent }) {
         />
         <div className="relative px-5 pt-4">
           <h3 className="text-base font-semibold tracking-tight">{name}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">e.g. {c.business.name}</p>
         </div>
         <ul className="relative mt-4 flex flex-1 flex-col divide-y divide-border-subtle border-t border-border-subtle px-5">
           {c.services.slice(0, 3).map((s) => (

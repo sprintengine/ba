@@ -167,7 +167,13 @@ export default function PricingPage() {
             as="h1"
             align="center"
             eyebrow="Pricing"
-            title="Free until you're busy. You pay for bookings, not people."
+            title={
+              <>
+                Free until you&apos;re busy.
+                <br />
+                You pay for bookings, not people.
+              </>
+            }
             description="Most booking software charges per person. Every plan here has unlimited staff and unlimited appointment types, and 0% platform fee on payments."
             className="animate-rise"
           />
