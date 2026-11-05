@@ -46,7 +46,7 @@ export function WorkedExample() {
             className={cn("flex flex-col gap-4 p-6 sm:p-8", col.us && "bg-surface-sunken")}
           >
             <p className="flex items-center gap-2 text-sm font-medium">
-              {col.us && <LogoMark className="size-5" aria-hidden title="" />}
+              {col.us && <LogoMark className="size-5" weight="small" aria-hidden title="" />}
               {col.title}
             </p>
             <div>

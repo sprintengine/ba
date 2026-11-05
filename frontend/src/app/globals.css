@@ -133,6 +133,7 @@
   --default-transition-duration: 150ms;
   --default-transition-timing-function: var(--ease-out);
 
+  --animate-logo-thread: logo-thread 2.4s linear infinite;
   --animate-fade-in: fade-in 160ms var(--ease-out);
   --animate-fade-out: fade-out 120ms var(--ease-in) forwards;
   --animate-pop-in: pop-in 180ms var(--ease-out);
@@ -157,6 +158,14 @@
   @keyframes fade-out {
     to {
       opacity: 0;
+    }
+  }
+  @keyframes logo-thread {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
   @keyframes pop-in {

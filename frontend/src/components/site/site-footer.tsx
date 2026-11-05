@@ -86,7 +86,7 @@ export function SiteFooter() {
               touchHitArea,
             )}
           >
-            <LogoMark className="size-3.5" aria-hidden title="" />
+            <LogoMark className="size-4" mono weight="small" aria-hidden title="" />
             Powered by bookanything
           </a>
         ) : (

@@ -2,101 +2,158 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The bookanything mark (Prism): a dark glass tile holding two slots, the upper one open and the lower one lit
- * with the prism spectrum — a booked slot catching the light. Same drawing as the brand kit's logo/mark.svg.
+ * The bookanything mark: the two o's of "book" drawn as one continuous line, an infinity with two true o's in it, in
+ * the prism colours from left to right. It is on the logo, the loading animation and the odd empty or success state,
+ * and nowhere else: not on assistant features, so it never comes to mean "AI". The letters are Geist SemiBold set
+ * tight, converted to outlines so the site doesn't load the font; the line is a stroke of the same weight.
  */
+export const PRISM = ["#2fb1e8", "#7a6af0", "#ff8a55"] as const;
+
+/** Stroke widths for one drawing of the line: the letters' own weight, and heavier cuts that hold at small sizes. */
+export const WEIGHT = { display: 108, text: 122, small: 170 } as const;
+type Weight = keyof typeof WEIGHT;
+
+/** The line and its box, for the symbol on its own. */
+const SYMBOL = {
+  width: 1079.1,
+  height: 620.0,
+  line: "M608.9 190.6A208.5 225.0 0 1 1 608.9 429.4L470.2 190.6A208.5 225.0 0 1 0 470.2 429.4Z",
+};
+
+/** The word: every letter but the o's, and the line that takes their place, on one baseline. */
+export const WORD = {
+  width: 6159.1,
+  height: 878,
+  lineLeft: 620,
+  lineRight: 1637.1,
+  letters:
+    "M357 722Q301 722 259 698Q217 674 195 631L192 710H70V0H198V252Q219 216 260.5 190Q302 164 357 164Q426 164 476.5 198.5Q527 233 554.5 295.5Q582 358 582 443Q582 528 554.5 590.5Q527 653 476.5 687.5Q426 722 357 722ZM328 618Q383 618 416 571.5Q449 525 449 443Q449 360 416.5 314Q384 268 329 268Q267 268 232.5 314Q198 360 198 443Q198 525 232.5 571.5Q267 618 328 618ZM1706.1 710V0H1834.1V417L2053.1 176H2211.1L2002.1 398L2218.1 710H2074.1L1918.1 474L1834.1 563V710ZM2407.1 722Q2323.1 722 2272.1 684Q2221.1 646 2221.1 576Q2221.1 507 2264.1 468Q2307.1 429 2395.1 412L2572.1 377Q2572.1 263 2469.1 263Q2423.1 263 2396.1 284.5Q2369.1 306 2360.1 346L2230.1 340Q2246.1 256 2308.1 210Q2370.1 164 2469.1 164Q2583.1 164 2641.6 221.5Q2700.1 279 2700.1 386V580Q2700.1 601 2707.6 609Q2715.1 617 2730.1 617H2747.1V710Q2730.1 714 2700.1 714Q2657.1 714 2627.1 696Q2597.1 678 2589.1 629V628Q2569.1 670 2520.6 696Q2472.1 722 2407.1 722ZM2433.1 629Q2497.1 629 2534.6 592Q2572.1 555 2572.1 494V464L2434.1 492Q2391.1 501 2372.6 518.5Q2354.1 536 2354.1 564Q2354.1 629 2433.1 629ZM2800.1 710V176H2916.1L2919.1 267Q2941.1 212 2983.6 188Q3026.1 164 3079.1 164Q3167.1 164 3214.1 220.5Q3261.1 277 3261.1 367V710H3133.1V408Q3133.1 340 3112.6 304Q3092.1 268 3040.1 268Q2988.1 268 2958.1 304Q2928.1 340 2928.1 408V710ZM3377.1 860V761H3445.1Q3471.1 761 3483.6 753Q3496.1 745 3503.1 726L3518.1 689H3481.1L3290.1 176H3423.1L3557.1 569L3685.1 176H3818.1L3609.1 766Q3591.1 816 3558.6 838Q3526.1 860 3468.1 860ZM4071.1 710Q3991.1 710 3953.6 673.5Q3916.1 637 3916.1 557V275H3832.1V176H3916.1V51H4044.1V176H4185.1V275H4044.1V545Q4044.1 583 4060.6 597Q4077.1 611 4110.1 611H4185.1V710ZM4241.1 710V0H4369.1V247Q4391.1 205 4431.1 184.5Q4471.1 164 4521.1 164Q4610.1 164 4656.1 220.5Q4702.1 277 4702.1 367V710H4574.1V398Q4574.1 268 4483.1 268Q4430.1 268 4399.6 302Q4369.1 336 4369.1 401V710ZM4806.1 710V176H4934.1V710ZM4804.1 105V-9H4937.1V105ZM5051.1 710V176H5167.1L5170.1 267Q5192.1 212 5234.6 188Q5277.1 164 5330.1 164Q5418.1 164 5465.1 220.5Q5512.1 277 5512.1 367V710H5384.1V408Q5384.1 340 5363.6 304Q5343.1 268 5291.1 268Q5239.1 268 5209.1 304Q5179.1 340 5179.1 408V710ZM5837.1 872Q5732.1 872 5672.1 830Q5612.1 788 5594.1 720L5726.1 711Q5736.1 742 5760.6 758.5Q5785.1 775 5837.1 775Q5896.1 775 5928.1 748.5Q5960.1 722 5960.1 666V598Q5941.1 637 5899.1 660.5Q5857.1 684 5805.1 684Q5739.1 684 5687.6 651.5Q5636.1 619 5607.1 560.5Q5578.1 502 5578.1 425Q5578.1 348 5607.1 289.5Q5636.1 231 5686.6 197.5Q5737.1 164 5803.1 164Q5860.1 164 5902.1 190Q5944.1 216 5964.1 259V176H6089.1V663Q6089.1 766 6020.1 819Q5951.1 872 5837.1 872ZM5835.1 584Q5892.1 584 5926.6 541.5Q5961.1 499 5961.1 424Q5962.1 350 5927.6 307Q5893.1 264 5835.1 264Q5776.1 264 5743.6 307.5Q5711.1 351 5711.1 424Q5711.1 497 5744.6 540.5Q5778.1 584 5835.1 584Z",
+  line: "M1197.9 323.6A208.5 225.0 0 1 1 1197.9 562.4L1059.2 323.6A208.5 225.0 0 1 0 1059.2 562.4Z",
+};
+
+function Prism({ id, x1, x2 }: { id: string; x1: number; x2: number }) {
+  return (
+    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={x1} x2={x2} y1={0} y2={0}>
+      {PRISM.map((color, i) => (
+        <stop key={color} offset={i / (PRISM.length - 1)} stopColor={color} />
+      ))}
+    </linearGradient>
+  );
+}
+
+type MarkProps = {
+  /** One colour (currentColor) instead of the prism. */
+  mono?: boolean;
+  weight?: Weight;
+};
+
+/** The symbol alone. Size it by height. Give `title=""` with `aria-hidden` when words beside it already say the name. */
 export function LogoMark({
   className,
   title = "bookanything",
+  mono = false,
+  weight = "text",
   ...props
-}: React.ComponentProps<"svg"> & { title?: string }) {
-  const id = useId().replace(/:/g, "");
+}: React.ComponentProps<"svg"> & MarkProps & { title?: string }) {
+  const id = useId();
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox={`0 0 ${SYMBOL.width} ${SYMBOL.height}`}
       role="img"
       aria-label={title}
-      className={cn("size-7 shrink-0", className)}
+      className={cn("h-5 w-auto shrink-0", className)}
       {...props}
     >
-      <defs>
-        <linearGradient id={`${id}-tile`} x1="0.25" y1="0" x2="0.6" y2="1">
-          <stop offset="0" stopColor="#454952" />
-          <stop offset="0.55" stopColor="#1c1e22" />
-          <stop offset="1" stopColor="#0b0c0e" />
-        </linearGradient>
-        <linearGradient id={`${id}-lit`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#8fd8f2" />
-          <stop offset="0.5" stopColor="#b9a6ff" />
-          <stop offset="1" stopColor="#ffb995" />
-        </linearGradient>
-        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.7" />
-          <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.34" />
-          <stop offset="0.35" stopColor="#fff" stopOpacity="0.06" />
-          <stop offset="0.8" stopColor="#fff" stopOpacity="0.04" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0.05" />
-        </linearGradient>
-        <radialGradient id={`${id}-glow`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#b9a6ff" stopOpacity="0.5" />
-          <stop offset="0.6" stopColor="#b9a6ff" stopOpacity="0.12" />
-          <stop offset="1" stopColor="#8fd8f2" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id={`${id}-sheen`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.1" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9.5" fill={`url(#${id}-tile)`} />
-      <rect width="32" height="32" rx="9.5" fill={`url(#${id}-sheen)`} />
-      <ellipse cx="16" cy="22.5" rx="14" ry="7.5" fill={`url(#${id}-glow)`} />
-      <rect x="6" y="7" width="20" height="6" rx="3" fill="#fff" fillOpacity="0.22" />
-      <rect x="6" y="17" width="20" height="8" rx="4" fill={`url(#${id}-lit)`} />
-      <rect x="6" y="17" width="20" height="8" rx="4" fill={`url(#${id}-shine)`} />
-      <rect
-        x="0.375"
-        y="0.375"
-        width="31.25"
-        height="31.25"
-        rx="9.125"
+      {!mono && (
+        <defs>
+          <Prism id={id} x1={0} x2={SYMBOL.width} />
+        </defs>
+      )}
+      <path
+        d={SYMBOL.line}
         fill="none"
-        stroke={`url(#${id}-rim)`}
-        strokeWidth="0.75"
+        stroke={mono ? "currentColor" : `url(#${id})`}
+        strokeWidth={WEIGHT[weight]}
       />
     </svg>
   );
 }
 
-/** "bookanything" wordmark: Figtree 640, -3% tracking, outlined so it needs no font. Inherits colour via currentColor. */
-export function Wordmark({ className, ...props }: React.ComponentProps<"svg">) {
+/** The word, in the text colour with the line in the prism. Size it by height. */
+export function Wordmark({
+  className,
+  mono = false,
+  weight = "text",
+  ...props
+}: React.ComponentProps<"svg"> & MarkProps) {
+  const id = useId();
   return (
     <svg
-      viewBox="0 0 590.98 98.19"
+      viewBox={`0 0 ${WORD.width} ${WORD.height}`}
       role="img"
       aria-label="bookanything"
       className={cn("h-5 w-auto", className)}
       {...props}
     >
+      {!mono && (
+        <defs>
+          <Prism id={id} x1={WORD.lineLeft} x2={WORD.lineRight} />
+        </defs>
+      )}
+      <path d={WORD.letters} fill="currentColor" />
       <path
-        transform="translate(-4.01 74.89)"
-        fill="currentColor"
-        d="M33.49 1.2Q28.34 1.2 24.39 -1.05Q20.43 -3.3 17.83 -7.41L17.38 0H6.01V-70H17.98V-42.84Q20.58 -46.85 24.49 -49.02Q28.39 -51.2 33.49 -51.2Q40.34 -51.2 45.41 -47.97Q50.49 -44.75 53.29 -38.87Q56.09 -33 56.09 -25Q56.09 -17.1 53.29 -11.18Q50.49 -5.25 45.41 -2.03Q40.34 1.2 33.49 1.2ZM30.5 -9.78Q34.34 -9.78 37.3 -11.73Q40.26 -13.68 41.99 -17.12Q43.72 -20.55 43.72 -25Q43.72 -29.46 42.05 -32.88Q40.38 -36.31 37.42 -38.24Q34.45 -40.17 30.6 -40.17Q26.93 -40.17 24.06 -38.24Q21.19 -36.31 19.59 -32.88Q17.98 -29.45 17.98 -24.99Q17.98 -20.54 19.58 -17.1Q21.19 -13.66 24.01 -11.72Q26.83 -9.78 30.5 -9.78ZM85.51 1.2Q77.91 1.2 72.06 -2.15Q66.2 -5.5 62.88 -11.4Q59.56 -17.3 59.56 -25Q59.56 -32.7 62.82 -38.6Q66.09 -44.5 71.95 -47.85Q77.8 -51.2 85.29 -51.2Q92.89 -51.2 98.74 -47.85Q104.6 -44.5 107.87 -38.6Q111.14 -32.7 111.14 -25Q111.14 -17.3 107.87 -11.4Q104.6 -5.5 98.8 -2.15Q93 1.2 85.51 1.2ZM85.5 -9.83Q89.46 -9.83 92.47 -11.77Q95.47 -13.71 97.2 -17.12Q98.92 -20.53 98.92 -25Q98.92 -29.47 97.19 -32.88Q95.46 -36.29 92.37 -38.23Q89.29 -40.17 85.31 -40.17Q81.34 -40.17 78.29 -38.23Q75.24 -36.29 73.51 -32.88Q71.78 -29.48 71.78 -25.01Q71.78 -20.54 73.53 -17.14Q75.29 -13.73 78.39 -11.78Q81.5 -9.83 85.5 -9.83ZM140.61 1.2Q133.01 1.2 127.16 -2.15Q121.3 -5.5 117.98 -11.4Q114.66 -17.3 114.66 -25Q114.66 -32.7 117.92 -38.6Q121.19 -44.5 127.05 -47.85Q132.9 -51.2 140.39 -51.2Q147.99 -51.2 153.84 -47.85Q159.7 -44.5 162.97 -38.6Q166.24 -32.7 166.24 -25Q166.24 -17.3 162.97 -11.4Q159.7 -5.5 153.9 -2.15Q148.1 1.2 140.61 1.2ZM140.6 -9.83Q144.56 -9.83 147.57 -11.77Q150.57 -13.71 152.3 -17.12Q154.02 -20.53 154.02 -25Q154.02 -29.47 152.29 -32.88Q150.56 -36.29 147.47 -38.23Q144.39 -40.17 140.41 -40.17Q136.44 -40.17 133.39 -38.23Q130.34 -36.29 128.61 -32.88Q126.88 -29.48 126.88 -25.01Q126.88 -20.54 128.63 -17.14Q130.39 -13.73 133.49 -11.78Q136.6 -9.83 140.6 -9.83ZM172.51 0V-70H184.48V-30.43L202.55 -50H216.93L198.13 -29.16L218.53 0H204.35L190.44 -20.52L184.48 -14.06V0ZM235.92 1.2Q226.95 1.2 222 -2.81Q217.05 -6.82 217.05 -14.1Q217.05 -22 222.34 -26.06Q227.62 -30.12 237.17 -30.12H249.48Q248.83 -35.29 246.44 -38.01Q244.05 -40.72 239.49 -40.72Q236.07 -40.72 233.4 -39.25Q230.72 -37.78 228.89 -34.73L218.34 -38.46Q219.86 -41.73 222.55 -44.65Q225.24 -47.57 229.41 -49.39Q233.58 -51.2 239.49 -51.2Q246.94 -51.2 251.88 -48.33Q256.82 -45.47 259.23 -40.19Q261.64 -34.92 261.55 -27.55L261.3 0H250.16L249.91 -6Q247.94 -2.52 244.43 -0.66Q240.92 1.2 235.92 1.2ZM237.68 -8.87Q241.15 -8.87 243.9 -10.44Q246.64 -12.02 248.19 -14.66Q249.74 -17.29 249.74 -20.4V-21.05H241.12Q234.5 -21.05 231.89 -19.31Q229.28 -17.57 229.28 -14.43Q229.28 -11.82 231.49 -10.34Q233.71 -8.87 237.68 -8.87ZM269.61 0V-50H280.88L281.38 -43.05Q283.83 -47 287.63 -49.1Q291.43 -51.2 296.34 -51.2Q302.29 -51.2 306.51 -48.8Q310.74 -46.4 312.99 -41.35Q315.24 -36.3 315.19 -28.25V0H303.22V-25.6Q303.22 -31.21 301.91 -34.29Q300.61 -37.37 298.31 -38.65Q296 -39.92 292.95 -39.97Q287.49 -40.07 284.54 -36.49Q281.58 -32.91 281.58 -26.15V0ZM330.73 21.2Q328.18 21.2 325.14 20.23Q322.09 19.25 319.49 17.9L323.93 8.12Q325.78 9.07 327.31 9.6Q328.84 10.12 329.89 10.12Q332.14 10.12 333.79 8.92Q335.44 7.72 336.44 5.37L338.85 -0.5L316.55 -50H329.62L344.44 -14.12L358.8 -50H371.92L348.92 4.91Q346.87 9.81 344.65 13.48Q342.42 17.15 339.17 19.18Q335.93 21.2 330.73 21.2ZM395.6 1.2Q387.5 1.2 383.3 -2.82Q379.1 -6.85 379.1 -14.29V-39.77H370.9V-50H379.1V-65.6H391.08V-50H404.19V-39.77H391.08V-16.73Q391.08 -13.33 392.63 -11.6Q394.19 -9.88 397.19 -9.88Q398.19 -9.88 399.37 -10.3Q400.54 -10.73 401.99 -11.73L406.29 -2.64Q403.79 -0.85 401.04 0.18Q398.29 1.2 395.6 1.2ZM412.11 0V-70H424.08V-43.35Q426.58 -47.2 430.33 -49.2Q434.08 -51.2 438.84 -51.2Q444.79 -51.2 449.01 -48.8Q453.24 -46.4 455.49 -41.35Q457.74 -36.3 457.69 -28.25V0H445.71V-25.6Q445.71 -31.21 444.41 -34.29Q443.11 -37.37 440.81 -38.65Q438.5 -39.92 435.45 -39.97Q429.99 -40.07 427.04 -36.49Q424.08 -32.91 424.08 -26.15V0ZM466.4 0V-50H478.38V0ZM472.44 -58.92Q469.65 -58.92 467.55 -61.01Q465.46 -63.11 465.46 -65.9Q465.46 -68.8 467.55 -70.85Q469.65 -72.89 472.44 -72.89Q475.34 -72.89 477.38 -70.85Q479.43 -68.8 479.43 -65.9Q479.43 -63.11 477.38 -61.01Q475.34 -58.92 472.44 -58.92ZM488.21 0V-50H499.48L499.98 -43.05Q502.43 -47 506.23 -49.1Q510.03 -51.2 514.94 -51.2Q520.89 -51.2 525.11 -48.8Q529.34 -46.4 531.59 -41.35Q533.84 -36.3 533.79 -28.25V0H521.82V-25.6Q521.82 -31.21 520.51 -34.29Q519.21 -37.37 516.91 -38.65Q514.6 -39.92 511.55 -39.97Q506.09 -40.07 503.14 -36.49Q500.18 -32.91 500.18 -26.15V0ZM563.69 21.3Q558.2 21.3 553.93 20.45Q549.65 19.6 546.7 18.35Q543.76 17.1 542.06 15.9L546.7 6.27Q548.1 7.02 550.4 8.07Q552.7 9.12 555.92 9.9Q559.15 10.67 563.25 10.67Q567.4 10.67 570.65 9.02Q573.91 7.37 575.76 3.91Q577.61 0.46 577.61 -4.9V-9.85Q575.06 -5.8 570.96 -3.5Q566.86 -1.2 561.66 -1.2Q554.81 -1.2 549.73 -4.22Q544.66 -7.25 541.86 -12.75Q539.06 -18.25 539.06 -25.6Q539.06 -33.4 541.86 -39.12Q544.66 -44.85 549.73 -48.02Q554.81 -51.2 561.66 -51.2Q566.86 -51.2 570.96 -48.82Q575.06 -46.45 577.61 -42.05V-50H589.59V-5.3Q589.59 3.2 586.39 9.18Q583.19 15.15 577.36 18.23Q571.54 21.3 563.69 21.3ZM565 -11.28Q568.65 -11.28 571.38 -13.18Q574.11 -15.08 575.64 -18.39Q577.16 -21.69 577.16 -25.95Q577.16 -30.26 575.61 -33.54Q574.06 -36.82 571.33 -38.67Q568.6 -40.52 564.9 -40.52Q561.09 -40.52 558.19 -38.67Q555.28 -36.82 553.65 -33.54Q552.03 -30.26 551.98 -25.95Q552.03 -21.69 553.68 -18.39Q555.33 -15.08 558.26 -13.18Q561.19 -11.28 565 -11.28Z"
+        d={WORD.line}
+        fill="none"
+        stroke={mono ? "currentColor" : `url(#${id})`}
+        strokeWidth={WEIGHT[weight]}
       />
     </svg>
   );
 }
 
-/** Mark + wordmark lockup. */
-export function Logo({ className, size = "md" }: { className?: string; size?: "sm" | "md" | "lg" }) {
-  const mark = { sm: "size-6", md: "size-7", lg: "size-9" }[size];
-  const word = { sm: "h-4", md: "h-[1.15rem]", lg: "h-6" }[size];
+/** The logo, at the sizes the shells use. */
+export function Logo({
+  className,
+  size = "md",
+  mono,
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+  mono?: boolean;
+}) {
+  const height = { sm: "h-[1.125rem]", md: "h-[1.375rem]", lg: "h-7" }[size];
   return (
-    <span className={cn("inline-flex items-center gap-2 text-foreground", className)}>
-      <LogoMark className={mark} aria-hidden title="" />
-      <Wordmark className={word} />
+    <span className={cn("inline-flex items-center text-foreground", className)}>
+      <Wordmark className={height} mono={mono} />
     </span>
+  );
+}
+
+/**
+ * Waiting on a page or a whole section: a thread of light runs round the symbol. With reduced motion it is the still
+ * symbol. Decorative: the caller says what's loading. Not for inline spinners.
+ */
+export function LogoLoader({ className }: { className?: string }) {
+  const id = useId();
+  return (
+    <svg
+      viewBox={`0 0 ${SYMBOL.width} ${SYMBOL.height}`}
+      aria-hidden
+      className={cn("h-9 w-auto shrink-0", className)}
+      fill="none"
+      strokeWidth={WEIGHT.text}
+    >
+      <defs>
+        <Prism id={id} x1={0} x2={SYMBOL.width} />
+      </defs>
+      <path d={SYMBOL.line} stroke="var(--border)" />
+      <path
+        d={SYMBOL.line}
+        pathLength={100}
+        stroke={`url(#${id})`}
+        strokeLinecap="round"
+        className="animate-logo-thread [stroke-dasharray:28_72] motion-reduce:animate-none motion-reduce:[stroke-dasharray:none]"
+      />
+    </svg>
   );
 }

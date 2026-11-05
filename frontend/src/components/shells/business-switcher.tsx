@@ -107,7 +107,7 @@ export function BusinessSwitcher({
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/">
-            <LogoMark className="size-4" aria-hidden title="" /> bookanything website
+            <LogoMark className="size-4" mono weight="small" aria-hidden title="" /> bookanything website
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

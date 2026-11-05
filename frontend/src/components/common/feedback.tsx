@@ -6,7 +6,7 @@ import { CircleAlert, Lock, RotateCw } from "lucide-react";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { signInUrl } from "@/lib/auth/components";
 import { cn } from "@/lib/utils";
-import { LogoMark } from "@/components/brand/logo";
+import { LogoLoader } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -19,7 +19,7 @@ export function FullPageLoader({ label = "Loading" }: { label?: string }) {
       className="flex min-h-dvh items-center justify-center bg-background"
     >
       <div className="flex flex-col items-center gap-4">
-        <LogoMark className="size-9 animate-pulse" aria-hidden title="" />
+        <LogoLoader />
         <span className="sr-only">{label}</span>
       </div>
     </div>

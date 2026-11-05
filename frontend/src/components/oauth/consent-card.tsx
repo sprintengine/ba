@@ -60,7 +60,7 @@ export function ConsentCard({
             <Avatar name={client.name} size="xl" shape="square" className="shadow-xs" />
             <ArrowLeftRight className="size-4 text-subtle-foreground" />
             <span className="flex size-14 items-center justify-center rounded-[28%] border border-border bg-surface shadow-xs">
-              <LogoMark className="size-9" title="" />
+              <LogoMark className="size-10" title="" />
             </span>
           </div>
           <div className="flex flex-col items-center gap-2">
