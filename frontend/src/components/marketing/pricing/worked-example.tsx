@@ -32,7 +32,7 @@ export function WorkedExample() {
   ];
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-xs">
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="flex flex-col gap-1 border-b border-border-subtle px-6 py-5 sm:px-8">
         <p className="text-sm font-semibold">
           A {e.teamSize}-person physio team taking {eur(e.monthlyBookingsEur)} a month in bookings
@@ -41,18 +41,16 @@ export function WorkedExample() {
       </div>
       <div className="grid divide-y divide-border-subtle md:grid-cols-3 md:divide-x md:divide-y-0">
         {columns.map((col) => (
-          <div key={col.title} className={cn("flex flex-col gap-4 p-6 sm:p-8", col.us && "bg-brand-soft/60")}>
+          <div
+            key={col.title}
+            className={cn("flex flex-col gap-4 p-6 sm:p-8", col.us && "bg-surface-sunken")}
+          >
             <p className="flex items-center gap-2 text-sm font-medium">
               {col.us && <LogoMark className="size-5" aria-hidden title="" />}
               {col.title}
             </p>
             <div>
-              <p
-                className={cn(
-                  "tnum text-4xl font-semibold tracking-tight",
-                  col.us ? "text-brand-soft-foreground" : "text-foreground",
-                )}
-              >
+              <p className="tnum text-4xl font-semibold tracking-tight text-foreground">
                 {col.month}
                 <span className="ml-1 text-sm font-normal text-muted-foreground">/ month</span>
               </p>
@@ -66,7 +64,7 @@ export function WorkedExample() {
       </div>
       <p className="border-t border-border-subtle bg-surface-sunken/60 px-6 py-4 text-xs text-subtle-foreground sm:px-8">
         Illustrative figures for typical pricing models, not quotes from any provider. Card processing fees
-        (for example Stripe&apos;s) apply in every scenario and are not included.
+        from your payment provider apply in every scenario and are not included.
       </p>
     </div>
   );

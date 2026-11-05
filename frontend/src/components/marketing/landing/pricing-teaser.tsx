@@ -3,6 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PLANS } from "../plans";
+import { WorkedExample } from "../pricing/worked-example";
 import { PrismContainer, PrismHeading } from "./heading";
 
 /** Pricing in brief: the three plans, flat on the page, with the full comparison a click away. */
@@ -42,12 +43,15 @@ export function PricingTeaser() {
               </p>
               <p className="mt-2.5 text-sm leading-normal text-muted-foreground">{p.tagline}</p>
               <ul className="mt-5 flex flex-1 flex-col gap-2 border-t border-border-subtle pt-4 text-sm">
-                {p.features.slice(0, 4).map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    {f}
-                  </li>
-                ))}
+                {p.features
+                  .filter((f) => !/\bAI\b/.test(f))
+                  .slice(0, 4)
+                  .map((f) => (
+                    <li key={f} className="flex gap-2">
+                      <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                      {f}
+                    </li>
+                  ))}
               </ul>
               <Button
                 asChild
@@ -59,6 +63,13 @@ export function PricingTeaser() {
             </li>
           ))}
         </ul>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Connecting your own AI assistant is included on every plan. Our built-in assistant is optional and
+          sold as monthly credits.
+        </p>
+        <div className="mt-10 sm:mt-14">
+          <WorkedExample />
+        </div>
         <div className="mt-6 flex justify-center">
           <Link
             href="/pricing"

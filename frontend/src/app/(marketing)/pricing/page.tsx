@@ -23,8 +23,8 @@ const PROMISES = [
   },
   {
     icon: CreditCard,
-    title: "Paid into your Stripe",
-    body: "You're the merchant of record. Stripe's standard processing fees apply.",
+    title: "Paid into your own account",
+    body: "You're the merchant of record. Your provider's standard processing fees apply.",
   },
   {
     icon: MessageSquareText,
@@ -44,7 +44,7 @@ const FAQ: FaqItem[] = [
     answer: (
       <>
         <p>
-          You connect your own Stripe account (it takes a few minutes). When a customer pays for a booking,
+          You connect your own payment provider (it takes a few minutes). When a customer pays for a booking,
           the charge is made on your account: you&apos;re the merchant of record and the money goes straight
           to you.
         </p>
@@ -56,8 +56,8 @@ const FAQ: FaqItem[] = [
     question: "So what does it cost me per payment?",
     answer: (
       <p>
-        Only Stripe&apos;s standard card processing fee, which Stripe charges you directly. It depends on your
-        Stripe account and the customer&apos;s card; we don&apos;t add anything on top.
+        Only your provider&apos;s standard card processing fee, which it charges you directly. It depends on
+        your provider and the customer&apos;s card; we don&apos;t add anything on top.
       </p>
     ),
   },
@@ -70,7 +70,7 @@ const FAQ: FaqItem[] = [
           cancel late (nothing, half or everything). Cancellations are then refunded automatically. If you
           cancel a booking, the customer always gets a full refund.
         </p>
-        <p>Note that Stripe doesn&apos;t return its processing fee on refunds.</p>
+        <p>Note that payment providers don&apos;t usually return their processing fee on refunds.</p>
       </>
     ),
   },
@@ -97,9 +97,9 @@ const FAQ: FaqItem[] = [
     question: "Where is my data stored? Is it GDPR compliant?",
     answer: (
       <p>
-        We&apos;re building bookanything for EU businesses, with EU hosting and GDPR in mind from the start.
-        You are the controller of your customers&apos; data and we act as your processor. Answers you mark as
-        sensitive are only visible to your team and are never sent to AI models. See the draft{" "}
+        bookanything is built for EU businesses, with EU hosting and GDPR in mind from the start. You are the
+        controller of your customers&apos; data and we act as your processor. Answers you mark as sensitive
+        are only visible to your team and are never sent to AI models. See the{" "}
         <Link href="/legal/privacy">privacy policy</Link>.
       </p>
     ),
