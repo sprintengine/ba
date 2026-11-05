@@ -5,6 +5,7 @@
 import type { SetupDraft } from "@/lib/onboarding/types";
 
 const KEY = "bookanything.onboarding.v1";
+const DESCRIPTION_KEY = "bookanything.onboarding.description";
 
 export type DraftOrigin = { kind: "ai" } | { kind: "template"; key: string };
 
@@ -58,5 +59,25 @@ export function clearOnboarding() {
     window.sessionStorage.removeItem(KEY);
   } catch {
     // ignore
+  }
+}
+
+/** What a visitor typed on the home page, kept through sign-up for the describe step. */
+export function saveDescription(text: string) {
+  try {
+    if (text.trim()) window.sessionStorage.setItem(DESCRIPTION_KEY, text.trim());
+  } catch {
+    // Storage full or disabled: they can type it again.
+  }
+}
+
+/** The words from the home page, once: a refresh after this doesn't bring them back. */
+export function takeDescription(): string | null {
+  try {
+    const text = window.sessionStorage.getItem(DESCRIPTION_KEY);
+    window.sessionStorage.removeItem(DESCRIPTION_KEY);
+    return text;
+  } catch {
+    return null;
   }
 }

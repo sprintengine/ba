@@ -6,6 +6,7 @@ import type { BusinessSetup } from "@/lib/api/types";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { must } from "@/test/must";
 import { SAMPLE_BUSINESS, SAMPLE_CONTEXT, SAMPLE_SERVICES, samplePlan } from "@/components/site/sample-site";
+import { saveDescription } from "./draft-storage";
 import { OnboardingWizard } from "./onboarding-wizard";
 
 const setup: BusinessSetup = {
@@ -274,6 +275,15 @@ describe("OnboardingWizard", () => {
     await user.click(must(screen.getAllByRole("button", { name: "Create business" })[0], "Create button"));
     expect(api.createBusiness).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/business name/i)).toHaveAccessibleDescription(/enter your business name/i);
+  });
+
+  it("opens the describe step with the words typed on the home page", async () => {
+    saveDescription("A dog groomer in Cork");
+    renderWizard();
+    expect((await screen.findByLabelText<HTMLTextAreaElement>(/about your business/i)).value).toBe(
+      "A dog groomer in Cork",
+    );
+    expect(window.sessionStorage.length).toBe(0);
   });
 
   it("maps SLUG_TAKEN from the API to the address field", async () => {
