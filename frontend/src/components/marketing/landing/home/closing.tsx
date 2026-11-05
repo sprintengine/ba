@@ -1,13 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PrismDot } from "../heading";
+import { DescribeForm } from "./describe-form";
 import { ThreadField } from "./thread-field";
 
-/** The close: the outcome in one line, with the threads coming together on the button. */
+/** The close: the outcome in one line, with the threads coming together on the box to start in. */
 export function ClosingSection() {
   const target = useRef<HTMLDivElement>(null);
   return (
@@ -31,20 +29,11 @@ export function ClosingSection() {
           <PrismDot />
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-[1.5] text-muted-foreground sm:text-xl">
-          Have your booking page live this afternoon, and let it take the bookings tonight.
+          Have your booking page live this afternoon, and let it take the bookings tonight. Your assistant can
+          run the rest.
         </p>
-        <div
-          ref={target}
-          className="mx-auto mt-10 flex w-fit justify-center gap-2.5 max-sm:w-full max-sm:flex-col max-sm:items-center max-sm:[&>a]:w-full max-sm:[&>a]:max-w-[17rem]"
-        >
-          <Button asChild variant="primary" size="xl" className="rounded-[14px] font-semibold">
-            <Link href="/sign-up">
-              Start for free <ArrowRight />
-            </Link>
-          </Button>
-          <Button asChild variant="secondary" size="xl" className="rounded-[14px] font-semibold">
-            <Link href="/pricing">See pricing</Link>
-          </Button>
+        <div ref={target} className="mx-auto mt-10 max-w-xl">
+          <DescribeForm cta="Start for free" />
         </div>
         <p className="mt-5 text-[0.9375rem] text-muted-foreground">
           Free for 100 bookings a month, no card needed. We never take a cut of your payments.

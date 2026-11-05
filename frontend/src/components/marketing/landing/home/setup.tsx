@@ -18,8 +18,9 @@ export function SetupSection() {
           align="left"
           label="Set up"
           title="Tell us what you do."
-          lit="It's ready this afternoon."
-          lead="Describe your business in a sentence, or paste your website. We draft your services, prices, hours and booking page. You check it, and nothing goes live until you say so."
+          lit="It’s ready this afternoon."
+          punch
+          lead="Describe your business in a sentence, or paste your website. We set out what you told us, suggest the rest, and nothing goes live until you’ve checked it."
         />
         <SetupDraft />
         <ul className="mt-12 grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
