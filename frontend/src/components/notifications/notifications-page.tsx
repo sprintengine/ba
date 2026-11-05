@@ -63,7 +63,7 @@ export function NotificationsPage() {
               headingLevel={2}
               icon={<Bell />}
               title="Nothing yet"
-              description="When something needs your attention, like a change your AI agent wants you to approve, it shows up here."
+              description="Anything that needs your attention shows up here."
             />
           ) : (
             <NotificationList items={list.data.items} />

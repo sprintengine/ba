@@ -163,7 +163,7 @@ export function WeekStrip({
                   selected
                     ? "border-primary bg-primary text-primary-foreground shadow-button"
                     : disabled
-                      ? "border-transparent text-subtle-foreground/50"
+                      ? "border-transparent text-subtle-foreground"
                       : "border-border bg-surface shadow-xs active:scale-95 dark:bg-surface-raised",
                 )}
               >

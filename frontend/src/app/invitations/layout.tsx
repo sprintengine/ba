@@ -2,6 +2,7 @@ import { AppProviders } from "@/app/app-providers";
 import { protectRoute } from "@/lib/auth/server";
 import { RequireAuth } from "@/lib/auth/components";
 import { FullPageLoader } from "@/components/common/feedback";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MinimalShell } from "@/components/shells/minimal-shell";
 import { UserMenu } from "@/components/shells/user-menu";
 
@@ -11,7 +12,15 @@ export default async function InvitationsLayout({ children }: { children: React.
   return (
     <AppProviders>
       <RequireAuth fallback={<FullPageLoader />}>
-        <MinimalShell width="narrow" actions={<UserMenu />}>
+        <MinimalShell
+          width="narrow"
+          actions={
+            <>
+              <NotificationBell />
+              <UserMenu />
+            </>
+          }
+        >
           {children}
         </MinimalShell>
       </RequireAuth>
