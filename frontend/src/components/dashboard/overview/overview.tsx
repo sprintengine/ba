@@ -65,7 +65,7 @@ export function OverviewView() {
           <OverviewStats overview={overview.data} todays={todays} now={now} loading={overview.isPending} />
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
             <TodayCard bookings={todays} loading={overview.isPending} now={now} />
-            <div className="contents lg:flex lg:flex-col lg:gap-6">
+            <div className="flex flex-col gap-6">
               {perms.manageSettings && overview.data && <SetupChecklist items={overview.data.checklist} />}
               <PendingApprovals today={today} />
               <ShareCard />

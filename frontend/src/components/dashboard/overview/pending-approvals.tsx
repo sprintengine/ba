@@ -35,8 +35,7 @@ export function PendingApprovals({ today }: { today: string }) {
   if (pending.isPending || items.length === 0) return null;
 
   return (
-    // On a phone, decisions come before the long list of today's bookings.
-    <Card className="max-lg:-order-1">
+    <Card>
       <CardHeader>
         <CardTitle headingLevel={2} className="flex items-center gap-2">
           Waiting for approval <Badge tone="info">{more ? `${items.length}+` : items.length}</Badge>
