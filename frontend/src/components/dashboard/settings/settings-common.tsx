@@ -10,7 +10,7 @@ import { SETTINGS_NAV, settingsNavText } from "@/components/shells/dashboard-nav
 import { Button } from "@/components/ui/button";
 import { Field, type FieldParts, type FieldProps } from "@/components/ui/field";
 import { FormField, FormSubmit } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 /** The current page's address without its query string: where Stripe sends people back to. */
@@ -313,32 +313,6 @@ export function SettingItem({
       </div>
       {actions && <div className="flex shrink-0 items-center gap-0.5">{actions}</div>}
     </li>
-  );
-}
-
-/** A settings card: title, plain-language description, fields, optional footer (save bar). */
-export function SettingsCard({
-  title,
-  description,
-  footer,
-  className,
-  children,
-}: {
-  title: React.ReactNode;
-  description?: React.ReactNode;
-  footer?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
-      </CardHeader>
-      <CardContent className={cn("flex flex-col gap-5")}>{children}</CardContent>
-      {footer && <CardFooter className="justify-end">{footer}</CardFooter>}
-    </Card>
   );
 }
 

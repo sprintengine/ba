@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowUpRight, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
 import { useUpdateBusiness } from "@/lib/api/hooks";
 import type { AgentChangeKind, AiAgentsAccess, UpdateBusiness } from "@/lib/api/types";
@@ -9,14 +8,30 @@ import { useBusinessContext } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
 import { BUSINESS_AI_HELP_PATH, BUSINESS_MCP_PATH, CONNECTED_APPS_PATH } from "@/lib/oauth/app-url";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
+import { LogoMark } from "@/components/brand/logo";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { CheckboxItem } from "@/components/ui/checkbox";
 import { RadioGroup, RadioItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { ServerUrlField } from "@/components/oauth/server-url-field";
-import { SettingsCard, SettingsHeader } from "./settings-common";
+import {
+  SettingFieldRow,
+  SettingGroup,
+  SettingLink,
+  SettingRow,
+  SettingsHeader,
+  settingsStack,
+} from "./settings-common";
+
+/** The symbol belongs on AI: it sits beside this page's title. */
+const AI_MARK = <LogoMark className="h-4.5" weight="small" aria-hidden title="" />;
+
+const ACCESS_CHIP: Record<AiAgentsAccess, string> = {
+  admins: "On for owners and admins",
+  team: "On for the team",
+  off: "Off",
+};
 
 /** Who may use agents; "Nobody" says Bo carries on where the deployment offers it. */
 function accessOptions(
@@ -93,9 +108,10 @@ export function AiAgentsSettings() {
   if (!business.aiAgentsAvailable) {
     return (
       <>
-        <SettingsHeader segment="ai-agents" />
-        <Card>
+        <SettingsHeader segment="ai-agents" lede mark={AI_MARK} />
+        <SettingGroup title="Your own AI agents">
           <EmptyState
+            headingLevel={4}
             icon={<Bot />}
             title="Not available yet"
             description={
@@ -104,7 +120,7 @@ export function AiAgentsSettings() {
                 : "Connecting your own AI agents isn't switched on for bookanything yet."
             }
           />
-        </Card>
+        </SettingGroup>
       </>
     );
   }
@@ -126,17 +142,21 @@ export function AiAgentsSettings() {
     );
   };
 
-  const ownerOnly = isOwner ? null : (
-    <p className="text-sm text-muted-foreground">Only an owner can change this.</p>
-  );
+  const ownerOnly = isOwner ? null : <p>Only an owner can change this.</p>;
 
   return (
     <>
-      <SettingsHeader segment="ai-agents" />
-      <div className="flex flex-col gap-6">
-        <SettingsCard
+      <SettingsHeader segment="ai-agents" lede mark={AI_MARK} />
+      <div className={settingsStack}>
+        <SettingGroup
           title="Who can use AI agents"
           description="Agents act with the same role the person has here."
+          action={
+            <Badge tone={access === "off" ? "neutral" : "success"} dot>
+              {ACCESS_CHIP[access]}
+            </Badge>
+          }
+          note={ownerOnly}
         >
           <RadioGroup
             aria-label="Who can use AI agents"
@@ -145,65 +165,61 @@ export function AiAgentsSettings() {
             onValueChange={(value) =>
               void save({ aiAgentsAccess: value as AiAgentsAccess }, "Saved who can use AI agents")
             }
-            className="flex flex-col gap-3"
+            className="gap-0 divide-y divide-border-subtle"
           >
             {accessOptions(!!business.assistantAvailable).map((a) => (
-              <RadioItem
-                key={a.value}
-                id={`ai-access-${a.value}`}
-                value={a.value}
-                label={a.label}
-                description={a.description}
-                disabled={!isOwner}
-              />
+              <div key={a.value} className="px-4.5 py-3">
+                <RadioItem
+                  id={`ai-access-${a.value}`}
+                  value={a.value}
+                  label={a.label}
+                  description={a.description}
+                  disabled={!isOwner}
+                />
+              </div>
             ))}
           </RadioGroup>
-          {ownerOnly}
-        </SettingsCard>
+        </SettingGroup>
 
-        <SettingsCard
+        <SettingGroup
           title="Approving changes"
-          description="By default, an agent prepares a change and the person approves it here, through a link. Tick what they can approve in their AI app instead."
+          description="By default, an agent prepares a change and the person approves it here, through a link. Turn on what they can approve in their AI app instead."
+          note={
+            <>
+              <p>
+                A change to several {v("bookings")} at once always needs approval here. Everything an agent
+                changes is in the activity log, marked as done by AI with the app&rsquo;s name.
+              </p>
+              {ownerOnly}
+            </>
+          }
         >
-          <fieldset className="flex flex-col gap-3" disabled={!isOwner || update.isPending}>
-            <legend className="sr-only">Changes that don&rsquo;t need approval here</legend>
-            {KINDS.map((k) => (
-              <CheckboxItem
-                key={k.value}
-                label={k.label}
-                description={k.description(v)}
+          {KINDS.map((k) => (
+            <SettingFieldRow key={k.value} fit label={k.label} help={k.description(v)}>
+              <Switch
                 checked={auto.has(k.value)}
                 disabled={!isOwner || update.isPending}
-                onCheckedChange={(on) => setKind(k.value, on === true)}
+                onCheckedChange={(on) => setKind(k.value, on)}
               />
-            ))}
-          </fieldset>
-          <p className="text-sm text-muted-foreground">
-            A change to several {v("bookings")} at once always needs approval here. Everything an agent
-            changes is in the activity log, marked as done by AI with the app&rsquo;s name.
-          </p>
-          {ownerOnly}
-        </SettingsCard>
+            </SettingFieldRow>
+          ))}
+        </SettingGroup>
 
-        <SettingsCard
-          title="Connect your agent"
-          description="Add this address to your AI app as a custom connector, then sign in and approve it. One connection covers every business you belong to."
-        >
-          <ServerUrlField path={BUSINESS_MCP_PATH} label="Business server URL" />
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <Button asChild variant="link" className="px-0">
-              <Link href={BUSINESS_AI_HELP_PATH} target="_blank" rel="noopener">
-                Step-by-step for Claude and ChatGPT <ArrowUpRight />
-              </Link>
-            </Button>
-            <Button asChild variant="link" className="px-0">
-              <Link href={dashboardHref(business.slug, "approvals")}>Your agents&rsquo; requests</Link>
-            </Button>
-            <Button asChild variant="link" className="px-0">
-              <Link href={CONNECTED_APPS_PATH}>Your connected apps</Link>
-            </Button>
-          </div>
-        </SettingsCard>
+        <SettingGroup title="Connect your agent">
+          <SettingRow
+            stacked
+            label="Business server URL"
+            help="Add this address to your AI app as a custom connector, then sign in and approve it. One connection covers every business you belong to."
+          >
+            <ServerUrlField path={BUSINESS_MCP_PATH} label="Business server URL" />
+          </SettingRow>
+          <SettingLink external href={BUSINESS_AI_HELP_PATH} label="Step-by-step for Claude and ChatGPT" />
+          <SettingLink
+            href={dashboardHref(business.slug, "approvals")}
+            label={<>Your agents&rsquo; requests</>}
+          />
+          <SettingLink href={CONNECTED_APPS_PATH} label="Your connected apps" />
+        </SettingGroup>
       </div>
     </>
   );
