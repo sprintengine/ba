@@ -2,30 +2,29 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PrismContainer } from "../heading";
-import { ThreadField } from "./thread-field";
+import { HeroBookings } from "./hero-bookings";
 
-/** The opening: what it is in one line, the threads behind it. */
+/** The opening: what it is and what it does for you, with every booking coming together behind it. */
 export function Hero() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative isolate flex min-h-[min(100svh,56rem)] items-center overflow-hidden pt-32 pb-20 sm:pb-28"
+      className="relative isolate overflow-hidden pt-24 pb-20 sm:pt-32 sm:pb-28 lg:flex lg:min-h-[min(100svh,54rem)] lg:items-center"
     >
-      <ThreadField className="inset-0 -z-10 [mask-image:linear-gradient(180deg,transparent_74%,black_94%)] lg:[mask-image:linear-gradient(100deg,transparent_16%,black_56%)]" />
-      <PrismContainer>
-        <div className="max-w-[46rem]">
+      <PrismContainer className="grid items-center gap-20 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-20">
+        <div>
           <p className="mb-5 text-[0.9375rem] font-semibold text-muted-foreground">
             Online booking for appointment businesses
           </p>
           <h1
             id="hero-title"
-            className="text-[clamp(3rem,7.4vw,6.25rem)] leading-[0.96] font-semibold tracking-[-0.05em] text-balance"
+            className="text-[clamp(3rem,7vw,6rem)] leading-[0.96] font-semibold tracking-[-0.05em] text-balance"
           >
             Booking software your AI can run.
           </h1>
           <p className="mt-7 max-w-[35rem] text-lg leading-[1.55] text-muted-foreground sm:text-xl sm:leading-[1.5]">
-            Clients book and pay online. You get one calendar for your staff, rooms and equipment. Connect
-            your own AI, or use ours, and it can run the whole business.
+            Clients book and pay themselves, day and night. Your AI, or ours, handles the rest. Fewer calls,
+            and you&apos;re home on time.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Button asChild variant="primary" size="xl" className="rounded-[14px] font-semibold">
@@ -41,6 +40,7 @@ export function Hero() {
             Free for up to 100 bookings a month. No card needed. We never take a cut of your payments.
           </p>
         </div>
+        <HeroBookings />
       </PrismContainer>
     </section>
   );
