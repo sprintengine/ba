@@ -6,7 +6,6 @@ import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import type { FormQuestion, Service } from "@/lib/api/types";
 import type { NewBookingValues as Values } from "@/lib/dashboard/new-booking";
 import { cn } from "@/lib/utils";
-import { useVocabulary } from "@/lib/vocabulary";
 import { FormField } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { PaymentFields } from "./new-booking-payment";
@@ -60,7 +59,6 @@ export function NewBookingMore({
   service: Service | undefined;
   questions: FormQuestion[];
 }) {
-  const { v } = useVocabulary();
   const form = useFormContext<Values>();
   const { errors } = useFormState({ control: form.control });
   const [paymentMode, notify, notes, answers] = useWatch({
@@ -68,7 +66,7 @@ export function NewBookingMore({
     name: ["paymentMode", "notifyCustomer", "internalNotes", "answers"],
   });
   const answered = questions.filter((q) => (answers[q.id] ?? "") !== "").length;
-  const email = notify ? `Email the ${v("customer")}` : "No email";
+  const email = notify ? "Confirmation email" : "No email";
 
   return (
     <div className="flex flex-col border-b border-border-subtle">
@@ -82,15 +80,15 @@ export function NewBookingMore({
         </MoreRow>
       )}
       <MoreRow
-        label="Payment"
+        label="Payment and email"
         summary={`${PAYMENT_WORDS[paymentMode]} · ${email}`}
         attention={!!errors.paymentMode}
       >
         <PaymentFields service={service} />
       </MoreRow>
-      <MoreRow label="Notes" summary={notes.trim() || "Add an internal note"}>
+      <MoreRow label="Notes" summary={notes.trim() || "Only your team sees these"}>
         <FormField<Values, "internalNotes"> name="internalNotes" label="Internal notes" optional>
-          {(field) => <Textarea {...field} rows={2} placeholder="Only your team can see these notes." />}
+          {(field) => <Textarea {...field} rows={2} placeholder="Add a note" />}
         </FormField>
       </MoreRow>
     </div>

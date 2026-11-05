@@ -179,7 +179,6 @@ describe("NewBookingSheet", () => {
       "Add a service first. Every appointment is for a service.",
     );
     expect(screen.getByRole("button", { name: "Create appointment" })).toBeDisabled();
-    expect(screen.getByText("Choose a service")).toBeInTheDocument();
   });
 
   it.each(["/services", "/questions", "/resources"])(

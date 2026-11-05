@@ -19,7 +19,7 @@ const monthStartOf = (date: PlainDate): PlainDate => `${date.slice(0, 7)}-01`;
 export type BookingRange = "upcoming" | "today" | "next7" | "past30" | "all" | "custom";
 
 export const BOOKING_RANGE_LABEL: Record<BookingRange, string> = {
-  upcoming: "Upcoming",
+  upcoming: "From today",
   today: "Today",
   next7: "Next 7 days",
   past30: "Past 30 days",

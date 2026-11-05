@@ -4,6 +4,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { minutesToTime, type PlainDate } from "@/lib/format/datetime";
+import type { BlockedInterval } from "@/lib/availability/windows";
 import {
   capLanes,
   groupSessions,
@@ -12,6 +13,7 @@ import {
   type MinuteInterval,
 } from "@/lib/dashboard/calendar-layout";
 import { cn } from "@/lib/utils";
+import { BlockedBand } from "./blocked-band";
 import { EventBlock } from "./event-block";
 import { OverflowMarker } from "./event-groups";
 
@@ -107,8 +109,12 @@ type ColumnProps = {
   open: MinuteInterval[];
   startHour: number;
   endHour: number;
-  /** Wall-clock minute for the now line (only when the column is today). */
+  /** Wall-clock minute for the now line: every column while today is on screen, so the time reads across the week. */
   nowMinute: number | null;
+  /** This column is another day of the week than today: its stretch of the line is faint and has no dot. */
+  nowFaint?: boolean;
+  /** Closures and time off, each drawn and named differently from plain closed hours. */
+  blocked: BlockedInterval[];
   compact?: boolean;
   formatTime: (iso: string) => string;
   onSelectBooking: (id: string) => void;
@@ -133,6 +139,8 @@ export const DayColumn = memo(function DayColumn({
   startHour,
   endHour,
   nowMinute,
+  nowFaint,
+  blocked,
   compact,
   formatTime,
   onSelectBooking,
@@ -204,6 +212,13 @@ export const DayColumn = memo(function DayColumn({
         );
       })}
       <GridLines startHour={startHour} endHour={endHour} hourPx={hourPx} />
+      {blocked.map((b) => {
+        const s = Math.max(b.start, startHour * 60);
+        const e = Math.min(b.end, endHour * 60);
+        return e > s ? (
+          <BlockedBand key={`${b.kind}-${b.start}`} block={b} top={top(s)} height={(e - s) * pxPerMin} />
+        ) : null;
+      })}
 
       {hover !== null && onCreate && (
         <div
@@ -250,8 +265,8 @@ export const DayColumn = memo(function DayColumn({
           className="pointer-events-none absolute inset-x-0 z-[4]"
           style={{ top: top(nowMinute) }}
         >
-          <div className="relative h-px bg-danger">
-            <span className="absolute -top-[3.5px] -left-1 size-2 rounded-full bg-danger" />
+          <div className={cn("relative h-px", nowFaint ? "bg-danger/30" : "bg-danger")}>
+            {!nowFaint && <span className="absolute -top-[3.5px] -left-1 size-2 rounded-full bg-danger" />}
           </div>
         </div>
       )}

@@ -1,24 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CalendarCheck,
-  CalendarRange,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CircleSlash,
-  Columns3,
-  List,
-  Plus,
-} from "lucide-react";
+import { CalendarRange, ChevronDown, ChevronLeft, ChevronRight, Columns3, List, Plus } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import type { CalendarMode } from "@/lib/dashboard/calendar";
 import type { ResourceChoice } from "@/lib/dashboard/calendar-resources";
 import type { PlainDate } from "@/lib/format/datetime";
 import type { UrlParamsPatch } from "@/lib/hooks/use-url-params";
-import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
@@ -82,12 +71,21 @@ export function CalendarToolbar({
     <SegmentedControl
       size="sm"
       aria-label="Calendar view"
-      collapseLabels="sm"
       value={view}
       onValueChange={(val) => setParams({ view: val === "day" ? null : val })}
       options={[
-        { value: "day", label: "Day", icon: <Columns3 aria-hidden />, shortcut: "D" },
-        { value: "week", label: "Week", icon: <CalendarRange aria-hidden />, shortcut: "W" },
+        {
+          value: "day",
+          label: "Day",
+          icon: <Columns3 aria-hidden className="max-sm:hidden" />,
+          shortcut: "D",
+        },
+        {
+          value: "week",
+          label: "Week",
+          icon: <CalendarRange aria-hidden className="max-sm:hidden" />,
+          shortcut: "W",
+        },
       ]}
     />
   );
@@ -115,11 +113,8 @@ export function CalendarToolbar({
             size="sm"
             onClick={() => setParams({ date: null })}
             disabled={date === today && view === "day"}
-            // Phones: a glyph (the date row is tight); still named "Today".
-            className="max-sm:aspect-square max-sm:px-0"
           >
-            <CalendarCheck aria-hidden className="sm:hidden" />
-            <span className="max-sm:sr-only">Today</span>
+            Today
           </Button>
         </Tooltip>
         <div className="flex-1 max-sm:hidden" />
@@ -160,21 +155,14 @@ export function CalendarToolbar({
           </Link>
         )}
         <div className="flex-1 max-sm:hidden" />
-        {phone ? (
-          <CancelledToggle
+        <label className="flex h-8 shrink-0 items-center gap-1.5 rounded-md text-sm text-muted-foreground sm:gap-2 sm:px-2 pointer-coarse:h-11">
+          <Switch
+            size="sm"
             checked={showCancelled}
-            onChange={(c) => setParams({ cancelled: c ? "1" : null })}
+            onCheckedChange={(c) => setParams({ cancelled: c ? "1" : null })}
           />
-        ) : (
-          <label className="flex h-8 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground pointer-coarse:h-11">
-            <Switch
-              size="sm"
-              checked={showCancelled}
-              onCheckedChange={(c) => setParams({ cancelled: c ? "1" : null })}
-            />
-            Cancelled
-          </label>
-        )}
+          Cancelled
+        </label>
         {phone && viewControl}
         {/* Phones have the list in the tab bar. */}
         <Button asChild variant="secondary" size="sm" className="max-sm:hidden">
@@ -184,29 +172,6 @@ export function CalendarToolbar({
         </Button>
       </div>
     </div>
-  );
-}
-
-/** Phones: "show cancelled" as a named glyph switch (the labelled switch doesn't fit next to the filters). */
-function CancelledToggle({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <Tooltip content="Show cancelled">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label="Cancelled"
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "inline-flex size-9 shrink-0 items-center justify-center rounded-lg border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:size-11 [&_svg]:size-4.5",
-          checked
-            ? "border-foreground bg-foreground text-background"
-            : "border-border bg-surface text-muted-foreground",
-        )}
-      >
-        <CircleSlash aria-hidden />
-      </button>
-    </Tooltip>
   );
 }
 

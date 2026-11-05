@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, Download, Mail, MoreHorizontal, Phone, ShieldAlert, Trash2 } from "lucide-react";
+import { Download, Mail, MoreHorizontal, Phone, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { useCustomer, useCustomerGroups, useUpdateCustomer } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -133,7 +133,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 openNewBooking({ customer: { id: c.id, name: c.name, email: c.email, phone: c.phone } })
               }
             >
-              <CalendarPlus /> New {v("booking")}
+              <Plus /> New {v("booking")}
             </Button>
           </>
         }

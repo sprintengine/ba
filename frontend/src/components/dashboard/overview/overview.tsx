@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { CalendarDays, CalendarPlus } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { useOverview } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { firstName, todaysBookings } from "@/lib/dashboard/overview";
@@ -48,7 +48,7 @@ export function OverviewView() {
               </Link>
             </Button>
             <Button variant="primary" onClick={() => openNewBooking()}>
-              <CalendarPlus /> New {v("booking")}
+              <Plus /> New {v("booking")}
             </Button>
           </>
         }

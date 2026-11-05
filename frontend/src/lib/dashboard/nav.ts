@@ -36,7 +36,7 @@ export type DashboardSection = {
 
 /** Primary dashboard navigation (architecture §11). Order = sidebar order. */
 export const DASHBOARD_SECTIONS: DashboardSection[] = [
-  { key: "overview", segment: "", label: "Overview", minRole: "staff" },
+  { key: "overview", segment: "", label: "Today", minRole: "staff" },
   { key: "calendar", segment: "calendar", label: "Calendar", minRole: "staff" },
   { key: "bookings", segment: "bookings", label: "Bookings", vocabulary: "bookings", minRole: "staff" },
   { key: "customers", segment: "customers", label: "Customers", vocabulary: "customers", minRole: "staff" },

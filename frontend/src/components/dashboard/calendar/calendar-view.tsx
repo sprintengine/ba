@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarPlus } from "lucide-react";
+import type { BlockedInterval } from "@/lib/availability/windows";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { minutesToTime, timeToMinutes, toTimeOfDay, todayInTz, type PlainDate } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
 import { CalendarReleases } from "../releases/lazy-releases";
+import { CLOSED_FILL, timeOffPattern } from "./blocked-band";
 import { DayColumn, TimeGutter } from "./calendar-grid";
 import { CalendarHeaderRow, colMin } from "./calendar-headers";
 import { CalendarToolbar } from "./calendar-toolbar";
@@ -214,7 +216,9 @@ export function CalendarView() {
                               open={c.open}
                               startHour={startHour}
                               endHour={endHour}
-                              nowMinute={c.date === today ? nowMinute : null}
+                              nowMinute={days.includes(today) ? nowMinute : null}
+                              nowFaint={c.date !== today}
+                              blocked={c.blocked}
                               compact={view === "week"}
                               formatTime={fmt.time}
                               onSelectBooking={openBooking}
@@ -241,7 +245,11 @@ export function CalendarView() {
               />
             )}
           </div>
-          <CalendarFooter count={data.count} updating={data.bookingsQ.isFetching} />
+          <CalendarFooter
+            count={data.count}
+            updating={data.bookingsQ.isFetching}
+            blocked={columns.flatMap((c) => c.blocked)}
+          />
         </div>
       )}
     </PageContainer>
@@ -249,7 +257,15 @@ export function CalendarView() {
 }
 
 /** Below the grid: how many bookings are shown and the timezone (the shortcuts are in the toolbar's tooltips). */
-function CalendarFooter({ count, updating }: { count: number; updating: boolean }) {
+function CalendarFooter({
+  count,
+  updating,
+  blocked,
+}: {
+  count: number;
+  updating: boolean;
+  blocked: BlockedInterval[];
+}) {
   const business = useCurrentBusiness();
   const { v } = useVocabulary();
   return (
@@ -268,8 +284,20 @@ function CalendarFooter({ count, updating }: { count: number; updating: boolean 
       <span className="flex gap-3">
         <span className="inline-flex items-center gap-1.5 max-sm:hidden">
           <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border" />
-          Closed or not working
+          Not working
         </span>
+        {blocked.some((b) => b.kind === "time-off") && (
+          <span className="inline-flex items-center gap-1.5 max-sm:hidden">
+            <span aria-hidden className="size-3 rounded-sm ring-1 ring-border" style={timeOffPattern} />
+            Time off
+          </span>
+        )}
+        {blocked.some((b) => b.kind === "closed") && (
+          <span className="inline-flex items-center gap-1.5 max-sm:hidden">
+            <span aria-hidden className={cn("size-3 rounded-sm ring-1 ring-border", CLOSED_FILL)} />
+            Closed
+          </span>
+        )}
         <span className="inline-flex items-center gap-1.5">
           <span
             aria-hidden

@@ -38,7 +38,7 @@ export function Summary({ service }: { service: Service | undefined }) {
     control: form.control,
     name: ["optionId", "addonIds", "timeMode", "slotStart", "slotOffer", "date", "exactTime"],
   });
-  if (!service) return <span className="text-sm text-subtle-foreground">Choose a service</span>;
+  if (!service) return null;
   // Same arithmetic as the booking flow: the option's price and length (or the service's), plus add-ons.
   const { durationMinutes: minutes, totalCents: price } = quote(service, optionId, addonIds);
   const deal = timeMode === "slots" && slotStart ? slotOffer : null;

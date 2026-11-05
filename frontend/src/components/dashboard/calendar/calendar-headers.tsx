@@ -6,7 +6,7 @@ import type { PlainDate } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResourceKindIcon, useFmt } from "../common";
-import type { CalendarColumn } from "./use-calendar-data";
+import type { CalendarColumn, ColumnOff } from "./use-calendar-data";
 
 /**
  * Minimum column width: wide enough to read a booking, so four people fit at 1024 and six at 1440 and the rest scroll
@@ -49,13 +49,14 @@ export function CalendarHeaderRow({
               <Skeleton className="h-4 w-24" />
             </div>
           ))
-        : columns.map((c) =>
+        : columns.map((c, i) =>
             c.resource ? (
               <ResourceHeader
                 key={c.key}
                 resource={c.resource}
                 count={shownCount(c)}
-                off={c.open.length === 0}
+                off={c.off}
+                position={columns.length > 1 ? `${i + 1} of ${columns.length}` : null}
                 className={colMin(view)}
               />
             ) : (
@@ -73,29 +74,48 @@ export function CalendarHeaderRow({
   );
 }
 
+const OFF_LABEL: Record<ColumnOff, string> = {
+  closed: "Closed",
+  "time-off": "Time off",
+  "not-working": "Not working",
+};
+
+/** What the header says beside the name; bookings that remain on a day off are still counted. */
+function columnNote(resource: Resource, count: number, off: ColumnOff | null): string {
+  if (!resource.isActive) return `Inactive · ${count} booked`;
+  if (!off) return `${count} booked`;
+  return count > 0 ? `${OFF_LABEL[off]} · ${count} booked` : OFF_LABEL[off];
+}
+
 function ResourceHeader({
   resource,
   count,
   off,
+  position,
   className,
 }: {
   resource: Resource;
   count: number;
-  off: boolean;
+  off: ColumnOff | null;
+  /** "1 of 4": a phone shows one column at a time, so it says there are more. */
+  position: string | null;
   className?: string;
 }) {
   return (
     <div className={cn("flex h-11 flex-1 items-center gap-2 border-l border-border px-3", className)}>
       <span
-        className="flex size-6 shrink-0 items-center justify-center rounded-md text-white"
-        style={{ backgroundColor: resource.color }}
+        className="flex size-6 shrink-0 items-center justify-center rounded-md"
+        style={{
+          backgroundColor: `color-mix(in oklab, ${resource.color} 22%, var(--surface))`,
+          color: `color-mix(in oklab, ${resource.color} 62%, var(--foreground))`,
+        }}
       >
         <ResourceKindIcon kind={resource.kind} className="size-3.5" />
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold">{resource.name}</span>
-      <span className="tnum shrink-0 text-xs text-muted-foreground">
-        {/* Deactivated, but shown for the bookings it still has that day. */}
-        {!resource.isActive ? `Inactive · ${count} booked` : off ? "Not working" : `${count} booked`}
+      <span className="min-w-0 truncate text-sm font-semibold">{resource.name}</span>
+      {position && <span className="tnum shrink-0 text-xs text-muted-foreground sm:hidden">{position}</span>}
+      <span className="tnum ml-auto shrink-0 text-xs text-muted-foreground">
+        {columnNote(resource, count, off)}
       </span>
     </div>
   );

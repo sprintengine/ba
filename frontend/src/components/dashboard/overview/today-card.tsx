@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, CalendarPlus, ChevronDown } from "lucide-react";
+import { CalendarDays, ChevronDown, Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -59,7 +59,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
             description={`New ${v("bookings")} show up here as they come in.`}
             action={
               <Button size="sm" variant="secondary" onClick={() => openNewBooking()}>
-                <CalendarPlus /> New {v("booking")}
+                <Plus /> New {v("booking")}
               </Button>
             }
           />
