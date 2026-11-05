@@ -210,7 +210,7 @@ export function Calendar({
                         isSelected
                           ? "bg-primary text-primary-foreground shadow-button"
                           : isDisabled
-                            ? "cursor-not-allowed text-subtle-foreground/50 line-through decoration-subtle-foreground/30"
+                            ? "cursor-not-allowed text-subtle-foreground/70"
                             : "text-foreground hover:bg-accent active:scale-95",
                         isToday &&
                           !isSelected &&

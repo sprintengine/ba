@@ -47,7 +47,7 @@ export function TimeGutter({
       ))}
       {showNow && (
         <span
-          className="tnum absolute right-1 -translate-y-1/2 rounded-full bg-danger px-1.5 text-2xs leading-4 font-semibold text-white"
+          className="tnum absolute right-1 -translate-y-1/2 rounded-full bg-danger px-1.5 text-2xs leading-4 font-semibold text-danger-foreground"
           style={{ top: nowTop }}
         >
           {minutesToTime(nowMinute)}
