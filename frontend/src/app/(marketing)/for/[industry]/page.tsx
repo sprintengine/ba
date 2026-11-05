@@ -120,7 +120,7 @@ export default async function IndustryPage({ params }: Props) {
               title={`Ready-made for ${meta.short.toLowerCase()}.`}
               description="You start with typical services, prices, opening hours and booking questions, and change whatever doesn't suit."
             />
-            <dl className="mt-10 grid grid-cols-3 gap-3">
+            <dl className="mt-10 flex flex-wrap gap-3">
               {[
                 { term: "Resources", value: v.resources },
                 { term: "Customers", value: v.customers },
@@ -128,7 +128,7 @@ export default async function IndustryPage({ params }: Props) {
               ].map((x) => (
                 <div key={x.term} className="rounded-xl border border-border bg-surface p-3.5 shadow-xs">
                   <dt className="text-2xs text-subtle-foreground">{x.term}</dt>
-                  <dd className="mt-1 text-sm font-medium [overflow-wrap:anywhere]">{x.value}</dd>
+                  <dd className="mt-1 text-sm font-medium">{x.value}</dd>
                 </div>
               ))}
             </dl>
@@ -246,7 +246,9 @@ function ServiceRow({ service: s }: { service: ExampleService }) {
         </Badge>
         {s.options?.map((o) => (
           <Badge key={o.name} tone="outline" className="tnum font-normal">
-            {o.name} · {formatDuration(o.durationMinutes)} · {formatMoney(o.priceCents, "EUR")}
+            {/* An option named for its length ("30 minutes") shouldn't say it twice. */}
+            {/\d/.test(o.name) ? o.name : `${o.name} · ${formatDuration(o.durationMinutes)}`} ·{" "}
+            {formatMoney(o.priceCents, "EUR")}
           </Badge>
         ))}
         {s.addons?.map((a) => (

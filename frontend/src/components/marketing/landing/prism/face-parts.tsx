@@ -123,5 +123,4 @@ export function BoPebble({ className }: { className?: string }) {
 }
 
 /** The prism spectrum as a thin bar of light (now-lines, lit slots). */
-export const LIGHT_BAR = "bg-linear-to-b from-prism-cyan via-prism-lilac to-prism-peach";
 export const LIGHT_LINE = "bg-linear-to-r from-prism-cyan via-prism-lilac to-prism-peach";

@@ -1,6 +1,6 @@
 import { Check, DoorOpen, Link2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FaceSlot, LIGHT_BAR, LIGHT_LINE, Pill, Tile } from "./face-parts";
+import { FaceSlot, LIGHT_LINE, Pill, Tile } from "./face-parts";
 
 export const CAL_COLUMNS = [
   { name: "Aoife Byrne", kind: "Physio", initials: "AB" },
@@ -44,21 +44,15 @@ export function CalBlock({ b, mini, style }: { b: Booking; mini?: boolean; style
   return (
     <div
       className={cn(
-        "absolute overflow-hidden rounded-[10px] py-[7px] pr-[9px] pl-3 text-[11.5px] leading-[1.3]",
-        mini && "inset-x-1 py-1.5 pr-[7px] pl-[11px] text-[10.5px]",
-        !mini && "max-[760px]:py-[5px] max-[760px]:pr-1.5 max-[760px]:pl-2.5 max-[760px]:text-[10px]",
+        "absolute overflow-hidden rounded-[10px] px-[9px] py-[7px] text-[11.5px] leading-[1.3]",
+        mini && "inset-x-1 px-[7px] py-1.5 text-[10.5px]",
+        !mini && "max-[760px]:px-1.5 max-[760px]:py-[5px] max-[760px]:text-[10px]",
         b.dark
           ? "bg-primary/90 text-primary-foreground shadow-md"
           : "bg-(--prism-block) shadow-(--prism-block-shadow)",
       )}
       style={style}
     >
-      <span
-        className={cn(
-          "absolute top-1.5 bottom-1.5 left-1 w-[3px] rounded-[3px]",
-          b.linked || b.dark ? LIGHT_BAR : "bg-foreground/20",
-        )}
-      />
       <b className="block truncate font-semibold">{b.title}</b>
       <span className={cn("block truncate", b.dark ? "text-primary-foreground/60" : "text-muted-foreground")}>
         {b.sub}

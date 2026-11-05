@@ -143,8 +143,7 @@ function BookingCard({ b, past }: { b: Row; past: boolean }) {
           past && "bg-surface/60",
         )}
       >
-        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-primary" />
-        <div className="flex gap-4 p-4 pl-5">
+        <div className="flex gap-4 p-4">
           <DateTile date={b.date} muted={past} />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

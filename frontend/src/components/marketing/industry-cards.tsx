@@ -89,7 +89,7 @@ function IndustryCard({ content: c }: { content: IndustryContent }) {
         <ul className="relative mt-4 flex flex-1 flex-col divide-y divide-border-subtle border-t border-border-subtle px-5">
           {c.services.slice(0, 3).map((s) => (
             <li key={s.name} className="flex items-baseline justify-between gap-3 py-2.5 text-sm">
-              <span className="min-w-0 truncate">{s.name}</span>
+              <span className="min-w-0">{s.name}</span>
               <span className="tnum shrink-0 text-xs text-muted-foreground">
                 {formatDuration(s.durationMinutes)} ·{" "}
                 <span className="text-foreground">{priceLabel(s, "EUR")}</span>

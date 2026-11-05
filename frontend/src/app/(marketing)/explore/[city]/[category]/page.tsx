@@ -37,7 +37,7 @@ export default async function ExploreCityCategoryRoute({ params }: Props) {
   if (result.status === "not_found") notFound();
   const seo = exploreSeo(result.status === "ok" ? result.route : undefined);
   return (
-    <ExploreLayout title={seo.heading} description={seo.description}>
+    <ExploreLayout title={seo.heading}>
       <Suspense fallback={<ExploreFallback />}>
         <ExplorePage preset={{ city, category }} />
       </Suspense>
