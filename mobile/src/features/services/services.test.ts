@@ -143,7 +143,7 @@ describe("serviceSummary", () => {
       addons: [service.addons[0]!, { ...service.addons[0]!, id: "a2" }],
     });
     expect(serviceSummary(many, "EUR", "en-IE")).toEqual(
-      expect.arrayContaining(["At venue", "2 options", "2 add-ons"]),
+      expect.arrayContaining(["Pay at venue", "2 options", "2 add-ons"]),
     );
   });
 });
