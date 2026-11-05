@@ -117,7 +117,7 @@ export function DialogFooter({ className, ...props }: React.ComponentProps<"div"
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 border-t border-border-subtle px-6 py-4 sm:flex-row sm:justify-end",
+        "flex gap-2 border-t border-border-subtle px-6 py-4 sm:justify-end max-sm:[&>button]:flex-1",
         className,
       )}
       {...props}

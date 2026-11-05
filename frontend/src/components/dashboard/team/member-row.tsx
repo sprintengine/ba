@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Trash2 } from "lucide-react";
+import { Mail } from "lucide-react";
 import type { MemberRole, TeamMember } from "@/lib/api/types";
 import { useRemoveTeamMember, useUpdateTeamMember } from "@/lib/api/hooks";
 import { useBusinessContext } from "@/lib/business/business-context";
@@ -9,7 +9,7 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { IconButton } from "@/components/ui/icon-button";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { withToast } from "@/components/common/with-toast";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -106,7 +106,9 @@ function CalendarControl({
   const { v } = useVocabulary();
   if (!editable || people.length === 0) {
     const resourceName = people.find((p) => p.id === m.resourceId)?.name;
-    return resourceName ? <span className="text-xs text-muted-foreground">{resourceName}</span> : null;
+    return resourceName ? (
+      <span className="text-xs text-muted-foreground">Calendar: {resourceName}</span>
+    ) : null;
   }
   return (
     <Select
@@ -198,9 +200,9 @@ function RemoveControl({ member: m, lastOwner }: { member: TeamMember; lastOwner
     return (
       <Tooltip content="The last owner can't be removed.">
         <span>
-          <IconButton label={`Remove ${m.name || m.email}`} disabled tooltip={false}>
-            <Trash2 />
-          </IconButton>
+          <Button size="sm" variant="ghost" aria-label={`Remove ${m.name || m.email}`} disabled>
+            Remove
+          </Button>
         </span>
       </Tooltip>
     );
@@ -209,9 +211,13 @@ function RemoveControl({ member: m, lastOwner }: { member: TeamMember; lastOwner
   return (
     <ConfirmDialog
       trigger={
-        <IconButton label={invited ? `Revoke invite for ${m.email}` : `Remove ${m.name || m.email}`}>
-          <Trash2 />
-        </IconButton>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label={invited ? `Revoke invite for ${m.email}` : `Remove ${m.name || m.email}`}
+        >
+          {invited ? "Revoke" : "Remove"}
+        </Button>
       }
       title={invited ? `Revoke the invite for ${m.email}?` : `Remove ${m.name || m.email}?`}
       description={

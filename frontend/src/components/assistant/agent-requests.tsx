@@ -87,7 +87,7 @@ export function AgentRequestPage({ id }: { id: string }) {
   const app = request.data?.app ?? "Your AI agent";
 
   return (
-    <PageContainer size="narrow">
+    <PageContainer size="default">
       <PageHeader
         back={{ href: dashboardHref(business.slug, "approvals"), label: "Approvals" }}
         title="Approve a change"
@@ -117,7 +117,7 @@ export function AgentRequestsPage() {
   const decided = items.filter((r) => r.action.status !== "pending");
 
   return (
-    <PageContainer size="narrow">
+    <PageContainer size="default">
       <PageHeader
         title="Approvals"
         description="Changes your AI agents asked to make, and whether they went ahead."

@@ -101,3 +101,9 @@ export function SensitiveMark({ className }: { className?: string }) {
     </Tooltip>
   );
 }
+
+/** A resource's tile: its colour soft behind, strong in the glyph, so the glyph reads on any colour in either theme. */
+export const resourceTile = (color: string): React.CSSProperties => ({
+  backgroundColor: `color-mix(in oklab, ${color} 22%, var(--surface))`,
+  color: `color-mix(in oklab, ${color} 62%, var(--foreground))`,
+});

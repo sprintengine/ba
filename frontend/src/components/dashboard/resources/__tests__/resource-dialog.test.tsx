@@ -236,7 +236,7 @@ describe("ResourceDialog: editing", () => {
     active.focus();
     await user.keyboard(" ");
     expect(active).not.toBeChecked();
-    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+    await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(api.bodies("PATCH", "/resources/r1")).toEqual([

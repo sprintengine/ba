@@ -95,8 +95,8 @@ describe("TeamView", () => {
     const items = await rows();
     expect(items.map((li) => li.textContent)).toEqual([
       expect.stringMatching(/Avery MorganYou/),
-      expect.stringMatching(/Blake Shaw.*Admin$/),
-      expect.stringMatching(/Casey Lane.*Sam Rivers.*Staff$/),
+      expect.stringMatching(/Blake Shaw.*Admin(Remove)?$/),
+      expect.stringMatching(/Casey Lane.*Sam Rivers.*Staff(Remove)?$/),
       expect.stringMatching(/^new@example\.testInvitedInvited 28 Sept?/),
     ]);
     expect(screen.getByRole("heading", { level: 2, name: "Roles" })).toBeInTheDocument();

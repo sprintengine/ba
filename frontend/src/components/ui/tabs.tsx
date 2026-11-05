@@ -35,7 +35,7 @@ export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof
         "inline-flex shrink-0 items-center justify-center gap-1.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none select-none pointer-coarse:min-w-11",
         "rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4",
         // underline
-        "group-data-[variant=underline]/tabs:relative group-data-[variant=underline]/tabs:-mb-px group-data-[variant=underline]/tabs:h-10 group-data-[variant=underline]/tabs:border-b-2 group-data-[variant=underline]/tabs:border-transparent pointer-coarse:group-data-[variant=underline]/tabs:h-11",
+        "group-data-[variant=underline]/tabs:relative group-data-[variant=underline]/tabs:-mb-px group-data-[variant=underline]/tabs:h-10 group-data-[variant=underline]/tabs:border-b-2 group-data-[variant=underline]/tabs:border-transparent group-data-[variant=underline]/tabs:px-1 pointer-coarse:group-data-[variant=underline]/tabs:h-11",
         "group-data-[variant=underline]/tabs:data-[state=active]:border-foreground group-data-[variant=underline]/tabs:data-[state=active]:text-foreground",
         // pill
         "group-data-[variant=pill]/tabs:h-8 group-data-[variant=pill]/tabs:rounded-md group-data-[variant=pill]/tabs:px-3 pointer-coarse:group-data-[variant=pill]/tabs:h-10",

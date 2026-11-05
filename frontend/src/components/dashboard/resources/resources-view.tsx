@@ -19,7 +19,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ResourceKindIcon } from "../common";
+import { ResourceKindIcon, resourceTile } from "../common";
 import { canEditAvailability } from "@/lib/business/permissions";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
 import { ResourceDialog } from "./resource-dialog";
@@ -53,6 +53,11 @@ export function ResourcesView() {
   };
   const select = (id: string) => setParams({ r: id });
 
+  // The default word doesn't stretch to rooms and equipment; a word the business chose stands.
+  const word = v("resource");
+  const addLabel = word.toLowerCase() === "staff member" ? "Add person or room" : `Add ${word}`;
+  const single = list.length < 2 && !perms.manageResources;
+
   return (
     <PageContainer size="wide">
       <PageHeader
@@ -68,7 +73,7 @@ export function ResourcesView() {
               variant="primary"
               onClick={() => editor.open(null)}
               icon={<Plus />}
-              label={`Add ${v("resource")}`}
+              label={addLabel}
               collapse={false}
             />
           )
@@ -99,7 +104,7 @@ export function ResourcesView() {
             action={
               perms.manageResources && (
                 <Button variant="primary" onClick={() => editor.open(null)}>
-                  <Plus /> Add {v("resource")}
+                  <Plus /> {addLabel}
                 </Button>
               )
             }
@@ -107,10 +112,12 @@ export function ResourcesView() {
         </div>
       ) : (
         <div className="flex flex-col gap-10">
-          <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          <div className={cn("grid items-start gap-6", !single && "lg:grid-cols-[18rem_minmax(0,1fr)]")}>
+            {/* With only one, there is nothing to pick: the panel says who it is. */}
             <nav
               aria-label={v("resources", { title: true })}
-              className="flex snap-x snap-mandatory gap-1.5 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+              hidden={single}
+              className="flex flex-wrap gap-1.5 lg:flex-col"
             >
               {list.map((r) => {
                 const active = selected?.id === r.id;
@@ -120,26 +127,21 @@ export function ResourcesView() {
                     type="button"
                     onClick={() => select(r.id)}
                     aria-current={active ? "true" : undefined}
-                    // On phones this is a sideways strip: the one on show stays in view.
-                    ref={
-                      active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "start" }) : undefined
-                    }
                     className={cn(
-                      "flex min-w-52 snap-start items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring lg:min-w-0",
+                      "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0 lg:py-2.5",
                       active ? "border-transparent bg-accent" : "border-transparent hover:bg-accent/60",
                       !r.isActive && "opacity-60",
                     )}
                   >
                     <span
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white"
-                      style={{ backgroundColor: r.color }}
+                      className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                      style={resourceTile(r.color)}
                     >
                       <ResourceKindIcon kind={r.kind} className="size-4" />
                     </span>
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-medium">{r.name}</span>
-                      {/* On a phone the row is a strip of names: a second line would be cut anyway. */}
-                      <span className="truncate text-xs text-muted-foreground max-sm:hidden">
+                      <span className="truncate text-xs text-muted-foreground max-lg:hidden">
                         {!r.isActive
                           ? "Inactive"
                           : r.kind === "person"
@@ -196,7 +198,7 @@ function ResourcePanel({
 }) {
   const [tab, setTab] = useState("hours");
   return (
-    <div className="flex min-w-0 flex-col lg:border-l lg:border-border lg:pl-6">
+    <div className="flex min-w-0 flex-col lg:not-only:border-l lg:not-only:border-border lg:not-only:pl-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">

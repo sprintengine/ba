@@ -63,7 +63,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
   );
 
   return (
-    <PageContainer size="default">
+    <PageContainer size="wide">
       <PageHeader
         title="Offers"
         description="Deals that fill quiet times. They're applied automatically when people book online — never more than one per booking."

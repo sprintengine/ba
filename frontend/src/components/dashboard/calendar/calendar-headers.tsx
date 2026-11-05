@@ -5,7 +5,7 @@ import type { CalendarMode } from "@/lib/dashboard/calendar";
 import type { PlainDate } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ResourceKindIcon, useFmt } from "../common";
+import { ResourceKindIcon, resourceTile, useFmt } from "../common";
 import type { CalendarColumn, ColumnOff } from "./use-calendar-data";
 
 /**
@@ -105,10 +105,7 @@ function ResourceHeader({
     <div className={cn("flex h-11 flex-1 items-center gap-2 border-l border-border px-3", className)}>
       <span
         className="flex size-6 shrink-0 items-center justify-center rounded-md"
-        style={{
-          backgroundColor: `color-mix(in oklab, ${resource.color} 22%, var(--surface))`,
-          color: `color-mix(in oklab, ${resource.color} 62%, var(--foreground))`,
-        }}
+        style={resourceTile(resource.color)}
       >
         <ResourceKindIcon kind={resource.kind} className="size-3.5" />
       </span>

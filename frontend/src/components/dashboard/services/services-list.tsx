@@ -14,7 +14,6 @@ import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
 import { useEditorDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
-import { IconButton } from "@/components/ui/icon-button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -54,7 +53,7 @@ export function ServicesList() {
   const open = editor.open;
 
   return (
-    <PageContainer size="default">
+    <PageContainer size="wide">
       <PageHeader
         title="Services"
         description="What people can book, how long it takes and what it costs."
@@ -131,6 +130,9 @@ export function ServicesList() {
   );
 }
 
+/** Two switches on every row: on is a grey, so the list stays about the services. */
+const QUIET_SWITCH = "data-[state=checked]:bg-muted-foreground";
+
 function ServiceRow({
   service: s,
   canEdit,
@@ -167,8 +169,7 @@ function ServiceRow({
       >
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="min-w-0 truncate text-sm font-medium">{s.name}</span>
-          {/* From sm up the Public switch says this. */}
-          {!s.isPublic && <Badge className="h-5 sm:hidden">Private</Badge>}
+          {!s.isPublic && <Badge className="h-5">Private</Badge>}
           {s.requiresApproval && (
             <Badge tone="info" className="h-5">
               Approval
@@ -215,6 +216,7 @@ function ServiceRow({
               Public
               <Switch
                 size="sm"
+                className={QUIET_SWITCH}
                 aria-label={`Public: ${s.name}`}
                 checked={s.isPublic}
                 disabled={replace.isPending || !s.isActive}
@@ -230,6 +232,7 @@ function ServiceRow({
               <span>Active</span>
               <Switch
                 size="sm"
+                className={QUIET_SWITCH}
                 aria-label={`Active: ${s.name}`}
                 checked={s.isActive}
                 disabled={replace.isPending}
@@ -239,9 +242,9 @@ function ServiceRow({
               />
             </label>
           </Tooltip>
-          <IconButton label={`Edit ${s.name}`} onClick={onEdit}>
-            <Pencil />
-          </IconButton>
+          <Button size="sm" variant="secondary" aria-label={`Edit ${s.name}`} onClick={onEdit}>
+            <Pencil /> Edit
+          </Button>
         </div>
       )}
     </li>

@@ -104,9 +104,9 @@ export function Closures({ editable }: { editable: boolean }) {
     <section className="flex flex-col gap-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold tracking-tight">Closed days</h2>
+          <h2 className="text-base font-semibold tracking-tight">Business closures</h2>
           <p className="text-sm text-muted-foreground">
-            When the whole business is closed — nobody can be booked.
+            When the whole business is closed, nobody can be booked.
           </p>
         </div>
         {editable && (
