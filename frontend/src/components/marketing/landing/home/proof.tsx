@@ -8,7 +8,7 @@ const SIMULATED = "19,486";
 
 /** What an owner needs to know about their bookings and their clients' details. Each is backed by the legal pages. */
 const KEPT = [
-  ["Your clients are yours", "You own your client list, and you can download any client's record."],
+  ["Your clients are yours", "You own your client list, and you can download any client’s record."],
   ["Kept in the EU", "Your bookings and client details are stored in the EU."],
   ["Backed up every night", "And we test the backups to make sure they work."],
   ["Private answers stay private", "Answers you mark as private are never sent to an AI."],
@@ -17,7 +17,7 @@ const KEPT = [
 function Figure({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="tnum text-[clamp(2.5rem,4.6vw,3.75rem)] leading-none font-semibold tracking-[-0.04em]">
+      <p className="tnum -ml-[0.05em] text-[clamp(2.5rem,4.6vw,3.75rem)] leading-none font-semibold tracking-[-0.04em]">
         {value}
       </p>
       <p className="mt-2 text-sm text-muted-foreground">{label}</p>
@@ -40,11 +40,12 @@ export function ProofSection() {
             align="left"
             label="Peace of mind"
             title="No double bookings."
-            lit="Your clients' details kept safe."
-            lead="Once a time is booked, it's gone for everyone else. Don't take our word for it: open an example and watch one land."
+            lit="Client details kept safe."
+            punch
+            lead="Once a time is booked, it’s gone for everyone else. Don’t take our word for it: open an example above and try it."
           />
           <div className="grid grid-cols-2 gap-6">
-            <Figure value={SIMULATED} label="simulated bookings, made by bots to test it" />
+            <Figure value={SIMULATED} label="test bookings across simulated businesses" />
             <Figure value="0" label="double bookings" />
           </div>
         </div>

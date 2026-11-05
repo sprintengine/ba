@@ -3,7 +3,7 @@ import { PrismContainer, PrismHeading } from "../heading";
 import { LogoMarquee } from "./logo-marquee";
 
 const WAYS = [
-  { icon: CreditCard, title: "Pay in full", body: "Paid when they book, so no-shows don't cost you." },
+  { icon: CreditCard, title: "Pay in full", body: "Paid when they book, so no-shows don’t cost you." },
   { icon: HandCoins, title: "Take a deposit", body: "They pay part now to hold the time." },
   { icon: Banknote, title: "Pay on the day", body: "Nothing to pay until they arrive." },
   { icon: Repeat, title: "Memberships and packs", body: "Sell a block of sessions or a monthly plan." },
@@ -35,6 +35,7 @@ export function MoneySection() {
           label="Payments"
           title="The money goes straight to you."
           lit="We take 0%"
+          punch
           dot
           lead="Clients pay into your own account, through the payment provider you already use or one you pick."
         />
@@ -57,7 +58,7 @@ export function MoneySection() {
             <Stop
               label="Your account"
               value="€60.00"
-              note="Minus your provider's usual card fee, paid out on their usual days."
+              note="Minus your provider’s usual card fee, paid out on their usual days."
             />
           </div>
         </div>

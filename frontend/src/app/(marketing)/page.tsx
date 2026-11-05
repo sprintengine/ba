@@ -25,10 +25,10 @@ const FAQ: FaqItem[] = [
     answer: (
       <>
         <p>
-          We don&apos;t take a percentage of your bookings. Clients pay into your own account through your
-          payment provider, and the provider charges its usual card fee.
+          We don’t take a percentage of your bookings. Clients pay into your own account through your payment
+          provider, and the provider charges its usual card fee.
         </p>
-        <p>We make our money from monthly plans, once you&apos;re busy.</p>
+        <p>We make our money from monthly plans, once you’re busy.</p>
       </>
     ),
   },
@@ -72,11 +72,11 @@ const FAQ: FaqItem[] = [
     ),
   },
   {
-    question: "My business isn't in your examples. Will it work?",
+    question: "My business isn’t in your examples. Will it work?",
     answer: (
       <p>
         Very likely. If you work by appointment, it will fit, with as many appointment types as you need on
-        every plan. Describe your business and we&apos;ll draft a setup for it.
+        every plan. Describe your business and we’ll draft a setup for it.
       </p>
     ),
   },
@@ -84,7 +84,7 @@ const FAQ: FaqItem[] = [
     question: "Who owns my customers' data?",
     answer: (
       <p>
-        You do. We only use your clients&apos; details to run your bookings. The{" "}
+        You do. We only use your clients’ details to run your bookings. The{" "}
         <Link href="/legal/privacy">privacy policy</Link> has the full story.
       </p>
     ),
@@ -115,11 +115,11 @@ export default function LandingPage() {
       <Hero />
       <BookedSection />
       <AiSection />
+      <SetupSection />
+      <PrismThread />
       <MoneySection />
       <IndustriesSection />
       <ProofSection />
-      <SetupSection />
-      <PrismThread />
       <PricingTeaser />
       <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-20 sm:pb-28">
         <PrismContainer className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">

@@ -38,6 +38,7 @@ export function PrismHeading({
   lead,
   align = "center",
   dot = false,
+  punch = false,
   className,
 }: {
   id?: string;
@@ -49,6 +50,8 @@ export function PrismHeading({
   align?: "center" | "left";
   /** End the headline on the logo's lit dot, not a full stop. */
   dot?: boolean;
+  /** The second clause is the point of the headline: full strength, not muted. */
+  punch?: boolean;
   className?: string;
 }) {
   return (
@@ -77,7 +80,7 @@ export function PrismHeading({
         {title}
         {lit && (
           <span className="block">
-            <span className="text-prism">{lit}</span>
+            <span className={cn(!punch && "text-prism")}>{lit}</span>
             {dot && <PrismDot />}
           </span>
         )}
