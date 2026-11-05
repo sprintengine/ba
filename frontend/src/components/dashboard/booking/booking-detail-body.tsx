@@ -21,13 +21,12 @@ import { Callout } from "./callout";
 import { InternalNotes } from "./internal-notes";
 import { PaymentLink } from "./payment-link";
 
-/** Everything about a booking, top to bottom: status notes, customer, service, payment, answers, notes, history. */
+/** Everything about a booking, top to bottom: status notes, the summary, payment, answers, notes, history. */
 export function BookingDetailBody({ booking: b }: { booking: BookingDetail }) {
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-6">
       <StatusCallouts booking={b} />
-      <CustomerSection booking={b} />
-      <ServiceSection booking={b} />
+      <Summary booking={b} />
       <PaymentSection booking={b} />
       {b.answers.length > 0 && (
         <PanelSection title="Answers">
@@ -58,7 +57,7 @@ function StatusCallouts({ booking: b }: { booking: BookingDetail }) {
       )}
       {b.status === "held" && b.checkoutUrl && <PaymentLink booking={b} checkoutUrl={b.checkoutUrl} />}
       {b.status === "pending_approval" && (
-        <Callout tone="info" icon={<CalendarClock />}>
+        <Callout tone="warning" icon={<CalendarClock />}>
           This {v("booking")} needs your approval. The {v("customer")} is told once you approve or decline.
         </Callout>
       )}
@@ -76,99 +75,114 @@ function StatusCallouts({ booking: b }: { booking: BookingDetail }) {
   );
 }
 
-/** Name, group, and how to reach them; links to their profile. */
-function CustomerSection({ booking: b }: { booking: BookingDetail }) {
-  const business = useCurrentBusiness();
-  const { v } = useVocabulary();
-  const groups = useCustomerGroups(business.id);
-  const group = groups.data?.find((g) => g.id === (b.groupId ?? b.customer.groupId));
+/** One line of the summary: a label, what it says, and anything to do about it. */
+function SummaryRow({
+  label,
+  action,
+  children,
+}: {
+  label: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <PanelSection
-      title={v("customer", { title: true })}
-      action={
-        <Button asChild variant="link" size="xs" className="text-xs">
-          <Link href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</Link>
-        </Button>
-      }
-    >
-      <div className="flex flex-col gap-1.5 text-sm">
-        {group && (
-          <Badge tone="brand" className="w-fit">
-            {group.name}
-          </Badge>
-        )}
-        {b.customer.email && (
-          <a
-            href={`mailto:${b.customer.email}`}
-            className="flex w-fit items-center gap-2 text-muted-foreground hover:text-foreground pointer-coarse:min-h-11"
-          >
-            <Mail className="size-3.5" aria-hidden /> {b.customer.email}
-          </a>
-        )}
-        {b.customer.phone && (
-          <a
-            href={`tel:${b.customer.phone}`}
-            className="tnum flex w-fit items-center gap-2 text-muted-foreground hover:text-foreground pointer-coarse:min-h-11"
-          >
-            <Phone className="size-3.5" aria-hidden /> {b.customer.phone}
-          </a>
-        )}
-        {!b.customer.email && !b.customer.phone && (
-          <span className="text-muted-foreground">No contact details</span>
-        )}
-      </div>
-    </PanelSection>
+    <div className="flex items-start gap-3 py-2.5">
+      <dt className="w-24 shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">{children}</div>
+        {action}
+      </dd>
+    </div>
   );
 }
 
-/** Service and option, length, add-ons, resources, buffers, and where it was booked. */
-function ServiceSection({ booking: b }: { booking: BookingDetail }) {
+/** Who, what, with whom and how to reach them, on flat rows; then where it was booked. */
+function Summary({ booking: b }: { booking: BookingDetail }) {
+  const business = useCurrentBusiness();
+  const { v } = useVocabulary();
   const fmt = useFmt();
+  const groups = useCustomerGroups(business.id);
+  const group = groups.data?.find((g) => g.id === (b.groupId ?? b.customer.groupId));
   return (
-    <PanelSection title="Service">
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3.5 text-sm dark:bg-surface-raised">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+    <div className="flex flex-col gap-2">
+      <dl className="-mt-2 flex flex-col divide-y divide-border-subtle border-b border-border-subtle text-sm">
+        <SummaryRow label="Service">
+          <span className="flex min-w-0 items-center gap-2">
             <ColorDot color={b.service.color} />
-            <span className="truncate font-medium">
+            <span className="min-w-0 truncate font-medium">
               {b.service.name}
               {b.option && <span className="font-normal text-muted-foreground"> · {b.option.name}</span>}
             </span>
-          </div>
-          <span className="tnum shrink-0 text-muted-foreground">{formatDuration(bookingMinutes(b))}</span>
-        </div>
+            <span className="tnum ml-auto shrink-0 text-muted-foreground">
+              {formatDuration(bookingMinutes(b))}
+            </span>
+          </span>
+          <Buffers before={b.bufferBeforeMinutes} after={b.bufferAfterMinutes} />
+        </SummaryRow>
         {b.addons.length > 0 && (
-          <ul className="flex flex-col gap-1 border-t border-border-subtle pt-2.5">
+          <SummaryRow label="Add-ons">
             {b.addons.map((a) => (
-              <li key={a.id} className="flex justify-between gap-3 text-muted-foreground">
+              <span key={a.id} className="flex justify-between gap-3">
                 <span>
-                  + {a.name}
+                  {a.name}
                   {a.extraMinutes ? ` (${formatDuration(a.extraMinutes)})` : ""}
                 </span>
                 <span className="tnum">{a.priceCents ? fmt.money(a.priceCents, { signed: true }) : ""}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        {b.resources.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 border-t border-border-subtle pt-2.5">
-            {b.resources.map((r) => (
-              <span
-                key={r.id}
-                className="inline-flex h-6 items-center gap-1.5 rounded-md bg-muted px-2 text-xs text-muted-foreground"
-              >
-                <ResourceKindIcon kind={r.kind} />
-                {r.name}
               </span>
             ))}
-          </div>
+          </SummaryRow>
         )}
-        <Buffers before={b.bufferBeforeMinutes} after={b.bufferAfterMinutes} />
-      </div>
+        {b.resources.length > 0 && (
+          <SummaryRow label="With">
+            <span className="flex flex-wrap gap-x-3 gap-y-1">
+              {b.resources.map((r) => (
+                <span key={r.id} className="inline-flex items-center gap-1.5">
+                  <ResourceKindIcon kind={r.kind} className="size-3.5 text-subtle-foreground" />
+                  {r.name}
+                </span>
+              ))}
+            </span>
+          </SummaryRow>
+        )}
+        <SummaryRow
+          label={v("customer", { title: true })}
+          action={
+            <Button asChild variant="link" size="xs" className="text-xs">
+              <Link href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</Link>
+            </Button>
+          }
+        >
+          {group && (
+            <Badge tone="brand" className="w-fit">
+              {group.name}
+            </Badge>
+          )}
+          {b.customer.email && (
+            <a
+              href={`mailto:${b.customer.email}`}
+              className="flex min-w-0 items-center gap-2 hover:text-muted-foreground pointer-coarse:min-h-11"
+            >
+              <Mail className="size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
+              <span className="min-w-0 truncate">{b.customer.email}</span>
+            </a>
+          )}
+          {b.customer.phone && (
+            <a
+              href={`tel:${b.customer.phone}`}
+              className="tnum flex w-fit items-center gap-2 hover:text-muted-foreground pointer-coarse:min-h-11"
+            >
+              <Phone className="size-3.5 text-subtle-foreground" aria-hidden /> {b.customer.phone}
+            </a>
+          )}
+          {!b.customer.email && !b.customer.phone && (
+            <span className="text-muted-foreground">No contact details</span>
+          )}
+        </SummaryRow>
+      </dl>
       <p className="text-xs text-subtle-foreground">
         Booked via {SOURCE_LABEL[b.source].toLowerCase()} on {fmt.dateTime(b.createdAt)}
       </p>
-    </PanelSection>
+    </div>
   );
 }
 
