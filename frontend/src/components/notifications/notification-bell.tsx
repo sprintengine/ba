@@ -78,8 +78,7 @@ export function NotificationBell({
             className={cn("relative", className)}
           >
             <Bell strokeWidth={1.75} />
-            <span>Alerts</span>
-            {badge}
+            <span>Alerts</span> {badge}
           </button>
         ) : variant === "row" ? (
           <button type="button" aria-label={label} className={cn("relative", className)}>
