@@ -12,14 +12,16 @@ import {
   linesFor,
   serviceTint,
   StatusWord,
-  STUCK,
+  CARD_TEXT,
+  STUCK_DETAIL,
+  STUCK_NAME,
   type Position,
 } from "./event-card";
 
 export type CalendarEvent = PositionedEvent<SessionEntry<Booking>>;
 
 const HATCH = (color: string) =>
-  `repeating-linear-gradient(135deg, color-mix(in oklab, ${color} 24%, transparent) 0 1px, transparent 1px 7px)`;
+  `repeating-linear-gradient(135deg, color-mix(in oklab, ${color} var(--event-hatch), transparent) 0 1px, transparent 1px 7px)`;
 
 /** A booking (or a session of several) on the grid: its buffers (hatched), and the block, clipped to the visible hours. */
 export function EventBlock({
@@ -229,28 +231,28 @@ function EventButton({
         ...(waiting || cancelled || noShow ? {} : serviceTint(b.service.color, tint)),
       }}
     >
-      <span className={STUCK}>
+      <span className={CARD_TEXT}>
         <span
           className={cn(
+            STUCK_NAME,
             "flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
             (cancelled || noShow) &&
               "font-medium text-muted-foreground line-through decoration-foreground/40",
           )}
         >
-          {/* Only one line: the time goes with the name, unless the card is too narrow for both. */}
+          {/* Only one line: the time goes first, and the name takes what is left. */}
           {lines === 1 && (
-            <span className="tnum shrink-0 font-medium text-muted-foreground @max-[8rem]:sr-only">
-              {formatTime(b.start)}
-            </span>
+            <span className="tnum shrink-0 font-medium text-muted-foreground">{formatTime(b.start)}</span>
           )}
           <span className="truncate">{b.customer.name}</span>
         </span>
         {detailRows({ booking: b, lines, compact, status, place, time, start: formatTime(b.start) }).map(
-          (row) => (
+          (row, i) => (
             <span
               key={row.text}
               className={cn(
                 "block truncate text-xs leading-[1.0625rem]",
+                i === 0 && STUCK_DETAIL,
                 row.kind === "detail" && "text-muted-foreground",
                 row.kind === "place" && "font-medium text-foreground",
               )}

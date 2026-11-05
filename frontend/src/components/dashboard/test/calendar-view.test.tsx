@@ -153,7 +153,7 @@ describe("CalendarView", () => {
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&cancelled=1`);
     await user.click(screen.getByRole("button", { name: /^Filter by therapist/ }));
     await user.click(await screen.findByRole("checkbox", { name: /Jo Park/ }));
-    expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r2`);
+    expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r1`);
     await user.click(screen.getByRole("button", { name: /new appointment/i }));
     expect(actions.openNewBooking).toHaveBeenCalledWith({ date: "2099-10-01", resourceId: undefined });
   });

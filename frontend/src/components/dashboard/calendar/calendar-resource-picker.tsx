@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SearchInput } from "@/components/ui/search-input";
-import { ColorDot } from "../common";
+import { ResourceKindIcon } from "../common";
 
 /** A saved set of resources, kept on this device. */
 type SavedGroup = { name: string; ids: string[] };
@@ -77,7 +77,8 @@ export function CalendarResourcePicker({
 
   const choose = (next: ResourceChoice) => onChoose(resourceChoiceParam(next));
   const toggle = (id: string) => {
-    const current = choice.type === "ids" ? choice.ids : [];
+    // Starting from what is showing, so unticking one person from "All people" keeps the rest.
+    const current = shown.map((r) => r.id);
     const ids = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
     choose({ type: "ids", ids });
   };
@@ -167,14 +168,20 @@ export function CalendarResourcePicker({
             </>
           )}
           {matches.map((r) => {
-            const checked = choice.type === "ids" && choice.ids.includes(r.id);
+            const checked = shown.some((x) => x.id === r.id);
             return (
               <label
                 key={r.id}
                 className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent pointer-coarse:min-h-11"
               >
                 <Checkbox checked={checked} onCheckedChange={() => toggle(r.id)} />
-                <ColorDot color={r.color} />
+                <span
+                  aria-hidden
+                  className="flex size-5 shrink-0 items-center justify-center rounded text-white"
+                  style={{ backgroundColor: r.color }}
+                >
+                  <ResourceKindIcon kind={r.kind} className="size-3" />
+                </span>
                 <span className="min-w-0 truncate">{r.name}</span>
               </label>
             );

@@ -21,8 +21,13 @@ export const serviceTint = (color: string, tint = "var(--event-tint)"): React.CS
   borderColor: `color-mix(in oklab, ${color} 28%, var(--border))`,
 });
 
-/** Its text stays in view while the card is scrolled: a long booking that began above still says who it is. */
-export const STUCK = "sticky top-[calc(var(--calendar-top,0px)+0.25rem)] block w-full px-2 py-1";
+/**
+ * The card's text. Its name and first detail stay in view while it is scrolled, so a long booking that began above
+ * still says who and when; near the card's end the detail slides under the name, which goes last.
+ */
+export const CARD_TEXT = "block w-full flex-1 bg-inherit px-2 py-1";
+export const STUCK_NAME = "sticky top-(--calendar-top,0px) z-[2] -mt-1 bg-inherit pt-1";
+export const STUCK_DETAIL = "sticky top-[calc(var(--calendar-top,0px)+1.3125rem)] z-[1] bg-inherit";
 
 /** How many lines of text a card this tall holds. */
 export const linesFor = (h: number) => Math.max(1, Math.floor((h - 8) / 17));

@@ -133,14 +133,16 @@ function DayHeader({
       >
         {Number(date.slice(8))}
       </span>
-      <span className={cn("text-sm font-medium", isToday ? "text-brand" : "text-muted-foreground")}>
-        {fmt.date(date, "weekday")}
-      </span>
-      {count > 0 && (
-        <span className="tnum ml-auto text-xs whitespace-nowrap text-muted-foreground @max-[30rem]:hidden">
-          {count} booked
+      <span className="flex min-w-0 flex-col">
+        <span
+          className={cn("text-sm leading-5 font-medium", isToday ? "text-brand" : "text-muted-foreground")}
+        >
+          {fmt.date(date, "weekday")}
         </span>
-      )}
+        <span className="tnum text-xs leading-4 whitespace-nowrap text-muted-foreground">
+          {count > 0 ? `${count} booked` : "\u00a0"}
+        </span>
+      </span>
     </button>
   );
 }

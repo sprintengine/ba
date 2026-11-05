@@ -14,7 +14,9 @@ import {
   linesFor,
   serviceTint,
   StatusWord,
-  STUCK,
+  CARD_TEXT,
+  STUCK_DETAIL,
+  STUCK_NAME,
   TONE_DOT,
   type Position,
 } from "./event-card";
@@ -59,15 +61,25 @@ export function SessionButton({
           )}
           style={{ ...pos, top, height: h, ...(waiting ? {} : serviceTint(first.service.color)) }}
         >
-          <span className={STUCK}>
-            <span className="flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground">
+          <span className={CARD_TEXT}>
+            <span
+              className={cn(
+                STUCK_NAME,
+                "flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
+              )}
+            >
               <span className="truncate">{first.service.name}</span>
               {lines === 1 && (
                 <span className="tnum shrink-0 font-medium text-muted-foreground">{active.length}</span>
               )}
             </span>
             {lines >= 2 && (
-              <span className="block truncate text-xs leading-[1.0625rem] text-muted-foreground">
+              <span
+                className={cn(
+                  STUCK_DETAIL,
+                  "block truncate text-xs leading-[1.0625rem] text-muted-foreground",
+                )}
+              >
                 <span className="tnum">{time}</span> · <span className="tnum">{count}</span>
               </span>
             )}
@@ -84,7 +96,12 @@ export function SessionButton({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label={`${first.service.name}, ${time}`} className="w-72 p-1.5">
+      <PopoverContent
+        side="right"
+        align="start"
+        aria-label={`${first.service.name}, ${time}`}
+        className="w-72 p-1.5"
+      >
         <p className="px-2 pt-1.5 pb-1 text-sm font-medium">
           {first.service.name} <span className="tnum font-normal text-muted-foreground">· {time}</span>
         </p>
@@ -139,7 +156,7 @@ export function OverflowMarker({
           className={cn(
             CARD,
             CARD_RAISED,
-            "@container border-border bg-muted px-2 py-1 text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
+            "@container border-border-strong bg-surface-raised px-2 py-1 text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
           )}
           style={{
             ...lanePosition(overflow.lane, overflow.lanes),
@@ -162,7 +179,12 @@ export function OverflowMarker({
           {!whole && <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-label={title} className="max-h-96 w-72 overflow-y-auto p-1.5">
+      <PopoverContent
+        side="right"
+        align="start"
+        aria-label={title}
+        className="max-h-96 w-72 overflow-y-auto p-1.5"
+      >
         <p className="px-2 pt-1.5 pb-1.5 text-sm font-medium">{title}</p>
         <BookingList bookings={bookings} formatTime={formatTime} onSelect={onSelect} showTime />
       </PopoverContent>
