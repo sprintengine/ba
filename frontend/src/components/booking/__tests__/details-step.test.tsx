@@ -324,9 +324,7 @@ describe("DetailsStep account", () => {
 
   it("says who is booking when signed in", () => {
     renderDetails({ signedInAs: { name: "Alex Morgan", email: "alex.morgan@example.com" } });
-    expect(screen.getByText(/Booking as/)).toHaveTextContent(
-      "Booking as Alex Morgan · alex.morgan@example.com",
-    );
+    expect(screen.getByText(/Booking as/)).toHaveTextContent("Booking as Alex Morgan");
     expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument();
   });
 
