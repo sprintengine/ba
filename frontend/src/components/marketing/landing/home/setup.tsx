@@ -1,5 +1,4 @@
 import { Sparkles } from "lucide-react";
-import { Avatar } from "@/components/ui/avatar";
 import { PrismContainer, PrismHeading } from "../heading";
 
 const DRAFT: { label: string; value: string }[] = [
@@ -50,11 +49,6 @@ export function SetupSection() {
                 </div>
               ))}
             </dl>
-            <div className="mt-5 flex items-center" aria-hidden>
-              {["Aoife Byrne", "Sam Rivers"].map((n) => (
-                <Avatar key={n} name={n} className="-mr-1.5 ring-2 ring-surface" />
-              ))}
-            </div>
           </div>
         </div>
         <ul className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">

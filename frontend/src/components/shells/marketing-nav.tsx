@@ -20,7 +20,7 @@ const LINKS = [
 
 /** The floating pill: glass that the page scrolls under. Desktop shows links; phones and tablets get the menu. */
 const PILL =
-  "glass-chrome flex h-14 [--glass-chrome-bg:rgb(250_250_250/0.9)] w-full max-w-[70rem] items-center gap-3 rounded-[18px] pr-2 pl-[1.125rem] max-[760px]:h-[3.25rem] max-[760px]:rounded-2xl max-[760px]:pr-1.5 max-[760px]:pl-3.5";
+  "glass-chrome flex h-14 [--glass-chrome-bg:rgb(250_250_250/0.96)] w-full max-w-[70rem] items-center gap-3 rounded-[18px] pr-2 pl-[1.125rem] max-[760px]:h-[3.25rem] max-[760px]:rounded-2xl max-[760px]:pr-1.5 max-[760px]:pl-3.5";
 
 function HomeLink({ onClick }: { onClick?: () => void }) {
   return (
