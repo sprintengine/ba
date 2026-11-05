@@ -32,7 +32,10 @@ export function DealPrice({
   return (
     <span className={cn("tnum inline-flex flex-wrap items-baseline gap-x-1.5", className)}>
       <span className="sr-only">{wasNowText(originalCents, priceCents, currency, locale)}</span>
-      <s aria-hidden className={cn("decoration-1", !inverted && "text-muted-foreground")}>
+      <s
+        aria-hidden
+        className={cn("decoration-1", !inverted && "text-muted-foreground decoration-subtle-foreground/50")}
+      >
         {formatPrice(originalCents, currency, { locale })}
       </s>
       <span aria-hidden className={cn("font-semibold", priceClassName)}>

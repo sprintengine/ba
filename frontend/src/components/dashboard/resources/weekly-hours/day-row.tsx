@@ -147,7 +147,7 @@ function Timeline({
       ref={track}
       data-touch-exempt
       className={cn(
-        "relative h-8 overflow-hidden rounded-md bg-surface-sunken max-sm:col-span-full max-sm:row-start-2",
+        "relative h-8 overflow-hidden rounded-md bg-muted ring-1 ring-border ring-inset max-sm:col-span-full max-sm:row-start-2",
         editable && "cursor-copy",
       )}
       onClick={(e) => {

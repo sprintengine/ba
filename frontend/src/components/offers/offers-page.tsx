@@ -97,7 +97,8 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
             description={`Turn empty slots into ${v("bookings")}.`}
             action={newButton}
           />
-          <ul className="grid gap-3 border-t border-border-subtle px-5 py-5 sm:grid-cols-3">
+          <h3 className="text-sm font-medium">Offers people often start with</h3>
+          <ul className="-mt-3 grid gap-3 sm:grid-cols-3">
             <Idea icon={<Clock3 />} title="Off-peak" text="e.g. 20% off Tuesday and Wednesday afternoons." />
             <Idea
               icon={<Hourglass />}
@@ -134,10 +135,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
 function Idea({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
     <li className="flex gap-3">
-      <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-soft-foreground [&_svg]:size-4"
-        aria-hidden
-      >
+      <span className="mt-0.5 shrink-0 text-subtle-foreground [&_svg]:size-4" aria-hidden>
         {icon}
       </span>
       <span className="flex flex-col gap-0.5">

@@ -55,9 +55,9 @@ describe("TimeOff", () => {
     const list = await screen.findByRole("list");
     const items = within(list).getAllByRole("listitem");
     expect(items.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/12 Oct 2026Day offAll day$/),
-      expect.stringMatching(/12 Oct 2026Unavailable10:00–12:00 · Dentist$/),
-      expect.stringMatching(/20 Oct 2026Extra hours18:00–20:00$/),
+      expect.stringMatching(/12 Oct 2026Day offAll day(Remove)?$/),
+      expect.stringMatching(/12 Oct 2026Unavailable10:00–12:00 · Dentist(Remove)?$/),
+      expect.stringMatching(/20 Oct 2026Extra hours18:00–20:00(Remove)?$/),
     ]);
     expect(screen.queryByText(/Old/)).not.toBeInTheDocument();
     await expectNoAxeViolations(container);

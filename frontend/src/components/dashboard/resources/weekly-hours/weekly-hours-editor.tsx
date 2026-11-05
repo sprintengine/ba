@@ -136,6 +136,12 @@ export function WeeklyHoursEditor({
         </div>
       ) : null}
 
+      {editable && (
+        <p className="text-xs text-muted-foreground pointer-coarse:hidden">
+          Drag the end of a bar to change it, or click an empty part of a day to add hours.
+        </p>
+      )}
+
       <WeekTimeline
         week={active.days}
         groups={activeGroups}
