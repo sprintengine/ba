@@ -227,7 +227,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-xs leading-4 text-muted-foreground">{label}</span>
-      <span className="tnum text-base font-semibold tracking-tight sm:text-lg">{value}</span>
+      <span className="tnum text-sm font-semibold tracking-tight whitespace-nowrap sm:text-lg">{value}</span>
     </div>
   );
 }

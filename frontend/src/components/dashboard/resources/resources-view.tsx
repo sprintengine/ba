@@ -53,9 +53,7 @@ export function ResourcesView() {
   };
   const select = (id: string) => setParams({ r: id });
 
-  // The default word doesn't stretch to rooms and equipment; a word the business chose stands.
-  const word = v("resource");
-  const addLabel = word.toLowerCase() === "staff member" ? "Add person or room" : `Add ${word}`;
+  const addLabel = addResourceLabel(v("resource"));
   const single = list.length < 2 && !perms.manageResources;
 
   return (
@@ -114,47 +112,48 @@ export function ResourcesView() {
         <div className="flex flex-col gap-10">
           <div className={cn("grid items-start gap-6", !single && "lg:grid-cols-[18rem_minmax(0,1fr)]")}>
             {/* With only one, there is nothing to pick: the panel says who it is. */}
-            <nav
-              aria-label={v("resources", { title: true })}
-              hidden={single}
-              className="flex flex-wrap gap-1.5 lg:flex-col"
-            >
-              {list.map((r) => {
-                const active = selected?.id === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => select(r.id)}
-                    aria-current={active ? "true" : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0 lg:py-2.5",
-                      active ? "border-transparent bg-accent" : "border-transparent hover:bg-accent/60",
-                      !r.isActive && "opacity-60",
-                    )}
-                  >
-                    <span
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                      style={resourceTile(r.color)}
+            {!single && (
+              <nav
+                aria-label={v("resources", { title: true })}
+                className="flex flex-wrap gap-1.5 lg:flex-col"
+              >
+                {list.map((r) => {
+                  const active = selected?.id === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => select(r.id)}
+                      aria-current={active ? "true" : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0 lg:py-2.5",
+                        active ? "border-transparent bg-accent" : "border-transparent hover:bg-accent/60",
+                        !r.isActive && "opacity-60",
+                      )}
                     >
-                      <ResourceKindIcon kind={r.kind} className="size-4" />
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-medium">{r.name}</span>
-                      <span className="truncate text-xs text-muted-foreground max-lg:hidden">
-                        {!r.isActive
-                          ? "Inactive"
-                          : r.kind === "person"
-                            ? memberName(r.memberId)
-                              ? `Linked to ${memberName(r.memberId)}`
-                              : "Not linked"
-                            : `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`}
+                      <span
+                        className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+                        style={resourceTile(r.color)}
+                      >
+                        <ResourceKindIcon kind={r.kind} className="size-4" />
                       </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate text-sm font-medium">{r.name}</span>
+                        <span className="truncate text-xs text-muted-foreground max-lg:hidden">
+                          {!r.isActive
+                            ? "Inactive"
+                            : r.kind === "person"
+                              ? memberName(r.memberId)
+                                ? `Linked to ${memberName(r.memberId)}`
+                                : "Not linked"
+                              : `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
             {selected && (
               <ResourcePanel
                 key={selected.id}
@@ -182,6 +181,10 @@ export function ResourcesView() {
     </PageContainer>
   );
 }
+
+/** The default word doesn't stretch to rooms and equipment; a word the business chose stands. */
+const addResourceLabel = (word: string) =>
+  word.toLowerCase() === "staff member" ? "Add person or room" : `Add ${word}`;
 
 function ResourcePanel({
   resource,

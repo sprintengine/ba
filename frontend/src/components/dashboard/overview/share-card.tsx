@@ -25,7 +25,7 @@ export function ShareCard() {
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2} className="flex items-center gap-2">
-          Your booking page
+          Booking page
           {draft ? (
             <Badge tone="warning">Draft</Badge>
           ) : (

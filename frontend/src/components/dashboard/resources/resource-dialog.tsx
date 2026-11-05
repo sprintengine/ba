@@ -69,7 +69,7 @@ export function ResourceDialog({
       returnFocusTo={returnFocusTo}
       form={form}
       title={resource ? `Edit ${resource.name}` : `Add a ${v("resource")}`}
-      description="A person, room or piece of equipment that services need."
+      description={resource ? undefined : "A person, room or piece of equipment that services need."}
       submitLabel={resource ? "Save changes" : "Add"}
       footerStart={
         resource ? (

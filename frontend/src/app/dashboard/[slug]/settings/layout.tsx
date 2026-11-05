@@ -34,7 +34,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">
         <nav
           aria-label="Settings"
-          className="-mx-1 flex snap-x snap-mandatory scroll-pl-1 scrollbar-none gap-1 overflow-x-auto px-1 max-lg:[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] max-lg:pr-10 lg:sticky lg:top-8 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:self-start lg:px-0"
+          className="-mx-1 flex snap-x snap-mandatory scroll-pl-6 scrollbar-none gap-1 overflow-x-auto px-1 max-lg:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-2.5rem),transparent)] max-lg:pr-10 lg:sticky lg:top-8 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:self-start lg:px-0"
         >
           {items.map((item) => {
             const href = dashboardHref(business.slug, `settings/${item.segment}`);
