@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
 import { minutesToTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -12,12 +11,13 @@ import {
   serviceTint,
 } from "@/components/dashboard/calendar/event-card";
 import { BookingPhone } from "./booking-phone";
-import { CALENDAR_HOUR_PX, CALENDAR_HOUR_PX_PHONE, CalendarPane, fitHourPx } from "./calendar-pane";
+import { CalendarPane, fitCalendar } from "./calendar-pane";
 import { CLIENT, FIRST_HOUR, NOW_MINUTES, TEAM, type DemoEntry } from "./fixture";
 import { IPhone } from "./iphone";
 import { drawThread, flight, THREAD_GRADIENT_STOPS, type FlightPath } from "./flight";
-import { SCENE_CALENDAR, SCENE_GRID, SceneToggle } from "./scene-parts";
+import { CalendarNotice, SCENE_CALENDAR, SCENE_GRID, SceneToggle } from "./scene-parts";
 import { useBookingDemo } from "./use-booking-demo";
+import { useSize } from "./use-size";
 
 /** The time on the phone: the same afternoon as the calendar's now line. */
 const PHONE_TIME = minutesToTime(NOW_MINUTES);
@@ -29,18 +29,6 @@ const endOf = (e: DemoEntry) => {
 };
 
 type Flying = { entry: DemoEntry; box: { left: number; top: number; width: number; height: number } };
-
-function useSize(ref: React.RefObject<HTMLElement | null>) {
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setSize({ width: el.clientWidth, height: el.clientHeight }));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref]);
-  return size;
-}
 
 /** The booking as the calendar draws it, on its way there. */
 function Ticket({ flying, ref }: { flying: Flying; ref: React.Ref<HTMLDivElement> }) {
@@ -87,10 +75,8 @@ export function BookedScene() {
   const [visible, setVisible] = useState(false);
   const land = useRef<() => void>(() => undefined);
   const { width, height } = useSize(calendar);
-  const phone = width > 0 && width < 560;
-  const columns = width >= 760 ? 3 : width >= 560 ? 2 : 1;
-  // The afternoon always fills the window, to scale, however tall the phone beside it is.
-  const hourPx = phone ? CALENDAR_HOUR_PX_PHONE : Math.min(CALENDAR_HOUR_PX, fitHourPx(height));
+  const fit = fitCalendar(width, height);
+  const { hourPx } = fit;
 
   useEffect(() => {
     const el = root.current;
@@ -193,28 +179,12 @@ export function BookedScene() {
             "relative flex min-w-0 overflow-hidden rounded-2xl bg-background shadow-[0_40px_80px_-40px_rgb(0_0_0/0.3)] ring-1 ring-border",
           )}
         >
-          <CalendarPane
-            date={demo.date}
-            entries={demo.entries}
-            columns={columns}
-            phone={phone}
-            hourPx={hourPx}
-            narrow={width > 0 && width < 760}
-          />
+          <CalendarPane date={demo.date} entries={demo.entries} {...fit} />
           {notice && (
-            <div className="absolute right-3 bottom-10 z-50 flex animate-pop-in items-center gap-2.5 rounded-xl bg-surface-raised px-3 py-2.5 text-sm shadow-lg ring-1 ring-border max-sm:bottom-3">
-              <span className="grid size-6 place-items-center rounded-full bg-success-soft text-success-soft-foreground">
-                <Check className="size-3.5" />
-              </span>
-              <span>
-                <span className="block font-semibold">
-                  New booking, paid €{notice.service.priceCents / 100}
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  {notice.customer}, {notice.at}
-                </span>
-              </span>
-            </div>
+            <CalendarNotice
+              title={`New booking, paid €${String(notice.service.priceCents / 100)}`}
+              detail={`${notice.customer}, ${notice.at}`}
+            />
           )}
         </div>
         {path && (

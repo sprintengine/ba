@@ -196,7 +196,13 @@ export function BookingPhone({ demo, entries }: { demo: BookingDemo; entries: De
             {LUMEN.name}
           </span>
         </div>
-        <div className="flex min-h-0 flex-1 scrollbar-none flex-col gap-5 overflow-y-auto px-5 py-5">
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 scrollbar-none flex-col gap-5 overflow-y-auto px-5 py-5",
+            step === "review" &&
+              "[mask-image:linear-gradient(180deg,black_calc(100%-3rem),transparent)] pb-12",
+          )}
+        >
           {!done && !paying && <StepProgress index={Math.max(stepIndex, 0)} total={STEPS.length} />}
           {step === "service" && (
             <>

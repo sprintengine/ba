@@ -90,7 +90,7 @@ export function useBookingDemo({
       if (!who) return;
       const entry = { who, at: time, customer: CLIENT.name, service, room: roomFor(who) };
       onPaid(entry, () => setBooked((b) => [...b, entry]));
-    }, 900);
+    }, 500);
     return () => window.clearTimeout(id);
   }, [paying, service, time, entries, onPaid]);
 

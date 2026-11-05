@@ -4,7 +4,9 @@ import { BUSINESS_AI_HELP_PATH } from "@/lib/oauth/app-url";
 import { PrismContainer, PrismHeading } from "../heading";
 import { AiScene } from "./ai-scene";
 
-const OWNER = [
+type Point = { title: string; body: string };
+
+const OWNER: Point[] = [
   {
     title: "Run the whole business by asking",
     body: "Move bookings, change your hours, add a service, see who hasn't paid. If you can do it in the app, your assistant can do it for you.",
@@ -18,7 +20,7 @@ const OWNER = [
     body: "Your assistant asks before it changes anything, until you tell it not to.",
   },
 ];
-const CUSTOMER = [
+const CUSTOMER: Point[] = [
   {
     title: "Clients can book through their AI too",
     body: "They ask their own assistant for a time with you, and it books it.",
@@ -33,33 +35,21 @@ const CUSTOMER = [
   },
 ];
 
-/** The chores an owner hands over, in the owner's words. */
-const ASKS = ["Who hasn't paid this week?", "Close the 24th and tell everyone", "Add a Saturday class"];
-
-function Points({ points, asks }: { points: { title: string; body: string }[]; asks?: string[] }) {
+/** The first point leads, at reading size; the others sit beside it. */
+function Points({ points }: { points: Point[] }) {
   return (
-    <>
-      <ul className="flex flex-col gap-5">
-        {points.map((p) => (
-          <li key={p.title}>
-            <h3 className="text-base font-semibold tracking-tight">{p.title}</h3>
-            <p className="mt-1 text-[0.9375rem] leading-[1.5] text-muted-foreground">{p.body}</p>
-          </li>
-        ))}
-      </ul>
-      {asks && (
-        <ul className="mt-6 flex flex-wrap gap-2">
-          {asks.map((a) => (
-            <li
-              key={a}
-              className="rounded-full bg-surface px-3.5 py-2 text-sm font-medium ring-1 ring-border"
-            >
-              “{a}”
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
+    <ul className="grid gap-x-10 gap-y-5 lg:grid-cols-3">
+      {points.map((p, i) => (
+        <li key={p.title}>
+          {i === 0 ? (
+            <h3 className="text-xl leading-tight font-semibold tracking-tight">{p.title}</h3>
+          ) : (
+            <h4 className="text-base font-semibold tracking-tight">{p.title}</h4>
+          )}
+          <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground">{p.body}</p>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -67,23 +57,16 @@ function Points({ points, asks }: { points: { title: string; body: string }[]; a
 export function AiSection() {
   return (
     <section id="ai" aria-labelledby="ai-title" className="scroll-mt-24 bg-surface-sunken py-20 sm:py-28">
-      <PrismContainer className="max-w-[80rem]">
+      <PrismContainer>
         <AiScene
           heading={
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
-              <PrismHeading
-                id="ai-title"
-                align="left"
-                className="max-w-none"
-                label="AI"
-                title="Use the AI you already have."
-                lit="Ask it to run your business."
-              />
-              <p className="text-base leading-[1.6] text-muted-foreground sm:text-lg lg:pb-1">
-                Connect ChatGPT, Claude, Grok or any other assistant, included on every plan. Your clients can
-                book through their own assistants too.
-              </p>
-            </div>
+            <PrismHeading
+              id="ai-title"
+              label="AI"
+              title="Use the AI you already have."
+              lit="Ask it to run your business."
+              lead="Connect ChatGPT, Claude, Grok or any other assistant, included on every plan. Your clients can book through their own assistants too."
+            />
           }
           footer={
             <Link
@@ -95,7 +78,7 @@ export function AiSection() {
             </Link>
           }
         >
-          {{ owner: <Points points={OWNER} asks={ASKS} />, customer: <Points points={CUSTOMER} /> }}
+          {{ owner: <Points points={OWNER} />, customer: <Points points={CUSTOMER} /> }}
         </AiScene>
       </PrismContainer>
     </section>

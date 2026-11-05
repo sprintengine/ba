@@ -89,7 +89,7 @@ export function OwnerChat({ step }: { step: number }) {
     },
   ];
   return (
-    <Chrome title="Assistant">
+    <Chrome title="Your assistant">
       <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden px-4 pt-3 text-sm leading-6">
         <Mine>Who hasn&apos;t paid this week?</Mine>
         <p>Everyone but Jo Hayes. €70 is due for Thursday.</p>
@@ -125,7 +125,7 @@ export function OwnerChat({ step }: { step: number }) {
 /** A client's phone: their own assistant, whichever it is, booking and paying with Lumen in the chat. */
 export function ClientChat({ step }: { step: number }) {
   return (
-    <Chrome title="Assistant">
+    <Chrome title="Their assistant">
       <div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden px-4 pt-3 text-sm leading-6">
         <Mine>Is there a physio near Lantern Quay I can book online?</Mine>
         <p>Lumen Physiotherapy, Unit 4, Lantern Quay. They take bookings here in the chat.</p>

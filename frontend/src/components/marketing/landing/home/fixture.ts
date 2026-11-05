@@ -188,6 +188,22 @@ export function whoIsFree(entries: DemoEntry[], chosen: PublicService, time: str
   return free?.id ?? null;
 }
 
+/** Friday afternoon, before and after the owner's assistant moves Sam's bookings to Aoife. */
+export const FRIDAY: DemoEntry[] = [
+  { who: "sam", at: "14:00", customer: "Remy Stroud", service: FOLLOW_UP, room: "Room 1" },
+  { who: "sam", at: "15:00", customer: "Dara Quinn", service: MASSAGE, room: "Room 1" },
+  { who: "sam", at: "16:15", customer: "Jo Hayes", service: ASSESSMENT, room: "Rehab gym" },
+  { who: "aoife", at: "13:00", customer: "Toby Marsh", service: ASSESSMENT, room: "Room 2" },
+  { who: "niamh", at: "13:00", customer: "Mia Doyle", service: MASSAGE, room: "Room 3" },
+  { who: "niamh", at: "14:00", customer: "Liam Hayes", service: ASSESSMENT, room: "Room 3" },
+  { who: "niamh", at: "15:30", customer: "Noor Ali", service: MASSAGE, room: "Room 3" },
+];
+
+export const movedFriday = (): DemoEntry[] =>
+  FRIDAY.map((e) =>
+    e.who === "sam" ? { ...e, who: "aoife", room: e.room === "Room 1" ? "Room 2" : e.room } : e,
+  );
+
 export const dayEntries = (extra: DemoEntry[]) => [...DAY, ...extra];
 
 /** The first minute a client can book on the demo's own day: nothing in the past, nothing inside the notice. */

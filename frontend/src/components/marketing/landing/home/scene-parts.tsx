@@ -1,4 +1,4 @@
-import { Pause, Play } from "lucide-react";
+import { Check, Pause, Play } from "lucide-react";
 import { CARD, CARD_RAISED, CARD_TEXT, serviceTint } from "@/components/dashboard/calendar/event-card";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * shrinks to fit under the heading, and the calendar stays the phone's height.
  */
 export const SCENE_GRID =
-  "relative grid justify-items-center gap-4 [--iphone-scale:0.66] sm:gap-5 sm:[--iphone-scale:0.72] lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:justify-items-stretch lg:gap-6 lg:[--iphone-scale:0.82] xl:gap-12 [@media(min-width:1024px)_and_(max-height:960px)]:[--iphone-scale:0.72]";
+  "relative grid justify-items-center gap-4 [--iphone-scale:0.66] sm:gap-5 sm:[--iphone-scale:0.72] lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center lg:justify-items-stretch lg:gap-6 lg:[--iphone-scale:0.78] [@media(min-width:1024px)_and_(max-height:960px)]:[--iphone-scale:0.72]";
 export const SCENE_CALENDAR = "h-[17rem] w-full sm:h-[45rem] lg:h-[calc(878px*var(--iphone-scale))]";
 
 export type SampleBookingProps = {
@@ -39,6 +39,21 @@ export function SampleBooking({
           {when} · {what}
         </span>
         <span className="block truncate text-[0.8125rem] leading-5 font-medium text-foreground">{via}</span>
+      </span>
+    </div>
+  );
+}
+
+/** What the calendar says when something lands on it. */
+export function CalendarNotice({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="absolute right-3 bottom-10 z-50 flex animate-pop-in items-center gap-2.5 rounded-xl bg-surface-raised px-3 py-2.5 text-sm shadow-lg ring-1 ring-border max-sm:bottom-3">
+      <span className="grid size-6 place-items-center rounded-full bg-success-soft text-success-soft-foreground">
+        <Check className="size-3.5" />
+      </span>
+      <span>
+        <span className="block font-semibold">{title}</span>
+        <span className="block text-xs text-muted-foreground">{detail}</span>
       </span>
     </div>
   );

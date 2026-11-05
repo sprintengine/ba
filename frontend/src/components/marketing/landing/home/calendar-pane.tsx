@@ -52,6 +52,17 @@ const CHROME_PX = 168;
 /** The hour height at which the whole afternoon fits a calendar this tall. */
 export const fitHourPx = (height: number) => Math.floor((height - CHROME_PX) / (LAST_HOUR - FIRST_HOUR));
 
+/** How a calendar this size is laid out: a person per column that fits, and the afternoon filling the height. */
+export function fitCalendar(width: number, height: number) {
+  const phone = width > 0 && width < 560;
+  return {
+    phone,
+    columns: width >= 760 ? 3 : width >= 560 ? 2 : 1,
+    hourPx: phone ? CALENDAR_HOUR_PX_PHONE : Math.min(CALENDAR_HOUR_PX, fitHourPx(height)),
+    narrow: width > 0 && width < 760,
+  };
+}
+
 /** The app's rail, drawn from its own items and classes. */
 function Rail() {
   return (
@@ -186,6 +197,8 @@ export function CalendarPane({
   phone,
   hourPx,
   narrow,
+  nowMinute = NOW_MINUTES,
+  lead,
 }: {
   date: PlainDate;
   entries: DemoEntry[];
@@ -195,19 +208,26 @@ export function CalendarPane({
   hourPx: number;
   /** Too narrow for the toolbar's view and day controls. */
   narrow: boolean;
+  /** The now line, on a day that's today. */
+  nowMinute?: number | null;
+  /** Who a calendar with room for one person shows first. */
+  lead?: string;
 }) {
   const columns = useMemo<Columns>(
     () =>
-      TEAM.slice(0, shown).map((resource) => ({
-        key: resource.id,
-        date,
-        resource,
-        bookings: entries.filter((e) => e.who === resource.id).map((e) => toBooking(e, date)),
-        open: openHours(resource.id),
-        blocked: [],
-        off: null,
-      })),
-    [date, entries, shown],
+      [...TEAM]
+        .sort((a, b) => Number(b.id === lead) - Number(a.id === lead))
+        .slice(0, shown)
+        .map((resource) => ({
+          key: resource.id,
+          date,
+          resource,
+          bookings: entries.filter((e) => e.who === resource.id).map((e) => toBooking(e, date)),
+          open: openHours(resource.id),
+          blocked: [],
+          off: null,
+        })),
+    [date, entries, shown, lead],
   );
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
@@ -224,7 +244,7 @@ export function CalendarPane({
                 startHour={FIRST_HOUR}
                 endHour={LAST_HOUR}
                 formatHour={hour}
-                nowMinute={NOW_MINUTES}
+                nowMinute={nowMinute}
                 hourPx={hourPx}
               />
             </div>
@@ -238,7 +258,7 @@ export function CalendarPane({
                     open={c.open}
                     startHour={FIRST_HOUR}
                     endHour={LAST_HOUR}
-                    nowMinute={NOW_MINUTES}
+                    nowMinute={nowMinute}
                     blocked={c.blocked}
                     formatTime={time}
                     onSelectBooking={noop}

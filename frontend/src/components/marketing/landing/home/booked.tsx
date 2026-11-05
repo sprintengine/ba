@@ -5,7 +5,7 @@ import { BookedSceneLoader } from "./booked-scene-loader";
 export function BookedSection() {
   return (
     <section id="product" aria-labelledby="product-title" className="scroll-mt-20 pt-4 pb-24 sm:pb-32">
-      <PrismContainer className="max-w-[80rem]">
+      <PrismContainer>
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
           <PrismHeading
             id="product-title"
