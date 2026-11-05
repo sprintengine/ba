@@ -13,7 +13,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-/** Step 3: find an existing customer, or switch to entering a new one (prefilled from the search). */
+/** Find an existing customer, or switch to entering a new one (prefilled from the search). */
 export function CustomerFields({ prefill }: { prefill?: NewBookingPrefill["customer"] }) {
   const business = useCurrentBusiness();
   const { v } = useVocabulary();

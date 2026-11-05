@@ -146,7 +146,7 @@ describe("NewBookingSheet", () => {
   it("creates a prefilled booking at an exact time and closes", async () => {
     const calls = api();
     const { onOpenChange } = renderSheet();
-    expect(await screen.findByText(/1 Oct, 10:00/)).toBeInTheDocument();
+    expect((await screen.findAllByText(/1 Oct, 10:00/)).length).toBeGreaterThan(0);
     await submit();
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(toast.success).toHaveBeenCalledWith("Appointment created", expect.anything());
@@ -200,7 +200,7 @@ describe("NewBookingSheet", () => {
       expect(screen.getByRole("button", { name: "Create appointment" })).toBeDisabled();
       fail = false;
       await user.click(screen.getByRole("button", { name: /try again/i }));
-      expect(await screen.findByText(/1 Oct, 10:00/)).toBeInTheDocument();
+      expect((await screen.findAllByText(/1 Oct, 10:00/)).length).toBeGreaterThan(0);
       expect(screen.queryByText("Settings are down")).not.toBeInTheDocument();
     },
   );
@@ -232,7 +232,9 @@ describe("NewBookingSheet", () => {
     );
     await user.click(screen.getByRole("radio", { name: "10:00" }));
     // The footer sums the option and add-ons.
-    expect(screen.getByText(/1 Oct, 10:00/).parentElement).toHaveTextContent(/10:00 · 1 h 15 min · €60$/);
+    expect(screen.getAllByText(/1 Oct, 10:00/).at(-1)?.parentElement).toHaveTextContent(
+      /10:00 · 1 h 15 min · €60$/,
+    );
 
     // 3. Find a customer.
     await user.click(screen.getByRole("combobox", { name: /find a patient/i }));
@@ -249,8 +251,9 @@ describe("NewBookingSheet", () => {
     );
 
     // 4. Questions: the service's and general ones, active only, in order.
+    await user.click(screen.getByRole("button", { name: /^Questions/ }));
     const step4 = within(
-      screen.getByRole("heading", { name: /Questions/ }).closest("section") as HTMLElement,
+      screen.getByRole("button", { name: /^Questions/ }).closest("section") as HTMLElement,
     );
     expect(screen.queryByText("Retired question")).not.toBeInTheDocument();
     expect(screen.queryByText("Other service's question")).not.toBeInTheDocument();
@@ -259,10 +262,11 @@ describe("NewBookingSheet", () => {
     await user.click(await screen.findByRole("option", { name: "Yes" }));
     await user.click(step4.getByRole("switch", { name: "Happy to be contacted" }));
     await user.type(step4.getByRole("textbox", { name: /Injuries/ }), "Sore back");
-    expect(screen.getByRole("heading", { name: /Payment and notes/ })).toHaveTextContent("5");
 
-    // 5. Payment and notes.
+    // Payment and notes.
+    await user.click(screen.getByRole("button", { name: /^Payment/ }));
     await user.click(screen.getByRole("radio", { name: /Online/ }));
+    await user.click(screen.getByRole("button", { name: /^Notes/ }));
     await user.type(screen.getByRole("textbox", { name: /Internal notes/ }), "Regular");
     await submit();
 
@@ -294,6 +298,7 @@ describe("NewBookingSheet", () => {
     await user.click(await screen.findByRole("combobox", { name: "Service" }));
     await user.click(await screen.findByRole("option", { name: /Intro chat/ }));
     expect(screen.getByRole("combobox", { name: "With" })).toHaveTextContent("Sam Rivers");
+    await user.click(screen.getByRole("button", { name: /^Payment/ }));
     expect(screen.getByRole("radio", { name: /No charge/ })).toBeChecked();
     expect(screen.getByRole("radio", { name: /At venue/ })).toBeDisabled();
     await submit();
@@ -329,7 +334,7 @@ describe("NewBookingSheet", () => {
   it("asks for an option when booking a service with options at an exact time", async () => {
     const calls = api(undefined, [massage]);
     renderSheet({ ...prefill, serviceId: "s2" });
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await submit();
     expect(await screen.findByText("Choose an option")).toBeInTheDocument();
     expect(createBody(calls)).toBeUndefined();
@@ -366,7 +371,7 @@ describe("NewBookingSheet", () => {
       json({ error: { code: "PLAN_LIMIT_REACHED", message: "Your plan's monthly limit is used." } }, 402),
     );
     renderSheet();
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await submit();
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Your plan's monthly limit is used. Upgrade in Settings → Billing to keep taking appointments.",
@@ -376,7 +381,7 @@ describe("NewBookingSheet", () => {
   it("explains online payments aren't set up under the payment choice", async () => {
     api(() => json({ error: { code: "PAYMENTS_NOT_CONFIGURED", message: "No payments" } }, 409));
     renderSheet();
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await submit();
     expect(await screen.findByText(/Online payments aren't set up yet/)).toBeInTheDocument();
   });
@@ -385,7 +390,7 @@ describe("NewBookingSheet", () => {
     const calls = api(() => booking());
     const user = userEvent.setup();
     renderSheet({ ...prefill, customer: undefined });
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await user.click(screen.getByRole("combobox", { name: /find a patient/i }));
     await user.click(await screen.findByRole("button", { name: /new patient/i }));
     await user.type(screen.getByRole("textbox", { name: /email/i }), "not-an-email");
@@ -409,7 +414,7 @@ describe("NewBookingSheet", () => {
     api();
     const user = userEvent.setup();
     renderSheet({ ...prefill, customer: undefined });
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await user.click(screen.getByRole("combobox", { name: /find a patient/i }));
     await user.type(await screen.findByPlaceholderText("Name, email or phone…"), "sam@example.test");
     await user.click(await screen.findByRole("button", { name: /new patient: “sam@example.test”/i }));
@@ -439,7 +444,7 @@ describe("NewBookingSheet", () => {
     );
     const user = userEvent.setup();
     renderSheet({ ...prefill, customer: undefined });
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await user.click(screen.getByRole("combobox", { name: /find a patient/i }));
     await user.click(await screen.findByRole("button", { name: /new patient/i }));
     await user.type(screen.getByRole("textbox", { name: /name/i }), "  Sam Lee ");
@@ -479,7 +484,8 @@ describe("NewBookingSheet", () => {
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     const { onOpenChange } = renderSheet(prefill, { onCreated });
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
+    await user.click(screen.getByRole("button", { name: /^Payment/ }));
     await user.click(screen.getByRole("radio", { name: /Online/ }));
     await submit();
 
@@ -506,7 +512,8 @@ describe("NewBookingSheet", () => {
       configurable: true,
     });
     const { onOpenChange } = renderSheet();
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
+    await user.click(screen.getByRole("button", { name: /^Payment/ }));
     await user.click(screen.getByRole("switch", { name: "Email the patient" }));
     await submit();
     expect(await screen.findByText(/Copy the link and send it to the patient/)).toBeInTheDocument();
@@ -520,7 +527,7 @@ describe("NewBookingSheet", () => {
   it("says how long a held booking without a link is kept", async () => {
     api(() => ({ ...booking({ status: "held", paymentStatus: "pending" }), checkoutUrl: null }));
     renderSheet();
-    await screen.findByText(/1 Oct, 10:00/);
+    await screen.findByRole("combobox", { name: /find a patient/i });
     await submit();
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith("Appointment created", {

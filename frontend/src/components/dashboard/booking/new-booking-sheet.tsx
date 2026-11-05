@@ -35,16 +35,14 @@ import { toast } from "@/components/ui/toast";
 import { useFmt } from "../common";
 import { HeldForPayment } from "./held-for-payment";
 import { CustomerFields } from "./new-booking-customer";
-import { PaymentFields } from "./new-booking-payment";
-import { QuestionFields } from "./new-booking-questions";
+import { NewBookingMore } from "./new-booking-more";
 import { ServiceFields } from "./new-booking-service";
-import { Step } from "./new-booking-step";
-import { Summary } from "./new-booking-summary";
+import { Context, Summary } from "./new-booking-summary";
 import { WhenFields } from "./new-booking-when";
 
 type Held = { booking: CreatedBooking; checkoutUrl: string; emailed: boolean };
 
-/** Staff "New booking" sheet: service → option/add-ons → time → customer → questions → payment. */
+/** Staff "New booking" sheet: service, time and customer; the rest stays one line each until it's needed. */
 export function NewBookingSheet({
   open,
   onOpenChange,
@@ -107,11 +105,13 @@ export function NewBookingSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent size="lg" aria-describedby={undefined}>
+      <SheetContent className="sm:max-w-[30rem]" aria-describedby={undefined}>
         <Form form={form} onSubmit={submit} className="flex min-h-0 flex-1 flex-col gap-0">
           <SheetHeader>
             <SheetTitle>New {v("booking")}</SheetTitle>
-            <SheetDescription>Times are in {business.timezone.replace(/_/g, " ")}.</SheetDescription>
+            <SheetDescription>
+              <Context resources={resources.data ?? []} />
+            </SheetDescription>
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             {failed[0] ? (
@@ -141,9 +141,9 @@ export function NewBookingSheet({
               />
             )}
           </div>
-          <SheetFooter className="items-center sm:justify-between">
+          <SheetFooter className="flex-wrap items-center justify-between max-sm:[&>span]:basis-full">
             <Summary service={service} />
-            <div className="flex gap-2">
+            <div className="flex gap-2 max-sm:flex-1 max-sm:[&>button]:flex-1">
               <Button variant="secondary" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
@@ -163,7 +163,7 @@ export function NewBookingSheet({
   );
 }
 
-/** The numbered steps; "Questions" only appears (and shifts the last number) when the service has any. */
+/** The form: what, when and who first; the rest folds to a line each, so a usual booking is a short one. */
 function NewBookingSteps({
   services,
   questions,
@@ -179,27 +179,17 @@ function NewBookingSteps({
   prefill: NewBookingPrefill;
   today: string;
 }) {
-  const { v } = useVocabulary();
   const asked = service ? questionsFor(questions, service.id) : [];
   return (
-    <div className="flex flex-col gap-8">
-      <Step n={1} title="What">
-        <ServiceFields services={services} service={service} />
-      </Step>
-      <Step n={2} title="When">
-        {service ? (
-          <WhenFields service={service} resources={resources} today={today} />
-        ) : (
-          <p className="text-sm text-subtle-foreground">Choose a service to see free times.</p>
-        )}
-      </Step>
-      <Step n={3} title={v("customer", { title: true })}>
-        <CustomerFields prefill={prefill.customer} />
-      </Step>
-      {service && <QuestionFields questions={asked} />}
-      <Step n={asked.length > 0 ? 5 : 4} title="Payment and notes">
-        <PaymentFields service={service} />
-      </Step>
+    <div className="flex flex-col gap-5">
+      <ServiceFields services={services} service={service} />
+      {service ? (
+        <WhenFields service={service} resources={resources} today={today} />
+      ) : (
+        <p className="text-sm text-subtle-foreground">Choose a service to see free times.</p>
+      )}
+      <CustomerFields prefill={prefill.customer} />
+      <NewBookingMore service={service} questions={asked} />
       <FormRootError />
     </div>
   );

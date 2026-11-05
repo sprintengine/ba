@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ColorDot, useFmt } from "../common";
 
-/** Step 1: the service (grouped by category), then its option and add-ons. Changing any of them clears the time. */
+/** The service (grouped by category), then its option and add-ons. Changing any of them clears the time. */
 export function ServiceFields({ services, service }: { services: Service[]; service: Service | undefined }) {
   const fmt = useFmt();
   const form = useFormContext<Values>();

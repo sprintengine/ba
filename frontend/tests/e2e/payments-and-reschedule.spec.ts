@@ -45,6 +45,7 @@ test.describe("payment links and rescheduling", () => {
     await page.getByRole("button", { name: /new customer/i }).click();
     await sheet.getByRole("textbox", { name: "Name", exact: true }).fill(name);
     await sheet.getByRole("textbox", { name: /^Email/ }).fill(`morgan+${Date.now()}@example.test`);
+    await sheet.getByRole("button", { name: /^payment/i }).click();
     await sheet.getByRole("radio", { name: /^online/i }).click();
     await sheet.getByRole("button", { name: /create booking/i }).click();
 
