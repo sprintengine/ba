@@ -76,7 +76,7 @@ export function HeroBookings() {
         target={target}
         paused={paused}
         onArrive={onArrive}
-        className="inset-0 -z-10 [mask-image:linear-gradient(180deg,transparent_40%,black_62%)] lg:[mask-image:linear-gradient(90deg,transparent_22%,black_52%)]"
+        className="inset-0 -z-10 [mask-image:linear-gradient(180deg,transparent_40%,black_62%)] lg:[mask-image:linear-gradient(90deg,transparent_58%,black_72%)] xl:[mask-image:linear-gradient(90deg,transparent_22%,black_52%)]"
       />
       <div className="flex flex-col gap-3">
         <div aria-hidden className="relative h-[16.5rem] w-full" inert>

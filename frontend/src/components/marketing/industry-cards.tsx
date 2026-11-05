@@ -35,7 +35,7 @@ export function IndustryCards({
       <div
         className={cn(
           "grid gap-4 sm:grid-cols-2",
-          list.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
+          list.length === 4 ? "xl:grid-cols-4" : "lg:grid-cols-3",
           swipe &&
             "max-sm:-mx-4 max-sm:flex max-sm:snap-x max-sm:snap-mandatory max-sm:scroll-px-4 max-sm:scrollbar-none max-sm:overflow-x-auto max-sm:px-4 max-sm:*:w-[82%] max-sm:*:shrink-0 max-sm:*:snap-start",
         )}
