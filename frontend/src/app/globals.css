@@ -349,7 +349,7 @@
     #ffbf9c,
     rgba(255, 255, 255, 0.95)
   );
-  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fcfbf8 0%, #f4f4f4 55%, #e9e4d8 100%);
+  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fcfcfc 0%, #f4f4f4 55%, #e6e6e6 100%);
 
   /* ---- glass recipes (light). Use: background: var(--glass-bg); backdrop-filter: var(--glass-backdrop);
      border: 1px solid var(--glass-border); box-shadow: var(--glass-highlight), var(--glass-shadow); */
@@ -362,7 +362,7 @@
     0 0 0 0.5px rgba(17, 17, 17, 0.08), 0 8px 16px -10px rgba(17, 17, 17, 0.14),
     0 28px 48px -28px rgba(17, 17, 17, 0.32);
   --glass-surface-backdrop: blur(var(--glass-surface-blur)) saturate(var(--glass-surface-saturate));
-  --glass-chrome-bg: rgba(251, 250, 246, 0.62);
+  --glass-chrome-bg: rgba(250, 250, 250, 0.62);
   --glass-chrome-blur: 20px;
   --glass-chrome-saturate: 1.6;
   --glass-chrome-border: rgba(255, 255, 255, 0.9);

@@ -1,23 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
-import { AgentsSection } from "@/components/marketing/landing/agents";
-import { AiSetupSection } from "@/components/marketing/landing/ai-setup";
-import { ClientSideSection } from "@/components/marketing/landing/client-side";
-import { FeaturesSection } from "@/components/marketing/landing/features";
 import { PrismContainer } from "@/components/marketing/landing/heading";
+import { AiSection } from "@/components/marketing/landing/home/ai";
+import { BookedSection } from "@/components/marketing/landing/home/booked";
+import { ClosingSection } from "@/components/marketing/landing/home/closing";
+import { Hero } from "@/components/marketing/landing/home/hero";
+import { SetupSection } from "@/components/marketing/landing/home/setup";
 import { IndustriesSection } from "@/components/marketing/landing/industries";
-import { PaymentsSection } from "@/components/marketing/landing/payments";
 import { PricingTeaser } from "@/components/marketing/landing/pricing-teaser";
-import { SlabFaces } from "@/components/marketing/landing/prism/faces";
-import { PrismStory } from "@/components/marketing/landing/prism/prism-story";
-import { StoryBeats } from "@/components/marketing/landing/prism/story-beats";
-import { SeeItWorkSection } from "@/components/marketing/landing/see-it-work";
 
 export const metadata: Metadata = {
   title: { absolute: "bookanything: online booking for anything bookable" },
   description:
-    "Online booking for appointment businesses. Clients book and pay online and get reminders; you get one calendar for your staff, rooms and equipment. A flat price per location and 0% platform fee on payments.",
+    "Online booking your AI can run. Clients book and pay online and get reminders; you get one calendar for your staff, rooms and equipment. A flat price per location and 0% platform fee on payments.",
   alternates: { canonical: "/" },
 };
 
@@ -94,14 +90,11 @@ const FAQ: FaqItem[] = [
 
 export default function LandingPage() {
   return (
-    <PrismStory faces={<SlabFaces />}>
-      <StoryBeats />
-      <SeeItWorkSection />
-      <ClientSideSection />
-      <FeaturesSection />
-      <AiSetupSection />
-      <PaymentsSection />
-      <AgentsSection />
+    <>
+      <Hero />
+      <BookedSection />
+      <AiSection />
+      <SetupSection />
       <IndustriesSection />
       <PricingTeaser />
       <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-28 sm:pb-36">
@@ -128,6 +121,7 @@ export default function LandingPage() {
           <Faq items={FAQ} />
         </PrismContainer>
       </section>
-    </PrismStory>
+      <ClosingSection />
+    </>
   );
 }
