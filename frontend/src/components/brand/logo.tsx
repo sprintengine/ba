@@ -205,7 +205,7 @@ export function Wordmark({
 export function AiBadge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-xs text-muted-foreground", className)}>
-      <LogoMark className="size-4" weight="small" aria-hidden title="" />
+      <LogoMark className="h-3.5 w-auto" aria-hidden title="" />
       {children}
     </span>
   );
@@ -213,7 +213,7 @@ export function AiBadge({ children, className }: { children: React.ReactNode; cl
 
 /** The rings on a button that hands something to an assistant: one colour, in the button's text colour. */
 export function AiIcon({ className }: { className?: string }) {
-  return <LogoMark className={cn("size-4", className)} mono weight="small" aria-hidden title="" />;
+  return <LogoMark className={cn("h-3.5! w-auto!", className)} mono aria-hidden title="" />;
 }
 
 /** The logo, at the sizes the shells use. */

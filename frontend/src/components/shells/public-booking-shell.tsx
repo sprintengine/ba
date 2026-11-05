@@ -185,7 +185,7 @@ function PoweredByBadge() {
         touchHitArea,
       )}
     >
-      <LogoMark className="size-4" mono weight="small" aria-hidden title="" />
+      <LogoMark className="h-3.5 w-auto" aria-hidden title="" />
       Powered by bookanything
     </a>
   );

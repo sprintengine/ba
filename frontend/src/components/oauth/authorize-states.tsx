@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { CircleAlert, Store } from "lucide-react";
+import { LogoLoader } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 
 /** Matches the consent card's layout while the request is checked. */
 export function ConsentSkeleton() {
@@ -97,7 +97,7 @@ export function NoBusinessToConnect({ message }: { message: string }) {
 export function ReturningToApp() {
   return (
     <div role="status" className="flex flex-col items-center gap-3 py-16 text-sm text-muted-foreground">
-      <Spinner className="size-5" />
+      <LogoLoader className="h-8" />
       Returning you to the app…
     </div>
   );

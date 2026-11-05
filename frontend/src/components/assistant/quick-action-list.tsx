@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import { quickActions } from "@/lib/assistant/quick-actions";
 import { useBusinessContext } from "@/lib/business/business-context";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ export function QuickActions({ className, onNavigate }: { className?: string; on
         <li key={a.id}>
           {a.kind === "ask" ? (
             <button type="button" className={chip} disabled={!canAsk} onClick={() => ask(a.prompt)}>
-              <Sparkles className="size-3.5 text-brand" aria-hidden /> {a.label}
+              <AiIcon /> {a.label}
             </button>
           ) : (
             <Link href={dashboardHref(business.slug, a.path)} onClick={onNavigate} className={chip}>

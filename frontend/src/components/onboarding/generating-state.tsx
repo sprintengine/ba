@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AiIcon } from "@/components/brand/logo";
 import { useReducedMotion } from "motion/react";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +65,7 @@ export function GeneratingState({
             className="absolute inset-0 rounded-xl bg-brand/25 [animation-duration:1.8s] motion-safe:animate-ping"
           />
           <span className="relative flex size-12 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-button">
-            <Sparkles aria-hidden className="size-5" />
+            <AiIcon className="h-4!" />
           </span>
         </span>
         <div className="flex flex-col gap-2">

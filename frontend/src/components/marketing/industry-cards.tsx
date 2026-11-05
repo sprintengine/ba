@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { formatDuration } from "@/lib/format";
 import { priceLabel } from "@/lib/booking/quote";
 import { BusinessThemeProvider } from "@/lib/theme/business-theme";
@@ -35,7 +36,7 @@ export function IndustryCards({ exclude, showOther = true }: { exclude?: string;
         <div className="flex flex-col gap-6 rounded-2xl border border-dashed border-border-strong bg-surface-sunken/50 p-6 sm:p-7 lg:flex-row lg:items-center">
           <div className="flex flex-1 flex-col gap-3">
             <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight">
-              <Sparkles className="size-4 text-brand" /> Don&apos;t see your business?
+              <LogoMark className="h-3.5 w-auto" aria-hidden title="" /> Don&apos;t see your business?
             </h3>
             <p className="max-w-xl text-sm text-muted-foreground">
               If you work by appointment, it will fit. Describe your business and we&apos;ll draft a setup for

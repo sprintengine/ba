@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { CalendarCheck2, CreditCard, Sparkles } from "lucide-react";
-import { Logo } from "@/components/brand/logo";
+import { CalendarCheck2, CreditCard } from "lucide-react";
+import { AiIcon, Logo } from "@/components/brand/logo";
 
 const POINTS = [
   {
-    icon: Sparkles,
+    icon: AiIcon,
     title: "Set up from a description",
     body: "Tell us about your business and AI drafts your services, hours and booking page for you to check.",
   },

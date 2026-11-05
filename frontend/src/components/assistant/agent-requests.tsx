@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bot, CircleCheck, Unplug } from "lucide-react";
-import { AiBadge } from "@/components/brand/logo";
+import { CircleCheck, Unplug } from "lucide-react";
+import { AiBadge, LogoMark } from "@/components/brand/logo";
 import {
   useAgentRequest,
   useAgentRequests,
@@ -132,7 +132,7 @@ export function AgentRequestsPage() {
         <div>
           <EmptyState
             headingLevel={2}
-            icon={<Bot />}
+            icon={<LogoMark mono title="" />}
             title="Nothing to approve"
             description="When your AI agent (Claude, ChatGPT and others) prepares a change here, it appears for you to approve."
             action={
