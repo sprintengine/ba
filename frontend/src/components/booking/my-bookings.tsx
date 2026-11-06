@@ -6,7 +6,7 @@ import { CalendarHeart, Plug } from "lucide-react";
 import { useMe, useMyBookings } from "@/lib/api/hooks";
 import type { CustomerBooking } from "@/lib/api/types";
 import { businessesIn, sortByStart } from "@/lib/booking/booking";
-import { formatRelativeDay, toPlainDate, toTimeOfDay } from "@/lib/format";
+import { formatRelativeDay, toTimeOfDay } from "@/lib/format";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
 import { ErrorState } from "@/components/common/feedback";
 import { BusinessTile } from "@/components/shells/business-tile";
@@ -109,13 +109,13 @@ export function MyBookingsPage() {
 const relativeDay = (b: CustomerBooking) => formatRelativeDay(b.start, b.timezone);
 
 /**
- * Bookings by the day they happen, each day in the order its times read: a list spanning businesses in several
- * timezones would otherwise look shuffled.
+ * Bookings under the day each heading names, in the order their times read: a list spanning businesses in several
+ * timezones would otherwise look shuffled. Keyed by the heading, so two timezones' "Today" are one day on the page.
  */
 function byDay(bookings: CustomerBooking[]) {
   const days = new Map<string, CustomerBooking[]>();
   for (const b of bookings) {
-    const day = toPlainDate(b.start, b.timezone);
+    const day = relativeDay(b);
     days.set(day, [...(days.get(day) ?? []), b]);
   }
   const readOrder = (b: CustomerBooking) => toTimeOfDay(b.start, b.timezone);
@@ -189,11 +189,26 @@ function BookingList({
   // An agent's request can point at any booking, so the list always reaches it.
   const requested = agentRequest ? sorted.findIndex((b) => b.id === agentRequest.bookingId) + 1 : 0;
   const shown = sorted.slice(0, Math.max(limit, requested));
+  // The one that matters most, on its own; everything after it is a quiet list.
+  const next = tab === "upcoming" ? shown[0] : undefined;
+  const rest = next ? shown.slice(1) : shown;
   return (
     <div className="flex flex-col gap-8">
-      {byDay(shown).map(({ day, bookings }) => (
+      {next && (
+        <section aria-label="Your next booking">
+          <h2 className="pb-2 text-sm font-semibold">Next, {relativeDay(next).toLowerCase()}</h2>
+          <MyBookingCard
+            booking={next}
+            past={false}
+            featured
+            agentAction={agentRequest?.bookingId === next.id ? agentRequest.action : null}
+            onAgentActionDone={() => agentRequest && onAgentRequestDone(agentRequest)}
+          />
+        </section>
+      )}
+      {byDay(rest).map(({ day, bookings }) => (
         <section key={day}>
-          <h2 className="pb-2 text-sm font-semibold">{bookings[0] && relativeDay(bookings[0])}</h2>
+          <h2 className="pb-2 text-sm font-semibold">{day}</h2>
           <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
             {bookings.map((b) => (
               <li key={b.id}>

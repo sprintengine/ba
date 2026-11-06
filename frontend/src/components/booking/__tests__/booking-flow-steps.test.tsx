@@ -125,10 +125,8 @@ describe("choosing what to book", () => {
     const { container } = renderFlow([assessment, membersOnly], withGroups);
 
     expect(screen.getByRole("heading", { name: "Which best describes you?" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Booking progress" })).toHaveAttribute(
-      "aria-valuenow",
-      "1",
-    );
+    // How many steps this takes depends on the answer, so no bar promises a length yet.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
 
     const groups = screen.getByRole("radiogroup", { name: "Who is booking" });

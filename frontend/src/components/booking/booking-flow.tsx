@@ -24,7 +24,7 @@ export function BookingFlow({
 }: {
   business: PublicBusiness;
   services: PublicService[];
-  /** Business introduction, on the first step only. */
+  /** Who the business is: beside every step with room, above the first without. */
   intro?: React.ReactNode;
 }) {
   const flow = useBookingFlow(business, services);
@@ -43,42 +43,41 @@ export function BookingFlow({
   };
 
   const reviewing = flow.step === "review";
-  // Until something is chosen there is nothing to summarise, so the list takes one easy column.
-  const single = reviewing || !flow.service;
-  // Container queries, not viewport breakpoints: from an iPad mini's width up there is room for the summary
-  // beside the steps (the action sticks to the bottom of the steps); narrower it is the phone layout, with the
-  // summary and the action in a bottom bar.
+  const first = flow.stepIndex === 0;
+  // Container queries, not viewport breakpoints: with room, the business stands on the left through every step, with
+  // the booking building up under it, and the step on the right; narrower it is the phone layout, with the business
+  // above the first step and the summary and the action in a bottom bar.
   return (
-    <div className={cn("@container", single && "mx-auto w-full max-w-2xl")}>
-      {/* The header keeps the business's name; past the first step the steps get the room. */}
-      {intro && flow.stepIndex === 0 && intro}
-      <div
-        className={cn(
-          "grid gap-8",
-          // The review step is the summary: a card beside it would say everything again.
-          !single &&
-            "@2xl:grid-cols-[minmax(0,1fr)_16rem] @2xl:gap-6 @4xl:grid-cols-[minmax(0,1fr)_17rem] @4xl:gap-10",
-        )}
-      >
-        <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @2xl:pb-0">
-          <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />
+    <div className="@container">
+      <div className="grid gap-6 @4xl:grid-cols-[19rem_minmax(0,1fr)] @4xl:gap-12">
+        <aside
+          aria-label={business.name}
+          className={cn(
+            "flex min-w-0 flex-col gap-6 @4xl:sticky @4xl:top-24 @4xl:self-start",
+            !first && "hidden @4xl:flex",
+          )}
+        >
+          {intro}
+          {/* The review step is the summary: a card beside it would say everything again. */}
+          {flow.service && !reviewing && (
+            <div className="hidden border-t border-border pt-5 @4xl:block">
+              <BookingSummaryCard {...summaryProps} />
+            </div>
+          )}
+        </aside>
+        <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @4xl:pb-0">
+          {/* While the number of steps depends on what's chosen, a bar would only promise a length it can't keep. */}
+          {flow.stepTotal.known && <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />}
           <FlowStep flow={flow} />
           {!flow.service && <BookingPromises {...summaryProps} />}
           {action && (
-            <div className="sticky bottom-0 z-10 -mx-2 hidden justify-end border-t border-border-subtle bg-background px-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] @2xl:flex">
+            <div className="sticky bottom-0 z-10 -mx-2 hidden justify-end border-t border-border-subtle bg-background px-2 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] @4xl:flex">
               {action}
             </div>
           )}
         </div>
-        {!single && (
-          <div className="hidden @2xl:block">
-            <div className="sticky top-24 border-l border-border pl-6">
-              <BookingSummaryCard {...summaryProps} />
-            </div>
-          </div>
-        )}
       </div>
-      <MobileSummaryBar {...summaryProps} action={action} actionOnly={reviewing} className="@2xl:hidden" />
+      <MobileSummaryBar {...summaryProps} action={action} actionOnly={reviewing} className="@4xl:hidden" />
       {flow.submit.redirecting && <RedirectOverlay />}
     </div>
   );
