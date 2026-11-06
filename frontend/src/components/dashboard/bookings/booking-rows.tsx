@@ -58,14 +58,10 @@ function ServiceCell({ booking: b }: { booking: Booking }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
       <ColorDot color={b.service.color} />
-      <span className="flex min-w-0 flex-col">
-        <span className="max-w-56 truncate">
-          {b.service.name}
-          {b.option && <span className="text-muted-foreground"> · {b.option.name}</span>}
-        </span>
-        {b.resources.length > 0 && (
-          <span className="max-w-56 truncate text-xs text-muted-foreground xl:hidden">{withWhom(b)}</span>
-        )}
+      <span className="max-w-64 min-w-0 truncate">
+        {b.service.name}
+        {b.option && <span className="text-muted-foreground"> · {b.option.name}</span>}
+        {b.resources.length > 0 && <span className="text-muted-foreground xl:hidden"> · {withWhom(b)}</span>}
       </span>
     </span>
   );
@@ -93,14 +89,7 @@ export function BookingRow({
       <TableCell>
         <div className={cn("flex min-w-0 items-center gap-2.5", nested && "pl-6")}>
           <Avatar name={b.customer.name} size="sm" />
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate font-medium">{b.customer.name}</span>
-            {(b.customer.email || b.customer.phone) && (
-              <span className="max-w-52 truncate text-xs text-muted-foreground">
-                {b.customer.email ?? b.customer.phone}
-              </span>
-            )}
-          </div>
+          <span className="truncate font-medium">{b.customer.name}</span>
         </div>
       </TableCell>
       <TableCell>{!nested && <ServiceCell booking={b} />}</TableCell>

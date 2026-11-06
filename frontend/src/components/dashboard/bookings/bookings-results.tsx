@@ -93,7 +93,7 @@ export function BookingsResults({
         tabIndex={0}
         role="region"
         aria-label="Results"
-        className="relative max-h-[calc(100dvh-15rem)] scrollbar-thin overflow-auto border-y border-border"
+        className="relative max-h-[calc(100dvh-11rem)] scrollbar-thin overflow-auto border-y border-border [&_td]:h-10"
       >
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-surface-sunken/95 backdrop-blur-sm">

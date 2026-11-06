@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useBookings, useInfiniteBookings, useResources, useServices } from "@/lib/api/hooks";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { bookingListQuery, isFilteredView, parseBookingFilters } from "@/lib/dashboard/booking-filters";
 import { todayInTz } from "@/lib/format/datetime";
+import { useNow } from "@/lib/hooks/use-now";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
@@ -53,7 +54,16 @@ export function BookingsList() {
   const services = useServices(business.id);
   const pending = useBookings(business.id, { status: "pending_approval", from: today, limit: 50 });
   const needsYou = pending.data?.items.length ?? 0;
-  const items = bookings.data ?? NO_BOOKINGS;
+  const loaded = bookings.data ?? NO_BOOKINGS;
+  // Upcoming means still to come: what has finished today is on Today and Past.
+  const now = useNow(60_000);
+  const items = useMemo(
+    () =>
+      filters.range === "upcoming" && filters.statuses.length === 0
+        ? loaded.filter((b) => new Date(b.end) >= now)
+        : loaded,
+    [loaded, filters.range, filters.statuses.length, now],
+  );
   const filtered = isFilteredView(filters, q);
   const reset = () => {
     search.setText("");
@@ -74,17 +84,19 @@ export function BookingsList() {
           />
         }
       />
-      <BookingViews filters={filters} needsYou={needsYou} setParams={setParams} />
-      <BookingsToolbar
-        filters={filters}
-        search={search.text}
-        onSearchChange={search.setText}
-        setParams={setParams}
-        resources={resources.data ?? []}
-        services={services.data ?? []}
-        filtered={filtered}
-        onReset={reset}
-      />
+      <div className="flex flex-col gap-2 pb-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <BookingViews filters={filters} needsYou={needsYou} setParams={setParams} />
+        <BookingsToolbar
+          filters={filters}
+          search={search.text}
+          onSearchChange={search.setText}
+          setParams={setParams}
+          resources={resources.data ?? []}
+          services={services.data ?? []}
+          filtered={filtered}
+          onReset={reset}
+        />
+      </div>
       {/* A failed refresh (or next page) keeps the rows already loaded; the error is for when there are none. */}
       {bookings.isError && !bookings.data ? (
         <ErrorState error={bookings.error} onRetry={() => bookings.refetch()} headingLevel={2} />

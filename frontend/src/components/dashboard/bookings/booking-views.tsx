@@ -40,7 +40,7 @@ export function BookingViews({
 }) {
   const active = current(filters);
   return (
-    <div role="group" aria-label="Views" className="mb-3 flex flex-wrap gap-1">
+    <div role="group" aria-label="Views" className="flex flex-wrap gap-1">
       {VIEWS.map((view) => (
         <button
           key={view.key}
