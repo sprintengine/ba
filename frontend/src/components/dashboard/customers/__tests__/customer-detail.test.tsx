@@ -153,7 +153,9 @@ describe("CustomerDetailView", () => {
     expect(screen.getByText("Account").parentElement).toHaveTextContent("Members");
     // Upcoming: only the future booking that isn't cancelled.
     expect(screen.getByText("Upcoming").nextSibling).toHaveTextContent("1");
-    expect(screen.getByText("Appointments").nextSibling).toHaveTextContent("3");
+    expect(screen.getByRole("heading", { level: 2, name: "Appointments" })).toBeInTheDocument();
+    const stat = screen.getAllByText("Appointments").find((el) => el.tagName !== "H2");
+    expect(stat?.nextSibling).toHaveTextContent("3");
     expect(screen.getByText("Patient since").nextSibling).toHaveTextContent("January 2026");
 
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
@@ -161,7 +163,6 @@ describe("CustomerDetailView", () => {
     expect(must(rows[2], "past row")).toHaveTextContent("Follow-up · Extended");
     expect(must(rows[1], "cancelled row")).toHaveTextContent("Cancelled");
     expect(screen.getByRole("textbox", { name: /notes/i })).toHaveValue("Prefers mornings");
-    expect(screen.getByText("Newest first. Select one to open it.")).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 

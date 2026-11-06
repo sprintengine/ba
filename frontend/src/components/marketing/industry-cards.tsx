@@ -108,7 +108,7 @@ function IndustryCard({ content: c }: { content: IndustryContent }) {
             </li>
           ))}
         </ul>
-        <span className="relative border-t border-border-subtle px-5 py-3 text-sm font-medium text-brand">
+        <span className="relative border-t border-border-subtle px-5 py-3 text-sm font-medium text-foreground">
           See this template
         </span>
       </Link>

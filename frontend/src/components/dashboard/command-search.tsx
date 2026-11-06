@@ -10,7 +10,7 @@ import { dashboardHref, settingsNavText, visibleSettings } from "@/components/sh
 import { Avatar } from "@/components/ui/avatar";
 import { CommandGroup, CommandItem, CommandShortcut } from "@/components/ui/command";
 import { Spinner } from "@/components/ui/spinner";
-import { BookingStatusBadge } from "@/components/ui/status-badge";
+import { BookingExceptions } from "@/components/ui/status-badge";
 import { useBookingActions } from "./booking/booking-actions-provider";
 import { useFmt } from "./common";
 
@@ -76,14 +76,17 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   <span className="w-18 shrink-0 truncate font-mono text-2xs whitespace-nowrap text-subtle-foreground max-sm:hidden">
                     {b.reference}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {b.customer.name} · {b.service.name}
-                  </span>
-                  <span className="ml-auto flex shrink-0 items-center gap-2 text-xs text-subtle-foreground max-sm:flex-col max-sm:items-end max-sm:gap-0.5">
-                    <span className="tnum">
-                      {fmt.date(b.start, "short")}, {fmt.time(b.start)}
+                  {/* A phone reads it as two lines: who and what, then when and anything out of the ordinary. */}
+                  <span className="flex min-w-0 flex-1 items-center gap-2 max-sm:flex-col max-sm:items-start max-sm:gap-0.5">
+                    <span className="w-full min-w-0 flex-1 truncate">
+                      {b.customer.name} · {b.service.name}
                     </span>
-                    <BookingStatusBadge status={b.status} />
+                    <span className="flex shrink-0 items-center gap-2 text-xs text-subtle-foreground">
+                      <span className="tnum">
+                        {fmt.date(b.start, "short")}, {fmt.time(b.start)}
+                      </span>
+                      <BookingExceptions status={b.status} />
+                    </span>
                   </span>
                 </CommandItem>
               ))}

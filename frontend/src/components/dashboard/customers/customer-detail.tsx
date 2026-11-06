@@ -151,8 +151,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle headingLevel={2}>History</CardTitle>
-              <CardDescription>Newest first. Select one to open it.</CardDescription>
+              <CardTitle headingLevel={2}>{v("bookings", { title: true })}</CardTitle>
             </CardHeader>
             {c.bookings.length === 0 ? (
               <CardContent>
@@ -175,7 +174,6 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
           <Card>
             <CardHeader>
               <CardTitle headingLevel={2}>Details</CardTitle>
-              <CardDescription>Contact details, group and private notes.</CardDescription>
             </CardHeader>
             <CardContent>
               <CustomerForm
