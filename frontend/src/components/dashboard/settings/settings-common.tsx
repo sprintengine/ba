@@ -57,7 +57,7 @@ export function SettingsHeader({
 
 /** Inside a card, fields are sunk into it rather than outlined: a page of them stays calm. Errors and focus still show. */
 const softFields =
-  "[&_:where(input,textarea,[role=combobox])]:bg-surface-sunken [&_:where(input,textarea,[role=combobox])]:shadow-none [&_:where(input,textarea,[role=combobox]):not([aria-invalid=true],:focus-visible)]:border-border-strong";
+  "[&_:where(input,textarea,[role=combobox])]:shadow-none [&_:where(input,textarea,[role=combobox]):not([aria-invalid=true],:focus-visible)]:border-border-strong";
 
 /**
  * The titled card every setting lives in: a short title above it, the rows inside, a hairline between them. `action`

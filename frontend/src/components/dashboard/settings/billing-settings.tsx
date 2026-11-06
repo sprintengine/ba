@@ -169,7 +169,7 @@ export function BillingSettings() {
             id="plans"
             title="Other plans"
             className="scroll-mt-20"
-            note="Prices exclude VAT. Priced per location, not per seat. Cancel any time."
+            note="Prices exclude VAT. One price per business, however many people work there. Cancel any time."
           >
             <div className="grid divide-y divide-border-subtle @lg/settings:grid-cols-2 @lg/settings:divide-x @lg/settings:divide-y-0">
               {others.map((p) => (

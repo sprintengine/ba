@@ -12,13 +12,13 @@ export const TONE_DOT = {
 
 /** A booking's card: the service's colour across the whole of it, a little above the page, lifting on hover. */
 export const CARD =
-  "group absolute z-[5] flex flex-col overflow-clip rounded-lg border text-left transition-[box-shadow,translate] duration-150 outline-none focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring";
-export const CARD_RAISED = "shadow-sm hover:z-20 hover:shadow-md motion-safe:hover:-translate-y-0.5";
+  "group absolute z-[5] flex flex-col overflow-clip rounded-md border text-left transition-[box-shadow,translate] duration-150 outline-none focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-ring";
+export const CARD_RAISED = "hover:z-20 hover:shadow-md motion-safe:hover:-translate-y-0.5";
 
-/** The soft service colour for a card, and its slightly stronger edge. */
+/** The soft service colour for a card: data on a grid, not a box, so its edge only just separates it from the next. */
 export const serviceTint = (color: string, tint = "var(--event-tint)"): React.CSSProperties => ({
   backgroundColor: `color-mix(in oklab, ${color} ${tint}, var(--surface))`,
-  borderColor: `color-mix(in oklab, ${color} 28%, var(--border))`,
+  borderColor: `color-mix(in oklab, ${color} 10%, var(--surface))`,
 });
 
 /**

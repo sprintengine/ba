@@ -1,4 +1,4 @@
-/** A titled block of the service editor, with an optional action (e.g. "Add option") on the right. */
+/** A titled card of the service editor, as in Settings, with an optional action (e.g. "Add option") on the right. */
 export function Section({
   title,
   description,
@@ -11,15 +11,15 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-3 border-b border-border-subtle pb-2">
+    <section className="flex flex-col gap-2.5">
+      <div className="flex items-end justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">{title}</h3>
           {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
         {action}
       </div>
-      {children}
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">{children}</div>
     </section>
   );
 }

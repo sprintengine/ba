@@ -62,17 +62,23 @@ export function OverviewView() {
         <div className="flex flex-col gap-6">
           <OverviewRelease />
           {perms.manageBilling && <PlanLimitNotice />}
-          <OverviewStats overview={overview.data} todays={todays} now={now} loading={overview.isPending} />
+          {/* In the order they matter: what needs a decision, then the day, then the numbers and the set-up. */}
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-            <TodayCard bookings={todays} loading={overview.isPending} now={now} />
-            {/* Waits for the data: on a phone this column sits under Today, which grows once its bookings arrive. */}
-            {overview.data && (
-              <div className="flex flex-col gap-6">
-                {perms.manageSettings && <SetupChecklist items={overview.data.checklist} />}
-                <PendingApprovals today={today} />
-                <ShareCard />
-              </div>
-            )}
+            <div className="flex min-w-0 flex-col gap-6">
+              {overview.data && <PendingApprovals today={today} />}
+              <TodayCard bookings={todays} loading={overview.isPending} now={now} />
+            </div>
+            <div className="flex min-w-0 flex-col gap-6">
+              <OverviewStats
+                overview={overview.data}
+                todays={todays}
+                now={now}
+                loading={overview.isPending}
+              />
+              {/* Waits for the data: on a phone this sits under Today, which grows once its bookings arrive. */}
+              {overview.data && perms.manageSettings && <SetupChecklist items={overview.data.checklist} />}
+              {overview.data && <ShareCard />}
+            </div>
           </div>
         </div>
       )}

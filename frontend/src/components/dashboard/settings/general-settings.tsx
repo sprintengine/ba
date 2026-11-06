@@ -104,7 +104,7 @@ export function GeneralSettings() {
     <>
       <SettingsHeader segment="general" />
       <Form form={form} onSubmit={submit} className={settingsStack}>
-        <SettingGroup title="Your business">
+        <SettingGroup title="Business details">
           <SettingFormRow<V, "name"> name="name" label="Business name" required>
             {(field) => <Input {...field} />}
           </SettingFormRow>
@@ -167,7 +167,9 @@ export function GeneralSettings() {
             name="published"
             fit
             label="Booking page"
-            help="Turned off, only your team can preview it."
+            help={
+              published ? "Anyone with the link can book." : "Only your team can see it until you turn it on."
+            }
           >
             {(field) => (
               <div className="flex items-center gap-2.5">

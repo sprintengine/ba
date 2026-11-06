@@ -38,7 +38,7 @@ export function PendingApprovals({ today }: { today: string }) {
     <Card>
       <CardHeader>
         <CardTitle headingLevel={2} className="flex items-center gap-2">
-          Waiting for approval <Badge tone="info">{more ? `${items.length}+` : items.length}</Badge>
+          Needs you <Badge tone="warning">{more ? `${items.length}+` : items.length}</Badge>
         </CardTitle>
         <CardDescription>{v("customers", { title: true })} hear back as soon as you decide.</CardDescription>
         {more && (
@@ -81,7 +81,7 @@ export function PendingApprovals({ today }: { today: string }) {
               </Button>
               <Button
                 size="sm"
-                variant="primary"
+                variant="secondary"
                 aria-label={`Approve ${b.customer.name}`}
                 loading={approval.isApproving(b.id)}
                 onClick={() => approval.approve(b.id)}

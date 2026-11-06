@@ -620,20 +620,21 @@
 .dark[data-theme],
 [data-mode="dark"] [data-theme],
 [data-theme][data-mode="dark"] {
-  --background: var(--td-background);
-  --foreground: var(--td-foreground);
-  --surface: var(--td-surface);
-  --surface-raised: var(--td-surface-raised);
-  --surface-sunken: var(--td-surface-sunken);
-  --muted: var(--td-muted);
-  --muted-foreground: var(--td-muted-foreground);
-  --subtle-foreground: var(--td-subtle-foreground);
-  --accent: var(--td-accent);
-  --accent-foreground: var(--td-foreground);
-  --border: var(--td-border);
-  --border-subtle: var(--td-border-subtle);
-  --border-strong: var(--td-border-strong);
-  --input: var(--td-input);
+  /* Dark is black and neutral greys for every business: a theme's own colour is its accent, never a warm or cool cast. */
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --surface: #121212;
+  --surface-raised: #181818;
+  --surface-sunken: #000000;
+  --muted: #1c1c1c;
+  --muted-foreground: #c7c7c7;
+  --subtle-foreground: #a6a6a6;
+  --accent: #222222;
+  --accent-foreground: #f5f5f5;
+  --border: #262626;
+  --border-subtle: #1c1c1c;
+  --border-strong: #3a3a3a;
+  --input: #6e6e6e;
   --brand: var(--td-brand);
   --brand-hover: var(--td-brand-hover);
   --brand-foreground: var(--td-brand-foreground);

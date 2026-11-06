@@ -20,9 +20,17 @@ const DayChart = dynamic(() => import("./day-chart").then((m) => m.DayChart), {
 });
 
 /** Bookings or revenue per day, as a chart or a table. */
-export function PerDayCard({ data, loading }: { data: ReportSummary | undefined; loading: boolean }) {
+export function PerDayCard({
+  data,
+  loading,
+  measure,
+}: {
+  data: ReportSummary | undefined;
+  loading: boolean;
+  /** Chosen with the numbers above the card. */
+  measure: Measure;
+}) {
   const { v } = useVocabulary();
-  const [measure, setMeasure] = useState<Measure>("bookings");
   const [asTable, setAsTable] = useState(false);
   return (
     <Card>
@@ -32,16 +40,6 @@ export function PerDayCard({ data, loading }: { data: ReportSummary | undefined;
         </CardTitle>
         <CardDescription>By the day the {v("booking")} takes place.</CardDescription>
         <CardAction wrap className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            size="sm"
-            aria-label="Measure"
-            value={measure}
-            onValueChange={setMeasure}
-            options={[
-              { value: "bookings", label: v("bookings", { title: true }) },
-              { value: "revenue", label: "Revenue" },
-            ]}
-          />
           <SegmentedControl
             size="sm"
             aria-label="Display"

@@ -5,10 +5,11 @@ import { FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SwatchGroup } from "@/components/ui/swatch-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Section } from "./section";
 
 export function BasicsSection({ categories }: { categories: string[] }) {
   return (
-    <div className="flex flex-col gap-5">
+    <Section title="What it is">
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
         <FormField<V, "name"> name="name" label="Name" required>
           {(field) => <Input {...field} placeholder="e.g. Initial consultation" autoComplete="off" />}
@@ -55,6 +56,6 @@ export function BasicsSection({ categories }: { categories: string[] }) {
           />
         )}
       </FormField>
-    </div>
+    </Section>
   );
 }
