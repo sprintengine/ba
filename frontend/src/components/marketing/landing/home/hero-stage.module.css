@@ -33,7 +33,7 @@
 
 @media (max-height: 860px) {
   .panel {
-    --iphone-scale: 0.54;
+    --iphone-scale: 0.5;
     --pad-top: 1.75rem;
     --pad-bottom: 2.25rem;
     --lift: 4.75rem;
