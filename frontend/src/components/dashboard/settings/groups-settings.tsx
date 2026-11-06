@@ -75,7 +75,7 @@ export function GroupsSettings() {
         >
           {list.length === 0 ? (
             <>
-              <ExamplePreview className="p-1.5">
+              <ExamplePreview inset className="p-1.5">
                 <SettingList>
                   <SettingItem
                     title="Members"
