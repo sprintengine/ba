@@ -205,7 +205,7 @@ describe("BillingSettings", () => {
   it("falls back to the published prices when the server lists none", async () => {
     api({ info: () => billing({ prices: [] }) });
     renderDashboard(<BillingSettings />);
-    expect(await screen.findByText("1,000 bookings a month")).toBeInTheDocument();
+    expect(await screen.findByText(/1,000 bookings a month/)).toBeInTheDocument();
     expect(planNames()).toEqual(["Pro", "Business"]);
   });
 });

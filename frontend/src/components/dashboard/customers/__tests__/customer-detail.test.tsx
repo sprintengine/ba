@@ -97,6 +97,12 @@ function api(routes: Routes = {}) {
 const errorBody = (status: number, code: string, message: string, fields: Record<string, string> = {}) =>
   json({ error: { code, message, fields } }, status);
 
+/** The table's booking rows, without its header and the Upcoming and Past lines. */
+const bookingRows = () =>
+  within(screen.getByRole("table"))
+    .getAllByRole("row")
+    .filter((r) => within(r).queryAllByRole("cell").length > 1);
+
 describe("CustomerDetailView", () => {
   it("says when the customer doesn't exist or isn't visible", async () => {
     api({ detail: () => errorBody(404, "NOT_FOUND", "Customer not found") });
@@ -156,8 +162,11 @@ describe("CustomerDetailView", () => {
     );
     expect(screen.getByRole("heading", { level: 2, name: "Appointments" })).toBeInTheDocument();
 
-    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    const rows = bookingRows();
     expect(rows).toHaveLength(3);
+    // What's ahead and what's been, each under its own heading.
+    expect(screen.getByRole("cell", { name: "Upcoming" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Past" })).toBeInTheDocument();
     expect(must(rows[2], "past row")).toHaveTextContent("Follow-up · Extended");
     expect(must(rows[1], "cancelled row")).toHaveTextContent("Cancelled");
     // Read first: the details are values, not an open form.
@@ -171,7 +180,7 @@ describe("CustomerDetailView", () => {
     const user = userEvent.setup();
     renderDashboard(<CustomerDetailView customerId="c1" />);
     await screen.findByRole("table");
-    const [, next, , past] = within(screen.getByRole("table")).getAllByRole("row");
+    const [next, , past] = bookingRows();
     await user.click(must(past, "past row"));
     expect(actions.openBooking).toHaveBeenCalledWith("b-past");
 

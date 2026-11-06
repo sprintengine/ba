@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import type { BillingPrice, Plan } from "@/lib/api/types";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useBilling, useBillingCheckout, useBillingPortal } from "@/lib/api/hooks";
@@ -167,50 +167,42 @@ export function BillingSettings() {
             className="scroll-mt-20"
             note="Prices exclude VAT. One price per business, however many people work there. Cancel any time."
           >
-            <div className="grid divide-y divide-border-subtle @lg/settings:grid-cols-2 @lg/settings:divide-x @lg/settings:divide-y-0">
-              {others.map((p) => (
-                <div key={p.plan} className="flex flex-col gap-4 p-4.5">
-                  <span className="text-sm font-semibold">{p.name ?? p.plan}</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="tnum text-3xl font-semibold tracking-tight">
-                      {formatMoney(p.amountCents, p.currency)}
+            {others.map((p) => (
+              <SettingRow
+                key={p.plan}
+                action
+                label={
+                  <span className="flex items-baseline gap-2">
+                    <span>{p.name ?? p.plan}</span>
+                    <span className="tnum font-normal text-muted-foreground">
+                      {formatMoney(p.amountCents, p.currency)} / {p.interval}
                     </span>
-                    <span className="text-sm text-muted-foreground">/ {p.interval}</span>
-                  </div>
-                  <ul className="flex flex-1 flex-col gap-2">
-                    {(p.features ?? []).map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  {p.plan !== "free" && (
-                    <Button
-                      variant="secondary"
-                      loading={
-                        subscribed
-                          ? portal.isPending
-                          : checkout.isPending && checkout.variables.plan === p.plan
-                      }
-                      onClick={() =>
-                        subscribed
-                          ? void openPortal()
-                          : void go(() =>
-                              checkout.mutateAsync({
-                                plan: p.plan as "pro" | "business",
-                                returnUrl: currentPageUrl(),
-                              }),
-                            )
-                      }
-                    >
-                      {b!.plan === "free"
-                        ? `Upgrade to ${p.name ?? p.plan}`
-                        : `Switch to ${p.name ?? p.plan}`}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </span>
+                }
+                help={(p.features ?? []).join(" · ")}
+              >
+                {p.plan !== "free" && (
+                  <Button
+                    variant="secondary"
+                    loading={
+                      subscribed ? portal.isPending : checkout.isPending && checkout.variables.plan === p.plan
+                    }
+                    onClick={() =>
+                      subscribed
+                        ? void openPortal()
+                        : void go(() =>
+                            checkout.mutateAsync({
+                              plan: p.plan as "pro" | "business",
+                              returnUrl: currentPageUrl(),
+                            }),
+                          )
+                    }
+                  >
+                    {b!.plan === "free" ? `Upgrade to ${p.name ?? p.plan}` : `Switch to ${p.name ?? p.plan}`}
+                  </Button>
+                )}
+              </SettingRow>
+            ))}
           </SettingGroup>
         </div>
       )}

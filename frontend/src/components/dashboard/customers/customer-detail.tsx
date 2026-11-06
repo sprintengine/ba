@@ -238,10 +238,17 @@ function DetailsCard({
           />
         ) : (
           <PropertyList>
-            <PropertyRow label="Email">{c.email ?? <NotSet />}</PropertyRow>
-            <PropertyRow label="Phone">
-              {c.phone ? <span className="tnum">{c.phone}</span> : <NotSet />}
-            </PropertyRow>
+            {/* Set, they're under the name already, as links. */}
+            {!c.email && (
+              <PropertyRow label="Email">
+                <NotSet />
+              </PropertyRow>
+            )}
+            {!c.phone && (
+              <PropertyRow label="Phone">
+                <NotSet />
+              </PropertyRow>
+            )}
             {(groupName || hasGroups) && (
               <PropertyRow label="Group">{groupName ?? <NotSet>No group</NotSet>}</PropertyRow>
             )}
