@@ -27,7 +27,18 @@ const TABS: { key: AiSide; label: string }[] = [
 function Poster() {
   return (
     <div className={SCENE_GRID}>
-      <div className={cn(SCENE_CHAT, "rounded-2xl bg-surface")} />
+      {/* The conversation is there from the first paint; only its live pieces wait for the chunk. */}
+      <div className={cn(SCENE_CHAT, "flex flex-col overflow-hidden rounded-2xl bg-surface text-left")}>
+        <p className="border-b border-border-subtle py-3 text-center text-[0.9375rem] font-semibold">
+          Your assistant
+        </p>
+        <div className="flex flex-1 flex-col justify-end gap-3.5 p-4 text-[0.9375rem] leading-6">
+          <p className="ml-10 self-end rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-primary-foreground">
+            Sam’s off on Friday afternoon. Can you sort out their bookings?
+          </p>
+          <p>Aoife is free for all three. Here’s what I’d change.</p>
+        </div>
+      </div>
       <BrowserWindow className={SCENE_WINDOW}>
         <div className={SCENE_CALENDAR} />
       </BrowserWindow>

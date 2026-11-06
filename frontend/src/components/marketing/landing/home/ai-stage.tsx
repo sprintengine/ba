@@ -12,9 +12,10 @@ import { CalendarNotice, SCENE_CALENDAR, SCENE_GRID, SCENE_WINDOW } from "./scen
 import { useScene } from "./use-scene";
 import { useSize } from "./use-size";
 
-/** A chat's steps: asked, then a proposal, then it's being approved, then done. */
+/** A chat's steps: asked, then a proposal, then it's being approved, then done. It opens on the proposal. */
 const STEPS = [1300, 3400, 800, 5600] as const;
 const LAST = STEPS.length - 1;
+const FIRST_SHOWN = 1;
 
 /** The next such weekday from the demo's day, so the chat and the calendar agree. */
 function nextWeekday(weekday: number): PlainDate {
@@ -29,7 +30,7 @@ function nextWeekday(weekday: number): PlainDate {
 export function AiStage({ side, paused }: { side: AiSide; paused: boolean }) {
   const chat = useRef<HTMLDivElement>(null);
   const calendar = useRef<HTMLDivElement>(null);
-  const step = useScene(chat, STEPS, paused);
+  const step = useScene(chat, STEPS, paused, FIRST_SHOWN);
   const { width, height } = useSize(calendar);
   const fit = fitCalendar(width, height);
   const owner = side === "owner";

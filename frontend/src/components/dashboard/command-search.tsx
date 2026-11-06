@@ -50,6 +50,7 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   forceMount
                   value={`${search} customer-${c.id}`}
                   onSelect={() => run(() => router.push(dashboardHref(business.slug, `customers/${c.id}`)))}
+                  className="h-auto min-h-9 py-1.5 pointer-coarse:h-auto pointer-coarse:min-h-11"
                 >
                   <Avatar name={c.name} size="xs" />
                   {/* Phones stack them: side by side, both would be cut short. */}
@@ -71,6 +72,7 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                   forceMount
                   value={`${search} booking-${b.id}`}
                   onSelect={() => run(() => openBooking(b.id))}
+                  className="h-auto min-h-9 py-1.5 pointer-coarse:h-auto pointer-coarse:min-h-11"
                 >
                   {/* A fixed width, so the names line up down the list whatever the reference's glyphs. */}
                   <span className="w-18 shrink-0 truncate font-mono text-2xs whitespace-nowrap text-subtle-foreground max-sm:hidden">

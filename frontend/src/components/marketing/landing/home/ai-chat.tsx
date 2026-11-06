@@ -122,18 +122,17 @@ export function OwnerChat({ step }: { step: number }) {
         <p>Everyone but Jo Hayes. €70 is due for Thursday.</p>
         <Mine>Sam’s off on Friday afternoon. Can you sort out their bookings?</Mine>
         <ToolActivityList tools={tools} />
-        {step >= 1 && (
-          <div className="flex animate-rise flex-col gap-3">
-            <p>Aoife is free for all three. Here’s what I’d change.</p>
-            <ProposalView
-              action={step >= 3 ? MOVED : MOVE}
-              confirm={{ mutate: noop, isPending: step === 2 }}
-              reject={idle}
-              retryHint=""
-              where={WHERE}
-            />
-          </div>
-        )}
+        {/* Always laid out, so the conversation above it never jumps when the answer arrives. */}
+        <div className={cn("flex flex-col gap-3 transition-opacity duration-300", step < 1 && "opacity-0")}>
+          <p>Aoife is free for all three. Here’s what I’d change.</p>
+          <ProposalView
+            action={step >= 3 ? MOVED : MOVE}
+            confirm={{ mutate: noop, isPending: step === 2 }}
+            reject={idle}
+            retryHint=""
+            where={WHERE}
+          />
+        </div>
       </div>
       <div className="shrink-0 px-3 py-3">
         <Composer
@@ -199,61 +198,59 @@ export function ClientChat({ step }: { step: number }) {
         <p className="flex items-center gap-2 text-muted-foreground">
           <Check className="size-4" aria-hidden /> Checked times at Lumen Physiotherapy
         </p>
-        {step >= 1 && (
-          <div className="flex animate-rise flex-col gap-3">
-            <p>Sam is free on Thursday at these times.</p>
-            <div className="rounded-xl border border-border bg-background p-3.5 shadow-xs">
-              <p className="font-semibold">Follow-up treatment</p>
-              <p className="text-muted-foreground">Lumen Physiotherapy · 45 minutes</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {["15:30", "15:45"].map((c, i) => (
-                  <span
-                    key={c}
-                    className={cn(
-                      "tnum rounded-lg border py-2 text-center font-medium",
-                      i === 0
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-surface",
-                    )}
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-              <dl className="mt-3 flex flex-col gap-1">
-                {[
-                  ["With", "Sam Rivers"],
-                  ["Price", "€60"],
-                ].map(([a, b]) => (
-                  <div key={a} className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">{a}</dt>
-                    <dd className="tnum font-medium">{b}</dd>
-                  </div>
-                ))}
-              </dl>
-              <span
-                className={cn(
-                  "mt-3 flex items-center justify-center gap-1.5 rounded-lg py-2.5 font-semibold transition-colors",
-                  step >= 3
-                    ? "bg-success-soft text-success-soft-foreground"
-                    : "bg-primary text-primary-foreground",
-                  step === 2 && "opacity-80",
-                )}
-              >
-                {step >= 3 ? (
-                  <>
-                    <Check className="size-4" aria-hidden /> Booked and paid
-                  </>
-                ) : (
-                  "Book and pay €60"
-                )}
-              </span>
+        <div className={cn("flex flex-col gap-3 transition-opacity duration-300", step < 1 && "opacity-0")}>
+          <p>Sam is free on Thursday at these times.</p>
+          <div className="rounded-xl border border-border bg-background p-3.5 shadow-xs">
+            <p className="font-semibold">Follow-up treatment</p>
+            <p className="text-muted-foreground">Lumen Physiotherapy · 45 minutes</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {["15:30", "15:45"].map((c, i) => (
+                <span
+                  key={c}
+                  className={cn(
+                    "tnum rounded-lg border py-2 text-center font-medium",
+                    i === 0
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-surface",
+                  )}
+                >
+                  {c}
+                </span>
+              ))}
             </div>
-            {step >= 3 && (
-              <p className="animate-fade-in">It’s on their calendar, and a reminder is set for Wednesday.</p>
-            )}
+            <dl className="mt-3 flex flex-col gap-1">
+              {[
+                ["With", "Sam Rivers"],
+                ["Price", "€60"],
+              ].map(([a, b]) => (
+                <div key={a} className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">{a}</dt>
+                  <dd className="tnum font-medium">{b}</dd>
+                </div>
+              ))}
+            </dl>
+            <span
+              className={cn(
+                "mt-3 flex items-center justify-center gap-1.5 rounded-lg py-2.5 font-semibold transition-colors",
+                step >= 3
+                  ? "bg-success-soft text-success-soft-foreground"
+                  : "bg-primary text-primary-foreground",
+                step === 2 && "opacity-80",
+              )}
+            >
+              {step >= 3 ? (
+                <>
+                  <Check className="size-4" aria-hidden /> Booked and paid
+                </>
+              ) : (
+                "Book and pay €60"
+              )}
+            </span>
           </div>
-        )}
+          <p className={cn("transition-opacity duration-300", step < 3 && "opacity-0")}>
+            It’s on their calendar, and a reminder is set for Wednesday.
+          </p>
+        </div>
       </div>
       <div className="m-3 flex h-11 shrink-0 items-center gap-2.5 rounded-full bg-muted pr-1.5 pl-4 text-muted-foreground">
         <Plus className="size-4.5" aria-hidden />

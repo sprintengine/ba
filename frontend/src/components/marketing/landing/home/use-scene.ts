@@ -6,14 +6,15 @@ import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 /**
  * Steps through a looping scene while it's on screen and not paused, holding each step for its duration. With reduced
- * motion it rests on the last step, which shows the result. Starts at step 0, as the server's HTML does.
+ * motion it rests on the last step, which shows the result. Starts at step `first`: a scene can open part way through.
  */
 export function useScene(
   ref: React.RefObject<HTMLElement | null>,
   durations: readonly number[],
   paused: boolean,
+  first = 0,
 ): number {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(first);
   const [visible, setVisible] = useState(false);
   const mounted = useMounted();
   const reduce = useReducedMotion() && mounted;

@@ -285,7 +285,10 @@ function Tour({ card, example }: { card: ExampleCard; example: Example }) {
   const root = useRef<HTMLDivElement>(null);
   const { view, paused, reduce, cursor, toggle, choose } = useTour(example, root);
   return (
-    <div ref={root} className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+    <div
+      ref={root}
+      className="relative isolate flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]"
+    >
       <header className="flex shrink-0 items-center gap-3 border-b border-border-subtle p-3 sm:p-4">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small static photo the card has already drawn */}
         <img

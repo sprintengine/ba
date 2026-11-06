@@ -321,11 +321,7 @@ function CalendarFooter({
           </span>
         )}
         <span className="inline-flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="size-3 rounded-sm"
-            style={{ backgroundImage: PREPARATION_HATCH }}
-          />
+          <span aria-hidden className="size-3 rounded-sm" style={{ backgroundImage: PREPARATION_HATCH }} />
           Preparation time
         </span>
       </span>

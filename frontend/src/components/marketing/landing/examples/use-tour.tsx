@@ -11,6 +11,17 @@ import { applyStep, endOfTour, START, tourFor, type TourView } from "./tour";
 const MOVE_MS = 800;
 const PRESS_MS = 160;
 
+/** Brings a target into its own sideways strip on a phone. It never moves the page: someone may be reading elsewhere. */
+function revealInStrip(target: HTMLElement, box: HTMLElement) {
+  for (let el = target.parentElement; el && el !== box; el = el.parentElement) {
+    if (el.scrollWidth > el.clientWidth) {
+      el.scrollLeft += target.getBoundingClientRect().left - el.getBoundingClientRect().left;
+      el.scrollLeft -= (el.clientWidth - target.offsetWidth) / 2;
+      return;
+    }
+  }
+}
+
 /** The walk through one business: moves the cursor to each step's target, presses, and applies what the step changes. */
 export function useTour(example: Example, root: React.RefObject<HTMLElement | null>) {
   const steps = useMemo(() => tourFor(example), [example]);
@@ -23,13 +34,25 @@ export function useTour(example: Example, root: React.RefObject<HTMLElement | nu
   const [touched, setTouched] = useState(false);
   const [cursor, setCursor] = useState<{ x: number; y: number; down: boolean } | null>(null);
 
+  // It plays only while it's on screen, like the page's other scenes.
+  const [onScreen, setOnScreen] = useState(false);
   useEffect(() => {
-    if (reduce || paused) return;
+    const el = root.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setOnScreen(!!entry?.isIntersecting), {
+      threshold: 0.3,
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [root]);
+
+  useEffect(() => {
+    if (reduce || paused || !onScreen) return;
     const step = steps[index];
     const box = root.current;
     const target = box?.querySelector<HTMLElement>(`[data-cursor="${step?.target ?? ""}"]`);
     if (!step || !box || !target) return;
-    target.scrollIntoView({ block: "nearest", inline: "center" });
+    revealInStrip(target, box);
     const b = box.getBoundingClientRect();
     const t = target.getBoundingClientRect();
     const x = t.left - b.left + Math.min(t.width / 2, 72);
@@ -47,7 +70,7 @@ export function useTour(example: Example, root: React.RefObject<HTMLElement | nu
       }, MOVE_MS + step.hold),
     ];
     return () => timers.forEach((id) => window.clearTimeout(id));
-  }, [index, paused, reduce, root, steps]);
+  }, [index, onScreen, paused, reduce, root, steps]);
 
   const shown = reduce && !touched ? endOfTour(steps, intro) : view;
   return {
