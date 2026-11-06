@@ -170,6 +170,8 @@ function OrderRow({
   const fmt = useFmt();
   const [b, ...rest] = session.bookings;
   const past = new Date(b.end) <= now;
+  // As on the calendar, only a booking that stands wears its service's colour; a status badge can't be read over it.
+  const standing = !past && !["cancelled", "expired", "no_show"].includes(b.status);
   const group = rest.length > 0;
   return (
     <button
@@ -184,9 +186,9 @@ function OrderRow({
       <span
         className={cn(
           "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 transition-[filter] group-hover:brightness-[0.97] dark:group-hover:brightness-125",
-          past && "border-border-subtle bg-surface-sunken",
+          !standing && "border-border-subtle bg-surface-sunken",
         )}
-        style={past ? undefined : serviceTint(b.service.color)}
+        style={standing ? serviceTint(b.service.color) : undefined}
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-semibold">{group ? b.service.name : b.customer.name}</span>

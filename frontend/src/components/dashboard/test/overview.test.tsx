@@ -129,6 +129,27 @@ describe("OverviewView", () => {
     expect(await screen.findByRole("dialog", { name: "Alex Morgan" }, LOAD)).toBeInTheDocument();
   });
 
+  it("keeps the service's colour off a cancelled booking, where its badge has to be read", async () => {
+    const at = (hour: string) => ({
+      start: `2099-10-02T${hour}:00:00+01:00`,
+      end: `2099-10-02T${hour}:45:00+01:00`,
+    });
+    const name = (n: string) => ({ ...booking().customer, name: n });
+    api({
+      data: { ...overview, today: [] },
+      pending: [
+        booking({ id: "on", customer: name("Sky Stands"), ...at("09") }),
+        booking({ id: "off", status: "cancelled", customer: name("Cass Gone"), ...at("10") }),
+      ],
+    });
+    renderOverview();
+    const later = await card("Today's appointments");
+    const row = async (who: string) =>
+      must((await later.findByText(who)).closest("button")).querySelector<HTMLElement>("[style]");
+    expect(await row("Sky Stands")).not.toBeNull();
+    expect(await row("Cass Gone")).toBeNull();
+  });
+
   it("says when nothing is booked today and offers to add a booking", async () => {
     api({ data: { ...overview, today: [] }, pending: [] });
     const user = userEvent.setup();
