@@ -226,13 +226,19 @@ function Row({ n, detail, onOpen }: { n: AppNotification; detail: string; onOpen
           aria-hidden
           className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-brand")}
         />
-        <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
             {n.title}
             {!n.read && <span className="sr-only"> (unread)</span>}
           </span>
           <span className="line-clamp-2 text-xs text-muted-foreground">{detail}</span>
         </span>
+        {/* The one kind that's waiting for an answer: it opens where Approve and Decline are. */}
+        {n.kind === "booking_request" && !n.read && (
+          <span className="flex h-7 shrink-0 items-center self-center rounded-lg border border-border bg-surface px-2.5 text-xs font-medium text-foreground">
+            Review
+          </span>
+        )}
       </Link>
     </li>
   );
