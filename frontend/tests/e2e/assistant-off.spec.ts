@@ -38,6 +38,12 @@ test("the dashboard has no Bo: no launcher, ⌘J or Ask Bo, and its routes aren'
   });
   await expect(page.getByRole("button", { name: /^Open Bo/ })).toHaveCount(0);
 
+  // The chrome is in the page's HTML, ahead of its shortcuts; the greeting's name comes from the client's first fetch.
+  await expect(
+    page.getByRole("heading", { name: /^Good (morning|afternoon|evening), /, level: 1 }),
+  ).toBeVisible({
+    timeout: 20_000,
+  });
   // ⌘J first; then ⌘K, which loads after the page as Bo's panel would: once it's up, a panel would be too.
   await page.keyboard.press("ControlOrMeta+j");
   await page.keyboard.press("ControlOrMeta+k");
@@ -69,6 +75,6 @@ test("the landing page offers connecting your own AI assistant, not Bo", async (
   await page.goto("/");
   const connect = page.getByRole("link", { name: "How to connect your assistant" });
   await expect(connect).toHaveAttribute("href", "/help/ai-agents-for-business");
-  await expect(page.getByRole("heading", { name: "Bring your own AI assistant" })).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: "Connect your own assistant, included" })).toHaveCount(1);
   await expect(page.locator("main")).not.toContainText(/\bBo\b/);
 });
