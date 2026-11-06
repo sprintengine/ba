@@ -2,7 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import type { CustomerDetail } from "@/lib/api/types";
-import { BookingStatusBadge } from "@/components/ui/status-badge";
+import { BookingExceptions } from "@/components/ui/status-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ColorDot, useFmt } from "../common";
 
@@ -19,7 +19,7 @@ export function HistoryTable({ bookings, onOpen }: HistoryProps) {
           <TableRow>
             <TableHead>When</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Needs attention</TableHead>
             <TableHead align="right">Price</TableHead>
           </TableRow>
         </TableHeader>
@@ -42,7 +42,7 @@ export function HistoryTable({ bookings, onOpen }: HistoryProps) {
                 </span>
               </TableCell>
               <TableCell>
-                <BookingStatusBadge status={b.status} />
+                <BookingExceptions status={b.status} />
               </TableCell>
               <TableCell align="right">{fmt.price(b.priceCents, b.currency)}</TableCell>
             </TableRow>
@@ -79,7 +79,7 @@ export function HistoryList({ bookings, onOpen }: HistoryProps) {
               </span>
             </span>
             <span className="flex shrink-0 flex-col items-end gap-1">
-              <BookingStatusBadge status={b.status} />
+              <BookingExceptions status={b.status} />
               <span className="tnum text-xs text-muted-foreground">
                 {fmt.price(b.priceCents, b.currency)}
               </span>

@@ -46,7 +46,10 @@ const ICONS: Record<DashboardSectionKey, LucideIcon> = {
 };
 
 /** Primary dashboard navigation with the website's icons. Order = sidebar order. */
-export const DASHBOARD_NAV: DashboardNavItem[] = DASHBOARD_SECTIONS.map((section) => ({
+export const DASHBOARD_NAV: DashboardNavItem[] = DASHBOARD_SECTIONS.filter(
+  // On the web, who can sign in sits on the same page as who gets booked.
+  (section) => section.key !== "team",
+).map((section) => ({
   ...section,
   icon: ICONS[section.key],
 }));

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectNoAxeViolations } from "@/test/axe";
 import { renderDashboard } from "@/components/dashboard/test/render";
-import { TeamView } from "../team-view";
+import { TeamSection } from "../team-view";
 import { apiError, fakeTeamApi, member, resource } from "./fake-team-api";
 
 vi.mock("next/navigation", () => ({
@@ -67,13 +67,13 @@ const rows = async () => {
   return within(await list()).getAllByRole("listitem");
 };
 
-describe("TeamView", () => {
+describe("TeamSection", () => {
   it("shows the list as busy while the team loads", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
     );
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     expect(screen.getByRole("list", { name: "Team members" })).toHaveAttribute("aria-busy", "true");
   });
 
@@ -81,8 +81,8 @@ describe("TeamView", () => {
     const api = fakeTeamApi({ team, resources });
     api.fail("GET", /\/team$/, () => apiError(500, "INTERNAL", "Team unavailable."));
     const user = userEvent.setup();
-    const { container } = renderDashboard(<TeamView />);
-    expect(await screen.findByRole("heading", { level: 2, name: "This didn’t load" })).toBeInTheDocument();
+    const { container } = renderDashboard(<TeamSection />);
+    expect(await screen.findByRole("heading", { level: 3, name: "This didn’t load" })).toBeInTheDocument();
     expect(screen.getByText("Team unavailable.")).toBeInTheDocument();
     await expectNoAxeViolations(container);
     await user.click(screen.getByRole("button", { name: "Try again" }));
@@ -91,7 +91,7 @@ describe("TeamView", () => {
 
   it("lists active members by role then name, invitations last, and explains the roles", async () => {
     fakeTeamApi({ team, resources });
-    const { container } = renderDashboard(<TeamView />);
+    const { container } = renderDashboard(<TeamSection />);
     const items = await rows();
     expect(items.map((li) => li.textContent)).toEqual([
       expect.stringMatching(/Avery MorganYou/),
@@ -99,7 +99,8 @@ describe("TeamView", () => {
       expect.stringMatching(/Casey Lane.*Sam Rivers.*Staff(Remove)?$/),
       expect.stringMatching(/^new@example\.testInvitedInvited 28 Sept?/),
     ]);
-    expect(screen.getByRole("heading", { level: 2, name: "Roles" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Who can sign in" })).toBeInTheDocument();
+    expect(screen.getByText("What each role can do")).toBeInTheDocument();
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent.trim())).toEqual([
       "Owner",
       "Admin",
@@ -112,7 +113,7 @@ describe("TeamView", () => {
   it("changes a member's role from the keyboard", async () => {
     const api = fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     const role = await screen.findByRole("combobox", { name: "Role for Casey Lane" });
     expect(role).toHaveTextContent("Staff");
     role.focus();
@@ -134,7 +135,7 @@ describe("TeamView", () => {
   it("offers admins only the roles they can give, and no control over owners", async () => {
     fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />, "admin");
+    renderDashboard(<TeamSection />, "admin");
     await user.click(await screen.findByRole("combobox", { name: "Role for Casey Lane" }));
     expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Admin", "Staff"]);
     await user.keyboard("{Escape}");
@@ -144,7 +145,7 @@ describe("TeamView", () => {
   it("links and unlinks a member's calendar, offering only active people", async () => {
     const api = fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     const calendar = await screen.findByRole("combobox", { name: "Linked therapist for Casey Lane" });
     expect(calendar).toHaveTextContent("Sam Rivers");
     await user.click(calendar);
@@ -167,7 +168,7 @@ describe("TeamView", () => {
     const api = fakeTeamApi({ team, resources });
     api.fail("PATCH", /\/team\/m2$/, () => apiError(409, "CONFLICT", "They were just removed."));
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     await user.click(await screen.findByRole("combobox", { name: "Role for Casey Lane" }));
     await user.click(await screen.findByRole("option", { name: "Admin" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("They were just removed."));
@@ -176,7 +177,7 @@ describe("TeamView", () => {
   it("removes a member after confirming", async () => {
     const api = fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     await user.click(await screen.findByRole("button", { name: "Remove Casey Lane" }));
     const confirm = await screen.findByRole("alertdialog", { name: "Remove Casey Lane?" });
     expect(confirm).toHaveAccessibleDescription(/lose access straight away/);
@@ -191,7 +192,7 @@ describe("TeamView", () => {
   it("revokes an invitation after confirming, and keeps it when cancelled", async () => {
     fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     const revoke = await screen.findByRole("button", { name: "Revoke invite for new@example.test" });
     await user.click(revoke);
     let confirm = await screen.findByRole("alertdialog", { name: "Revoke the invite for new@example.test?" });
@@ -209,7 +210,7 @@ describe("TeamView", () => {
     const api = fakeTeamApi({ team, resources });
     api.fail("DELETE", /\/team\/m2$/, () => apiError(409, "POLICY_VIOLATION", "They have bookings today."));
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     await user.click(await screen.findByRole("button", { name: "Remove Casey Lane" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Remove" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("They have bookings today."));
@@ -224,7 +225,7 @@ describe("TeamView", () => {
       role: "owner",
     });
     fakeTeamApi({ team: [member({ ...avery, role: "admin" }), pat], resources });
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     expect(await screen.findByRole("button", { name: "Remove Pat Owner" })).toBeDisabled();
     expect(screen.queryByRole("combobox", { name: "Role for Pat Owner" })).not.toBeInTheDocument();
   });
@@ -233,7 +234,7 @@ describe("TeamView", () => {
     const invitedOwner = member({ ...invited, id: "m5", email: "partner@example.test", role: "owner" });
     fakeTeamApi({ team: [avery, invitedOwner], resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     const revoke = await screen.findByRole("button", { name: "Revoke invite for partner@example.test" });
     expect(revoke).toBeEnabled();
     await user.click(revoke);
@@ -244,7 +245,7 @@ describe("TeamView", () => {
 
   it("shows staff the team read-only, with linked calendars by name", async () => {
     fakeTeamApi({ team, resources });
-    renderDashboard(<TeamView />, "staff");
+    renderDashboard(<TeamSection />, "staff");
     const casey = (await rows())[2];
     expect(casey).toHaveTextContent(/Sam Rivers/);
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
@@ -254,7 +255,7 @@ describe("TeamView", () => {
   it("opens the invite dialog", async () => {
     fakeTeamApi({ team, resources });
     const user = userEvent.setup();
-    renderDashboard(<TeamView />);
+    renderDashboard(<TeamSection />);
     await user.click(await screen.findByRole("button", { name: "Invite" }));
     const dialog = await screen.findByRole("dialog", { name: "Invite to Lumen Physiotherapy" });
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));

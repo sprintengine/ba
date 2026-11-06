@@ -1,5 +1,7 @@
-import { TeamView } from "@/components/dashboard/team/team-view";
+import { redirect } from "next/navigation";
 
-export default function TeamPage() {
-  return <TeamView />;
+/** Who can sign in now sits with who gets booked; old links land on that part of the page. */
+export default async function TeamPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  redirect(`/dashboard/${slug}/resources#team`);
 }

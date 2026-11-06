@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
-import { useInfiniteBookings, useResources, useServices } from "@/lib/api/hooks";
+import { useBookings, useInfiniteBookings, useResources, useServices } from "@/lib/api/hooks";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { bookingListQuery, isFilteredView, parseBookingFilters } from "@/lib/dashboard/booking-filters";
 import { todayInTz } from "@/lib/format/datetime";
@@ -17,6 +17,7 @@ import { useDebouncedSearch } from "@/components/ui/search-input";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { BookingsResults } from "./bookings-results";
 import { BookingsToolbar } from "./bookings-toolbar";
+import { BookingViews } from "./booking-views";
 
 const NO_BOOKINGS: Booking[] = [];
 
@@ -50,6 +51,8 @@ export function BookingsList() {
   const bookings = useInfiniteBookings(business.id, bookingListQuery(filters, q, today));
   const resources = useResources(business.id);
   const services = useServices(business.id);
+  const pending = useBookings(business.id, { status: "pending_approval", from: today, limit: 50 });
+  const needsYou = pending.data?.items.length ?? 0;
   const items = bookings.data ?? NO_BOOKINGS;
   const filtered = isFilteredView(filters, q);
   const reset = () => {
@@ -71,6 +74,7 @@ export function BookingsList() {
           />
         }
       />
+      <BookingViews filters={filters} needsYou={needsYou} setParams={setParams} />
       <BookingsToolbar
         filters={filters}
         search={search.text}

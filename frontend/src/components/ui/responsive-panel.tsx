@@ -1,14 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "./drawer";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "./sheet";
 import { IconButton } from "./icon-button";
 import { useMediaQuery } from "./use-media-query";
 
+/** `sm:max-w-md`, the width of an inspector. */
+const INSPECTOR_WIDTH = "28rem";
+
 /**
  * Side sheet on desktop, swipeable bottom drawer on phones (below `sm`) — for booking details and other detail
  * panels. Its own module, so pages that only format dates and money don't load the drawer library with it.
+ *
+ * `inspector` is for opening a record: on desktop the panel stands beside the page instead of over it, with no scrim,
+ * so the calendar or list stays sharp and in use, and picking another record swaps what's in the panel. Anything modal
+ * keeps the sheet's blurred backdrop.
  */
 export function ResponsivePanel({
   open,
@@ -19,6 +27,7 @@ export function ResponsivePanel({
   footer,
   size = "lg",
   className,
+  inspector = false,
   children,
 }: {
   open: boolean;
@@ -30,9 +39,19 @@ export function ResponsivePanel({
   footer?: React.ReactNode;
   size?: "md" | "lg" | "xl";
   className?: string;
+  inspector?: boolean;
   children: React.ReactNode;
 }) {
   const mobile = useMediaQuery("(max-width: 639px)");
+  const beside = inspector && open && !mobile;
+  // From a wide window up the shell's main column gives up the panel's width, so nothing is left underneath it.
+  useEffect(() => {
+    if (!beside) return;
+    document.documentElement.style.setProperty("--inspector-width", INSPECTOR_WIDTH);
+    return () => {
+      document.documentElement.style.removeProperty("--inspector-width");
+    };
+  }, [beside]);
   if (mobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
@@ -62,8 +81,15 @@ export function ResponsivePanel({
     );
   }
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent size={size} className={className} aria-describedby={undefined}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={!inspector}>
+      <SheetContent
+        size={inspector ? "md" : size}
+        className={className}
+        aria-describedby={undefined}
+        bare={inspector}
+        // The page beside it stays in use: clicking there never closes the panel.
+        onInteractOutside={inspector ? (e) => e.preventDefault() : undefined}
+      >
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           {description ? (

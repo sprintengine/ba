@@ -25,15 +25,18 @@ export function SheetContent({
   side = "right",
   size = "md",
   hideClose,
+  bare,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "left" | "right";
   size?: keyof typeof widths;
   hideClose?: boolean;
+  /** No backdrop: for a panel that isn't modal. */
+  bare?: boolean;
 }) {
   return (
     <SheetPrimitive.Portal>
-      <DialogOverlay />
+      {!bare && <DialogOverlay />}
       <SheetPrimitive.Content
         className={cn(
           "fixed inset-y-0 z-50 w-full outline-none",

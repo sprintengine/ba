@@ -14,7 +14,7 @@ import { useCurrentBusiness } from "@/lib/business/business-context";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BookingStatusBadge } from "@/components/ui/status-badge";
+import { BookingExceptions } from "@/components/ui/status-badge";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
 
@@ -128,7 +128,9 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
                         {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}
                       </span>
                     </span>
-                    <BookingStatusBadge status={b.status} className="hidden sm:inline-flex" />
+                    <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+                      <BookingExceptions status={b.status} />
+                    </span>
                   </button>
                 </li>
               );

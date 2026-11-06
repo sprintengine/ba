@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MemberRole, Service } from "@/lib/api/types";
 import { ServicesList } from "../services/services-list";
-import { TeamView } from "../team/team-view";
+import { TeamSection } from "../team/team-view";
 import { mockApi, renderDashboard } from "./render";
 
 vi.mock("next/navigation", () => ({
@@ -81,13 +81,13 @@ describe.each<[MemberRole, boolean]>([
     renderDashboard(<ServicesList />, role);
     expect(await screen.findByText("Initial assessment")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /new service/i }) !== null).toBe(canManage);
-    expect(screen.queryByRole("switch", { name: /active/i }) !== null).toBe(canManage);
+    expect(screen.queryByRole("button", { name: /more for initial assessment/i }) !== null).toBe(canManage);
     expect(screen.queryByRole("button", { name: /edit initial assessment/i }) !== null).toBe(canManage);
   });
 
   it(`${canManage ? "can" : "cannot"} invite or change the team`, async () => {
     api();
-    renderDashboard(<TeamView />, role);
+    renderDashboard(<TeamSection />, role);
     expect(await screen.findByText("Casey Lane")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /invite/i }) !== null).toBe(canManage);
     expect(screen.queryByRole("combobox", { name: /role/i }) !== null).toBe(canManage);
@@ -96,7 +96,7 @@ describe.each<[MemberRole, boolean]>([
 
 it("admins can't change or remove an owner", async () => {
   api();
-  renderDashboard(<TeamView />, "admin");
+  renderDashboard(<TeamSection />, "admin");
   expect(await screen.findByText("Avery Morgan")).toBeInTheDocument();
   // Only Casey (staff) gets a role picker and a remove button.
   expect(screen.getAllByRole("combobox", { name: /role/i })).toHaveLength(1);

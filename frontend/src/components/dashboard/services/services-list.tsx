@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Pencil, Plus, Sparkles } from "lucide-react";
+import { Eye, EyeOff, MoreHorizontal, Pencil, Plus, Power, Sparkles } from "lucide-react";
 import type { Service } from "@/lib/api/types";
 import { useReplaceService, useServices } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
@@ -12,13 +12,18 @@ import { PageContainer } from "@/components/ui/page-container";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { IconButton } from "@/components/ui/icon-button";
 import { useEditorDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { withToast } from "@/components/common/with-toast";
-import { Tooltip } from "@/components/ui/tooltip";
 import { useFmt } from "../common";
 import { durationLabel, priceLabel } from "@/lib/booking/quote";
 import { PAYMENT_MODE_SHORT, serviceWith } from "@/lib/services/service-form";
@@ -130,9 +135,25 @@ export function ServicesList() {
   );
 }
 
-/** Two switches on every row: on is a grey, so the list stays about the services. */
-const QUIET_SWITCH = "data-[state=checked]:bg-muted-foreground";
+/** Whichever states are out of the ordinary: a service that's public, on and instantly bookable says nothing. */
+function ServiceStates({ service: s }: { service: Service }) {
+  return (
+    <>
+      {!s.isActive && <Badge className="h-5">Off</Badge>}
+      {s.isActive && !s.isPublic && <Badge className="h-5">Private</Badge>}
+      {s.requiresApproval && (
+        <Badge tone="info" className="h-5">
+          Needs approval
+        </Badge>
+      )}
+    </>
+  );
+}
 
+/**
+ * One service: the row opens the editor, the figures sit in columns, and only a state that's out of the ordinary shows.
+ * Turning it off or making it private, the rare changes, are in the row's menu.
+ */
 function ServiceRow({
   service: s,
   canEdit,
@@ -147,105 +168,92 @@ function ServiceRow({
   const replace = useReplaceService(business.id);
   const priceText = priceLabel(s, fmt.currency, { locale: fmt.locale });
   const durText = durationLabel(s);
+  const payment = PAYMENT_MODE_SHORT[s.paymentMode];
+  const extras = [
+    s.capacity > 1 ? `${String(s.capacity)} seats` : null,
+    s.options.length > 0
+      ? `${String(s.options.length)} ${s.options.length === 1 ? "option" : "options"}`
+      : null,
+    s.addons.length > 0 ? `${String(s.addons.length)} ${s.addons.length === 1 ? "add-on" : "add-ons"}` : null,
+  ].filter(Boolean);
 
   const toggle = async (patch: { isPublic?: boolean; isActive?: boolean }, message: string) => {
     await withToast(() => replace.mutateAsync({ id: s.id, input: serviceWith(s, patch) }), message);
   };
 
   return (
-    <li
-      className={cn(
-        "group flex items-center gap-4 px-4 py-3.5 transition-colors",
-        canEdit && "hover:bg-accent/40",
-        !s.isActive && "opacity-70",
-      )}
-    >
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+    <li className={cn("flex items-center transition-colors", canEdit && "hover:bg-accent/40")}>
       <button
         type="button"
         disabled={!canEdit}
         onClick={onEdit}
-        className="flex min-w-0 flex-1 flex-col gap-1 text-left disabled:cursor-default"
+        aria-label={canEdit ? `Edit ${s.name}` : undefined}
+        className="focus-ring flex min-w-0 flex-1 items-center gap-4 rounded-md py-3.5 pl-4 text-left disabled:cursor-default"
       >
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="min-w-0 truncate text-sm font-medium">{s.name}</span>
-          {!s.isPublic && <Badge className="h-5">Private</Badge>}
-          {s.requiresApproval && (
-            <Badge tone="info" className="h-5">
-              Approval
-            </Badge>
-          )}
-          {s.capacity > 1 && <Badge className="h-5">{s.capacity} seats</Badge>}
+        <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              className={cn("min-w-0 truncate text-sm font-medium", !s.isActive && "text-muted-foreground")}
+            >
+              {s.name}
+            </span>
+            <ServiceStates service={s} />
+          </span>
+          <span className="tnum truncate text-xs text-muted-foreground">
+            {/* The figures have their own columns from a small window up. */}
+            <span className="sm:hidden">{[durText, priceText].join(" · ")}</span>
+            {extras.length > 0 && <span className="max-sm:before:content-['_·_']">{extras.join(" · ")}</span>}
+          </span>
         </span>
-        <span className="tnum flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-          <span>{durText}</span>
-          <span aria-hidden>·</span>
-          <span className="font-medium text-foreground">{priceText}</span>
+        <span className="tnum hidden w-16 shrink-0 text-right text-sm text-muted-foreground sm:block">
+          {durText}
+        </span>
+        <span className="hidden w-32 shrink-0 truncate text-sm text-muted-foreground lg:block">
           {/* A free service already reads "Free" from its price, so don't say it twice. */}
-          {PAYMENT_MODE_SHORT[s.paymentMode] !== priceText && (
-            <>
-              <span aria-hidden>·</span>
-              <span>
-                {PAYMENT_MODE_SHORT[s.paymentMode]}
-                {s.allowPayAtVenue && " or at venue"}
-              </span>
-            </>
-          )}
-          {s.options.length > 0 && (
-            <>
-              <span aria-hidden>·</span>
-              <span>
-                {s.options.length} {s.options.length === 1 ? "option" : "options"}
-              </span>
-            </>
-          )}
-          {s.addons.length > 0 && (
-            <>
-              <span aria-hidden>·</span>
-              <span>
-                {s.addons.length} {s.addons.length === 1 ? "add-on" : "add-ons"}
-              </span>
-            </>
-          )}
+          {payment !== priceText && `${payment}${s.allowPayAtVenue ? " or at venue" : ""}`}
         </span>
+        <span className="tnum hidden w-20 shrink-0 text-right text-sm font-medium sm:block">{priceText}</span>
       </button>
-      {canEdit && (
-        <div className="flex shrink-0 items-center gap-4">
-          <Tooltip content={s.isPublic ? "Shown on your booking page" : "Hidden from your booking page"}>
-            <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-              Public
-              <Switch
-                size="sm"
-                className={QUIET_SWITCH}
-                aria-label={`Public: ${s.name}`}
-                checked={s.isPublic}
-                disabled={replace.isPending || !s.isActive}
-                onCheckedChange={(c) =>
-                  toggle({ isPublic: c }, c ? `${s.name} is on your page` : `${s.name} is now private`)
-                }
-              />
-            </label>
-          </Tooltip>
-          <Tooltip content={s.isActive ? "Bookable" : "Can't be booked"}>
-            {/* On phones the word sits under the switch, so it's never an unexplained toggle. */}
-            <label className="flex flex-col-reverse items-center gap-0.5 text-[0.625rem] leading-3 text-muted-foreground sm:flex-row sm:gap-2 sm:text-xs">
-              <span>Active</span>
-              <Switch
-                size="sm"
-                className={QUIET_SWITCH}
-                aria-label={`Active: ${s.name}`}
-                checked={s.isActive}
-                disabled={replace.isPending}
-                onCheckedChange={(c) =>
-                  toggle({ isActive: c }, c ? `${s.name} activated` : `${s.name} deactivated`)
-                }
-              />
-            </label>
-          </Tooltip>
-          <Button size="sm" variant="secondary" aria-label={`Edit ${s.name}`} onClick={onEdit}>
-            <Pencil /> Edit
-          </Button>
-        </div>
+      {canEdit ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton label={`More for ${s.name}`} className="mx-2 shrink-0">
+              <MoreHorizontal />
+            </IconButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={onEdit}>
+              <Pencil /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={replace.isPending || !s.isActive}
+              onSelect={() =>
+                void toggle(
+                  { isPublic: !s.isPublic },
+                  s.isPublic ? `${s.name} is now private` : `${s.name} is on your page`,
+                )
+              }
+            >
+              {s.isPublic ? <EyeOff /> : <Eye />}
+              {s.isPublic ? "Make private" : "Show on booking page"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={replace.isPending}
+              onSelect={() =>
+                void toggle(
+                  { isActive: !s.isActive },
+                  s.isActive ? `${s.name} deactivated` : `${s.name} activated`,
+                )
+              }
+            >
+              <Power />
+              {s.isActive ? "Turn off" : "Turn on"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <span className="w-4 shrink-0" />
       )}
     </li>
   );

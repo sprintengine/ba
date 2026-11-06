@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResourceKindIcon, resourceTile } from "../common";
 import { canEditAvailability } from "@/lib/business/permissions";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
+import { TeamSection } from "../team/team-view";
 import { ResourceDialog } from "./resource-dialog";
 import { Closures, TimeOff } from "./time-off";
 import { WeeklyHours } from "./weekly-hours/weekly-hours";
@@ -62,7 +63,7 @@ export function ResourcesView() {
         title={v("resources", { title: true })}
         description={
           perms.manageResources
-            ? "The people, rooms and equipment that get booked, and when each one is available."
+            ? "The people, rooms and equipment that get booked, when each one is available, and who can sign in."
             : "Your working hours and time off."
         }
         actions={
@@ -97,7 +98,7 @@ export function ResourcesView() {
             description={
               perms.manageResources
                 ? `Add who or what gets booked. Each ${v("resource")} has its own hours and calendar column.`
-                : "Ask an admin to link you to your calendar in Team settings."
+                : "Ask an admin to link you to your calendar on this page."
             }
             action={
               perms.manageResources && (
@@ -144,8 +145,8 @@ export function ResourcesView() {
                             ? "Inactive"
                             : r.kind === "person"
                               ? memberName(r.memberId)
-                                ? `Linked to ${memberName(r.memberId)}`
-                                : "Not linked"
+                                ? `Signs in as ${memberName(r.memberId)}`
+                                : "No sign-in"
                               : `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`}
                         </span>
                       </span>
@@ -166,6 +167,7 @@ export function ResourcesView() {
             )}
           </div>
           {perms.manageClosures && <Closures editable />}
+          <TeamSection />
         </div>
       )}
       {editor.current && (

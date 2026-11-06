@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/select";
 import { StatusFilter } from "./status-filter";
 
+/** Filters as quiet chips: they shouldn't be the darkest lines on a page of bookings. */
+const QUIET_FILTER = "w-auto shrink-0 border-transparent bg-muted shadow-none hover:bg-accent";
+
 /** Search box and filters above the bookings list; every change goes to the URL through `setParams`. */
 export function BookingsToolbar({
   filters,
@@ -42,13 +45,13 @@ export function BookingsToolbar({
 }) {
   const { v } = useVocabulary();
   return (
-    <div className="flex flex-col gap-3 pb-4">
+    <div className="pb-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <SearchInput
           placeholder="Name, email, phone or reference"
           value={search}
           onValueChange={onSearchChange}
-          className="sm:w-72"
+          className="sm:w-60"
           aria-label={`Search ${v("bookings")}`}
         />
         <div className="flex flex-wrap items-center gap-2">
@@ -62,11 +65,7 @@ export function BookingsToolbar({
               value={filters.resourceId}
               onValueChange={(r) => setParams({ resource: r === "all" ? null : r })}
             >
-              <SelectTrigger
-                size="sm"
-                className="w-auto shrink-0 sm:w-44"
-                aria-label={`Filter by ${v("resource")}`}
-              >
+              <SelectTrigger size="sm" className={QUIET_FILTER} aria-label={`Filter by ${v("resource")}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -85,7 +84,7 @@ export function BookingsToolbar({
               value={filters.serviceId}
               onValueChange={(s) => setParams({ service: s === "all" ? null : s })}
             >
-              <SelectTrigger size="sm" className="w-auto shrink-0 sm:w-44" aria-label="Filter by service">
+              <SelectTrigger size="sm" className={QUIET_FILTER} aria-label="Filter by service">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -125,7 +124,7 @@ function RangeFilter({
         value={filters.range}
         onValueChange={(r) => setParams({ range: r === "upcoming" ? null : r, from: null, to: null })}
       >
-        <SelectTrigger size="sm" className="w-auto shrink-0 sm:w-40" aria-label="Date range">
+        <SelectTrigger size="sm" className={QUIET_FILTER} aria-label="Date range">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

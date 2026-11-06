@@ -13,19 +13,18 @@ import {
 import { SheetFooter, SheetHeader, SHEET_SURFACE, SHEET_TITLE } from "@/components/ui/sheet";
 import { SAMPLE_BUSINESS } from "./fixture-api";
 
-/** The booking's side sheet: the app's own head, body and actions, in the window rather than over the page. */
+/** The booking's inspector: the app's own head, body and actions, beside the calendar, which stays in view. */
 export function BookingPanel({ id, onClose }: { id: string; onClose: () => void }) {
   const detail = useBooking(SAMPLE_BUSINESS.id, id);
   const b = detail.data;
   if (!b) return null;
   return (
-    <div className="absolute inset-0 z-50">
-      <div className="absolute inset-0 animate-fade-in bg-overlay backdrop-blur-[7px]" />
+    <div className="absolute inset-0 z-50 overflow-hidden">
       <div
         style={{ right: "var(--tour-covered, 0px)" }}
         className={cn(
           SHEET_SURFACE,
-          "absolute inset-y-0 w-full max-w-xl animate-sheet-in-right border-l border-border",
+          "absolute inset-y-0 w-full max-w-md animate-sheet-in-right border-l border-border",
         )}
       >
         <SheetHeader>

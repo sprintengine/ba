@@ -12,7 +12,7 @@ import { BookingActionsBar } from "./booking-actions-bar";
 import { BookingDetailBody } from "./booking-detail-body";
 import { BookingPanelBadges, BookingPanelName, BookingPanelWhen } from "./booking-panel-head";
 
-/** Booking detail: side sheet on desktop, bottom drawer on mobile. */
+/** Booking detail: an inspector beside the page on desktop, a bottom drawer on mobile. */
 export function BookingDrawer({
   bookingId,
   open,
@@ -29,6 +29,7 @@ export function BookingDrawer({
 
   return (
     <ResponsivePanel
+      inspector
       open={open}
       onOpenChange={onOpenChange}
       title={

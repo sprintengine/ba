@@ -1,20 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ShieldCheck, UserPlus } from "lucide-react";
+import { Check, ChevronDown, ShieldCheck, UserPlus } from "lucide-react";
 import { useResources, useTeam } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
-import { PageContainer } from "@/components/ui/page-container";
 import { ActionButton } from "@/components/ui/action-button";
-import { PageHeader, SectionHeader } from "@/components/ui/page-header";
+import { SectionHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { roleInfo, roleRank } from "@/lib/business/permissions";
 import { InviteDialog } from "./invite-dialog";
 import { MemberRow } from "./member-row";
 
-export function TeamView() {
+/**
+ * Who can sign in, and what each person can do: the second half of the page that says who gets booked, so a person is
+ * in one place. Each member's calendar links the two.
+ */
+export function TeamSection() {
   const { business, role, me } = useBusinessContext();
   const perms = usePermissions();
   const { v } = useVocabulary();
@@ -32,14 +35,14 @@ export function TeamView() {
   const people = (resources.data ?? []).filter((r) => r.kind === "person" && r.isActive);
 
   return (
-    <PageContainer size="wide">
-      <PageHeader
-        title="Team"
+    <section id="team" className="scroll-mt-8">
+      <SectionHeader
+        title="Who can sign in"
         description={perms.manageTeam ? "Invite people and choose what they can do." : "Who is on the team."}
         actions={
           perms.manageTeam && (
             <ActionButton
-              variant="primary"
+              variant="secondary"
               onClick={() => setInviting(true)}
               icon={<UserPlus />}
               label="Invite"
@@ -49,9 +52,9 @@ export function TeamView() {
         }
       />
       {team.isError ? (
-        <ErrorState error={team.error} onRetry={() => team.refetch()} headingLevel={2} />
+        <ErrorState error={team.error} onRetry={() => team.refetch()} headingLevel={3} />
       ) : (
-        <div className="flex flex-col gap-10">
+        <>
           <ul
             aria-label="Team members"
             aria-busy={team.isPending || undefined}
@@ -79,13 +82,12 @@ export function TeamView() {
                   />
                 ))}
           </ul>
-
-          <section>
-            <SectionHeader
-              title="Roles"
-              description="What each role can do. Everyone can see the whole team."
-            />
-            <div className="grid gap-3 sm:grid-cols-3">
+          <details className="group mt-4">
+            <summary className="focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground">
+              What each role can do
+              <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-4 grid gap-6 sm:grid-cols-3">
               {(["owner", "admin", "staff"] as const).map((r) => (
                 <div key={r} className="flex flex-col gap-2">
                   <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -102,10 +104,10 @@ export function TeamView() {
                 </div>
               ))}
             </div>
-          </section>
-        </div>
+          </details>
+        </>
       )}
       {inviting && <InviteDialog open onOpenChange={setInviting} people={people} />}
-    </PageContainer>
+    </section>
   );
 }

@@ -102,8 +102,8 @@ describe("ResourcesView", () => {
     const list = await navList();
     const items = within(list).getAllByRole("button");
     expect(items.map((b) => b.textContent)).toEqual([
-      "Jo ParkNot linked",
-      "Sam RiversLinked to Samantha Rivers",
+      "Jo ParkNo sign-in",
+      "Sam RiversSigns in as Samantha Rivers",
       "Room 1Space · 4 places",
       "Old couchInactive",
     ]);
