@@ -27,7 +27,12 @@ export function OverviewStats({
     (b) => new Date(b.start) <= now && new Date(b.end) > now && b.status !== "pending_approval",
   ).length;
   return (
-    <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !perms.viewRevenue && "sm:grid-cols-3")}>
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-3 sm:gap-4",
+        perms.viewRevenue ? "lg:grid-cols-4" : "sm:grid-cols-3",
+      )}
+    >
       <StatCard
         label="Today"
         value={todays.length}

@@ -5,11 +5,10 @@ import { Check, ListChecks } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useBookings } from "@/lib/api/hooks";
 import { useBusinessContext } from "@/lib/business/business-context";
-import { useVocabulary } from "@/lib/vocabulary";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { DeclineBookingDialog } from "../booking/decline-dialog";
@@ -24,7 +23,6 @@ const SHOWN = 20;
  */
 export function PendingApprovals({ today }: { today: string }) {
   const { business } = useBusinessContext();
-  const { v } = useVocabulary();
   const fmt = useFmt();
   const { openBooking } = useBookingActions();
   const pending = useBookings(business.id, { status: "pending_approval", from: today, limit: SHOWN });
@@ -40,7 +38,6 @@ export function PendingApprovals({ today }: { today: string }) {
         <CardTitle headingLevel={2} className="flex items-center gap-2">
           Needs you <Badge tone="warning">{more ? `${items.length}+` : items.length}</Badge>
         </CardTitle>
-        <CardDescription>{v("customers", { title: true })} hear back as soon as you decide.</CardDescription>
         {more && (
           <CardAction>
             <ActionButton
