@@ -265,7 +265,7 @@ export function NotificationList({
           <ul className="flex flex-col">
             {foldRuns(day.items, opened).map((entry) =>
               "more" in entry ? (
-                <li key={entry.key}>
+                <li key={`${entry.key}-more`}>
                   <button
                     type="button"
                     onClick={() => setOpened((was) => new Set(was).add(entry.key))}

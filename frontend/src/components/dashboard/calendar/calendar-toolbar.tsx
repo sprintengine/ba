@@ -218,6 +218,8 @@ export function CalendarToolbar({
           icon={<Plus />}
           label={`New ${v("booking")}`}
           shortcut="N"
+          // Beside the inspector in a small window the words give way, so the glyph is never cut.
+          className="@max-[36rem]/tools:aspect-square @max-[36rem]/tools:px-0 @max-[36rem]/tools:[&>span]:sr-only"
         />
       </div>
       {/* Phones have the list in the tab bar. */}
