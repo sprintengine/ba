@@ -2,20 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CircleAlert, Loader, MapPin, MapPinOff, Search } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { MarketplaceSettings as Settings } from "@/lib/api/types";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useMarketplaceSettings, useUpdateMarketplaceSettings } from "@/lib/api/hooks";
 import { useBusinessContext } from "@/lib/business/business-context";
 import { ErrorState } from "@/components/common/feedback";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
-import { SettingsCard, SettingsHeader, StatusLine } from "./settings-common";
+import {
+  SettingFieldRow,
+  SettingGroup,
+  SettingLink,
+  SettingRow,
+  SettingsHeader,
+  settingsStack,
+} from "./settings-common";
 
 /** Settings → Marketplace: list the business on bookanything.ie/explore (Pro and Business plans). */
 export function MarketplaceSettings() {
@@ -23,13 +30,13 @@ export function MarketplaceSettings() {
   const settings = useMarketplaceSettings(business.id);
   return (
     <>
-      <SettingsHeader segment="marketplace" />
+      <SettingsHeader segment="marketplace" lede />
       {settings.isError ? (
         <ErrorState error={settings.error} onRetry={() => settings.refetch()} />
       ) : settings.isPending ? (
-        <div className="flex flex-col gap-4" aria-busy aria-label="Loading marketplace settings">
-          <Skeleton className="h-52 rounded-xl" />
-          <Skeleton className="h-28 rounded-xl" />
+        <div className={settingsStack} aria-busy aria-label="Loading marketplace settings">
+          <Skeleton className="h-52 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
         </div>
       ) : (
         <MarketplaceForm settings={settings.data} />
@@ -68,33 +75,37 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {!eligible && <UpgradeNote message={planLimit} />}
-      <SettingsCard
-        title="Marketplace listing"
-        description="People searching bookanything.ie/explore by service, place and time can find you and book straight away."
+    <div className={settingsStack}>
+      <SettingGroup
+        title="Listing"
+        description="People searching by service, place and time can find you and book straight away."
       >
-        <Field
-          orientation="horizontal"
+        {!eligible && <UpgradeNote message={planLimit} />}
+        <SettingFieldRow
+          fit
           label="List on the bookanything marketplace"
           help={
             eligible ? "Commission-free: bookings from the marketplace cost you nothing extra." : undefined
           }
         >
-          <Switch
-            checked={s.listed}
-            disabled={!eligible || update.isPending}
-            onCheckedChange={(on) => save(on)}
-          />
-        </Field>
-        <Field
+          <div className="flex items-center gap-2.5">
+            <Badge tone={s.listed ? "success" : "neutral"} dot>
+              {s.listed ? "Listed" : "Not listed"}
+            </Badge>
+            <Switch
+              checked={s.listed}
+              disabled={!eligible || update.isPending}
+              onCheckedChange={(on) => save(on)}
+            />
+          </div>
+        </SettingFieldRow>
+        <SettingFieldRow
           label="Category"
           help={
             eligible
               ? "The main thing people book with you. It decides where you appear in search."
               : "You can choose this once your plan includes the marketplace."
           }
-          className="sm:max-w-xs"
         >
           <Select value={category} onValueChange={onCategory} disabled={!eligible || update.isPending}>
             <SelectTrigger>
@@ -108,23 +119,19 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
               ))}
             </SelectContent>
           </Select>
-        </Field>
-        <Button asChild variant="link" className="self-start px-0">
-          <Link
-            href={s.listed ? `/explore?q=${encodeURIComponent(business.name)}` : "/explore"}
-            target="_blank"
-          >
-            <Search /> {s.listed ? "Find yourself on the marketplace" : "Browse the marketplace"}{" "}
-            <ArrowUpRight />
-          </Link>
-        </Button>
-      </SettingsCard>
-      <SettingsCard
+        </SettingFieldRow>
+        <SettingLink
+          external
+          href={s.listed ? `/explore?q=${encodeURIComponent(business.name)}` : "/explore"}
+          label={s.listed ? "Find yourself on the marketplace" : "Browse the marketplace"}
+        />
+      </SettingGroup>
+      <SettingGroup
         title="Location"
         description="Your address puts you on the map for “near me” and city searches."
       >
         <LocationStatus settings={s} slug={business.slug} />
-      </SettingsCard>
+      </SettingGroup>
     </div>
   );
 }
@@ -132,16 +139,17 @@ function MarketplaceForm({ settings: s }: { settings: Settings }) {
 function UpgradeNote({ message }: { message: string | null }) {
   const { business } = useBusinessContext();
   return (
-    <p role={message ? "alert" : undefined} className="text-sm text-muted-foreground">
-      <span className="font-medium text-foreground">Included in the Pro and Business plans.</span>{" "}
-      {message ?? "We don't take a cut of the bookings it brings in."}{" "}
-      <Link
-        href={dashboardHref(business.slug, "settings/billing")}
-        className="font-medium text-foreground underline underline-offset-2"
+    <div role={message ? "alert" : undefined}>
+      <SettingRow
+        action
+        label="Included in the Pro and Business plans"
+        help={message ?? "We don't take a cut of the bookings it brings in."}
       >
-        See plans
-      </Link>
-    </p>
+        <Button asChild variant="secondary" size="sm">
+          <Link href={dashboardHref(business.slug, "settings/billing")}>See plans</Link>
+        </Button>
+      </SettingRow>
+    </div>
   );
 }
 
@@ -153,7 +161,7 @@ const PRECISION: Record<string, string> = {
 
 function LocationStatus({ settings: s, slug }: { settings: Settings; slug: string }) {
   const general = (
-    <Button asChild variant="secondary" size="sm" className="self-start">
+    <Button asChild variant="secondary" size="sm">
       <Link href={dashboardHref(slug, "settings/general")}>
         <MapPin /> Open General settings
       </Link>
@@ -162,45 +170,47 @@ function LocationStatus({ settings: s, slug }: { settings: Settings; slug: strin
   switch (s.locationStatus) {
     case "located":
       return (
-        <StatusLine
-          tone="success"
-          icon={<MapPin />}
-          title="You're on the map"
-          text={`We found your address and placed you ${PRECISION[s.location?.precision ?? ""] ?? "on the map"}.`}
-        />
+        <SettingRow
+          action
+          label="You're on the map"
+          help={`We found your address and placed you ${PRECISION[s.location?.precision ?? ""] ?? "on the map"}.`}
+        >
+          <Badge tone="success" dot>
+            Located
+          </Badge>
+        </SettingRow>
       );
     case "pending":
       return (
-        <StatusLine
-          tone="info"
-          icon={<Loader />}
-          title="We're locating your address"
-          text="This usually takes a minute or two. You can list now in the meantime."
-        />
+        <SettingRow
+          action
+          label="We're locating your address"
+          help="This usually takes a minute or two. You can list now in the meantime."
+        >
+          <Badge tone="info" dot>
+            Checking
+          </Badge>
+        </SettingRow>
       );
     case "not_found":
       return (
-        <>
-          <StatusLine
-            tone="warning"
-            icon={<CircleAlert />}
-            title="We couldn't find your address"
-            text="Check it in General settings — a street and town (or Eircode) works best."
-          />
+        <SettingRow
+          action
+          label="We couldn't find your address"
+          help="Check it in General settings: a street and town (or Eircode) works best."
+        >
           {general}
-        </>
+        </SettingRow>
       );
     case "missing_address":
       return (
-        <>
-          <StatusLine
-            tone="warning"
-            icon={<MapPinOff />}
-            title="Add your address"
-            text="Without one you won't show up in location searches. Add it in General settings."
-          />
+        <SettingRow
+          action
+          label="Add your address"
+          help="Without one you won't show up in location searches. Add it in General settings."
+        >
           {general}
-        </>
+        </SettingRow>
       );
   }
 }

@@ -149,8 +149,10 @@ describe("CalendarView", () => {
     expect(screen.getByRole("button", { name: "Today" })).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: "Week" }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&view=week`);
-    await user.click(screen.getByRole("switch", { name: "Cancelled" }));
+    await user.click(screen.getByRole("button", { name: "View options" }));
+    await user.click(await screen.findByRole("switch", { name: "Cancelled" }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&cancelled=1`);
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: /^Filter by therapist/ }));
     await user.click(await screen.findByRole("checkbox", { name: /Jo Park/ }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r1`);
@@ -415,15 +417,31 @@ describe("CalendarView", () => {
     expect(actions.openBooking).toHaveBeenCalledWith("d");
   });
 
-  it("puts the now line under the bookings, with the time on the gutter", async () => {
+  it("draws the now line over the bookings, with the time on the gutter", async () => {
     api();
     const { container } = render();
     await screen.findByRole("button", { name: /Alex Morgan/ });
     // 11:30Z is 12:30 in Dublin; the fake clock is on the visible day.
     expect(within(container).getAllByText("12:30")).not.toHaveLength(0);
     const line = must(container.querySelector(".bg-danger.h-px")).parentElement;
-    expect(line).toHaveClass("z-[4]");
-    expect(line).not.toHaveClass("z-20");
+    expect(line).toHaveClass("z-[15]");
+  });
+
+  it("remembers the zoom chosen in the View menu", async () => {
+    api();
+    const user = userEvent.setup();
+    const first = render();
+    await screen.findByRole("button", { name: /Alex Morgan/ });
+    await user.click(screen.getByRole("button", { name: "View options" }));
+    expect(await screen.findByRole("radio", { name: /Comfortable/ })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: /Fit the day/ }));
+    expect(screen.getByRole("radio", { name: /Fit the day/ })).toBeChecked();
+    first.unmount();
+    render();
+    await screen.findByRole("button", { name: /Alex Morgan/ });
+    await user.click(screen.getByRole("button", { name: "View options" }));
+    expect(await screen.findByRole("radio", { name: /Fit the day/ })).toBeChecked();
+    window.localStorage.clear();
   });
 
   it("says when there are no resources yet", async () => {

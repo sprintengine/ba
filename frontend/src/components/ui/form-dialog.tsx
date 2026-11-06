@@ -94,7 +94,7 @@ export function FormDialog<V extends FieldValues>({
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
-          <DialogBody className={cn("flex flex-col gap-5", bodyClassName)}>{children}</DialogBody>
+          <DialogBody className={cn("flex flex-col gap-5 pb-5", bodyClassName)}>{children}</DialogBody>
           <DialogFooter
             className={cn(props.footerStart !== undefined && "max-sm:flex-col-reverse sm:justify-between")}
           >

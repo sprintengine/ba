@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState } from "react";
 import { CalendarPlus, Plus, CalendarSearch } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -10,13 +10,25 @@ import { InfiniteFooter, type InfinitePaging } from "@/components/ui/infinite-fo
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { useBookingActions } from "../booking/booking-actions-provider";
-import { BookingRow, MobileRow, MobileSkeletonRow, SkeletonRow } from "./booking-rows";
+import { useOpenBooking } from "../booking/open-booking";
+import { useFmt } from "../common";
+import {
+  BookingRow,
+  ClassRow,
+  DayRow,
+  MobileClassRow,
+  MobileDayHeading,
+  MobileRow,
+  MobileSkeletonRow,
+  SkeletonRow,
+} from "./booking-rows";
+import { groupBookings } from "./group-bookings";
 
 /** The pieces of `useInfiniteBookings` the results need. */
 type Paging = InfinitePaging & { isPending: boolean };
 
 /**
- * The bookings: a scrolling table from iPad landscape up (loads more as you scroll inside it) and a list with "Load
+ * The bookings, by day, with a class as one row: a scrolling table from iPad landscape up (loads more as you scroll inside it) and a list with "Load
  * more" on phones and iPad portrait, where the table's columns don't fit without clipping the status; an empty state
  * when there are none. Only the one for the screen is rendered (not both, one hidden by CSS).
  */
@@ -31,7 +43,20 @@ export function BookingsResults({
 }) {
   const { v } = useVocabulary();
   const { openBooking, openNewBooking } = useBookingActions();
-  const wide = useMediaQuery("(min-width: 1024px)");
+  const inspecting = useOpenBooking();
+  const roomy = useMediaQuery("(min-width: 1024px)");
+  const beside = useMediaQuery("(min-width: 1280px)");
+  // In a small window the inspector takes the room the table needs, so the list folds into its two-line rows.
+  const wide = roomy && (beside || inspecting === null);
+  const fmt = useFmt();
+  const days = useMemo(() => groupBookings(items, (b) => fmt.date(b.start)), [items, fmt]);
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
+  const toggle = (key: string) =>
+    setOpened((was) => {
+      const next = new Set(was);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
 
   // Infinite scroll inside the table viewport (the list, under lg, has "Load more" instead).
   const scroller = useRef<HTMLDivElement>(null);
@@ -73,17 +98,16 @@ export function BookingsResults({
         tabIndex={0}
         role="region"
         aria-label="Results"
-        className="relative max-h-[calc(100dvh-15rem)] scrollbar-thin overflow-auto border-y border-border"
+        className="relative max-h-[calc(100dvh-11rem)] scrollbar-thin overflow-auto border-y border-border [&_td]:h-10"
       >
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-surface-sunken/95 backdrop-blur-sm">
             <TableRow>
-              <TableHead>When</TableHead>
+              <TableHead>Time</TableHead>
               <TableHead>{v("customer", { title: true })}</TableHead>
               <TableHead>Service</TableHead>
               <TableHead className="hidden xl:table-cell">With</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
               <TableHead align="right">Price</TableHead>
               <TableHead className="hidden 2xl:table-cell">Reference</TableHead>
             </TableRow>
@@ -91,7 +115,28 @@ export function BookingsResults({
           <TableBody>
             {paging.isPending
               ? Array.from({ length: 8 }, (_, i) => <SkeletonRow key={i} />)
-              : items.map((b) => <BookingRow key={b.id} booking={b} onOpen={() => openBooking(b.id)} />)}
+              : days.map((day) => (
+                  <Fragment key={day.key}>
+                    <DayRow day={day} />
+                    {day.slots.map(({ key, bookings }) =>
+                      bookings.length === 1 ? (
+                        <BookingRow
+                          key={key}
+                          booking={bookings[0]}
+                          onOpen={() => openBooking(bookings[0].id)}
+                        />
+                      ) : (
+                        <Fragment key={key}>
+                          <ClassRow bookings={bookings} open={opened.has(key)} onToggle={() => toggle(key)} />
+                          {opened.has(key) &&
+                            bookings.map((b) => (
+                              <BookingRow key={b.id} nested booking={b} onOpen={() => openBooking(b.id)} />
+                            ))}
+                        </Fragment>
+                      ),
+                    )}
+                  </Fragment>
+                ))}
           </TableBody>
         </Table>
         <InfiniteFooter
@@ -108,10 +153,31 @@ export function BookingsResults({
   return (
     <>
       {/* Phone and iPad portrait list */}
-      <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
+      <ul className="flex flex-col divide-y divide-border-subtle border-b border-border">
         {paging.isPending
           ? Array.from({ length: 6 }, (_, i) => <MobileSkeletonRow key={i} />)
-          : items.map((b) => <MobileRow key={b.id} booking={b} onOpen={() => openBooking(b.id)} />)}
+          : days.map((day) => (
+              <Fragment key={day.key}>
+                <MobileDayHeading day={day} />
+                {day.slots.map(({ key, bookings }) =>
+                  bookings.length === 1 ? (
+                    <MobileRow key={key} booking={bookings[0]} onOpen={() => openBooking(bookings[0].id)} />
+                  ) : (
+                    <Fragment key={key}>
+                      <MobileClassRow
+                        bookings={bookings}
+                        open={opened.has(key)}
+                        onToggle={() => toggle(key)}
+                      />
+                      {opened.has(key) &&
+                        bookings.map((b) => (
+                          <MobileRow key={b.id} nested booking={b} onOpen={() => openBooking(b.id)} />
+                        ))}
+                    </Fragment>
+                  ),
+                )}
+              </Fragment>
+            ))}
       </ul>
       {paging.hasNextPage && (
         <Button

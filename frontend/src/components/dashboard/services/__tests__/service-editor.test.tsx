@@ -51,7 +51,6 @@ describe("ServiceEditor: creating", () => {
   it("creates a service with what was entered, axe-clean", async () => {
     const api = fakeServicesApi({ resources: [sam, jo] });
     const { sheet, user, onOpenChange } = open();
-    expect(sheet).toHaveAccessibleDescription(/What people book, how long it takes/);
     expect(within(sheet).getByRole("complementary", { name: "Customer preview" })).toBeInTheDocument();
     await expectNoAxeViolations(document.body);
 

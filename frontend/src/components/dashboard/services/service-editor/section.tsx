@@ -1,25 +1,25 @@
-/** A titled block of the service editor, with an optional action (e.g. "Add option") on the right. */
+import { SettingGroup } from "../../settings/setting-rows";
+
+/**
+ * A titled card of the service editor, the same card as in Settings, with an optional action (e.g. "Add option") on the
+ * right. `rows` is for cards of label-and-control rows; anything else gets the card's padding.
+ */
 export function Section({
   title,
   description,
   action,
+  rows = false,
   children,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  rows?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-3 border-b border-border-subtle pb-2">
-        <div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
+    <SettingGroup title={title} description={description} action={action}>
+      {rows ? children : <div className="flex flex-col gap-4 p-4">{children}</div>}
+    </SettingGroup>
   );
 }

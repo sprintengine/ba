@@ -61,6 +61,16 @@ export function useFieldLabelledBy(named: boolean): string | undefined {
   return named ? undefined : (field?.labelId ?? undefined);
 }
 
+/** The parts of a field, for a layout other than the two orientations. */
+export type FieldParts = {
+  label: React.ReactNode;
+  control: React.ReactNode;
+  error: React.ReactNode;
+  /** Give this to the element showing the help, so the control is described by it. */
+  helpId: string;
+  disabled: boolean;
+};
+
 export type FieldProps = {
   label?: React.ReactNode;
   /** Help text under the control. */
@@ -75,6 +85,8 @@ export type FieldProps = {
   labelAction?: React.ReactNode;
   /** "vertical" (default) or "horizontal" (label left, control right — for switches in settings). */
   orientation?: "vertical" | "horizontal";
+  /** Places the parts itself (a settings row); it shows `help` too. Replaces `orientation`. */
+  layout?: (parts: FieldParts) => React.ReactNode;
   id?: string;
   className?: string;
   children: React.ReactNode;
@@ -90,6 +102,7 @@ export function Field({
   disabled = false,
   labelAction,
   orientation = "vertical",
+  layout,
   id,
   className,
   children,
@@ -129,6 +142,17 @@ export function Field({
     </div>
   ) : null;
 
+  const errorMessage = error ? (
+    <p
+      id={ctx.errorId}
+      role="alert"
+      className="flex animate-fade-in items-start gap-1.5 text-xs leading-5 font-medium text-danger-soft-foreground"
+    >
+      <CircleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+      <span>{error}</span>
+    </p>
+  ) : null;
+
   const messages = (
     <>
       {help && !error && (
@@ -141,22 +165,21 @@ export function Field({
           {help}
         </span>
       )}
-      {error && (
-        <p
-          id={ctx.errorId}
-          role="alert"
-          className="flex animate-fade-in items-start gap-1.5 text-xs leading-5 font-medium text-danger-soft-foreground"
-        >
-          <CircleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-          <span>{error}</span>
-        </p>
-      )}
+      {errorMessage}
     </>
   );
 
   return (
     <FieldContext.Provider value={ctx}>
-      {orientation === "horizontal" ? (
+      {layout ? (
+        layout({
+          label: labelRow,
+          control: children,
+          error: errorMessage,
+          helpId: ctx.descriptionId,
+          disabled,
+        })
+      ) : orientation === "horizontal" ? (
         <div
           data-disabled={disabled || undefined}
           className={cn("group flex items-start justify-between gap-6", className)}

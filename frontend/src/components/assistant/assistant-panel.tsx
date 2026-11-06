@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { Brain, House, SquarePen, X } from "lucide-react";
+import { Brain, House, SquarePen } from "lucide-react";
 import { formatCredits } from "@/lib/ai/credits";
 import { ASSISTANT_NAME, ASSISTANT_SHORTCUT } from "@/lib/assistant/constants";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { CreditsNotice } from "@/components/ai/credits";
 import { ResponsivePanel } from "@/components/ui/responsive-panel";
 import { Button } from "@/components/ui/button";
-import { IconButton } from "@/components/ui/icon-button";
 import { Kbd } from "@/components/ui/kbd";
 import { useAssistant, type AssistantView } from "./assistant-context";
 import { AssistantHome, NotConfigured } from "./assistant-home";
@@ -87,14 +86,6 @@ export function AssistantPanel() {
         <Kbd>⌘</Kbd>
         <Kbd>{ASSISTANT_SHORTCUT.key.toUpperCase()}</Kbd>
       </span>
-      {/* The phone drawer fills the screen and has no close button of its own (the side sheet does). */}
-      <IconButton
-        label={`Close ${ASSISTANT_NAME}`}
-        className="absolute top-4 right-3 sm:hidden"
-        onClick={close}
-      >
-        <X />
-      </IconButton>
     </div>
   );
 
@@ -122,7 +113,9 @@ export function AssistantPanel() {
     );
 
   return (
+    // Beside the page, not over it: what it changes stays in view as it works.
     <ResponsivePanel
+      inspector
       open={open}
       onOpenChange={setOpen}
       title={title}

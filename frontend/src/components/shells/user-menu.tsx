@@ -70,7 +70,7 @@ export function UserMenu({
           </button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={align} side={side} className="w-60">
+      <DropdownMenuContent align={align} side={side} className="w-60 max-sm:w-[calc(100vw-1rem)]">
         <DropdownMenuLabel className="flex flex-col gap-0.5 pb-2">
           <span className="text-sm font-medium text-foreground">{user.name ?? "Signed in"}</span>
           <span className="truncate font-normal">{user.email}</span>

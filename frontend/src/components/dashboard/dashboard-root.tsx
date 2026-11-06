@@ -8,6 +8,7 @@ import { useBusiness, useBusinessBySlug, useMe } from "@/lib/api/hooks";
 import { BusinessContextProvider } from "@/lib/business/business-context";
 import { VocabularyProvider } from "@/lib/vocabulary";
 import { ErrorState, NoAccess } from "@/components/common/feedback";
+import { LogoMark } from "@/components/brand/logo";
 import { DashboardShell } from "@/components/shells/dashboard-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookingActionsProvider } from "./booking/booking-actions-provider";
@@ -113,6 +114,7 @@ export function DashboardRoot({ Chrome, children }: { Chrome: DashboardChrome; c
       return (
         <NoAccess
           title="Business not found"
+          icon={<LogoMark mono title="" />}
           description={`We can't find “${boot.slug}” on this account. Check the address, or sign in with the account that runs it.`}
         />
       );

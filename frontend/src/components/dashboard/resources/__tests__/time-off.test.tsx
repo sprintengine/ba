@@ -55,9 +55,9 @@ describe("TimeOff", () => {
     const list = await screen.findByRole("list");
     const items = within(list).getAllByRole("listitem");
     expect(items.map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/12 Oct 2026Day offAll day(Remove)?$/),
-      expect.stringMatching(/12 Oct 2026Unavailable10:00–12:00 · Dentist(Remove)?$/),
-      expect.stringMatching(/20 Oct 2026Extra hours18:00–20:00(Remove)?$/),
+      expect.stringMatching(/Mon, 12 OctDay offAll day(Remove)?$/),
+      expect.stringMatching(/Mon, 12 OctPart of the day10:00–12:00 · Dentist(Remove)?$/),
+      expect.stringMatching(/Tue, 20 OctExtra hours18:00–20:00(Remove)?$/),
     ]);
     expect(screen.queryByText(/Old/)).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
@@ -75,23 +75,23 @@ describe("TimeOff", () => {
   it("says when nothing is planned", async () => {
     fakeResourcesApi({ resources: [resource()] });
     renderTimeOff();
-    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
   });
 
   it("removes an entry, naming it by date", async () => {
     const api = fakeResourcesApi({ resources: [resource()], overrides: [override({ id: "o1" })] });
     const { user } = renderTimeOff();
-    await user.click(await screen.findByRole("button", { name: "Remove 12 Oct 2026" }));
+    await user.click(await screen.findByRole("button", { name: "Remove Mon, 12 Oct" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Removed"));
     expect(api.requests.some((r) => r.method === "DELETE" && r.path.endsWith("/overrides/o1"))).toBe(true);
-    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
   });
 
   it("says why a removal failed", async () => {
     const api = fakeResourcesApi({ resources: [resource()], overrides: [override({ id: "o1" })] });
     api.fail("DELETE", /\/overrides\/o1$/, () => apiError(404, "NOT_FOUND", "Already gone."));
     const { user } = renderTimeOff();
-    await user.click(await screen.findByRole("button", { name: "Remove 12 Oct 2026" }));
+    await user.click(await screen.findByRole("button", { name: "Remove Mon, 12 Oct" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Already gone."));
   });
 

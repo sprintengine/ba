@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { useRouter } from "next/navigation";
 import { Search, UserPlus, Users } from "lucide-react";
 import type { Customer } from "@/lib/api/types";
@@ -153,29 +153,34 @@ export function CustomersList() {
                   ))
                 : items.map((c) => (
                     <TableRow key={c.id} interactive onClick={() => router.push(href(c))}>
-                      {/* Phones: the name column takes what's left and a long email wraps, so it is never cut
-                          short and can't push the count off the edge. */}
+                      {/* Phones: the name column takes what's left, and every row keeps one shape: the name and
+                          badge on a line, the contact on another, cut short rather than wrapped. */}
                       <TableCell className="max-md:w-full max-md:max-w-0">
-                        <Link
+                        <AppLink
                           href={href(c)}
                           className="flex min-w-0 items-center gap-2.5 focus-visible:outline-none pointer-coarse:min-h-11"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Avatar name={c.name} size="md" />
                           <span className="flex min-w-0 flex-col">
-                            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+                            <span className="flex min-w-0 items-center gap-x-2 font-medium">
                               <span className="truncate">{c.name}</span>
                               {c.hasAccount && (
-                                <Badge tone="brand" className="h-5 shrink-0">
+                                <Badge tone="brand" className="h-5 shrink-0 max-md:hidden">
                                   Account
                                 </Badge>
                               )}
                             </span>
-                            <span className="text-xs [overflow-wrap:anywhere] text-muted-foreground md:hidden">
-                              {c.email ?? c.phone ?? ""}
+                            <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:hidden">
+                              <span className="truncate">{c.email ?? c.phone ?? ""}</span>
+                              {c.hasAccount && (
+                                <Badge tone="brand" className="h-4.5 shrink-0">
+                                  Account
+                                </Badge>
+                              )}
                             </span>
                           </span>
-                        </Link>
+                        </AppLink>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex flex-col text-sm">
@@ -196,7 +201,7 @@ export function CustomersList() {
                       )}
                       <TableCell align="right">{c.bookingCount}</TableCell>
                       <TableCell className="hidden text-muted-foreground sm:table-cell">
-                        {c.lastBookingAt ? fmt.date(c.lastBookingAt, "medium") : "—"}
+                        {c.lastBookingAt ? fmt.day(c.lastBookingAt) : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -6,7 +6,7 @@ import { useTemplate } from "@/lib/api/hooks";
 import type { BusinessSetup } from "@/lib/api/types";
 import { createDraft } from "@/lib/onboarding/draft";
 import { DescribeStep, type DescribeValues } from "./describe-step";
-import { clearOnboarding, saveOnboarding, type DraftOrigin } from "./draft-storage";
+import { clearOnboarding, saveOnboarding, takeDescription, type DraftOrigin } from "./draft-storage";
 import { ReviewStep } from "./review-step";
 import { LookStep } from "./look-step";
 import { StartStep } from "./start-step";
@@ -37,6 +37,18 @@ export function OnboardingWizard() {
   useEffect(() => {
     if (templateParam) router.replace(pathname, { scroll: false });
   }, [templateParam, router, pathname]);
+
+  // Words typed on the home page before signing up open the describe step, already filled in.
+  useEffect(() => {
+    const description = takeDescription();
+    if (!description || state.step !== "start") return;
+    const website = /^(https?:\/\/|www\.)\S+$/i.test(description);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAiInput(website ? { description: "", websiteUrl: description } : { description, websiteUrl: "" });
+    setState({ step: "describe" });
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const templateKey = state.step === "template" ? state.key : "";
   const template = useTemplate(templateKey, { retry: false });

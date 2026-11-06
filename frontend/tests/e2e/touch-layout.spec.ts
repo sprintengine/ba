@@ -193,6 +193,8 @@ const OVERLAYS: Overlay[] = [
     name: "date picker",
     path: `${DASH}/bookings?range=custom`,
     open: async (page) => {
+      // The custom range lives in Filters now.
+      await page.getByRole("button", { name: /^Filters/ }).click();
       await page.getByRole("button", { name: "From" }).click();
       await expect(page.getByRole("grid")).toBeVisible();
     },

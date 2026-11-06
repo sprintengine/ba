@@ -21,6 +21,11 @@ import {
   type DashboardSectionKey,
 } from "@/lib/dashboard/nav";
 
+/** A rail item: glyph over its label. */
+export const railClass =
+  "relative flex w-16 flex-col items-center gap-1 rounded-lg px-0.5 pt-2 pb-1.5 text-xs leading-4 font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4.5 [&_svg]:shrink-0";
+export const railIdle = "text-muted-foreground hover:bg-accent hover:text-foreground";
+
 /** The platform-agnostic model (sections, settings, roles) lives in lib, shared with the mobile app. */
 export * from "@/lib/dashboard/nav";
 
@@ -41,7 +46,10 @@ const ICONS: Record<DashboardSectionKey, LucideIcon> = {
 };
 
 /** Primary dashboard navigation with the website's icons. Order = sidebar order. */
-export const DASHBOARD_NAV: DashboardNavItem[] = DASHBOARD_SECTIONS.map((section) => ({
+export const DASHBOARD_NAV: DashboardNavItem[] = DASHBOARD_SECTIONS.filter(
+  // On the web, who can sign in sits on the same page as who gets booked.
+  (section) => section.key !== "team",
+).map((section) => ({
   ...section,
   icon: ICONS[section.key],
 }));

@@ -103,14 +103,19 @@ describe("ServicesList", () => {
       "Inactive",
     ]);
 
-    expect(rowFor("Initial assessment")).toHaveTextContent("1 h·€65·Prepaid");
+    const plain = rowFor("Initial assessment");
+    expect(plain).toHaveTextContent("1 h");
+    expect(plain).toHaveTextContent("Prepaid");
+    expect(plain).toHaveTextContent("€65");
+    // Public, on and instantly bookable is the normal case, so it says nothing.
+    expect(within(plain).queryByText(/Private|Off|Needs approval/)).not.toBeInTheDocument();
     const follow = rowFor("Follow-up");
-    expect(follow).toHaveTextContent("30 min – 1 h·from €40·Deposit·2 options·1 add-on");
+    expect(follow).toHaveTextContent("2 options · 1 add-on");
+    expect(follow).toHaveTextContent("Deposit");
     expect(within(follow).getByText("Private")).toBeInTheDocument();
-    expect(within(follow).getByText("Approval")).toBeInTheDocument();
+    expect(within(follow).getByText("Needs approval")).toBeInTheDocument();
     expect(rowFor("Yoga class")).toHaveTextContent("12 seats");
-    expect(rowFor("Yoga class")).toHaveTextContent(/1 h·Free(?!·)/);
-    expect(screen.getByRole("switch", { name: "Public: Retired massage" })).toBeDisabled();
+    expect(within(rowFor("Retired massage")).getByText("Off")).toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -121,14 +126,15 @@ describe("ServicesList", () => {
     expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
   });
 
-  it("makes a service private from its switch, naming it", async () => {
+  const openMenu = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
+    user.click(await screen.findByRole("button", { name: `More for ${name}` }));
+
+  it("makes a service private from its menu, naming it", async () => {
     const api = fakeServicesApi({ services: [assessment] });
     const user = userEvent.setup();
     renderDashboard(<ServicesList />);
-    const publicSwitch = await screen.findByRole("switch", { name: "Public: Initial assessment" });
-    expect(publicSwitch).toBeChecked();
-    publicSwitch.focus();
-    await user.keyboard(" ");
+    await openMenu(user, "Initial assessment");
+    await user.click(await screen.findByRole("menuitem", { name: "Make private" }));
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Initial assessment is now private"));
     expect(api.bodies("PUT", "/services/s1")).toEqual([
@@ -139,18 +145,18 @@ describe("ServicesList", () => {
         color: "#0e7c70",
       }),
     ]);
-    await waitFor(() =>
-      expect(screen.getByRole("switch", { name: "Public: Initial assessment" })).not.toBeChecked(),
-    );
+    expect(await screen.findByText("Private")).toBeInTheDocument();
   });
 
   it("deactivates and reactivates a service", async () => {
     fakeServicesApi({ services: [assessment, retired] });
     const user = userEvent.setup();
     renderDashboard(<ServicesList />);
-    await user.click(await screen.findByRole("switch", { name: "Active: Initial assessment" }));
+    await openMenu(user, "Initial assessment");
+    await user.click(await screen.findByRole("menuitem", { name: "Turn off" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Initial assessment deactivated"));
-    await user.click(screen.getByRole("switch", { name: "Active: Retired massage" }));
+    await openMenu(user, "Retired massage");
+    await user.click(await screen.findByRole("menuitem", { name: "Turn on" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Retired massage activated"));
   });
 
@@ -159,20 +165,22 @@ describe("ServicesList", () => {
     api.fail("PUT", /\/services\/s1$/, () => apiError(409, "CONFLICT", "Someone else changed it."));
     const user = userEvent.setup();
     renderDashboard(<ServicesList />);
-    await user.click(await screen.findByRole("switch", { name: "Active: Initial assessment" }));
+    await openMenu(user, "Initial assessment");
+    await user.click(await screen.findByRole("menuitem", { name: "Turn off" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Someone else changed it."));
   });
 
-  it("opens the editor from the row or its edit button", async () => {
+  it("opens the editor from the row or its menu", async () => {
     fakeServicesApi({ services: [assessment] });
     const user = userEvent.setup();
     renderDashboard(<ServicesList />);
-    await user.click(await screen.findByRole("button", { name: "Edit Initial assessment" }));
+    await user.click(await screen.findByRole("button", { name: /^Edit Initial assessment/ }));
     const sheet = await screen.findByRole("dialog", { name: "Edit Initial assessment" });
     await user.click(within(sheet).getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 
-    await user.click(screen.getByRole("button", { name: /^Initial assessment/ }));
+    await openMenu(user, "Initial assessment");
+    await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
     expect(await screen.findByRole("dialog", { name: "Edit Initial assessment" })).toBeInTheDocument();
   });
 

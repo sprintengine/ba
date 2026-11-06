@@ -68,10 +68,7 @@ export function BusinessSwitcher({
           {!collapsed && (
             <>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span
-                  className="line-clamp-2 text-sm leading-5 font-semibold break-words"
-                  title={business.name}
-                >
+                <span className="truncate text-sm leading-5 font-semibold" title={business.name}>
                   {business.name}
                 </span>
                 <span className="truncate text-xs text-subtle-foreground capitalize">
@@ -83,7 +80,7 @@ export function BusinessSwitcher({
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="start">
+      <DropdownMenuContent className="w-64 max-sm:w-[calc(100vw-1rem)]" align="start">
         <DropdownMenuLabel>Businesses</DropdownMenuLabel>
         {memberships.map((m) => (
           <DropdownMenuItem key={m.businessId} asChild>
@@ -107,7 +104,7 @@ export function BusinessSwitcher({
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/">
-            <LogoMark className="size-4" aria-hidden title="" /> bookanything website
+            <LogoMark className="h-3.5! w-auto!" mono aria-hidden title="" /> bookanything website
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

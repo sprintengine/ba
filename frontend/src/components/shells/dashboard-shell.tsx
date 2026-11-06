@@ -100,7 +100,10 @@ export function DashboardShell({
           <UserMenu />
         </header>
 
-        <main id="main" className="flex-1 bg-background">
+        <main
+          id="main"
+          className="flex-1 bg-background transition-[padding] duration-200 motion-reduce:transition-none xl:pr-(--inspector-width,0px)"
+        >
           {/* Phones keep the last row clear of the tab bar (and the home indicator under it); with Bo's launcher
               floating over the corner, the last row can also scroll clear of it. */}
           <div

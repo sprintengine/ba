@@ -100,7 +100,7 @@ describe("DashboardShell", () => {
   });
 
   it("gathers the set-up pages under Business, with a strip to move between them", () => {
-    pathname = "/dashboard/lumen-physio/team";
+    pathname = "/dashboard/lumen-physio/resources";
     renderShell();
     const rail = within(sidebarNav());
     expect(rail.getByRole("link", { name: "Business" })).toHaveAttribute("aria-current", "page");
@@ -113,10 +113,9 @@ describe("DashboardShell", () => {
       "Services",
       "Offers",
       "Therapists",
-      "Team",
       "Settings",
     ]);
-    expect(strip.getByRole("link", { name: "Team" })).toHaveAttribute("aria-current", "page");
+    expect(strip.getByRole("link", { name: "Therapists" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "View booking page" })).toHaveAttribute("href", "/lumen-physio");
   });
 

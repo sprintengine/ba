@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { ThemeToggle } from "@/components/common/theme-toggle";
 import { INDUSTRIES } from "./industries";
 import { MarketingNav } from "./marketing-nav";
 
@@ -72,10 +71,9 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               </div>
             ))}
           </div>
-          <div className="flex flex-col items-start justify-between gap-4 border-t border-border-subtle py-6 text-[0.8125rem] text-subtle-foreground sm:flex-row sm:items-center">
-            <p>© {new Date().getFullYear()} bookanything · Made in Ireland</p>
-            <ThemeToggle className="pointer-coarse:[&_button]:size-11" />
-          </div>
+          <p className="border-t border-border-subtle py-6 text-[0.8125rem] text-subtle-foreground">
+            © {new Date().getFullYear()} bookanything · Made in Ireland
+          </p>
         </div>
       </footer>
     </div>

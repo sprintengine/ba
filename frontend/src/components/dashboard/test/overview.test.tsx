@@ -138,7 +138,7 @@ describe("OverviewView", () => {
     expect(today.getByRole("heading", { name: "Nothing booked today" })).toBeInTheDocument();
     await user.click(today.getByRole("button", { name: "New appointment" }));
     expect(await screen.findByRole("dialog", { name: "New appointment" }, LOAD)).toBeInTheDocument();
-    expect(screen.queryByText("Waiting for approval")).not.toBeInTheDocument();
+    expect(screen.queryByText("Needs you")).not.toBeInTheDocument();
   });
 
   it("shows the server's message with a retry when the overview fails", async () => {
@@ -199,7 +199,7 @@ describe("OverviewView", () => {
   it("approves a booking waiting for approval, naming whose it is", async () => {
     const calls = api();
     renderOverview();
-    const pending = await card("Waiting for approval");
+    const pending = await card("Needs you");
     await userEvent.click(pending.getByRole("button", { name: "Approve Riley Quinn" }));
     await waitFor(() => expect(requests(calls)).toContain("POST /v1/businesses/b1/bookings/p1/approve"));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Appointment approved"));
@@ -213,7 +213,7 @@ describe("OverviewView", () => {
       return { items: [pendingBooking], nextCursor: null };
     });
     renderOverview();
-    const pending = await card("Waiting for approval");
+    const pending = await card("Needs you");
     await userEvent.click(pending.getByRole("button", { name: "Approve Riley Quinn" }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Already declined"));
   });
@@ -222,7 +222,7 @@ describe("OverviewView", () => {
     const calls = api();
     const user = userEvent.setup();
     renderOverview();
-    const pending = await card("Waiting for approval");
+    const pending = await card("Needs you");
     expect(pending.getByText("1")).toBeInTheDocument();
     await user.click(pending.getByRole("button", { name: "Decline Riley Quinn" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Decline this appointment?" });
@@ -238,7 +238,7 @@ describe("OverviewView", () => {
       return { items: [pendingBooking], nextCursor: "next" };
     });
     renderOverview();
-    const pending = await card("Waiting for approval");
+    const pending = await card("Needs you");
     expect(pending.getByText("1+")).toBeInTheDocument();
     expect(pending.getByRole("link", { name: /See all/ })).toHaveAttribute(
       "href",
@@ -250,7 +250,7 @@ describe("OverviewView", () => {
     api();
     const user = userEvent.setup();
     renderOverview();
-    const pending = await card("Waiting for approval");
+    const pending = await card("Needs you");
     await user.click(pending.getByRole("button", { name: /^Riley Quinn/ }));
     expect(await screen.findByRole("dialog", {}, LOAD)).toBeInTheDocument();
   });
@@ -258,7 +258,7 @@ describe("OverviewView", () => {
   it("has no accessibility violations", async () => {
     api();
     const { container } = renderOverview();
-    await screen.findByText("Waiting for approval");
+    await screen.findByText("Needs you");
     await expectNoAxeViolations(container);
   });
 });

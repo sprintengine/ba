@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bot, CircleCheck, Unplug } from "lucide-react";
+import { CircleCheck, Unplug } from "lucide-react";
+import { AiBadge } from "@/components/brand/logo";
 import {
   useAgentRequest,
   useAgentRequests,
@@ -21,7 +22,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { dashboardWhere, ProposalView } from "./proposal-card";
+import { dashboardWhere, ExampleProposal, ProposalView } from "./proposal-card";
 
 /**
  * One of the member's AI apps' proposals (§20.8): what it would change, from which app, with Approve and Decline.
@@ -45,9 +46,10 @@ export function AgentRequestCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Bot className="size-3.5" aria-hidden /> From {app} ·{" "}
-        {formatDateTime(action.createdAt, business.timezone, business.locale)}
+      <p>
+        <AiBadge>
+          From {app} · {formatDateTime(action.createdAt, business.timezone, business.locale)}
+        </AiBadge>
       </p>
       <ProposalView
         action={action}
@@ -127,12 +129,13 @@ export function AgentRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <div>
+        <div className="flex flex-col gap-2">
+          <ExampleProposal where={dashboardWhere(business)} />
           <EmptyState
+            size="sm"
             headingLevel={2}
-            icon={<Bot />}
             title="Nothing to approve"
-            description="When your AI agent (Claude, ChatGPT and others) prepares a change here, it appears for you to approve."
+            description="When your AI agent (Claude, ChatGPT and others) prepares a change here, it looks like this, and nothing happens until you approve it."
             action={
               <Button asChild variant="secondary">
                 <Link href={BUSINESS_AI_HELP_PATH}>Connect your agent</Link>

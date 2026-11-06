@@ -29,7 +29,9 @@ export function WeeklyHours({ resource, editable }: { resource: Resource; editab
     <WeeklyHoursEditor
       key={JSON.stringify(availability.data.rules)}
       resourceId={resource.id}
+      color={resource.color}
       initial={rulesToSchedules(availability.data.rules)}
+      overrides={availability.data.overrides}
       editable={editable}
     />
   );

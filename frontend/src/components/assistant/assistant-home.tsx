@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, MessageSquare, PlugZap, Sparkles, X } from "lucide-react";
+import { ArrowUpRight, MessageSquare, PlugZap, X } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import { errorMessage } from "@/lib/api/client";
 import { useDismissNudge } from "@/lib/api/hooks";
 import type { Nudge } from "@/lib/api/types";
@@ -62,7 +63,7 @@ function NudgeCard({ nudge, onNavigate }: { nudge: Nudge; onNavigate: () => void
       <div className="flex flex-wrap gap-2 pl-4">
         {canAsk && (
           <Button size="xs" variant="soft" onClick={() => ask(nudge.prompt)}>
-            <Sparkles aria-hidden /> Ask {ASSISTANT_NAME}
+            <AiIcon /> Ask {ASSISTANT_NAME}
           </Button>
         )}
         {nudge.action && (
@@ -113,7 +114,7 @@ export function AssistantHome({ onNavigate }: { onNavigate: () => void }) {
       {nudges.length > 0 && (
         <section aria-labelledby="bo-nudges" className="flex flex-col gap-2.5">
           <h3 id="bo-nudges" className="text-sm font-medium text-muted-foreground">
-            Needs attention
+            Needs you
           </h3>
           <ul className="flex flex-col gap-2.5">
             {nudges.map((n) => (

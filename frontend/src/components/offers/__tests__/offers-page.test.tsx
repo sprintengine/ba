@@ -27,6 +27,7 @@ function api(offers: Offer[]) {
     if (method === "DELETE") return new Response(null, { status: 204 });
     if (path.endsWith("/offers")) return offers;
     if (path.endsWith("/services")) return [service(), service({ id: "s2", name: "Physio assessment" })];
+    if (path.endsWith("/preview")) return { affectedSlots: 0, totalSlots: 0, days: [] };
     return {};
   });
   return calls;
@@ -40,6 +41,15 @@ describe("offers list", () => {
     expect(screen.getByText("Off-peak")).toBeInTheDocument();
     expect(screen.getByText("Last-minute")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /new offer/i })).toBeInTheDocument();
+  });
+
+  it("opens a suggestion filled in, ready to change and create", async () => {
+    api([]);
+    const user = userEvent.setup();
+    renderDashboard(<OffersPage />);
+    await user.click(await screen.findByRole("button", { name: /Off-peak/ }));
+    const sheet = await screen.findByRole("dialog", { name: "New offer" });
+    expect(within(sheet).getByRole("textbox", { name: /^Name/ })).toHaveValue("Off-peak afternoons");
   });
 
   it("lists offers with label, status, summary, services and usage", async () => {
@@ -70,7 +80,7 @@ describe("offers list", () => {
     expect(within(second).getByText("Paused")).toBeInTheDocument();
     expect(second).toHaveTextContent("Sports massage, Physio assessment");
     expect(second).toHaveTextContent("0 used");
-    expect(second).toHaveTextContent("Until 31 Dec 2099");
+    expect(second).toHaveTextContent("Until Thu, 31 Dec 2099");
   });
 
   it("pauses and resumes", async () => {

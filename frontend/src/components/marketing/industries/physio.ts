@@ -23,7 +23,7 @@ export const PHYSIO: IndustryContent = {
   meta: {
     title: "Online booking for physiotherapy clinics",
     description:
-      "Book the therapist and the treatment room together, take full prepayment through your own Stripe account and keep intake notes private. Free to start, 0% platform fee.",
+      "Book the therapist and the treatment room together, take full prepayment into your own account and keep intake notes private. Free to start, 0% platform fee.",
   },
   hero: {
     eyebrow: "For physiotherapy clinics",
@@ -32,7 +32,7 @@ export const PHYSIO: IndustryContent = {
       "Clients choose a treatment and a therapist (or whoever is free), pay upfront and tell you what's wrong in a private intake question. bookanything reserves a therapist and a treatment room together, so nobody is ever double-booked.",
     points: [
       "Therapist and treatment room reserved together",
-      "Full prepayment to your own Stripe account",
+      "Full prepayment to your own account",
       "Sensitive intake answers kept private",
     ],
   },
@@ -77,7 +77,7 @@ export const PHYSIO: IndustryContent = {
     {
       icon: CreditCard,
       title: "Paid when booked",
-      body: "Full prepayment by default, straight into your own Stripe account. Late cancellations follow your policy automatically.",
+      body: "Full prepayment by default, straight into your own account. Late cancellations follow your policy automatically.",
     },
     {
       icon: Lock,

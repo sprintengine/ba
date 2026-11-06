@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import type { BillingPrice, Plan } from "@/lib/api/types";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useBilling, useBillingCheckout, useBillingPortal } from "@/lib/api/hooks";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { AiUsageCard } from "./ai-usage-card";
-import { currentPageUrl, SettingsCard, SettingsHeader } from "./settings-common";
+import { currentPageUrl, SettingGroup, SettingRow, SettingsHeader, settingsStack } from "./settings-common";
 
 const FALLBACK_PRICES: BillingPrice[] = [
   {
@@ -32,7 +32,7 @@ const FALLBACK_PRICES: BillingPrice[] = [
     amountCents: 1200,
     currency: "EUR",
     interval: "month",
-    features: ["Unlimited bookings", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
+    features: ["1,000 bookings a month", "Unlimited team", "Remove the badge", "SMS reminders at cost"],
   },
   {
     plan: "business",
@@ -78,14 +78,12 @@ export function BillingSettings() {
     return (
       <>
         <SettingsHeader segment="billing" />
-        <SettingsCard
-          title="Only owners manage billing"
-          description="Ask an owner of this business to change the plan or see invoices."
-        >
-          <span className="text-sm text-muted-foreground">
-            You&apos;re an admin, so you can manage everything else in Settings.
-          </span>
-        </SettingsCard>
+        <SettingGroup title="Your plan">
+          <SettingRow
+            label="Only owners manage billing"
+            help="Ask an owner of this business to change the plan or see invoices. You're an admin, so you can manage everything else in Settings."
+          />
+        </SettingGroup>
       </>
     );
   }
@@ -96,32 +94,30 @@ export function BillingSettings() {
       {billing.isError ? (
         <ErrorState error={billing.error} onRetry={() => billing.refetch()} />
       ) : billing.isPending ? (
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-28 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl" />
+        <div className={settingsStack}>
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
-          <SettingsCard
-            title={
-              <span className="flex items-center gap-2">
-                <span>
-                  Current plan: <span className="capitalize">{b!.plan}</span>
+        <div className={settingsStack}>
+          <SettingGroup title="Your plan">
+            <SettingRow
+              action
+              label={
+                <span className="flex flex-wrap items-center gap-2">
+                  <span>
+                    Current plan: <span className="capitalize">{b!.plan}</span>
+                  </span>
+                  {b!.status && b!.status !== "active" && (
+                    <Badge tone="warning" className="capitalize">
+                      {b!.status.replace(/_/g, " ")}
+                    </Badge>
+                  )}
                 </span>
-                {b!.status && b!.status !== "active" && (
-                  <Badge tone="warning" className="capitalize">
-                    {b!.status.replace(/_/g, " ")}
-                  </Badge>
-                )}
-              </span>
-            }
-            description={
-              b!.plan === "free"
-                ? "Free forever for small businesses."
-                : "Thanks for supporting bookanything."
-            }
-            footer={
-              b!.plan !== "free" ? (
+              }
+              help={b!.plan === "free" ? "Free until you're busy." : "Thanks for supporting bookanything."}
+            >
+              {b!.plan !== "free" ? (
                 <Button variant="secondary" loading={portal.isPending} onClick={() => void openPortal()}>
                   Manage subscription and invoices
                 </Button>
@@ -129,29 +125,30 @@ export function BillingSettings() {
                 <Button asChild variant="secondary">
                   <a href="#plans">See plans</a>
                 </Button>
-              )
-            }
-          >
-            {b!.usage.limit !== null ? (
-              <UsageMeter
-                used={b!.usage.bookingsThisMonth}
-                limit={b!.usage.limit}
-                label={`${v("bookings", { title: true })} this month`}
-              />
-            ) : (
-              <p className="tnum text-sm text-muted-foreground">
-                {b!.usage.bookingsThisMonth} {v("booking", { count: b!.usage.bookingsThisMonth })} this month
-                · unlimited
-              </p>
-            )}
-          </SettingsCard>
+              )}
+            </SettingRow>
+            <SettingRow stacked>
+              {b!.usage.limit !== null ? (
+                <UsageMeter
+                  used={b!.usage.bookingsThisMonth}
+                  limit={b!.usage.limit}
+                  label={`${v("bookings", { title: true })} this month`}
+                />
+              ) : (
+                <p className="tnum text-sm text-muted-foreground">
+                  {b!.usage.bookingsThisMonth} {v("booking", { count: b!.usage.bookingsThisMonth })} this
+                  month · unlimited
+                </p>
+              )}
+            </SettingRow>
+          </SettingGroup>
 
           <AiUsageCard />
 
           {notConfigured && (
             <div
               role="alert"
-              className="flex items-start gap-2.5 rounded-xl border border-warning-border bg-warning-soft px-4 py-3 text-sm text-warning-soft-foreground"
+              className="flex items-start gap-2.5 rounded-2xl border border-warning-border bg-warning-soft px-4.5 py-3 text-sm text-warning-soft-foreground"
             >
               <CircleAlert className="mt-0.5 size-4 shrink-0" />
               <span>
@@ -163,27 +160,27 @@ export function BillingSettings() {
             </div>
           )}
 
-          {/* The plan you're on is the card above; these are the ones to move to. */}
-          <div id="plans" className="grid scroll-mt-20 gap-4 sm:grid-cols-2">
+          {/* The plan you're on is the group above; these are the ones to move to. */}
+          <SettingGroup
+            id="plans"
+            title="Other plans"
+            className="scroll-mt-20"
+            note="Prices exclude VAT. One price per business, however many people work there. Cancel any time."
+          >
             {others.map((p) => (
-              <div
+              <SettingRow
                 key={p.plan}
-                className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5"
-              >
-                <span className="text-sm font-semibold">{p.name ?? p.plan}</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="tnum text-3xl font-semibold tracking-tight">
-                    {formatMoney(p.amountCents, p.currency)}
+                action
+                label={
+                  <span className="flex items-baseline gap-2">
+                    <span>{p.name ?? p.plan}</span>
+                    <span className="tnum font-normal text-muted-foreground">
+                      {formatMoney(p.amountCents, p.currency)} / {p.interval}
+                    </span>
                   </span>
-                  <span className="text-sm text-muted-foreground">/ {p.interval}</span>
-                </div>
-                <ul className="flex flex-1 flex-col gap-2">
-                  {(p.features ?? []).map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CircleCheck className="mt-0.5 size-4 shrink-0 text-success" /> {f}
-                    </li>
-                  ))}
-                </ul>
+                }
+                help={(p.features ?? []).join(" · ")}
+              >
                 {p.plan !== "free" && (
                   <Button
                     variant="secondary"
@@ -204,12 +201,9 @@ export function BillingSettings() {
                     {b!.plan === "free" ? `Upgrade to ${p.name ?? p.plan}` : `Switch to ${p.name ?? p.plan}`}
                   </Button>
                 )}
-              </div>
+              </SettingRow>
             ))}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Prices exclude VAT. Priced per location, not per seat. Cancel any time.
-          </p>
+          </SettingGroup>
         </div>
       )}
     </>
@@ -235,10 +229,7 @@ function UsageMeter({ used, limit, label }: { used: number; limit: number; label
         aria-label={label}
       >
         <div
-          className={cn(
-            "h-full rounded-full transition-[width]",
-            pct >= 90 ? "bg-danger" : pct >= 70 ? "bg-warning" : "bg-brand",
-          )}
+          className={cn("h-full rounded-full transition-[width]", pct >= 70 ? "bg-warning" : "bg-brand")}
           style={{ width: `${pct}%` }}
         />
       </div>

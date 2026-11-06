@@ -76,7 +76,7 @@ export function BookingPromises({ business, takesOnlinePayment }: SummaryProps) 
 
 /** Desktop sticky summary. */
 export function BookingSummaryCard(props: SummaryProps) {
-  const { business, service, quote, onEdit, steps } = props;
+  const { business, service, selection, quote, onEdit, steps } = props;
   const { v } = useVocabulary();
   const rows = useRows(props);
   const locale = business.locale;
@@ -116,6 +116,12 @@ export function BookingSummaryCard(props: SummaryProps) {
             </li>
           );
         })}
+        {/* The one thing left to choose, so the receipt reads as filling in. */}
+        {service && !selection.time && (
+          <li className="mx-3 mt-1 border-t border-dashed border-border pt-2.5 text-sm text-subtle-foreground">
+            Choose a time
+          </li>
+        )}
       </ul>
       {quote && service && (
         <div className="flex flex-col gap-3 border-t border-border-subtle pt-3">

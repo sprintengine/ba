@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { AiBadge } from "@/components/brand/logo";
 import { useTemplates } from "@/lib/api/hooks";
 import type { BusinessSetup } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +15,7 @@ export function SourceNote({ setup, origin }: { setup: BusinessSetup; origin: Dr
   if (origin.kind === "ai" && setup.source === "ai") {
     return (
       <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Badge tone="brand">
-          <Sparkles />
-          Drafted by AI
-        </Badge>
+        <AiBadge className="text-sm font-medium text-foreground">Drafted by AI</AiBadge>
         <span>Double-check prices and hours.</span>
       </p>
     );

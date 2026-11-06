@@ -298,7 +298,7 @@ describe("BookingDrawer payment", () => {
     expect(moneyRow("Deposit")).toBe("Deposit€20");
     expect(moneyRow("Outstanding")).toBe("Outstanding€70");
     expect(screen.queryByText("Paid", { selector: "dt" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Charge · stripe · failed/)).toBeInTheDocument();
+    expect(screen.getByText(/Charge · Stripe · failed/)).toBeInTheDocument();
   });
 
   it("shows the booking's money in its own currency, not the business's", async () => {
@@ -349,7 +349,7 @@ describe("BookingDrawer payment", () => {
     await screen.findByRole("dialog", { name: "Alex Morgan" });
     expect(moneyRow("Refunded")).toBe("Refunded−€45");
     expect(screen.queryByText("Outstanding")).not.toBeInTheDocument();
-    expect(screen.getByText(/Refund · stripe · succeeded/).parentElement).toHaveTextContent("−€45");
+    expect(screen.getByText(/Refund · Stripe · succeeded/).parentElement).toHaveTextContent("−€45");
   });
 
   it("strikes through the original price when a deal applied", async () => {

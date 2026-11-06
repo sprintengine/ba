@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { BadgePercent, Clock3, Hourglass, Plus, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Clock3, Hourglass, Plus, Sparkles } from "lucide-react";
 import type { Offer } from "@/lib/api/types";
 import { useOffers, useServices } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
-import { todayInTz } from "@/lib/format";
+import { addDaysToPlainDate, addMonths, todayInTz, type PlainDate } from "@/lib/format";
+import type { OfferFormValues } from "@/lib/offers/offer-form";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState, NoAccess } from "@/components/common/feedback";
 import { PageContainer } from "@/components/ui/page-container";
@@ -13,11 +14,48 @@ import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
 import { useEditorDialog } from "@/components/ui/form-dialog";
-import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OfferCard } from "./offer-card";
 import { OfferEditor } from "./offer-editor";
+
+/** Common first offers: each opens the editor filled in, for the owner to name, change and create. */
+function starterOffers(today: PlainDate) {
+  const monthEnd = addDaysToPlainDate(`${addMonths(today.slice(0, 7), 1)}-01`, -1);
+  return [
+    {
+      title: "Off-peak",
+      text: "e.g. 20% off Tuesday and Wednesday afternoons.",
+      icon: <Clock3 />,
+      values: {
+        name: "Off-peak afternoons",
+        discount: { type: "percent", percent: 20 },
+        schedule: {
+          daysOfWeek: [2, 3],
+          timeWindows: [{ start: "13:00", end: "17:00" }],
+          lastMinuteHours: 3,
+        },
+      },
+    },
+    {
+      title: "Last-minute",
+      text: "e.g. €10 off times starting within 3 hours.",
+      icon: <Hourglass />,
+      values: {
+        name: "Last-minute",
+        discount: { type: "fixed", amountCents: 1000 },
+        lastMinute: true,
+        schedule: { daysOfWeek: [], timeWindows: [], lastMinuteHours: 3 },
+      },
+    },
+    {
+      title: "Launch",
+      text: "e.g. 15% off everything until the end of the month.",
+      icon: <Sparkles />,
+      values: { name: "Launch offer", discount: { type: "percent", percent: 15 }, validUntil: monthEnd },
+    },
+  ] satisfies { title: string; text: string; icon: React.ReactNode; values: Partial<OfferFormValues> }[];
+}
 
 /** /dashboard/[slug]/offers: deals that discount quiet times (owner/admin). */
 export function OffersPage({ previewDelay }: { previewDelay?: number } = {}) {
@@ -45,6 +83,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
   const editor = useEditorDialog<Offer>();
   const open = editor.open;
   const editing = editor.current;
+  const [starter, setStarter] = useState<Partial<OfferFormValues> | undefined>();
   const today = todayInTz(business.timezone);
   const list = useMemo(
     () =>
@@ -57,7 +96,14 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
   const allServices = services.data ?? [];
   const editorServices = allServices.filter((s) => s.isActive || editing?.item?.serviceIds.includes(s.id));
   const newButton = (
-    <Button variant="primary" onClick={() => open(null)} disabled={services.isPending}>
+    <Button
+      variant="primary"
+      onClick={() => {
+        setStarter(undefined);
+        open(null);
+      }}
+      disabled={services.isPending}
+    >
       <Plus /> New offer
     </Button>
   );
@@ -66,7 +112,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
     <PageContainer size="wide">
       <PageHeader
         title="Offers"
-        description="Deals that fill quiet times. They're applied automatically when people book online — never more than one per booking."
+        description="Deals that fill quiet times. They're applied automatically when people book online, never more than one per booking."
         actions={
           list.length > 0 && (
             <ActionButton
@@ -89,28 +135,34 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="flex flex-col gap-6">
-          <EmptyState
-            headingLevel={2}
-            icon={<BadgePercent />}
-            title="No offers yet"
-            description={`Turn empty slots into ${v("bookings")}.`}
-            action={newButton}
-          />
-          <h3 className="text-sm font-medium">Offers people often start with</h3>
-          <ul className="-mt-3 grid gap-3 sm:grid-cols-3">
-            <Idea icon={<Clock3 />} title="Off-peak" text="e.g. 20% off Tuesday and Wednesday afternoons." />
-            <Idea
-              icon={<Hourglass />}
-              title="Last-minute"
-              text="e.g. €10 off times starting within 3 hours."
-            />
-            <Idea
-              icon={<Sparkles />}
-              title="Launch"
-              text="e.g. 15% off everything until the end of the month."
-            />
+        <div className="flex flex-col gap-5 pt-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold tracking-tight">No offers yet</h2>
+            <p className="text-sm text-muted-foreground">
+              Turn empty slots into {v("bookings")}. Start from one of these, or from blank.
+            </p>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-3">
+            {starterOffers(today).map((s) => (
+              <li key={s.title}>
+                <button
+                  type="button"
+                  disabled={services.isPending}
+                  onClick={() => {
+                    setStarter(s.values);
+                    open(null);
+                  }}
+                  className="focus-ring flex h-full w-full flex-col gap-1 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-border-strong hover:bg-accent/40"
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium [&_svg]:size-4 [&_svg]:text-subtle-foreground">
+                    {s.icon} {s.title}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{s.text}</span>
+                </button>
+              </li>
+            ))}
           </ul>
+          <div>{newButton}</div>
         </div>
       ) : (
         <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
@@ -123,25 +175,12 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
         <OfferEditor
           key={editing.key}
           offer={editing.item}
+          starter={editing.item ? undefined : starter}
           services={editorServices}
           {...editor.dialogProps}
           previewDelay={previewDelay}
         />
       )}
     </PageContainer>
-  );
-}
-
-function Idea({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return (
-    <li className="flex gap-3">
-      <span className="mt-0.5 shrink-0 text-subtle-foreground [&_svg]:size-4" aria-hidden>
-        {icon}
-      </span>
-      <span className="flex flex-col gap-0.5">
-        <span className="text-sm font-medium">{title}</span>
-        <span className="text-xs text-muted-foreground">{text}</span>
-      </span>
-    </li>
   );
 }

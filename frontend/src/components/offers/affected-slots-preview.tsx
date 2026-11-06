@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_LOCALE } from "@/lib/format/locale";
 import { useMemo } from "react";
 import { useWatch } from "react-hook-form";
 import { CalendarSearch, CircleAlert, RotateCw } from "lucide-react";
@@ -92,8 +93,11 @@ function PreviewResult({ preview }: { preview: OfferPreview }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-surface p-4 shadow-xs dark:bg-surface-raised">
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          <strong className="tnum text-2xl font-semibold tracking-tight text-foreground">{affected}</strong>{" "}
-          of <span className="tnum">{total}</span> times in the next {PREVIEW_DAYS} days
+          <strong className="tnum text-2xl font-semibold tracking-tight text-foreground">
+            {affected.toLocaleString(DEFAULT_LOCALE)}
+          </strong>{" "}
+          of <span className="tnum">{total.toLocaleString(DEFAULT_LOCALE)}</span> times in the next{" "}
+          {PREVIEW_DAYS} days
         </p>
         <div
           className="h-1.5 overflow-hidden rounded-full bg-muted"

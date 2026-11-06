@@ -41,7 +41,16 @@ import {
 } from "@/lib/availability/time-off";
 
 /** Date exceptions for one resource: days off, partial unavailability, extra hours. */
-export function TimeOff({ resourceId, editable }: { resourceId: string; editable: boolean }) {
+export function TimeOff({
+  resourceId,
+  editable,
+  person = true,
+}: {
+  resourceId: string;
+  editable: boolean;
+  /** A room or a machine has closures, not time off. */
+  person?: boolean;
+}) {
   const business = useCurrentBusiness();
   const availability = useResourceAvailability(business.id, resourceId);
   const create = useCreateResourceOverride(business.id, resourceId);
@@ -59,11 +68,16 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
     .filter((o) => o.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "").localeCompare(b.startTime ?? ""));
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-4.5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          One-off days off and extra hours. These override the weekly hours on that date.
-        </p>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-tight">
+            {person ? "Time off and extra hours" : "Closures and extra hours"}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            These replace the regular hours on that date, and show on the week above.
+          </p>
+        </div>
         {editable && (
           <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
             <Plus /> Add
@@ -73,7 +87,11 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
       <OverrideList
         items={upcoming}
         editable={editable}
-        empty={<p className="text-sm text-muted-foreground">No time off or extra hours.</p>}
+        empty={
+          <p className="text-sm text-muted-foreground">
+            {person ? "Nothing planned." : "No closures planned."}
+          </p>
+        }
       />
       <OverrideDialog
         open={adding}
@@ -85,7 +103,7 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
           toast.success("Added");
         }}
       />
-    </div>
+    </section>
   );
 }
 
@@ -163,11 +181,11 @@ function OverrideList({
   const remove = useDeleteOverride(business.id);
   if (items.length === 0) return empty;
   return (
-    <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
+    <ul className="flex flex-col divide-y divide-border-subtle border-t border-border-subtle">
       {items.map((o) => {
         const kind = overrideKind(o);
         return (
-          <li key={o.id} className="flex items-center gap-3 px-4 py-2.5">
+          <li key={o.id} className="flex items-center gap-3 py-2.5">
             <span className="flex size-9 shrink-0 flex-col items-center justify-center rounded-lg bg-muted leading-none">
               <span className="text-2xs font-medium text-muted-foreground uppercase">
                 {fmt.date(o.date, "weekday")}
@@ -176,7 +194,7 @@ function OverrideList({
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="flex items-center gap-2 text-sm font-medium">
-                {fmt.date(o.date, "medium")}
+                {fmt.day(o.date)}
                 <Badge
                   tone={kind === "extra" ? "success" : kind === "off" ? "neutral" : "warning"}
                   className="h-5"
@@ -193,7 +211,7 @@ function OverrideList({
               <Button
                 size="sm"
                 variant="ghost"
-                aria-label={`Remove ${fmt.date(o.date, "medium")}`}
+                aria-label={`Remove ${fmt.day(o.date)}`}
                 loading={remove.isPending && remove.variables === o.id}
                 onClick={async () => {
                   await withToast(() => remove.mutateAsync(o.id), "Removed");

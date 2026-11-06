@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import { useMe, useTemplates } from "@/lib/api/hooks";
 import { errorMessage } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,7 @@ export function StartStep({
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_140%_at_0%_0%,var(--brand-soft)_0%,transparent_55%)] opacity-90"
         />
         <span className="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-button">
-          <Sparkles aria-hidden className="size-5" />
+          <AiIcon className="h-4!" />
         </span>
         <span className="relative flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">

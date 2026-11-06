@@ -51,11 +51,11 @@ const SECTIONS: LegalSection[] = [
       <>
         <ul>
           <li>
-            The <strong>Free</strong> plan includes up to 100 bookings a month and up to 3 team members, and
-            shows a small &ldquo;Powered by bookanything&rdquo; badge on your booking page.
+            The <strong>Free</strong> plan includes up to 100 bookings a month with unlimited team members,
+            and shows a small &ldquo;Powered by bookanything&rdquo; badge on your booking page.
           </li>
           <li>
-            <strong>Paid plans</strong> are billed monthly, per location, in advance. Prices exclude VAT,
+            <strong>Paid plans</strong> are billed monthly, per business, in advance. Prices exclude VAT,
             which is added where applicable.
           </li>
           <li>You can upgrade, downgrade or cancel at any time. Cancelling moves you to the Free plan.</li>

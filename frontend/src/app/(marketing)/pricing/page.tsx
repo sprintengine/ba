@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CreditCard, MessageSquareText, Percent, RotateCcw } from "lucide-react";
+import { Layers, Percent, RotateCcw, Users } from "lucide-react";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
-import { PlanCards } from "@/components/marketing/pricing/plan-cards";
+import { PlanCards, PlanNotes } from "@/components/marketing/pricing/plan-cards";
 import { PlanComparison } from "@/components/marketing/pricing/plan-comparison";
 import { WorkedExample } from "@/components/marketing/pricing/worked-example";
 import { Container, FeatureIcon, Section, SectionHeader } from "@/components/marketing/section";
@@ -11,30 +11,42 @@ import { Container, FeatureIcon, Section, SectionHeader } from "@/components/mar
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Free to start. Pro is €12 and Business €39 a month per location, however big your team. 0% platform fee on payments on every plan.",
+    "Free until you're busy. You pay for bookings, not people: Free for 100 bookings a month, Pro €10 for 1,000, Business €49 for 10,000. Unlimited staff and appointment types on every plan.",
   alternates: { canonical: "/pricing" },
 };
 
 const PROMISES = [
   {
+    icon: Users,
+    title: "Unlimited staff",
+    body: "On every plan, including Free. Adding a person never costs extra.",
+  },
+  {
+    icon: Layers,
+    title: "Unlimited appointment types",
+    body: "Every kind of appointment, on every plan. You choose which staff do which.",
+  },
+  {
     icon: Percent,
     title: "0% platform fee",
-    body: "On every plan, including Free. We never take a cut of a booking.",
-  },
-  {
-    icon: CreditCard,
-    title: "Paid into your Stripe",
-    body: "You're the merchant of record. Stripe's standard processing fees apply.",
-  },
-  {
-    icon: MessageSquareText,
-    title: "SMS at cost",
-    body: "Text reminders are billed at what the SMS provider charges us. No markup.",
+    body: "We never take a cut of a booking. Your provider's usual card fee applies.",
   },
   {
     icon: RotateCcw,
     title: "Cancel any time",
     body: "Monthly plans, no contract. Move down to Free whenever you like.",
+  },
+];
+
+/** Who the free plan is for: the people the pricing is built around. */
+const STARTERS = [
+  {
+    title: "Working on your own",
+    body: "Every kind of appointment and your own booking page, free until you pass 100 bookings a month. Most booking software charges per person, so a team costs more every time you grow. Here it doesn't.",
+  },
+  {
+    title: "Starting a business with AI",
+    body: "Build your own site with AI and plug our booking in for free. Connect your own assistant, on every plan, and it can run the rest.",
   },
 ];
 
@@ -44,7 +56,7 @@ const FAQ: FaqItem[] = [
     answer: (
       <>
         <p>
-          You connect your own Stripe account (it takes a few minutes). When a customer pays for a booking,
+          You connect your own payment provider (it takes a few minutes). When a customer pays for a booking,
           the charge is made on your account: you&apos;re the merchant of record and the money goes straight
           to you.
         </p>
@@ -56,8 +68,8 @@ const FAQ: FaqItem[] = [
     question: "So what does it cost me per payment?",
     answer: (
       <p>
-        Only Stripe&apos;s standard card processing fee, which Stripe charges you directly. It depends on your
-        Stripe account and the customer&apos;s card; we don&apos;t add anything on top.
+        Only your provider&apos;s standard card processing fee, which it charges you directly. It depends on
+        your provider and the customer&apos;s card; we don&apos;t add anything on top.
       </p>
     ),
   },
@@ -70,26 +82,44 @@ const FAQ: FaqItem[] = [
           cancel late (nothing, half or everything). Cancellations are then refunded automatically. If you
           cancel a booking, the customer always gets a full refund.
         </p>
-        <p>Note that Stripe doesn&apos;t return its processing fee on refunds.</p>
+        <p>Note that payment providers don&apos;t usually return their processing fee on refunds.</p>
       </>
     ),
   },
   {
-    question: "What counts as a location?",
+    question: "Does it cost more to add staff?",
     answer: (
       <p>
-        A place where you take bookings, with its own address and hours: a clinic, a car wash, a studio. Each
-        location on a paid plan is billed separately. Your whole team works across them at no extra cost.
+        No. Every plan is one price per business, with unlimited staff and unlimited appointment types, Free
+        included. You pay for bookings, not people.
       </p>
     ),
   },
   {
-    question: "What happens if I go over 100 bookings on Free?",
+    question: "What happens if I go over my plan's bookings?",
     answer: (
       <p>
         Nothing is lost. New online bookings pause for the rest of the month and customers see a short message
-        instead. Bookings you already have carry on as normal, and if you upgrade to Pro, online booking opens
-        again straight away.
+        instead. Bookings you already have carry on as normal, and if you move up a plan, online booking opens
+        again straight away. Above 10,000 bookings a month, talk to us.
+      </p>
+    ),
+  },
+  {
+    question: "Can I use it with a site I built myself?",
+    answer: (
+      <p>
+        Yes, on every plan. If you built your site with AI, or any other way, plug our booking into it for
+        free and clients book without leaving.
+      </p>
+    ),
+  },
+  {
+    question: "Is AI included?",
+    answer: (
+      <p>
+        Connecting your own AI assistant is included on every plan. Our built-in assistant is a paid add-on,
+        sold as monthly credits.
       </p>
     ),
   },
@@ -97,9 +127,9 @@ const FAQ: FaqItem[] = [
     question: "Where is my data stored? Is it GDPR compliant?",
     answer: (
       <p>
-        We&apos;re building bookanything for EU businesses, with EU hosting and GDPR in mind from the start.
-        You are the controller of your customers&apos; data and we act as your processor. Answers you mark as
-        sensitive are only visible to your team and are never sent to AI models. See the draft{" "}
+        bookanything is built for EU businesses, with EU hosting and GDPR in mind from the start. You are the
+        controller of your customers&apos; data and we act as your processor. Answers you mark as sensitive
+        are only visible to your team and are never sent to AI models. See the{" "}
         <Link href="/legal/privacy">privacy policy</Link>.
       </p>
     ),
@@ -137,8 +167,14 @@ export default function PricingPage() {
             as="h1"
             align="center"
             eyebrow="Pricing"
-            title="A flat monthly price, and we never take a cut of your bookings."
-            description="Start on Free. Paid plans are priced per location, so adding staff doesn't cost extra. 0% platform fee on payments on every plan."
+            title={
+              <>
+                Free until you’re busy.
+                <br />
+                You pay for bookings, not people.
+              </>
+            }
+            description="Most booking software charges per person. Every plan here has unlimited staff and unlimited appointment types, and 0% platform fee on payments."
             className="animate-rise"
           />
         </Container>
@@ -146,11 +182,23 @@ export default function PricingPage() {
 
       <Container>
         <PlanCards />
-        <p className="mt-5 text-center text-xs text-subtle-foreground">
+        <div className="mt-6">
+          <PlanNotes />
+        </div>
+        <p className="mt-3 text-center text-xs text-subtle-foreground">
           Launch pricing in euro, excluding VAT. Prices may change before general availability.
         </p>
 
-        <ul className="mt-16 grid gap-8 border-y border-border-subtle py-10 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-14 grid gap-4 md:grid-cols-2">
+          {STARTERS.map((s) => (
+            <li key={s.title} className="rounded-2xl bg-surface-sunken p-6 sm:p-7">
+              <h2 className="font-semibold tracking-tight">{s.title}</h2>
+              <p className="mt-1 text-sm leading-normal text-muted-foreground">{s.body}</p>
+            </li>
+          ))}
+        </ul>
+
+        <ul className="mt-14 grid gap-8 border-y border-border-subtle py-10 sm:grid-cols-2 lg:grid-cols-4">
           {PROMISES.map(({ icon: Icon, title, body }) => (
             <li key={title} className="flex gap-4">
               <FeatureIcon>
@@ -170,7 +218,7 @@ export default function PricingPage() {
           id="example-title"
           eyebrow="The maths"
           title="What a three-person clinic would pay each month."
-          description="Per-seat tools cost more every time you take someone on, and commission platforms take more as you get busier. Our price stays the same either way."
+          description="Most booking software charges per person, so it costs more every time you take someone on. Commission platforms take more as you get busier. You pay for bookings, not people."
         />
         <div className="mt-12">
           <WorkedExample />
@@ -178,7 +226,7 @@ export default function PricingPage() {
       </Section>
 
       <Section aria-labelledby="compare-title" className="pt-0 sm:pt-0">
-        <SectionHeader id="compare-title" eyebrow="Compare plans" title="What's in each plan." />
+        <SectionHeader id="compare-title" eyebrow="Compare plans" title="What’s in each plan." />
         <div className="mt-10">
           <PlanComparison />
         </div>
@@ -194,7 +242,7 @@ export default function PricingPage() {
               <>
                 Anything else? Email{" "}
                 <a
-                  className="text-brand underline underline-offset-4 hover:decoration-2"
+                  className="font-medium text-foreground underline underline-offset-4 hover:decoration-2"
                   href="mailto:hello@bookanything.ie"
                 >
                   hello@bookanything.ie
@@ -209,8 +257,8 @@ export default function PricingPage() {
 
       <CtaBand
         variant="primary"
-        title="Start on Free and upgrade when you're busy."
-        description="Free covers up to 100 bookings a month, and you don't need a card to sign up."
+        title="Free until you’re busy."
+        description="Free covers 100 bookings a month, and you don’t need a card to sign up."
         secondary={{ href: "/#features", label: "See features" }}
       />
     </>

@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import type { CustomerGroup } from "@/lib/api/types";
 import {
   useCreateCustomerGroup,
@@ -21,6 +21,7 @@ import {
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { Badge } from "@/components/ui/badge";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { ActionButton } from "@/components/ui/action-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -33,7 +34,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
-import { SettingsHeader } from "./settings-common";
+import { SettingGroup, SettingItem, SettingList, SettingsHeader } from "./settings-common";
 
 export function GroupsSettings() {
   const business = useCurrentBusiness();
@@ -45,75 +46,110 @@ export function GroupsSettings() {
     (a, b) => Number(b.isActive) - Number(a.isActive) || a.sortOrder - b.sortOrder,
   );
 
+  const newGroup = (
+    <ActionButton
+      size="sm"
+      variant="primary"
+      onClick={() => editor.open(null)}
+      icon={<Plus />}
+      label="New group"
+      collapse={false}
+    />
+  );
+
   return (
     <>
-      <SettingsHeader
-        segment="customer-groups"
-        actions={
-          <ActionButton
-            size="sm"
-            variant="primary"
-            onClick={() => editor.open(null)}
-            icon={<Plus />}
-            label="New group"
-            collapse={false}
-          />
-        }
-      />
-      <p className="mb-6 max-w-prose text-sm text-muted-foreground">
-        Members of a restricted group can book only the hours assigned to it. You add people to a group on
-        their profile.
-      </p>
+      <SettingsHeader segment="customer-groups" lede actions={list.length > 0 && newGroup} />
       {groups.isError ? (
         <ErrorState error={groups.error} onRetry={() => groups.refetch()} />
       ) : groups.isPending ? (
-        <Skeleton className="h-40 rounded-xl" />
-      ) : list.length === 0 ? (
-        <div>
-          <EmptyState
-            icon={<UsersRound />}
-            title="No groups"
-            description={`Everyone books the same hours and services. Add a group when some ${v("customers")} need their own.`}
-          />
-        </div>
+        <Skeleton className="h-40 rounded-2xl" />
       ) : (
-        <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
-          {list.map((g) => (
-            <li key={g.id} className="flex items-center gap-3 px-4 py-3">
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  {g.name}
-                  {g.restricted && (
-                    <Badge tone="warning" className="h-5">
-                      <Lock /> Restricted
-                    </Badge>
-                  )}
-                  {!g.isActive && <Badge className="h-5">Inactive</Badge>}
-                </span>
-                {g.description && (
-                  <span className="truncate text-xs text-muted-foreground">{g.description}</span>
-                )}
-              </div>
-              <IconButton label={`Edit ${g.name}`} onClick={() => editor.open(g)}>
-                <Pencil />
-              </IconButton>
-              <ConfirmDialog
-                trigger={
-                  <IconButton label={`Delete ${g.name}`}>
-                    <Trash2 />
-                  </IconButton>
-                }
-                title={`Delete ${g.name}?`}
-                description={`If it's used by hours, services or ${v("bookings")} it's deactivated instead.`}
-                confirmLabel="Delete"
-                destructive
-                onConfirm={async () => {
-                  await withToast(() => remove.mutateAsync(g.id), "Group removed");
-                }}
+        <SettingGroup
+          title={list.length > 0 ? "Your groups" : "What a group looks like"}
+          description={
+            list.length > 0
+              ? "Members of a restricted group can book only the hours assigned to it. You add people to a group on their profile."
+              : undefined
+          }
+        >
+          {list.length === 0 ? (
+            <>
+              <ExamplePreview inset className="p-1.5">
+                <SettingList>
+                  <SettingItem
+                    title="Members"
+                    chips={
+                      <Badge tone="warning" className="h-5">
+                        <Lock /> Restricted
+                      </Badge>
+                    }
+                    meta={
+                      <span className="truncate text-[0.8125rem] leading-5 text-muted-foreground">
+                        Their own hours and prices
+                      </span>
+                    }
+                  />
+                </SettingList>
+              </ExamplePreview>
+              <EmptyState
+                size="sm"
+                headingLevel={4}
+                title="Everyone books alike"
+                description={`Everyone books the same hours and services. Add a group when some ${v("customers")} need their own.`}
+                action={newGroup}
               />
-            </li>
-          ))}
-        </ul>
+            </>
+          ) : (
+            <SettingList>
+              {list.map((g) => (
+                <SettingItem
+                  key={g.id}
+                  dimmed={!g.isActive}
+                  title={g.name}
+                  chips={
+                    <>
+                      {g.restricted && (
+                        <Badge tone="warning" className="h-5">
+                          <Lock /> Restricted
+                        </Badge>
+                      )}
+                      {!g.isActive && <Badge className="h-5">Inactive</Badge>}
+                    </>
+                  }
+                  meta={
+                    g.description && (
+                      <span className="truncate text-[0.8125rem] leading-5 text-muted-foreground">
+                        {g.description}
+                      </span>
+                    )
+                  }
+                  actions={
+                    <>
+                      <IconButton label={`Edit ${g.name}`} onClick={() => editor.open(g)}>
+                        <Pencil />
+                      </IconButton>
+                      <ConfirmDialog
+                        trigger={
+                          <IconButton label={`Delete ${g.name}`}>
+                            <Trash2 />
+                          </IconButton>
+                        }
+                        title={`Delete ${g.name}?`}
+                        description={`If it's used by hours, services or ${v("bookings")} it's deactivated instead.`}
+                        confirmLabel="Delete"
+                        destructive
+                        onConfirm={async () => {
+                          await withToast(() => remove.mutateAsync(g.id), "Group removed");
+                        }}
+                      />
+                    </>
+                  }
+                />
+              ))}
+            </SettingList>
+          )}
+        </SettingGroup>
       )}
       {editor.current && (
         <GroupDialog

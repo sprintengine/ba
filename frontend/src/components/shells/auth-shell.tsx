@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { CalendarCheck2, CreditCard, Sparkles } from "lucide-react";
-import { Logo } from "@/components/brand/logo";
+import { CalendarCheck2, CreditCard } from "lucide-react";
+import { AiIcon, Logo } from "@/components/brand/logo";
 
 const POINTS = [
   {
-    icon: Sparkles,
+    icon: AiIcon,
     title: "Set up from a description",
     body: "Tell us about your business and AI drafts your services, hours and booking page for you to check.",
   },
@@ -16,7 +16,7 @@ const POINTS = [
   {
     icon: CreditCard,
     title: "0% platform fee",
-    body: "Payments and deposits go straight to your own Stripe account. We don't take a cut.",
+    body: "Payments and deposits go straight to your own account. We don't take a cut.",
   },
 ];
 

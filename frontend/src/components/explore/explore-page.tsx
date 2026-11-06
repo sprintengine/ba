@@ -104,21 +104,18 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
         onValueChange={(category) => change({ category })}
       />
 
-      <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
-        <aside aria-labelledby="explore-filters-title" className="hidden lg:block">
-          <div className="sticky top-24 flex flex-col gap-5">
-            <div className="flex h-8 items-center justify-between">
-              <h2 id="explore-filters-title" className="text-sm font-semibold">
-                Filters
-              </h2>
-              {panelCount > 0 && (
-                <Button variant="link" size="sm" onClick={() => change(PANEL_DEFAULTS)}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            <FiltersPanel filters={filters} onChange={change} />
-          </div>
+      <div className="flex flex-col gap-5">
+        {/* A bar with room for it, one Filters button without: the free times are what people came for. */}
+        <aside aria-labelledby="explore-filters-title" className="hidden items-start gap-6 xl:flex">
+          <h2 id="explore-filters-title" className="sr-only">
+            Filters
+          </h2>
+          <FiltersPanel filters={filters} onChange={change} bar />
+          {panelCount > 0 && (
+            <Button variant="link" size="sm" onClick={() => change(PANEL_DEFAULTS)} className="ml-auto">
+              Clear
+            </Button>
+          )}
         </aside>
 
         <section aria-labelledby="explore-results-title" className="@container flex min-w-0 flex-col gap-4">
@@ -151,7 +148,7 @@ function cityName(filters: ExploreFilters, meta: MarketplaceMeta | undefined, ce
   return meta?.cities.find((c) => c.slug === location.slug)?.name ?? centerLabel ?? "your area";
 }
 
-/** "Physiotherapists in Galway · within 20 km", "Businesses near you · within 25 km", "Businesses across Ireland". */
+/** Under a heading that names the place and trade: "Within 20 km of Galway", "Within 25 km of you", "Businesses across Ireland". */
 function describeScope(
   filters: ExploreFilters,
   meta: MarketplaceMeta | undefined,
@@ -163,9 +160,9 @@ function describeScope(
     case "anywhere":
       return `${subject} across Ireland`;
     case "near":
-      return `${subject} near you · within ${radius} km`;
+      return `Within ${radius} km of you`;
     case "city":
-      return `${subject} in ${cityName(filters, meta, centerLabel)} · within ${radius} km`;
+      return `Within ${radius} km of ${cityName(filters, meta, centerLabel)}`;
   }
 }
 

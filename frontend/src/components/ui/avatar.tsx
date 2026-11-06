@@ -11,7 +11,8 @@ const sizes = {
   xl: "size-14 text-lg",
 } as const;
 
-// Soft, warm-leaning tints; deterministic per name.
+// Soft, warm-leaning tints for businesses; deterministic per name. People are neutral: colour on a list of customers
+// would say nothing, and colour is kept for the staff and services it means something for.
 const tints = [
   "bg-[oklch(0.93_0.04_180)] text-[oklch(0.4_0.07_185)] dark:bg-[oklch(0.33_0.05_185)] dark:text-[oklch(0.88_0.06_180)]",
   "bg-[oklch(0.93_0.04_250)] text-[oklch(0.42_0.1_255)] dark:bg-[oklch(0.33_0.06_255)] dark:text-[oklch(0.88_0.05_250)]",
@@ -59,7 +60,10 @@ export function Avatar({
       {src && <AvatarPrimitive.Image src={src} alt={name ?? ""} className="size-full object-cover" />}
       <AvatarPrimitive.Fallback
         delayMs={src ? 400 : 0}
-        className={cn("flex size-full items-center justify-center", tintFor(name ?? "?"))}
+        className={cn(
+          "flex size-full items-center justify-center",
+          shape === "circle" ? "bg-muted text-muted-foreground" : tintFor(name ?? "?"),
+        )}
       >
         {initials(name)}
       </AvatarPrimitive.Fallback>

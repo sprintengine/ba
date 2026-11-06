@@ -115,14 +115,14 @@ export function paymentModeCopy(
     case "deposit":
       return `${formatMoney(q.dueNowCents, currency, { locale })} deposit online now, ${formatMoney(q.dueLaterCents, currency, { locale })} at your appointment.`;
     case "at_venue":
-      return "Nothing to pay now — pay at your appointment.";
+      return "Nothing to pay now. Pay at your appointment.";
   }
 }
 
 /** The review step's button: pay (the amount due now), send a request, or confirm. */
 export function submitLabel(
   service: Pick<PublicService, "requiresApproval">,
-  q: Pick<Quote, "mode" | "dueNowCents">,
+  q: Pick<Quote, "mode" | "dueNowCents" | "totalCents">,
   currency: string,
   locale: string,
   bookingNoun: string,
@@ -130,5 +130,7 @@ export function submitLabel(
   if (q.mode === "full" || q.mode === "deposit")
     return `Continue to payment · ${formatMoney(q.dueNowCents, currency, { locale })}`;
   if (service.requiresApproval) return "Send request";
+  if (q.mode === "at_venue" && q.totalCents > 0)
+    return `Confirm ${bookingNoun} · ${formatMoney(q.totalCents, currency, { locale })} at venue`;
   return `Confirm ${bookingNoun}`;
 }

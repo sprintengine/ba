@@ -108,8 +108,11 @@ describe("PoliciesSettings", () => {
         nextAvailableOnly: true,
       },
     });
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Policies saved"));
-    expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("Changes saved")).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("validates on the client against the backend's limits", async () => {

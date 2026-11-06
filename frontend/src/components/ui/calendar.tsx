@@ -212,19 +212,14 @@ export function Calendar({
                           : isDisabled
                             ? "cursor-not-allowed text-subtle-foreground"
                             : "text-foreground hover:bg-accent active:scale-95",
-                        isToday &&
-                          !isSelected &&
-                          "text-brand after:absolute after:top-1 after:right-1 after:size-1 after:rounded-full after:bg-brand",
+                        isToday && !isSelected && "font-semibold text-brand",
                       )}
                     >
                       {Number(date.slice(8))}
-                      {marker && (
+                      {marker && !isSelected && (
                         <span
                           aria-hidden
-                          className={cn(
-                            "absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full",
-                            isSelected ? "bg-primary-foreground" : "bg-brand",
-                          )}
+                          className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-brand"
                         />
                       )}
                       {locked && (

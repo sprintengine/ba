@@ -11,7 +11,7 @@ export type OverrideKind = "off" | "partial" | "extra";
 
 export const OVERRIDE_KIND_LABEL: Record<OverrideKind, string> = {
   off: "Day off",
-  partial: "Unavailable",
+  partial: "Part of the day",
   extra: "Extra hours",
 };
 

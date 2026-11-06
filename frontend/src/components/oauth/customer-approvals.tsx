@@ -19,7 +19,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProposalView } from "@/components/assistant/proposal-card";
+import { ExampleProposal, ProposalView } from "@/components/assistant/proposal-card";
 
 /** Where the customer sees every request their AI apps made. */
 export const MY_APPROVALS_PATH = "/my/approvals";
@@ -135,12 +135,13 @@ export function CustomerRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <div>
+        <div className="flex flex-col gap-2">
+          <ExampleProposal where={{ timezone: "UTC", href: (path) => path }} />
           <EmptyState
+            size="sm"
             headingLevel={2}
-            icon={<Bot />}
             title="Nothing to approve"
-            description="Anything your assistant asks you to confirm appears here."
+            description="Anything your assistant asks you to confirm looks like this, and waits for your yes."
             action={
               <Button asChild variant="secondary">
                 <Link href={AI_HELP_PATH}>

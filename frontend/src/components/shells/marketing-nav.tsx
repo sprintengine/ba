@@ -12,20 +12,23 @@ import { Button } from "@/components/ui/button";
 import { INDUSTRIES } from "./industries";
 
 const LINKS = [
-  { href: "/#product", label: "Product" },
-  { href: "/#features", label: "Features" },
-  { href: "/#industries", label: "Industries" },
+  { href: "/#ai", label: "AI" },
+  { href: "/#product", label: "How it works" },
+  { href: "/#industries", label: "Examples" },
   { href: "/pricing", label: "Pricing" },
 ];
 
 /** The floating pill: glass that the page scrolls under. Desktop shows links; phones and tablets get the menu. */
 const PILL =
-  "glass-chrome flex h-14 w-full max-w-[70rem] items-center gap-3 rounded-[18px] pr-2 pl-[1.125rem] max-[760px]:h-[3.25rem] max-[760px]:rounded-2xl max-[760px]:pr-1.5 max-[760px]:pl-3.5";
+  "glass-chrome flex h-14 [--glass-chrome-bg:rgb(250_250_250)] w-full max-w-[70rem] items-center gap-3 rounded-[18px] pr-2 pl-[1.125rem] max-[760px]:h-[3.25rem] max-[760px]:rounded-2xl max-[760px]:pr-1.5 max-[760px]:pl-3.5";
 
 function HomeLink({ onClick }: { onClick?: () => void }) {
+  const home = usePathname() === "/";
   return (
     <Link
       href="/"
+      // Not the page it's already on.
+      prefetch={home ? false : undefined}
       aria-label="bookanything home"
       onClick={onClick}
       className="focus-ring inline-flex min-h-11 shrink-0 items-center rounded-md"
@@ -40,6 +43,8 @@ export function MarketingNav() {
   const pathname = usePathname();
   // A hint, not the auth provider: marketing pages don't load Clerk (lib/auth/signed-in-hint.ts).
   const signedIn = useSignedInHint();
+  // Explore is for people looking for an appointment: no sales pitch, and the way to their bookings.
+  const browsing = pathname.startsWith("/explore");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -47,11 +52,11 @@ export function MarketingNav() {
   }, [pathname]);
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-3.5 z-50 flex justify-center pr-[max(0.875rem,env(safe-area-inset-right))] pl-[max(0.875rem,env(safe-area-inset-left))] max-[760px]:top-2.5 max-[760px]:pr-[max(0.625rem,env(safe-area-inset-right))] max-[760px]:pl-[max(0.625rem,env(safe-area-inset-left))]">
+    <header className="pointer-events-none fixed inset-x-0 top-3.5 z-50 flex justify-center pr-[max(0.875rem,env(safe-area-inset-right))] pl-[max(0.875rem,env(safe-area-inset-left))] before:pointer-events-none before:fixed before:inset-x-0 before:top-0 before:-z-10 before:h-[5.5rem] before:bg-linear-to-b before:from-background before:from-20% before:to-transparent before:to-60% before:[mask-image:linear-gradient(black_45%,transparent)] before:backdrop-blur-[10px] max-[760px]:top-2.5 max-[760px]:pr-[max(0.625rem,env(safe-area-inset-right))] max-[760px]:pl-[max(0.625rem,env(safe-area-inset-left))]">
       <div className={cn(PILL, "pointer-events-auto")}>
         <HomeLink />
         <nav aria-label="Main" className="mx-auto hidden items-center gap-1 lg:flex">
-          {LINKS.map((l) => (
+          {(browsing ? [] : LINKS).map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -63,7 +68,22 @@ export function MarketingNav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
-          {signedIn ? (
+          {browsing ? (
+            <>
+              <Button
+                asChild
+                variant="ghost"
+                className="hidden h-10 rounded-xl px-3.5 text-muted-foreground sm:inline-flex"
+              >
+                <Link href="/">For businesses</Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-10 rounded-xl px-4 font-semibold">
+                <Link href={signedIn ? "/my/bookings" : "/sign-in"}>
+                  {signedIn ? "My bookings" : "Sign in"}
+                </Link>
+              </Button>
+            </>
+          ) : signedIn ? (
             <Button asChild variant="primary" className="h-10 rounded-xl px-4 font-semibold">
               <Link href="/dashboard">
                 Dashboard <ArrowRight />
@@ -79,7 +99,10 @@ export function MarketingNav() {
                 <Link href="/sign-in">Sign in</Link>
               </Button>
               <Button asChild variant="primary" className="h-10 rounded-xl px-4 font-semibold">
-                <Link href="/sign-up">Start for free</Link>
+                {/* In view on every visit: the ones further down each page prefetch it for those still reading. */}
+                <Link href="/sign-up" prefetch={false}>
+                  Start for free
+                </Link>
               </Button>
             </>
           )}

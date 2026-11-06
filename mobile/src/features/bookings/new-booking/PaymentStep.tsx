@@ -48,7 +48,7 @@ export function PaymentStep({ service }: { service: Service | undefined }) {
             <ChoiceRow
               testID="payment-none"
               icon={CircleSlash}
-              title="No charge"
+              title="Free"
               detail="Nothing to pay"
               selected={field.value === "none"}
               onPress={() => field.onChange("none")}

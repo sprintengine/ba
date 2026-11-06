@@ -1,10 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import type { BlockedInterval } from "@/lib/availability/windows";
 import { useCurrentBusiness } from "@/lib/business/business-context";
-import { minutesToTime, timeToMinutes, toTimeOfDay, todayInTz, type PlainDate } from "@/lib/format/datetime";
+import {
+  minutesToTime,
+  timeToMinutes,
+  toPlainDate,
+  toTimeOfDay,
+  todayInTz,
+  type PlainDate,
+} from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { useNow } from "@/lib/hooks/use-now";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -15,15 +23,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
 import { CalendarReleases } from "../releases/lazy-releases";
-import { CLOSED_FILL, timeOffPattern } from "./blocked-band";
+import { CLOSED_FILL, PREPARATION_HATCH } from "./blocked-band";
 import { DayColumn, TimeGutter } from "./calendar-grid";
 import { CalendarHeaderRow, colMin } from "./calendar-headers";
 import { CalendarToolbar } from "./calendar-toolbar";
 import { hourPx } from "./grid-scale";
+import { useCalendarZoom } from "./use-calendar-zoom";
 
 /** The time gutter's width (`w-14`): the columns scroll under it. */
 const HOUR_GUTTER_PX = 56;
 import { useCalendarData } from "./use-calendar-data";
+import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { useCalendarKeyboard } from "./use-calendar-keyboard";
 import { useCalendarUrl } from "./use-calendar-url";
 
@@ -41,14 +51,32 @@ export function CalendarView() {
   const { date, view, setParams, go } = url;
   const data = useCalendarData(url);
   const { columns, selected, startHour, endHour } = data;
-  const scale = hourPx(view);
+  const [zoom, setZoom] = useCalendarZoom();
+  // The grid's own height, measured below, is what Fit the day fits into.
+  const [gridHeight, setGridHeight] = useState(0);
+  const shortestMinutes = useMemo(
+    () =>
+      Math.min(
+        ...columns.flatMap((c) =>
+          c.bookings.map((b) => (new Date(b.end).getTime() - new Date(b.start).getTime()) / 60_000),
+        ),
+        60,
+      ),
+    [columns],
+  );
+  const scale = hourPx(view, zoom, { available: gridHeight, hours: endHour - startHour, shortestMinutes });
   const nowMinute = timeToMinutes(toTimeOfDay(now, business.timezone));
 
   const newBooking = useCallback(
     () => openNewBooking({ date, resourceId: selected?.id }),
     [openNewBooking, date, selected],
   );
-  useCalendarKeyboard({ go, setParams, onNew: newBooking });
+  const router = useRouter();
+  const showList = useCallback(
+    () => router.push(dashboardHref(business.slug, "bookings")),
+    [router, business.slug],
+  );
+  useCalendarKeyboard({ go, setParams, onNew: newBooking, onList: showList });
   // Stable across renders so the memoised columns only re-render when their own bookings or hours change.
   const createAt = useCallback(
     (d: PlainDate, minute: number, resourceId: string | undefined) =>
@@ -84,7 +112,24 @@ export function CalendarView() {
       c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.start, business.timezone))),
     );
     const firstBusy = starts.length > 0 ? Math.min(...starts) : firstOpen;
-    const target = days.includes(today) ? Math.max(firstOpen - 15, nowMinute - 45) : firstBusy - 15;
+    // Once today's last booking is over there's nothing ahead to look at: today opens as any other day does.
+    const lastEnd = Math.max(
+      0,
+      ...columns.flatMap((c) => c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.end, business.timezone)))),
+    );
+    const live = days.includes(today) && nowMinute < lastEnd;
+    // Hours before today's first booking are empty, so today opens where the work is.
+    const startsToday = columns.flatMap((c) =>
+      c.bookings
+        .filter((b) => toPlainDate(b.start, business.timezone) === today)
+        .map((b) => timeToMinutes(toTimeOfDay(b.start, business.timezone))),
+    );
+    const firstToday = Math.min(...startsToday);
+    const target = !live
+      ? firstBusy - 15
+      : nowMinute < firstToday
+        ? firstToday - 15
+        : Math.max(firstOpen - 15, nowMinute - 45);
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * scale);
     // Where the week doesn't fit, it opens on today rather than on Monday.
     const column = view === "week" ? scroller.current.querySelector(`[data-day="${today}"]`) : null;
@@ -107,11 +152,23 @@ export function CalendarView() {
   useEffect(() => {
     const el = scroller.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(syncMoreRight);
+    const measure = () => {
+      syncMoreRight();
+      setGridHeight(el.clientHeight - (pinned.current?.offsetHeight ?? 0));
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
+    if (pinned.current) observer.observe(pinned.current);
     return () => observer.disconnect();
   }, [syncMoreRight, ready]);
+  // A new scale keeps the same time at the top of the window.
+  const scaleShown = useRef(scale);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && scaleShown.current !== scale) el.scrollTop *= scale / scaleShown.current;
+    scaleShown.current = scale;
+  }, [scale]);
   // Bookings keep their text in view just under the pinned rows, however tall those are today.
   useEffect(() => {
     const el = pinned.current;
@@ -141,6 +198,8 @@ export function CalendarView() {
         position={view === "day" ? position : null}
         waiting={data.waiting}
         showCancelled={url.showCancelled}
+        zoom={zoom}
+        onZoom={setZoom}
         setParams={setParams}
         go={go}
         onNew={newBooking}
@@ -276,22 +335,16 @@ function CalendarFooter({
         business.assistantAvailable && "max-sm:pr-20",
       )}
     >
-      <span className="tnum">
+      <span data-tally="day" className="tnum transition-opacity">
         {updating ? "Updating…" : `${count} ${v("booking", { count })}`} ·{" "}
         {business.timezone.split("/").at(-1)?.replace(/_/g, " ")}
       </span>
       <span className="hidden pointer-coarse:inline">Tap a free time to book</span>
       <span className="flex gap-3">
         <span className="inline-flex items-center gap-1.5 max-sm:hidden">
-          <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border" />
+          <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border dark:bg-background" />
           Not working
         </span>
-        {blocked.some((b) => b.kind === "time-off") && (
-          <span className="inline-flex items-center gap-1.5 max-sm:hidden">
-            <span aria-hidden className="size-3 rounded-sm ring-1 ring-border" style={timeOffPattern} />
-            Time off
-          </span>
-        )}
         {blocked.some((b) => b.kind === "closed") && (
           <span className="inline-flex items-center gap-1.5 max-sm:hidden">
             <span aria-hidden className={cn("size-3 rounded-sm ring-1 ring-border", CLOSED_FILL)} />
@@ -299,14 +352,7 @@ function CalendarFooter({
           </span>
         )}
         <span className="inline-flex items-center gap-1.5">
-          <span
-            aria-hidden
-            className="size-3 rounded-sm"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 3px)",
-            }}
-          />
+          <span aria-hidden className="size-3 rounded-sm" style={{ backgroundImage: PREPARATION_HATCH }} />
           Preparation time
         </span>
       </span>

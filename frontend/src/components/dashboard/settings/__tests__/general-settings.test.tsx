@@ -76,13 +76,23 @@ describe("GeneralSettings", () => {
     expect(screen.getByRole("heading", { name: "General" })).toBeInTheDocument();
     expect(textbox("Business name")).toHaveValue("Lumen Physiotherapy");
     expect(textbox(/booking page address/i)).toHaveValue("lumen-physio");
-    expect(screen.getByRole("switch", { name: "Published" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "Booking page" })).toBeChecked();
     expect(screen.getByRole("combobox", { name: "Currency" })).toHaveTextContent("EUR");
     expect(screen.getByRole("combobox", { name: "Date and number format" })).toHaveTextContent(
       "English (Ireland)",
     );
     expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
+  });
+
+  it("shows whether the booking page is live beside its switch", async () => {
+    api();
+    const user = userEvent.setup();
+    renderDashboard(<GeneralSettings />);
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: "Booking page" }));
+    expect(screen.getByText("Draft")).toBeInTheDocument();
+    expect(screen.queryByText("Live")).not.toBeInTheDocument();
   });
 
   it("validates on the client: the message sits under the field, which is invalid and focused", async () => {
@@ -129,7 +139,7 @@ describe("GeneralSettings", () => {
     expect(slug).toHaveValue("lumen-dublin");
     expect(screen.getByText("Changing it breaks links you've already shared.")).toBeInTheDocument();
     expect(await screen.findByRole("img", { name: "Available" })).toBeInTheDocument();
-    await user.click(screen.getByRole("switch", { name: "Published" }));
+    await user.click(screen.getByRole("switch", { name: "Booking page" }));
     await user.type(textbox(/town or city/i), " Dublin ");
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -216,15 +226,42 @@ describe("GeneralSettings", () => {
     await waitFor(() => expect(patches).toMatchObject([{ slug: "lumen-2" }]));
   });
 
+  it("says the save worked in the bar, in place of a toast, then the bar leaves", async () => {
+    api();
+    const user = userEvent.setup();
+    renderDashboard(<GeneralSettings />);
+    await user.type(textbox(/about/i), "Sports injuries");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(await screen.findByText("Changes saved")).toBeInTheDocument();
+    expect(screen.getByText("Your changes are saved")).toHaveAttribute("role", "status");
+    expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByText("Changes saved")).not.toBeInTheDocument(), {
+      timeout: 4000,
+    });
+  });
+
+  it("doesn't say saved when the server refuses, and keeps the changes", async () => {
+    api({ patch: () => apiError(409, "SLUG_TAKEN", "That address was just taken.") });
+    const user = userEvent.setup();
+    renderDashboard(<GeneralSettings />);
+    await user.type(textbox(/about/i), "Sports injuries");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("That address was just taken.");
+    expect(screen.queryByText("Changes saved")).not.toBeInTheDocument();
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+  });
+
   it("discards unsaved changes", async () => {
     api();
     const user = userEvent.setup();
     renderDashboard(<GeneralSettings />);
     await user.type(textbox(/about/i), "Sports injuries");
-    expect(screen.getByText("You have unsaved changes")).toBeInTheDocument();
+    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Discard" }));
     expect(textbox(/about/i)).toHaveValue("");
-    expect(screen.queryByText("You have unsaved changes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unsaved changes")).not.toBeInTheDocument();
   });
 
   it("keeps the save bar above the phone tab bar and Bo's launcher, over them", async () => {
@@ -233,7 +270,7 @@ describe("GeneralSettings", () => {
     renderDashboard(<GeneralSettings />, "owner", ASSISTANT_ON);
     await user.type(textbox(/about/i), "Sports injuries");
     // jsdom has no layout, so the placement is checked by its classes (end to end covers the real thing).
-    const bar = screen.getByText("You have unsaved changes").parentElement!;
+    const bar = screen.getByText("Unsaved changes").parentElement!;
     expect(bar).toHaveClass("sticky", "max-sm:z-40");
     expect(bar.className).toContain(
       "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+5rem)]",
@@ -245,7 +282,7 @@ describe("GeneralSettings", () => {
     const user = userEvent.setup();
     renderDashboard(<GeneralSettings />);
     await user.type(textbox(/about/i), "Sports injuries");
-    const bar = screen.getByText("You have unsaved changes").parentElement!;
+    const bar = screen.getByText("Unsaved changes").parentElement!;
     expect(bar).toHaveClass("sticky", "max-sm:z-40");
     expect(bar.className).toContain(
       "max-sm:bottom-[calc(var(--tab-bar-height,0px)+env(safe-area-inset-bottom)+0.75rem)]",

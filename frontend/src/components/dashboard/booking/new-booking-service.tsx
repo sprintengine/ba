@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import type { Service } from "@/lib/api/types";
 import { defaultPaymentMode, type NewBookingValues as Values } from "@/lib/dashboard/new-booking";
@@ -23,6 +23,7 @@ import { ColorDot, useFmt } from "../common";
 export function ServiceFields({ services, service }: { services: Service[]; service: Service | undefined }) {
   const fmt = useFmt();
   const form = useFormContext<Values>();
+  const trigger = useRef<HTMLButtonElement>(null);
   const byCategory = useMemo(() => {
     const map = new Map<string, Service[]>();
     for (const s of [...services].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))) {
@@ -32,46 +33,83 @@ export function ServiceFields({ services, service }: { services: Service[]; serv
     return [...map.entries()];
   }, [services]);
 
+  const choose = (id: string, onChange: (id: string) => void) => {
+    onChange(id);
+    const s = services.find((x) => x.id === id);
+    form.setValue("optionId", s?.options.length === 1 ? (s.options[0]?.id ?? null) : null);
+    form.setValue("addonIds", []);
+    form.setValue("slotStart", null);
+    form.setValue("paymentMode", defaultPaymentMode(s));
+  };
+
   return (
     <>
       <FormField<Values, "serviceId"> name="serviceId" label="Service" required>
-        {(field) => (
-          <Select
-            // "" (not undefined) shows the placeholder and keeps the Select controlled from the start.
-            value={field.value}
-            onValueChange={(id) => {
-              field.onChange(id);
-              const s = services.find((x) => x.id === id);
-              form.setValue("optionId", s?.options.length === 1 ? (s.options[0]?.id ?? null) : null);
-              form.setValue("addonIds", []);
-              form.setValue("slotStart", null);
-              form.setValue("paymentMode", defaultPaymentMode(s));
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Choose a service" />
-            </SelectTrigger>
-            <SelectContent>
-              {byCategory.map(([cat, list]) => (
-                <SelectGroup key={cat}>
-                  {byCategory.length > 1 && <SelectLabel>{cat}</SelectLabel>}
-                  {list.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      <span className="flex items-center gap-2">
-                        <ColorDot color={s.color} />
-                        {s.name}
-                        <span className="text-subtle-foreground">
-                          {formatDuration(s.durationMinutes)}
-                          {!s.isPublic ? " · private" : ""}
+        {(field) =>
+          // Every choice on show until one is made, then the sheet's first line, where it can still be changed.
+          field.value ? (
+            <Select value={field.value} onValueChange={(id) => choose(id, field.onChange)}>
+              <SelectTrigger ref={trigger}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {byCategory.map(([cat, list]) => (
+                  <SelectGroup key={cat}>
+                    {byCategory.length > 1 && <SelectLabel>{cat}</SelectLabel>}
+                    {list.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        <span className="flex items-center gap-2">
+                          <ColorDot color={s.color} />
+                          {s.name}
+                          <span className="text-subtle-foreground">
+                            {formatDuration(s.durationMinutes)}
+                            {!s.isPublic ? " · private" : ""}
+                          </span>
                         </span>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div
+              role="group"
+              aria-label="Choose a service"
+              className="flex max-h-80 flex-col overflow-y-auto rounded-xl border border-border bg-surface"
+            >
+              {byCategory.map(([cat, list]) => (
+                <div key={cat} className="flex flex-col">
+                  {byCategory.length > 1 && (
+                    <p className="px-3 pt-2.5 pb-1 text-xs font-medium text-muted-foreground">{cat}</p>
+                  )}
+                  {list.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        choose(s.id, field.onChange);
+                        // The row goes; focus moves to the line that replaces it.
+                        requestAnimationFrame(() => trigger.current?.focus());
+                      }}
+                      className="focus-ring flex min-h-10 w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors hover:bg-accent/60 pointer-coarse:min-h-11"
+                    >
+                      <ColorDot color={s.color} />
+                      <span className="min-w-0 flex-1 truncate font-medium">{s.name}</span>
+                      {!s.isPublic && <span className="text-xs text-subtle-foreground">Private</span>}
+                      <span className="tnum shrink-0 text-xs text-muted-foreground">
+                        {formatDuration(s.durationMinutes)}
                       </span>
-                    </SelectItem>
+                      <span className="tnum w-12 shrink-0 text-right text-xs text-muted-foreground">
+                        {fmt.price(s.priceCents)}
+                      </span>
+                    </button>
                   ))}
-                </SelectGroup>
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-        )}
+            </div>
+          )
+        }
       </FormField>
       {service && service.options.length > 0 && (
         <FormField<Values, "optionId"> name="optionId" label="Option" required>

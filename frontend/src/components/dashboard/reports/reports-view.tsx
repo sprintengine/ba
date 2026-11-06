@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useReportSummary } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { parseReportParams } from "@/lib/dashboard/reports";
@@ -14,6 +15,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFmt } from "../common";
 import { ServiceBars, UtilisationBars } from "./breakdowns";
+import type { Measure } from "./day-chart";
 import { PerDayCard } from "./per-day-card";
 import { ReportRangePicker } from "./report-range-picker";
 import { ReportTotals } from "./report-totals";
@@ -23,6 +25,7 @@ export function ReportsView() {
   const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
+  const [measure, setMeasure] = useState<Measure>("bookings");
   const { params, setParams } = useUrlParams();
   const { preset, range } = parseReportParams(params, todayInTz(business.timezone));
   const report = useReportSummary(business.id, range, { enabled: perms.viewReports });
@@ -45,15 +48,21 @@ export function ReportsView() {
     <PageContainer size="wide">
       <PageHeader
         title="Reports"
-        description={`${fmt.date(range.from, "medium")} – ${fmt.date(range.to, "medium")} · ${days} days`}
+        description={`${fmt.date(range.from, range.from.slice(0, 4) === range.to.slice(0, 4) ? "short" : "medium")} – ${fmt.date(range.to, "medium")} · ${days} days`}
         actions={<ReportRangePicker preset={preset} range={range} setParams={setParams} />}
       />
       {report.isError ? (
         <ErrorState error={report.error} onRetry={() => report.refetch()} />
       ) : (
         <div className="flex flex-col gap-6">
-          <ReportTotals totals={data?.totals} days={days} loading={report.isPending} />
-          <PerDayCard data={data} loading={report.isPending} />
+          <ReportTotals
+            totals={data?.totals}
+            days={days}
+            loading={report.isPending}
+            measure={measure}
+            onMeasure={setMeasure}
+          />
+          <PerDayCard data={data} loading={report.isPending} measure={measure} />
           <div className="grid items-start gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>

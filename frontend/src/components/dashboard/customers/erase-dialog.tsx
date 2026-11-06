@@ -25,11 +25,14 @@ export function EraseDialog({
   open,
   onOpenChange,
   onErased,
+  returnFocusTo,
 }: {
   customer: Pick<CustomerDetail, "id" | "name">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onErased: () => void;
+  /** Where focus goes on closing, when what opened it has gone (a menu item). */
+  returnFocusTo?: HTMLElement | null;
 }) {
   const { business } = useBusinessContext();
   const { v } = useVocabulary();
@@ -44,7 +47,14 @@ export function EraseDialog({
         if (!o) setTyped("");
       }}
     >
-      <DialogContent size="sm">
+      <DialogContent
+        size="sm"
+        onCloseAutoFocus={(e) => {
+          if (!returnFocusTo) return;
+          e.preventDefault();
+          returnFocusTo.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Erase {customer.name}?</DialogTitle>
           <DialogDescription>

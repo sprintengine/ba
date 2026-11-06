@@ -97,6 +97,12 @@ function api(routes: Routes = {}) {
 const errorBody = (status: number, code: string, message: string, fields: Record<string, string> = {}) =>
   json({ error: { code, message, fields } }, status);
 
+/** The table's booking rows, without its header and the Upcoming and Past lines. */
+const bookingRows = () =>
+  within(screen.getByRole("table"))
+    .getAllByRole("row")
+    .filter((r) => within(r).queryAllByRole("cell").length > 1);
+
 describe("CustomerDetailView", () => {
   it("says when the customer doesn't exist or isn't visible", async () => {
     api({ detail: () => errorBody(404, "NOT_FOUND", "Customer not found") });
@@ -148,20 +154,24 @@ describe("CustomerDetailView", () => {
       "mailto:alex@example.test",
     );
     expect(screen.getByRole("link", { name: /\+353871234567/ })).toHaveAttribute("href", "tel:+353871234567");
-    // The group: a badge by the name, and the value of the form's Group select.
-    expect(await screen.findByRole("combobox", { name: "Group" })).toHaveTextContent("Members");
+    // The group: a badge by the name, and a row of the details.
     expect(screen.getByText("Account").parentElement).toHaveTextContent("Members");
-    // Upcoming: only the future booking that isn't cancelled.
-    expect(screen.getByText("Upcoming").nextSibling).toHaveTextContent("1");
-    expect(screen.getByText("Appointments").nextSibling).toHaveTextContent("3");
-    expect(screen.getByText("Patient since").nextSibling).toHaveTextContent("January 2026");
+    // One sentence: upcoming counts only the future booking that isn't cancelled.
+    expect(screen.getByText(/3 appointments, 1 upcoming\./)).toHaveTextContent(
+      /Patient since January 2026\./,
+    );
+    expect(screen.getByRole("heading", { level: 2, name: "Appointments" })).toBeInTheDocument();
 
-    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    const rows = bookingRows();
     expect(rows).toHaveLength(3);
+    // What's ahead and what's been, each under its own heading.
+    expect(screen.getByRole("cell", { name: "Upcoming" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Past" })).toBeInTheDocument();
     expect(must(rows[2], "past row")).toHaveTextContent("Follow-up · Extended");
     expect(must(rows[1], "cancelled row")).toHaveTextContent("Cancelled");
-    expect(screen.getByRole("textbox", { name: /notes/i })).toHaveValue("Prefers mornings");
-    expect(screen.getByText("Newest first. Select one to open it.")).toBeInTheDocument();
+    // Read first: the details are values, not an open form.
+    expect(screen.getByText("Prefers mornings")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /notes/i })).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -170,7 +180,7 @@ describe("CustomerDetailView", () => {
     const user = userEvent.setup();
     renderDashboard(<CustomerDetailView customerId="c1" />);
     await screen.findByRole("table");
-    const [, next, , past] = within(screen.getByRole("table")).getAllByRole("row");
+    const [next, , past] = bookingRows();
     await user.click(must(past, "past row"));
     expect(actions.openBooking).toHaveBeenCalledWith("b-past");
 
@@ -204,11 +214,14 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       const notes = await screen.findByRole("textbox", { name: /notes/i });
       await user.clear(notes);
       await user.type(notes, "Prefers afternoons");
       await user.click(screen.getByRole("button", { name: "Save changes" }));
       await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Saved"));
+      // Saved, it goes back to reading.
+      expect(await screen.findByRole("button", { name: "Edit details" })).toBeInTheDocument();
       expect(sent).toEqual([
         {
           method: "PATCH",
@@ -233,6 +246,7 @@ describe("CustomerDetailView", () => {
       });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       await screen.findByRole("textbox", { name: /notes/i });
       await user.click(screen.getByRole("button", { name: "Save changes" }));
       const phone = await screen.findByRole("textbox", { name: /phone/i, description: /can text/ });
@@ -245,6 +259,7 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       const name = await screen.findByRole("textbox", { name: "Name" });
       await user.clear(name);
       await user.click(screen.getByRole("button", { name: "Save changes" }));
@@ -259,10 +274,10 @@ describe("CustomerDetailView", () => {
       renderDashboard(<CustomerDetailView customerId="c1" />, "staff");
       await screen.findByRole("heading", { level: 1, name: /Alex Morgan/ });
       expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Erase personal data/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
     });
 
-    it("downloads the customer's data as a JSON file, also from the actions menu", async () => {
+    it("downloads the customer's data as a JSON file from the actions menu", async () => {
       const sent = api();
       const createObjectURL = vi.fn(() => "blob:export");
       vi.stubGlobal("URL", Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
@@ -270,7 +285,8 @@ describe("CustomerDetailView", () => {
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
 
-      await user.click(await screen.findByRole("button", { name: /Download their data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
       await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Export downloaded"));
       expect(sent).toEqual([
         { method: "GET", path: "/v1/businesses/b1/customers/c1/export", body: undefined },
@@ -279,17 +295,14 @@ describe("CustomerDetailView", () => {
         "download",
         "alex-morgan-data-export.json",
       );
-
-      await user.click(screen.getByRole("button", { name: "More actions" }));
-      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
-      await waitFor(() => expect(click).toHaveBeenCalledTimes(2));
     });
 
     it("reports a failed export", async () => {
       api({ exportData: () => errorBody(403, "FORBIDDEN", "Only admins can export data.") });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Download their data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
       await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Only admins can export data."));
     });
 
@@ -297,7 +310,8 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Erase personal data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog", { name: "Erase Alex Morgan?" });
       await expectNoAxeViolations(document.body);
       const erase = within(dialog).getByRole("button", { name: "Erase permanently" });
@@ -318,13 +332,14 @@ describe("CustomerDetailView", () => {
       api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      const open = await screen.findByRole("button", { name: /Erase personal data/ });
-      await user.click(open);
+      const more = await screen.findByRole("button", { name: "More actions" });
+      await user.click(more);
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog");
       await user.type(within(dialog).getByRole("textbox"), "Alex Morgan");
       await user.keyboard("{Escape}");
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      await waitFor(() => expect(open).toHaveFocus());
+      await waitFor(() => expect(more).toHaveFocus());
 
       await user.click(screen.getByRole("button", { name: "More actions" }));
       await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
@@ -338,7 +353,8 @@ describe("CustomerDetailView", () => {
       api({ erase: () => errorBody(409, "CONFLICT", "They have a booking in progress.") });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Erase personal data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog");
       await user.type(within(dialog).getByRole("textbox"), "Alex Morgan");
       await user.click(within(dialog).getByRole("button", { name: "Erase permanently" }));

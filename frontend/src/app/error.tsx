@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleAlert, RotateCw } from "lucide-react";
+import { DeadEndMark } from "@/components/brand/logo";
+import { RotateCw } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,7 +17,7 @@ function RootError({ reset }: RootErrorProps) {
     <div className="flex min-h-dvh items-center justify-center px-6">
       <EmptyState
         headingLevel={1}
-        icon={<CircleAlert />}
+        icon={<DeadEndMark />}
         title="Something went wrong"
         description="This page didn't load properly. Try again, or come back in a moment."
         action={

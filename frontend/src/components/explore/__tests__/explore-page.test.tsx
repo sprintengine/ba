@@ -158,7 +158,7 @@ describe("ExplorePage", () => {
     expect(navigation.replace).toHaveBeenLastCalledWith("/explore/galway/physio", { scroll: false });
     await waitFor(() => expect(lastSearch(api).get("city")).toBe("galway"));
     expect(lastSearch(api).get("category")).toBe("physio");
-    expect(await screen.findByText("Physiotherapists in Galway · within 20 km")).toBeInTheDocument();
+    expect(await screen.findByText("Within 20 km of Galway")).toBeInTheDocument();
   });
 
   it("searches near the visitor with Near me", async () => {
@@ -174,7 +174,7 @@ describe("ExplorePage", () => {
     await waitFor(() => expect(lastSearch(api).get("lat")).toBe("53.35"));
     expect(lastSearch(api).get("lng")).toBe("-6.26");
     expect(lastSearch(api).has("city")).toBe(false);
-    expect(await screen.findByText("Businesses near you · within 25 km")).toBeInTheDocument();
+    expect(await screen.findByText("Within 25 km of you")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Near me" })).toHaveAttribute("aria-pressed", "true");
   });
 

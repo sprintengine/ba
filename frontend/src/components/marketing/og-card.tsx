@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { PRISM, WEIGHT, WORD } from "@/components/brand/logo";
 
 /** Social card size shared by every marketing `opengraph-image`. */
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -73,28 +74,30 @@ export async function renderOgCard({
         }}
       />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <svg width="56" height="56" viewBox="0 0 32 32">
-            <defs>
-              <linearGradient id="tile" x1="0.25" y1="0" x2="0.6" y2="1">
-                <stop offset="0" stopColor="#454952" />
-                <stop offset="0.55" stopColor="#1c1e22" />
-                <stop offset="1" stopColor="#0b0c0e" />
-              </linearGradient>
-              <linearGradient id="lit" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="#8fd8f2" />
-                <stop offset="0.5" stopColor="#b9a6ff" />
-                <stop offset="1" stopColor="#ffb995" />
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="9.5" fill="url(#tile)" />
-            <rect x="6" y="7" width="20" height="6" rx="3" fill="#fff" fillOpacity="0.22" />
-            <rect x="6" y="17" width="20" height="8" rx="4" fill="url(#lit)" />
-          </svg>
-          <div style={{ display: "flex", fontSize: 40, fontWeight: 600, letterSpacing: "-0.03em" }}>
-            bookanything
-          </div>
-        </div>
+        <svg
+          width={(WORD.width * 64) / WORD.height}
+          height={64}
+          viewBox={`0 0 ${WORD.width} ${WORD.height}`}
+          aria-label="bookanything"
+        >
+          <defs>
+            <linearGradient
+              id="line"
+              gradientUnits="userSpaceOnUse"
+              x1={WORD.lineLeft}
+              x2={WORD.lineRight}
+              y1={0}
+              y2={0}
+            >
+              {PRISM.map((color, i) => (
+                <stop key={color} offset={i / (PRISM.length - 1)} stopColor={color} />
+              ))}
+            </linearGradient>
+          </defs>
+          <path d={WORD.letters} fill={INK} />
+          <path d={WORD.line} fill="none" stroke="url(#line)" strokeWidth={WEIGHT.display} />
+          <circle cx={WORD.dot.cx} cy={WORD.dot.cy} r={WORD.dot.r} fill={PRISM[1]} />
+        </svg>
         {eyebrow && (
           <div
             style={{

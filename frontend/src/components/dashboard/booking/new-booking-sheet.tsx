@@ -183,11 +183,7 @@ function NewBookingSteps({
   return (
     <div className="flex flex-col gap-5">
       <ServiceFields services={services} service={service} />
-      {service ? (
-        <WhenFields service={service} resources={resources} today={today} />
-      ) : (
-        <p className="text-sm text-subtle-foreground">Choose a service to see free times.</p>
-      )}
+      {service && <WhenFields service={service} resources={resources} today={today} />}
       <CustomerFields prefill={prefill.customer} />
       <NewBookingMore service={service} questions={asked} />
       <FormRootError />

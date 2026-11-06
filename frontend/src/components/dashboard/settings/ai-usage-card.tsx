@@ -12,7 +12,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useFmt } from "../common";
-import { SettingsCard } from "./settings-common";
+import { SettingGroup, SettingRow } from "./settings-common";
 
 /** Recharts only loads when the chart is shown (it was a third of the billing page's JavaScript). */
 const DailyChart = dynamic(() => import("./ai-usage-chart").then((m) => m.DailyChart), {
@@ -36,27 +36,35 @@ function AiUsageDetails({ uses }: { uses: string }) {
   const [asTable, setAsTable] = useState(false);
   const u = usage.data;
   return (
-    <SettingsCard
+    <SettingGroup
       title="AI credits"
       description={`One monthly allowance for ${uses}. Each AI request uses credits in line with the model work it takes; unused credits don't roll over.`}
     >
       {usage.isError ? (
-        <ErrorState error={usage.error} onRetry={() => usage.refetch()} />
+        <SettingRow stacked>
+          <ErrorState error={usage.error} onRetry={() => usage.refetch()} />
+        </SettingRow>
       ) : !u ? (
-        <Skeleton className="h-40 rounded-lg" />
+        <SettingRow stacked>
+          <Skeleton className="h-40 rounded-lg" />
+        </SettingRow>
       ) : (
         <>
-          <CreditsMeter credits={u.credits} />
-          <CreditsNotice credits={u.credits} />
-          {!u.model.configured && (
-            <p className="text-sm text-muted-foreground">
-              No AI model is connected on this server, so AI features use the free built-in helpers.
-            </p>
-          )}
-          <FeatureBreakdown usage={u} />
-          <div className="flex flex-col gap-3">
+          <SettingRow stacked>
+            <CreditsMeter credits={u.credits} />
+            <CreditsNotice credits={u.credits} />
+            {!u.model.configured && (
+              <p className="text-sm text-muted-foreground">
+                No AI model is connected on this server, so AI features use the free built-in helpers.
+              </p>
+            )}
+          </SettingRow>
+          <SettingRow stacked>
+            <FeatureBreakdown usage={u} />
+          </SettingRow>
+          <SettingRow stacked>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-medium">Credits per day</h3>
+              <h4 className="text-sm font-medium">Credits per day</h4>
               <SegmentedControl
                 size="sm"
                 aria-label="Display"
@@ -69,10 +77,10 @@ function AiUsageDetails({ uses }: { uses: string }) {
               />
             </div>
             {asTable ? <DailyTable usage={u} /> : <DailyChart usage={u} />}
-          </div>
+          </SettingRow>
         </>
       )}
-    </SettingsCard>
+    </SettingGroup>
   );
 }
 
@@ -119,7 +127,7 @@ function DailyTable({ usage }: { usage: AiUsage }) {
         <TableBody>
           {[...usage.daily].reverse().map((d) => (
             <TableRow key={d.date}>
-              <TableCell className="h-9">{fmt.date(d.date, "dayMonthYear")}</TableCell>
+              <TableCell className="h-9">{fmt.day(d.date)}</TableCell>
               <TableCell align="right" className="h-9">
                 {formatCredits(d.credits, business.locale)}
               </TableCell>

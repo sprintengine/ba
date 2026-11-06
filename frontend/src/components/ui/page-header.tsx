@@ -37,7 +37,7 @@ export function PageHeader({
         </Link>
       )}
       {/* Actions sit beside the title when they fit (a glyph on a phone, see ActionButton), else wrap under it. */}
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-4 sm:flex-nowrap sm:items-end">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-4 sm:flex-nowrap">
         <div className="flex min-w-0 flex-[1_1_15rem] flex-col gap-1">
           {eyebrow && <div className="mb-1">{eyebrow}</div>}
           <h1

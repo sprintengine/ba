@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Boxes, Link2, Pencil, Plus } from "lucide-react";
+import { useMemo } from "react";
+import { Boxes, CalendarOff, KeyRound, Link2, Pencil, Plus, Rows3 } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useResources, useTeam } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
@@ -12,16 +12,17 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { PageContainer } from "@/components/ui/page-container";
 import { Badge } from "@/components/ui/badge";
-import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
 import { useEditorDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResourceKindIcon, resourceTile } from "../common";
 import { canEditAvailability } from "@/lib/business/permissions";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
+import { TeamSection } from "../team/team-view";
+import { CompareHours } from "./compare-hours";
 import { ResourceDialog } from "./resource-dialog";
 import { Closures, TimeOff } from "./time-off";
 import { WeeklyHours } from "./weekly-hours/weekly-hours";
@@ -45,7 +46,11 @@ export function ResourcesView() {
       ),
     [resources.data],
   );
-  const selected = list.find((r) => r.id === params.get("r")) ?? list[0];
+  const wanted = params.get("r");
+  // The page shows one thing at a time: someone's calendar, or something that's true of the whole business.
+  const wholeBusiness = wholeBusinessSections(list.length > 1, perms.manageClosures);
+  const section = wholeBusiness.find((s) => s.id === wanted)?.id ?? null;
+  const selected = section ? undefined : (list.find((r) => r.id === wanted) ?? list[0]);
   const myMemberId = team.data?.find((m) => m.userId === me.user.id)?.id ?? null;
   const memberName = (id: string | null) => {
     const m = team.data?.find((x) => x.id === id);
@@ -54,29 +59,10 @@ export function ResourcesView() {
   const select = (id: string) => setParams({ r: id });
 
   const addLabel = addResourceLabel(v("resource"));
-  const single = list.length < 2 && !perms.manageResources;
 
   return (
     <PageContainer size="wide">
-      <PageHeader
-        title={v("resources", { title: true })}
-        description={
-          perms.manageResources
-            ? "The people, rooms and equipment that get booked, and when each one is available."
-            : "Your working hours and time off."
-        }
-        actions={
-          perms.manageResources && (
-            <ActionButton
-              variant="primary"
-              onClick={() => editor.open(null)}
-              icon={<Plus />}
-              label={addLabel}
-              collapse={false}
-            />
-          )
-        }
-      />
+      <PageHeader title={v("resources", { title: true })} />
       {resources.isError ? (
         <ErrorState error={resources.error} onRetry={() => resources.refetch()} headingLevel={2} />
       ) : resources.isPending ? (
@@ -89,71 +75,22 @@ export function ResourcesView() {
           <Skeleton className="h-[28rem] rounded-xl" />
         </div>
       ) : list.length === 0 ? (
-        <div>
-          <EmptyState
-            headingLevel={2}
-            icon={<Boxes />}
-            title={perms.manageResources ? `No ${v("resources")} yet` : "You're not linked to a calendar"}
-            description={
-              perms.manageResources
-                ? `Add who or what gets booked. Each ${v("resource")} has its own hours and calendar column.`
-                : "Ask an admin to link you to your calendar in Team settings."
-            }
-            action={
-              perms.manageResources && (
-                <Button variant="primary" onClick={() => editor.open(null)}>
-                  <Plus /> {addLabel}
-                </Button>
-              )
-            }
-          />
-        </div>
+        <NoResources addLabel={addLabel} onAdd={() => editor.open(null)} />
       ) : (
-        <div className="flex flex-col gap-10">
-          <div className={cn("grid items-start gap-6", !single && "lg:grid-cols-[18rem_minmax(0,1fr)]")}>
-            {/* With only one, there is nothing to pick: the panel says who it is. */}
-            {!single && (
-              <nav
-                aria-label={v("resources", { title: true })}
-                className="flex flex-wrap gap-1.5 lg:flex-col"
-              >
-                {list.map((r) => {
-                  const active = selected?.id === r.id;
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => select(r.id)}
-                      aria-current={active ? "true" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0 lg:py-2.5",
-                        active ? "border-transparent bg-accent" : "border-transparent hover:bg-accent/60",
-                        !r.isActive && "opacity-60",
-                      )}
-                    >
-                      <span
-                        className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                        style={resourceTile(r.color)}
-                      >
-                        <ResourceKindIcon kind={r.kind} className="size-4" />
-                      </span>
-                      <span className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium">{r.name}</span>
-                        <span className="truncate text-xs text-muted-foreground max-lg:hidden">
-                          {!r.isActive
-                            ? "Inactive"
-                            : r.kind === "person"
-                              ? memberName(r.memberId)
-                                ? `Linked to ${memberName(r.memberId)}`
-                                : "Not linked"
-                              : `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
-            )}
+        <div className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+          <StaffNav
+            list={list}
+            selectedId={selected?.id}
+            section={section}
+            sections={wholeBusiness}
+            memberName={memberName}
+            onSelect={select}
+            add={perms.manageResources ? { label: addLabel, onAdd: () => editor.open(null) } : null}
+          />
+          <div className="min-w-0">
+            {section === "compare" && <CompareHours resources={list} onSelect={select} />}
+            {section === "sign-in" && <TeamSection />}
+            {section === "closures" && <Closures editable />}
             {selected && (
               <ResourcePanel
                 key={selected.id}
@@ -165,7 +102,6 @@ export function ResourcesView() {
               />
             )}
           </div>
-          {perms.manageClosures && <Closures editable />}
         </div>
       )}
       {editor.current && (
@@ -179,6 +115,145 @@ export function ResourcesView() {
         />
       )}
     </PageContainer>
+  );
+}
+
+const wholeBusinessSections = (several: boolean, closures: boolean) => [
+  ...(several ? [{ id: "compare", label: "Compare hours", icon: <Rows3 /> }] : []),
+  { id: "sign-in", label: "Who can sign in", icon: <KeyRound /> },
+  ...(closures ? [{ id: "closures", label: "Closures", icon: <CalendarOff /> }] : []),
+];
+
+function NoResources({ addLabel, onAdd }: { addLabel: string; onAdd: () => void }) {
+  const perms = usePermissions();
+  const { v } = useVocabulary();
+  return (
+    <EmptyState
+      headingLevel={2}
+      icon={<Boxes />}
+      title={perms.manageResources ? `No ${v("resources")} yet` : "You're not linked to a calendar"}
+      description={
+        perms.manageResources
+          ? `Add who or what gets booked. Each ${v("resource")} has its own hours and calendar column.`
+          : "Ask an admin to link you to your calendar on this page."
+      }
+      action={
+        perms.manageResources && (
+          <Button variant="primary" onClick={onAdd}>
+            <Plus /> {addLabel}
+          </Button>
+        )
+      }
+    />
+  );
+}
+
+const resourceNote = (r: Resource, signsInAs: string | null) => {
+  if (!r.isActive) return "Inactive";
+  if (r.kind === "person") return signsInAs ? `Signs in as ${signsInAs}` : "No sign-in";
+  return `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`;
+};
+
+/** The page's list: who gets booked, then what's true of the whole business. One of them shows at a time. */
+function StaffNav({
+  list,
+  selectedId,
+  section,
+  sections,
+  memberName,
+  onSelect,
+  add,
+}: {
+  list: Resource[];
+  selectedId: string | undefined;
+  section: string | null;
+  sections: { id: string; label: string; icon: React.ReactNode }[];
+  memberName: (id: string | null) => string | null;
+  onSelect: (id: string) => void;
+  add: { label: string; onAdd: () => void } | null;
+}) {
+  const { v } = useVocabulary();
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 lg:flex lg:flex-col">
+      {/* On a phone one compact control gets to everything, so the hours start near the top of the screen. */}
+      <Select value={section ?? selectedId ?? ""} onValueChange={onSelect}>
+        <SelectTrigger className="lg:hidden" aria-label={`Choose ${v("resource")} or section`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {list.map((r) => (
+            <SelectItem key={r.id} value={r.id}>
+              {r.name}
+            </SelectItem>
+          ))}
+          {sections.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <nav aria-label={v("resources", { title: true })} className="flex flex-col gap-0.5 max-lg:hidden">
+        {list.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => onSelect(r.id)}
+            aria-current={selectedId === r.id ? "true" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              selectedId === r.id ? "bg-accent" : "hover:bg-accent/60",
+              !r.isActive && "opacity-60",
+            )}
+          >
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+              style={resourceTile(r.color)}
+            >
+              <ResourceKindIcon kind={r.kind} className="size-4" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium">{r.name}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {resourceNote(r, memberName(r.memberId))}
+              </span>
+            </span>
+          </button>
+        ))}
+      </nav>
+      {add && (
+        <button
+          type="button"
+          onClick={add.onAdd}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-border-strong">
+            <Plus className="size-4" aria-hidden />
+          </span>
+          <span className="max-lg:sr-only">{add.label}</span>
+        </button>
+      )}
+      <nav aria-label="Whole business" className="mt-2 flex flex-col gap-0.5 max-lg:hidden">
+        <h2 className="px-3 text-xs font-medium text-muted-foreground">Whole business</h2>
+        <div className="flex flex-col gap-0.5">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onSelect(s.id)}
+              aria-current={section === s.id ? "true" : undefined}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
+                section === s.id ? "bg-accent font-medium" : "hover:bg-accent/60",
+              )}
+            >
+              {s.icon}
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
   );
 }
 
@@ -199,9 +274,8 @@ function ResourcePanel({
   linkedTo: string | null;
   onEdit: () => void;
 }) {
-  const [tab, setTab] = useState("hours");
   return (
-    <div className="flex min-w-0 flex-col lg:not-only:border-l lg:not-only:border-border lg:not-only:pl-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -225,23 +299,13 @@ function ResourcePanel({
         )}
       </div>
       {!editable && (
-        <p className="mt-3 rounded-lg bg-surface-sunken px-3 py-2 text-xs text-muted-foreground">
+        <p className="rounded-lg bg-surface-sunken px-3 py-2 text-xs text-muted-foreground">
           View only — you can edit hours for your own calendar.
         </p>
       )}
-      <Tabs value={tab} onValueChange={setTab} className="mt-4">
-        <TabsList>
-          <TabsTrigger value="hours">Weekly hours</TabsTrigger>
-          <TabsTrigger value="exceptions">Time off and extra hours</TabsTrigger>
-        </TabsList>
-        {/* Kept mounted while hidden, so unsaved weekly hours survive a look at time off. */}
-        <TabsContent value="hours" forceMount hidden={tab !== "hours"}>
-          <WeeklyHours resource={resource} editable={editable} />
-        </TabsContent>
-        <TabsContent value="exceptions">
-          <TimeOff resourceId={resource.id} editable={editable} />
-        </TabsContent>
-      </Tabs>
+      {/* One page for one calendar: the regular week, then what's different on particular dates. */}
+      <WeeklyHours resource={resource} editable={editable} />
+      <TimeOff resourceId={resource.id} editable={editable} person={resource.kind === "person"} />
     </div>
   );
 }

@@ -9,7 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import type { CalendarEvent } from "./event-block";
 import {
   CARD,
+  CARD_LINE,
   CARD_RAISED,
+  CARD_TEXT_TIGHT,
+  isTight,
   lanePosition,
   linesFor,
   serviceTint,
@@ -18,6 +21,7 @@ import {
   STUCK_DETAIL,
   STUCK_NAME,
   TONE_DOT,
+  waitingFill,
   type Position,
 } from "./event-card";
 
@@ -56,19 +60,20 @@ export function SessionButton({
             CARD,
             CARD_RAISED,
             "@container data-[state=open]:z-20 data-[state=open]:ring-2 data-[state=open]:ring-ring",
-            waiting && "border-warning-border bg-warning-soft",
+            waiting && "border-warning-border",
           )}
-          style={{ ...pos, top, height: h, ...(waiting ? {} : serviceTint(first.service.color)) }}
+          style={{ ...pos, top, height: h, ...(waiting ? waitingFill : serviceTint(first.service.color)) }}
         >
           {/* Read as one sentence; the lines on screen would run together (WCAG 2.5.3). */}
           <span className="sr-only">
             {`${first.service.name}, ${time}, ${count}${waiting ? ", some waiting for approval" : ""}`}
           </span>
-          <span aria-hidden className={CARD_TEXT}>
+          <span aria-hidden className={isTight(h) ? CARD_TEXT_TIGHT : CARD_TEXT}>
             <span
               className={cn(
                 STUCK_NAME,
-                "flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
+                "flex w-full min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
+                isTight(h) && "mt-0 pt-0 text-xs leading-[0.9375rem]",
               )}
             >
               <span className="truncate">{first.service.name}</span>
@@ -87,12 +92,17 @@ export function SessionButton({
               </span>
             )}
             {lines >= 3 && waiting && (
-              <span className="block truncate text-xs leading-[1.0625rem]">
+              <span className={cn(CARD_LINE, "block truncate text-xs leading-[1.0625rem]")}>
                 <StatusWord tone="warning">Some need approval</StatusWord>
               </span>
             )}
             {lines >= (waiting ? 4 : 3) && place && (
-              <span className="block truncate text-xs leading-[1.0625rem] font-medium text-foreground">
+              <span
+                className={cn(
+                  CARD_LINE,
+                  "block truncate text-xs leading-[1.0625rem] font-medium text-foreground",
+                )}
+              >
                 {place}
               </span>
             )}
@@ -149,6 +159,9 @@ export function OverflowMarker({
   const from = formatTime(bookings[0]?.start ?? overflow.events[0].item.start);
   const until = formatTime(bookings.at(-1)?.end ?? overflow.events[0].item.end);
   const title = `${n}${whole ? "" : " more"} ${v("booking", { count: n })}`;
+  const height = Math.max((e - s) * pxPerMin - 2, 22);
+  // A stack in a week names who's in it, tinted like the bookings it holds, with a card's edge showing behind.
+  const stack = whole ? bookings[0] : undefined;
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -158,30 +171,21 @@ export function OverflowMarker({
           className={cn(
             CARD,
             CARD_RAISED,
-            "@container border-border-strong bg-surface-raised text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
+            "@container text-xs leading-4 font-semibold text-foreground data-[state=open]:z-20",
+            !stack && "border-border-strong bg-surface-raised",
           )}
           style={{
             ...lanePosition(overflow.lane, overflow.lanes),
             top: top(s) + 1,
-            height: Math.max((e - s) * pxPerMin - 2, 22),
+            height,
+            ...(stack ? stackLook(stack.service.color) : {}),
           }}
         >
           <span className="sr-only">{`${title}, ${from} to ${until}`}</span>
           {/* The whole column: what's there and when. A lane beside other blocks: the count. */}
           {/* Pinned like a booking's name: a long block scrolled to its middle must not read as an empty card. */}
-          <span aria-hidden className={CARD_TEXT}>
-            <span className={cn(STUCK_NAME, "tnum block truncate", !whole && "@max-[6rem]:hidden")}>
-              {n} {v("booking", { count: n })}
-            </span>
-            <span
-              className={cn(
-                STUCK_DETAIL,
-                "tnum block truncate text-xs font-normal text-muted-foreground",
-                !whole && "@max-[6rem]:hidden",
-              )}
-            >
-              {from}–{until}
-            </span>
+          <span aria-hidden className={isTight(height) ? CARD_TEXT_TIGHT : CARD_TEXT}>
+            <StackText bookings={bookings} whole={!!whole} height={height} from={from} until={until} />
             {!whole && <span className="tnum hidden text-center @max-[6rem]:block">+{n}</span>}
           </span>
         </button>
@@ -196,6 +200,76 @@ export function OverflowMarker({
         <BookingList bookings={bookings} formatTime={formatTime} onSelect={onSelect} showTime />
       </PopoverContent>
     </Popover>
+  );
+}
+
+const stackLook = (color: string): React.CSSProperties => ({
+  ...serviceTint(color),
+  boxShadow: `0 2px 0 -1px var(--surface), 0 3px 0 -1px color-mix(in oklab, ${color} 28%, var(--surface))`,
+});
+
+/** What a stack or a "+N" says: who's in it and when, then what, as the height allows. */
+function StackText({
+  bookings,
+  whole,
+  height,
+  from,
+  until,
+}: {
+  bookings: Booking[];
+  whole: boolean;
+  height: number;
+  from: string;
+  until: string;
+}) {
+  const { v } = useVocabulary();
+  const n = bookings.length;
+  const first = whole ? bookings[0] : undefined;
+  const lines = linesFor(height);
+  // Names say who's in the stack: a count alone reads as one booking with a number on it.
+  const names = bookings.map((b) => b.customer.name.split(" ")[0]);
+  const services = [...new Set(bookings.map((b) => b.service.name))];
+  return (
+    <>
+      <span
+        className={cn(
+          STUCK_NAME,
+          // As wide as the card: pinned over the time as the card scrolls away, it has to cover all of it.
+          "tnum flex w-full min-w-0 items-baseline gap-1",
+          !whole && "@max-[6rem]:hidden",
+          isTight(height) && "mt-0 pt-0",
+        )}
+      >
+        {first ? (
+          <>
+            <span className="min-w-0 truncate">
+              {n} {v("bookings")}
+            </span>
+          </>
+        ) : (
+          <span className="truncate">
+            {n} {v("booking", { count: n })}
+          </span>
+        )}
+      </span>
+      {(lines >= 2 || !whole) && (
+        <span
+          className={cn(
+            STUCK_DETAIL,
+            "tnum block truncate text-xs font-normal text-muted-foreground",
+            !whole && "@max-[6rem]:hidden",
+          )}
+        >
+          {from}–{until}
+        </span>
+      )}
+      {first && lines >= 3 && (
+        <span className="block truncate text-xs font-normal text-muted-foreground">
+          {`${names.slice(0, 2).join(", ")}${n > 2 ? ` +${n - 2}` : ""}`}
+          {services.length === 1 ? ` · ${services[0]}` : ""}
+        </span>
+      )}
+    </>
   );
 }
 

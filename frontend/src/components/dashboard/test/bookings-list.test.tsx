@@ -101,7 +101,7 @@ describe("BookingsList", () => {
     expect(url?.searchParams.get("limit")).toBe("50");
   });
 
-  it("shows a row per booking with its time, customer, service, calendar, status, price and reference", async () => {
+  it("shows a row per booking under its day, saying only what's out of the ordinary", async () => {
     serve([
       booking({ option: { id: "o1", name: "Long" } }),
       booking({
@@ -115,15 +115,33 @@ describe("BookingsList", () => {
     ]);
     renderList();
     const table = await screen.findByRole("table");
-    await waitFor(() => expect(within(table).getAllByRole("row")).toHaveLength(3));
+    await waitFor(() => expect(within(table).getAllByRole("row")).toHaveLength(4));
     // Only the table: the phone list isn't rendered alongside it.
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
-    const [, first, second] = within(table).getAllByRole("row");
-    expect(first).toHaveTextContent(
-      /Alex Morgan.*alex@example\.test.*Follow-up · Long.*Sam Rivers.*Confirmed.*Paid.*€45.*BA-TEST01/,
-    );
-    expect(second).toHaveTextContent(/Riley Quinn.*087 123 4567.*—.*Needs approval/);
+    const [, day, first, second] = within(table).getAllByRole("row");
+    expect(day).toHaveTextContent(/2 appointments/);
+    expect(first).toHaveTextContent(/Alex Morgan.*Follow-up · Long.*Sam Rivers.*€45.*BA-TEST01/);
+    expect(first).not.toHaveTextContent(/Confirmed|Paid/);
+    expect(second).toHaveTextContent(/Riley Quinn.*—.*Needs approval/);
     expect(screen.getByRole("columnheader", { name: "Patient" })).toBeInTheDocument();
+  });
+
+  it("shows a class as one row, and opens it to show the people in it", async () => {
+    serve([
+      booking(),
+      booking({
+        id: "bk2",
+        reference: "BA-TEST02",
+        customer: { id: "c2", name: "Riley Quinn", email: null, phone: null, groupId: null },
+      }),
+    ]);
+    const user = userEvent.setup();
+    renderList();
+    const table = await screen.findByRole("table");
+    const row = await within(table).findByRole("row", { name: /2 patients/ });
+    expect(within(table).queryByRole("row", { name: /Riley Quinn/ })).not.toBeInTheDocument();
+    await user.click(row);
+    expect(within(table).getByRole("row", { name: /Riley Quinn/ })).toBeInTheDocument();
   });
 
   it("opens a booking from its row with the keyboard", async () => {
@@ -145,8 +163,9 @@ describe("BookingsList", () => {
     const user = userEvent.setup();
     renderList();
     const row = await screen.findByRole("button", { name: /Alex Morgan/ });
-    // The payment shows beside the status on iPad portrait.
-    expect(row).toHaveTextContent(/Follow-up.*Paid.*Confirmed/);
+    // The money stays on a phone, and the normal outcomes stay quiet.
+    expect(row).toHaveTextContent(/Alex Morgan.*€45.*Follow-up/);
+    expect(row).not.toHaveTextContent(/Confirmed|Paid/);
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     await user.click(row);
     expect(await screen.findByRole("dialog", { name: "Alex Morgan" }, LOAD)).toBeInTheDocument();
@@ -196,8 +215,9 @@ describe("BookingsList", () => {
     const user = userEvent.setup();
     renderList();
     await screen.findByText("No appointments match");
-    expect(screen.getByRole("button", { name: /1 Sept 2099|1 Sep 2099/ })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /To/ }));
+    await user.click(screen.getByRole("button", { name: /Filters/ }));
+    expect(await screen.findByRole("button", { name: /1 Sept 2099|1 Sep 2099/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^To\b(?!day)/ }));
     await user.click(await screen.findByRole("button", { name: /\b5 September 2099/ }));
     replacedWith("range=custom&from=2099-09-01&to=2099-09-05");
   });
@@ -208,7 +228,8 @@ describe("BookingsList", () => {
     const user = userEvent.setup();
     renderList();
     await screen.findByText("No appointments match");
-    await user.click(screen.getByRole("button", { name: /1 Sept 2099|1 Sep 2099/ }));
+    await user.click(screen.getByRole("button", { name: /Filters/ }));
+    await user.click(await screen.findByRole("button", { name: /1 Sept 2099|1 Sep 2099/ }));
     expect(await screen.findByRole("button", { name: /\b5 September 2099/ })).toBeEnabled();
     expect(screen.getByRole("button", { name: /\b6 September 2099/ })).toBeDisabled();
   });
@@ -219,36 +240,33 @@ describe("BookingsList", () => {
     renderList();
     await screen.findByRole("table");
 
-    await user.click(screen.getByRole("combobox", { name: "Date range" }));
+    await user.click(screen.getByRole("button", { name: /Filters/ }));
+    await user.click(await screen.findByRole("combobox", { name: "Date range" }));
     await user.click(await screen.findByRole("option", { name: "Past 30 days" }));
     replacedWith("range=past30");
 
-    await user.click(screen.getByRole("button", { name: /status/i }));
     await user.click(await screen.findByRole("checkbox", { name: "Needs approval" }));
     replacedWith("status=pending_approval");
-    await user.keyboard("{Escape}");
 
     await user.click(await screen.findByRole("combobox", { name: "Filter by therapist" }));
     await user.click(await screen.findByRole("option", { name: "Jo Park" }));
     replacedWith("resource=r2");
 
-    await user.click(screen.getByRole("combobox", { name: "Filter by service" }));
+    await user.click(await screen.findByRole("combobox", { name: "Filter by service" }));
     await user.click(await screen.findByRole("option", { name: "Massage" }));
     replacedWith("service=s2");
   });
 
-  it("counts and clears the picked statuses", async () => {
+  it("counts the filters and unpicks a status", async () => {
     search = "status=confirmed,pending_approval";
     serve();
     const user = userEvent.setup();
     renderList();
-    const trigger = await screen.findByRole("button", { name: /status/i });
-    expect(trigger).toHaveTextContent("Status2");
+    const trigger = await screen.findByRole("button", { name: /Filters/ });
+    expect(trigger).toHaveTextContent("Filters1");
     await user.click(trigger);
     await user.click(await screen.findByRole("checkbox", { name: "Confirmed" }));
     replacedWith("status=pending_approval");
-    await user.click(screen.getByRole("button", { name: "Clear" }));
-    replacedWith("");
   });
 
   it("says there is nothing upcoming and offers to add a booking", async () => {

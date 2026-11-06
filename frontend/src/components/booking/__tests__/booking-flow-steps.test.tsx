@@ -125,10 +125,8 @@ describe("choosing what to book", () => {
     const { container } = renderFlow([assessment, membersOnly], withGroups);
 
     expect(screen.getByRole("heading", { name: "Which best describes you?" })).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Booking progress" })).toHaveAttribute(
-      "aria-valuenow",
-      "1",
-    );
+    // How many steps this takes depends on the answer, so no bar promises a length yet.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
 
     const groups = screen.getByRole("radiogroup", { name: "Who is booking" });
@@ -349,7 +347,7 @@ describe("paying and confirming", () => {
     const payment = within(
       must(screen.getByRole("heading", { name: "Payment" }).closest("section"), "payment"),
     );
-    expect(payment.getByText("Nothing to pay now — pay at your appointment.")).toBeInTheDocument();
+    expect(payment.getByText("Nothing to pay now. Pay at your appointment.")).toBeInTheDocument();
     expect(payment.getByText("Free cancellation up to 24 hours before.")).toBeInTheDocument();
     // No preference reads as it is ("Any therapist"), not "With Any therapist".
     expect(within(whatSection()).getByText("Any therapist")).toBeInTheDocument();
@@ -362,7 +360,7 @@ describe("paying and confirming", () => {
     await u.click(action(/^Review/));
     await screen.findByRole("heading", { name: "Review and confirm" });
 
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/manage/tok123?booked=1"));
     const post = must(
       requests.find((r) => r.method === "POST"),
@@ -428,7 +426,7 @@ describe("when booking fails", () => {
         }),
     });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
 
     expect(await screen.findByRole("heading", { name: "Your details" })).toBeInTheDocument();
     const email = screen.getByRole("textbox", { name: /^Email/ });
@@ -457,7 +455,7 @@ describe("when booking fails", () => {
         }),
     });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Something in your selection needs another look");
     expect(alert).toHaveTextContent("Alex isn't available for this service");
@@ -467,7 +465,7 @@ describe("when booking fails", () => {
     const u = user();
     api({ booking: () => apiError(409, "PLAN_LIMIT_REACHED", "Plan limit reached.") });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Lumen Physiotherapy can't take more online appointments right now");
     expect(alert).toHaveTextContent(

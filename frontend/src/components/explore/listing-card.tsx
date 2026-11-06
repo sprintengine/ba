@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { MapPin, Tag } from "lucide-react";
 import type { Listing, NextSlot } from "@/lib/api/types";
-import { formatDistance, formatPriceFrom, formatSlotLabel } from "@/lib/explore";
+import { formatDistance, formatPriceFrom, formatSlotLabel, sharedSlotDay } from "@/lib/explore";
+import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BusinessTile } from "@/components/shells/business-tile";
 import { DealPrice } from "@/components/offers/deal-price";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "./category-icon";
 
@@ -26,10 +26,15 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
     .filter(Boolean)
     .join(" · ");
 
+  const day = sharedSlotDay(
+    listing.nextSlots.map((s) => s.start),
+    business.timezone,
+    now,
+  );
   return (
     <article
       className={cn(
-        "group relative flex flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-5",
+        "group relative flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs",
         "transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-px hover:border-border-strong hover:shadow-md",
         "has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring",
       )}
@@ -39,9 +44,9 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
           name={business.name}
           logoUrl={business.branding.logoUrl}
           color={business.branding.primaryColor}
-          size="xl"
+          size="lg"
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-start justify-between gap-3">
             <h3 className="min-w-0 text-base leading-6 font-semibold tracking-tight">
               <Link
@@ -68,15 +73,34 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
         </div>
       </div>
 
-      {business.description && (
-        <p className="line-clamp-2 text-sm text-muted-foreground">{business.description}</p>
-      )}
-
+      {/* What someone came for, ahead of the blurb. */}
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium text-subtle-foreground">
+          {listing.nextSlots.length === 0
+            ? "No free times in the next few days"
+            : day
+              ? `Next free times · ${day}`
+              : "Next free times"}
+        </p>
+        {listing.nextSlots.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5">
+            {listing.nextSlots.map((slot) => (
+              <SlotChip
+                key={`${slot.start}-${slot.serviceId}-${slot.optionId ?? ""}`}
+                slot={slot}
+                timeZone={business.timezone}
+                currency={currency}
+                now={now}
+                timeOnly={day !== null}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
       {hasDeals && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge tone="success">
-            <Tag aria-hidden /> Deals
-          </Badge>
+          <Tag aria-hidden className="size-3.5 text-success-soft-foreground" />
+          <span className="sr-only">Deals</span>
           {listing.deals.slice(0, MAX_DEALS_SHOWN).map((deal) => (
             <span key={deal.id} className="text-xs text-muted-foreground">
               <span className="font-medium text-success-soft-foreground">{deal.label}</span>
@@ -91,24 +115,9 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
         </div>
       )}
 
-      <div className="mt-auto flex flex-col gap-2">
-        <p className="text-xs font-medium text-subtle-foreground">
-          {listing.nextSlots.length > 0 ? "Next free times" : "No free times in the next few days"}
-        </p>
-        {listing.nextSlots.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
-            {listing.nextSlots.map((slot) => (
-              <SlotChip
-                key={`${slot.start}-${slot.serviceId}-${slot.optionId ?? ""}`}
-                slot={slot}
-                timeZone={business.timezone}
-                currency={currency}
-                now={now}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+      {business.description && (
+        <p className="line-clamp-1 text-sm text-muted-foreground">{business.description}</p>
+      )}
     </article>
   );
 }
@@ -118,23 +127,23 @@ function SlotChip({
   timeZone,
   currency,
   now,
+  timeOnly,
 }: {
   slot: NextSlot;
   timeZone: string;
   currency: string;
   now?: Date;
+  /** The heading above already names the day. */
+  timeOnly: boolean;
 }) {
   const service = slot.optionName ? `${slot.serviceName}, ${slot.optionName}` : slot.serviceName;
-  const label = formatSlotLabel(slot.start, timeZone, now);
+  const label = timeOnly ? formatTime(slot.start, timeZone) : formatSlotLabel(slot.start, timeZone, now);
   const offer = slot.offer;
   return (
     <li
       title={service}
       className={cn(
-        "tnum inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap",
-        offer
-          ? "border-success-border bg-success-soft text-success-soft-foreground"
-          : "border-border bg-surface-sunken text-foreground",
+        "tnum inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-surface-sunken px-2.5 text-xs font-medium whitespace-nowrap text-foreground",
       )}
     >
       <span>{label}</span>
@@ -148,7 +157,6 @@ function SlotChip({
             originalCents={offer.originalPriceCents}
             priceCents={offer.priceCents}
             currency={currency}
-            inverted
           />
           <span className="sr-only">, {offer.label}</span>
         </>

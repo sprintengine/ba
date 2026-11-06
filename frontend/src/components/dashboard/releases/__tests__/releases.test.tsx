@@ -200,7 +200,7 @@ describe("ReleaseSettings", () => {
   it("has an empty state that starts a schedule", async () => {
     fakeApi({ schedules: [] });
     renderDashboard(<ReleaseSettings />);
-    expect(await screen.findByText("No release schedules")).toBeInTheDocument();
+    expect(await screen.findByText("Every day is open")).toBeInTheDocument();
   });
 
   it("creates a schedule from the editor, previewing when days open", async () => {

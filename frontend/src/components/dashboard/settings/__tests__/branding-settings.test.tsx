@@ -107,8 +107,11 @@ describe("BrandingSettings", () => {
       branding: { primaryColor: "#1d4ed8", logoUrl: null, coverImageUrl: null, portalStyle: "bold" },
       vocabulary: { ...business.vocabulary, customer: "client" },
     });
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Branding saved"));
-    expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("Changes saved")).toBeInTheDocument();
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("leaves the style to the site's theme where business websites are on", () => {

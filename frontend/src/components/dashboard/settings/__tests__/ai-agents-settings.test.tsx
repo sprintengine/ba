@@ -50,7 +50,7 @@ describe("AiAgentsSettings", () => {
     const { container } = renderDashboard(<AiAgentsSettings />, "owner", available);
     expect(screen.getByRole("heading", { name: "AI agents" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /owners and admins/i })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /cancellations/i })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: /cancellations/i })).not.toBeChecked();
     expect(screen.getByRole("group", { name: "Business server URL" })).toHaveTextContent(
       "https://bookanything.ie/mcp/business",
     );
@@ -76,8 +76,8 @@ describe("AiAgentsSettings", () => {
   it("lets the owner choose kinds of change that skip approval, keeping the others", async () => {
     const patches = recordPatches({ aiAgentsAutoApprove: ["records", "time_off"] });
     renderDashboard(<AiAgentsSettings />, "owner", { ...available, aiAgentsAutoApprove: ["records"] });
-    expect(screen.getByRole("checkbox", { name: /notes and customer details/i })).toBeChecked();
-    await userEvent.click(screen.getByRole("checkbox", { name: /time off and closures/i }));
+    expect(screen.getByRole("switch", { name: /notes and customer details/i })).toBeChecked();
+    await userEvent.click(screen.getByRole("switch", { name: /time off and closures/i }));
     await waitFor(() => expect(patches).toEqual([{ aiAgentsAutoApprove: ["records", "time_off"] }]));
   });
 
@@ -85,7 +85,7 @@ describe("AiAgentsSettings", () => {
     mockApi(() => ({}));
     renderDashboard(<AiAgentsSettings />, "admin", available);
     expect(screen.getByRole("radio", { name: /nobody/i })).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: /cancellations/i })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: /cancellations/i })).toBeDisabled();
     expect(screen.getAllByText("Only an owner can change this.")).toHaveLength(2);
   });
 

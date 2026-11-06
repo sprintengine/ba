@@ -22,8 +22,7 @@ test.describe("dashboard (owner)", () => {
     await expect(sheet).toBeVisible();
 
     // Service without options keeps the flow short.
-    await sheet.getByRole("combobox").first().click();
-    await page.getByRole("option", { name: /exterior wash/i }).click();
+    await sheet.getByRole("button", { name: /exterior wash/i }).click();
 
     // First free time within the next week.
     const nextAvailable = sheet.getByRole("button", { name: /next available/i });

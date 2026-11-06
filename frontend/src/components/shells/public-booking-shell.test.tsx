@@ -24,11 +24,11 @@ describe("PublicBookingShell", () => {
     );
     const view = render(shell(null));
     const scope = () => {
-      const el = screen.getByText("Page").closest("[data-business-theme], [data-theme]");
+      const el = screen.getByText("Page").closest(".min-h-dvh");
       if (!el) throw new Error("no theme scope");
       return el;
     };
-    expect(scope()).toHaveAttribute("data-business-theme");
+    expect(scope()).not.toHaveAttribute("data-theme");
 
     view.rerender(shell(business));
     view.rerender(

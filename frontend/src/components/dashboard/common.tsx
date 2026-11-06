@@ -8,6 +8,7 @@ import {
   DEFAULT_LOCALE,
   formatDate,
   formatDateTime,
+  formatDay,
   formatDuration,
   formatMoney,
   formatPrice,
@@ -32,6 +33,8 @@ export function useFmt() {
       time: (iso: string) => formatTime(iso, tz, locale),
       range: (start: string, end: string) => formatTimeRange(start, end, tz, locale),
       date: (value: string, style: DateStyle = "medium") => formatDate(value, tz, style, locale),
+      /** A day in a line: "Fri, 6 Nov", with the year only when it isn't this year. */
+      day: (value: string) => formatDay(value, tz, locale),
       dateTime: (iso: string) => formatDateTime(iso, tz, locale),
       relDay: (value: string) => formatRelativeDay(value, tz, locale),
       /** `currency`: the amount's own (a booking's or payment's); the business's by default. */

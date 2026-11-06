@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { FiltersPanel } from "./filters-panel";
 
-/** "Filters" button + bottom drawer for small screens (the sidebar takes over from `lg`). */
+/** "Filters" button + bottom drawer for small screens (the bar takes over from `xl`). */
 export function MobileFilters({
   filters,
   activeCount,
@@ -35,7 +35,7 @@ export function MobileFilters({
         <Button
           variant="secondary"
           size="sm"
-          className="lg:hidden"
+          className="xl:hidden"
           aria-label={activeCount > 0 ? `Filters (${activeCount} active)` : undefined}
         >
           <SlidersHorizontal /> Filters

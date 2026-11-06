@@ -11,6 +11,7 @@ import type { Quote } from "@/lib/booking/quote";
 import { ANY_RESOURCE, chosenExtras, resourceChoiceName, type Selection } from "@/lib/booking/selection";
 import type { StepId } from "@/lib/booking/steps";
 import { formatDate, formatDuration, formatTimeRange, timeZoneLabel, zonedToIso } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Badge } from "@/components/ui/badge";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
@@ -44,6 +45,7 @@ export function ReviewStep({
     <div className="flex flex-col gap-5">
       {alert && <AlertBanner alert={alert} />}
       <div className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-4 shadow-xs sm:px-5 dark:bg-surface-raised">
+        {/* The whole booking in one place, in the same order on every screen, with the final action under it. */}
         <WhenSection business={business} selection={selection} quote={quote} onEdit={() => onEdit("time")} />
         <Section title="What" onEdit={() => onEdit("service")}>
           <WhatSummary business={business} service={service} selection={selection} />
@@ -250,14 +252,16 @@ function PaymentSummary({
 function Section({
   title,
   onEdit,
+  className,
   children,
 }: {
   title: string;
   onEdit?: () => void;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="py-4 sm:py-5">
+    <section className={cn("py-4 sm:py-5", className)}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <h3 className="text-xs font-medium text-subtle-foreground">{title}</h3>
         {onEdit && (

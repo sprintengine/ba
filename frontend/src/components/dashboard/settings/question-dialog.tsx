@@ -35,6 +35,7 @@ export function QuestionDialog({
   question,
   nextSort,
   defaultService,
+  starter,
   open,
   onOpenChange,
   returnFocusTo,
@@ -42,6 +43,8 @@ export function QuestionDialog({
   question: FormQuestion | null;
   nextSort: number;
   defaultService: string;
+  /** A suggested wording for a new question, to accept or change. */
+  starter?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   returnFocusTo?: HTMLElement | null;
@@ -52,7 +55,10 @@ export function QuestionDialog({
   const update = useUpdateQuestion(business.id);
   const form = useForm<V>({
     resolver: zodResolver(questionSchema),
-    defaultValues: questionToFormValues(question, defaultService),
+    defaultValues: {
+      ...questionToFormValues(question, defaultService),
+      ...(starter ? { label: starter } : {}),
+    },
   });
   const kind = useWatch({ control: form.control, name: "kind" });
   return (

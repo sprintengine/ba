@@ -185,7 +185,7 @@ function PoweredByBadge() {
         touchHitArea,
       )}
     >
-      <LogoMark className="size-3.5" aria-hidden title="" />
+      <LogoMark className="h-3.5 w-auto" aria-hidden title="" />
       Powered by bookanything
     </a>
   );
@@ -234,7 +234,8 @@ function ShellTheme({
   return (
     <div
       data-theme={scope?.["data-theme"]}
-      data-business-theme={scope ? undefined : ""}
+      // With no business yet, or none at all on a dead end, it's the product's own black, not a stand-in colour.
+      data-business-theme={scope || !primaryColor ? undefined : ""}
       style={scope ? scope.style : businessThemeVars(primaryColor)}
       className={cn("flex min-h-dvh flex-col bg-background", scope?.className)}
     >

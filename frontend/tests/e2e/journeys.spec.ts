@@ -152,7 +152,8 @@ test("music lessons: a student books the same lesson three weeks running and see
   const first = flow.chosen(page);
   const params = new URL(page.url()).searchParams;
   await flow.details(page, student, answers);
-  await expect(flow.submit(page)).toHaveText(/^Confirm lesson$/); // the school calls bookings lessons;
+  // The school calls bookings lessons, and the button says what will be owed there.
+  await expect(flow.submit(page)).toHaveText(/^Confirm lesson · €\d+ at venue$/);
   await flow.submit(page).click();
   await expect(page.getByRole("heading", { name: /you're booked/i })).toBeVisible({ timeout: 15_000 });
 
@@ -240,7 +241,8 @@ test("team: the owner invites a therapist, who signs in and lands on their calen
   await page.getByRole("option", { name: "Sam Rivers" }).click();
   await dialog.getByRole("button", { name: "Send invite" }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByText(therapist.email).first()).toBeVisible();
+  // `.visible()`: a phone shows the sign-in list alone, and the staff list that also names them stays in the page.
+  await expect(page.getByText(therapist.email).visible().first()).toBeVisible();
 
   // The invitation goes to that email; signing in with it accepts it (the later sign-in replaces the owner).
   await signInAs(page, therapist);

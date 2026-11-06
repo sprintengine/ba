@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { Check, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { PLAN_COMPARISON, PLANS, type ComparisonValue } from "../plans";
 
@@ -26,32 +30,55 @@ function Value({ value }: { value: ComparisonValue }) {
   return <span className="tnum font-medium">{value}</span>;
 }
 
-/** Full feature matrix. Scrolls horizontally on small screens. */
+/** A phone's width holds the features and one plan, so a phone picks the plan and every value stays readable. */
+const WIDE_ONLY = "max-[35.99rem]:hidden";
+
+/** Full feature matrix: every plan side by side, or one at a time on a phone. */
 export function PlanComparison() {
+  const [shown, setShown] = useState(1);
   return (
     <>
-      <p className="mb-3 text-sm text-muted-foreground min-[36rem]:hidden">
-        Swipe the table sideways to see every plan.
-      </p>
       <div
-        // Scrolls sideways on phones, so keyboard users must be able to focus and scroll it.
-        tabIndex={0}
+        role="group"
+        aria-label="Plan to compare"
+        className="mb-3 flex gap-1 rounded-xl bg-muted p-1 min-[36rem]:hidden"
+      >
+        {PLANS.map((p, i) => (
+          <button
+            key={p.key}
+            type="button"
+            aria-pressed={shown === i}
+            onClick={() => setShown(i)}
+            className={cn(
+              "focus-ring min-h-11 flex-1 rounded-lg text-sm font-medium text-muted-foreground",
+              shown === i && "bg-surface text-foreground shadow-xs",
+            )}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+      <div
         role="region"
         aria-label="Plan comparison"
-        className="relative scrollbar-thin overflow-x-auto rounded-2xl border border-border bg-surface shadow-xs max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] max-sm:pr-8"
+        className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-xs"
       >
-        <table className="w-full min-w-[34rem] table-fixed border-collapse text-sm">
+        <table className="w-full table-fixed border-collapse text-sm">
           <caption className="sr-only">Features included in each plan</caption>
           <thead>
             <tr className="border-b border-border">
-              <th scope="col" className="sticky left-0 z-10 w-[36%] bg-surface px-5 py-4 text-left">
+              <th scope="col" className="w-[58%] bg-surface px-4 py-4 text-left min-[36rem]:w-[36%] sm:px-5">
                 <span className="sr-only">Feature</span>
               </th>
-              {PLANS.map((p) => (
-                <th key={p.key} scope="col" className="px-2 py-4 text-center sm:px-4">
+              {PLANS.map((p, i) => (
+                <th
+                  key={p.key}
+                  scope="col"
+                  className={cn("px-2 py-4 text-center sm:px-4", shown !== i && WIDE_ONLY)}
+                >
                   <span className="block text-sm font-semibold">{p.name}</span>
                   <span className="tnum block text-xs font-normal text-muted-foreground">
-                    {p.price ? `€${p.price} / location / month` : "€0"}
+                    {p.price ? `€${p.price} / month` : "€0"}
                   </span>
                 </th>
               ))}
@@ -70,17 +97,14 @@ export function PlanComparison() {
               </tr>
               {group.rows.map((row) => (
                 <tr key={row.label} className="border-b border-border-subtle last:border-b-0">
-                  <th
-                    scope="row"
-                    className="sticky left-0 z-10 bg-surface px-5 py-3.5 text-left font-normal max-md:shadow-[1px_0_0_var(--border-subtle)]"
-                  >
+                  <th scope="row" className="bg-surface px-4 py-3.5 text-left font-normal sm:px-5">
                     {row.label}
                     {row.hint && (
                       <span className="mt-0.5 block text-xs text-subtle-foreground">{row.hint}</span>
                     )}
                   </th>
                   {row.values.map((v, i) => (
-                    <td key={i} className="px-2 py-3.5 text-center sm:px-4">
+                    <td key={i} className={cn("px-2 py-3.5 text-center sm:px-4", shown !== i && WIDE_ONLY)}>
                       <Value value={v} />
                     </td>
                   ))}

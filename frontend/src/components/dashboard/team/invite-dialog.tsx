@@ -99,7 +99,7 @@ export function InviteDialog({
           optional
           help={
             selectedRole === "staff"
-              ? `Staff see ${v("bookings")} on this calendar only.`
+              ? `Pick one, and they see ${v("bookings")} on that calendar only.`
               : "Link them to their own calendar column."
           }
         >

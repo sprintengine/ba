@@ -126,6 +126,16 @@ describe("WeeklyHours", () => {
     expect(await dayButton("Tuesday")).toHaveTextContent("09:00–17:00");
   });
 
+  it("draws a date's time off on the week it falls in, and only that week", async () => {
+    const off = { id: "o", resourceId: "r1", date: "2026-10-12", isAvailable: false };
+    setup([monday], { overrides: [{ ...off, startTime: null, endTime: null, reason: null }] });
+    const { user } = render();
+    await dayButton("Monday");
+    expect(document.querySelector("[data-exception]")).toBeNull();
+    await user.click(screen.getByRole("radio", { name: /12–18 Oct/ }));
+    expect(document.querySelector('[data-exception="off"]')).not.toBeNull();
+  });
+
   it("opens the day's editor from a bar on the timeline", async () => {
     setup();
     const { user } = render();
@@ -138,7 +148,7 @@ describe("WeeklyHours", () => {
     const { user } = render();
     const end = await screen.findByRole("slider", { name: "Monday 09:00–17:00 end" });
     end.focus();
-    await user.keyboard("{ArrowRight}");
+    await user.keyboard("{ArrowDown}");
     expect(await dayButton("Monday")).toHaveTextContent("09:00–17:15");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
 
@@ -157,12 +167,12 @@ describe("WeeklyHours", () => {
     end.setPointerCapture = vi.fn();
     const track = must(must(end.parentElement, "bar").parentElement, "track");
     // The axis is 08:00–18:00: 100px is an hour.
-    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
-    fireEvent.pointerDown(end, { pointerId: 1, clientX: 900 });
-    fireEvent.pointerMove(end, { pointerId: 1, clientX: 655 });
+    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ top: 0, height: 1000 } as DOMRect);
+    fireEvent.pointerDown(end, { pointerId: 1, clientY: 900 });
+    fireEvent.pointerMove(end, { pointerId: 1, clientY: 655 });
     expect(await dayButton("Monday")).toHaveTextContent("09:00–14:30");
-    fireEvent.pointerUp(end, { pointerId: 1, clientX: 655 });
-    fireEvent.pointerMove(end, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerUp(end, { pointerId: 1, clientY: 655 });
+    fireEvent.pointerMove(end, { pointerId: 1, clientY: 300 });
     expect(await dayButton("Monday")).toHaveTextContent("09:00–14:30");
   });
 
@@ -171,14 +181,14 @@ describe("WeeklyHours", () => {
     render();
     const bar = await screen.findByRole("button", { name: "Edit Monday 09:00–17:00" });
     const track = must(must(bar.parentElement, "bar").parentElement, "track");
-    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
-    fireEvent.click(track, { clientX: 950 });
+    vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ top: 0, height: 1000 } as DOMRect);
+    fireEvent.click(track, { clientY: 950 });
     expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00, 17:30–21:30");
 
-    const tuesday = must((await dayButton("Tuesday")).parentElement, "row");
+    const tuesday = must((await dayButton("Tuesday")).closest("[role=group]"), "column");
     const free = must(tuesday.querySelector("[data-touch-exempt]"), "Tuesday's track");
-    vi.spyOn(free, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
-    fireEvent.click(free, { clientX: 100 });
+    vi.spyOn(free, "getBoundingClientRect").mockReturnValue({ top: 0, height: 1000 } as DOMRect);
+    fireEvent.click(free, { clientY: 100 });
     expect(await dayButton("Tuesday")).toHaveTextContent("09:00–13:00");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });
@@ -333,8 +343,8 @@ describe("WeeklyHours", () => {
   it("is read-only when not editable", async () => {
     setup();
     render(false);
-    expect(await screen.findByText("09:00–17:00", { selector: "span.text-sm" })).toBeInTheDocument();
-    expect(screen.getAllByText("Closed")).toHaveLength(6);
+    expect(await screen.findByText("09:00–17:00", { selector: "span.sr-only" })).toBeInTheDocument();
+    expect(screen.getAllByText("Closed", { selector: "[aria-hidden]" })).toHaveLength(6);
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Edit Monday/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save hours" })).not.toBeInTheDocument();

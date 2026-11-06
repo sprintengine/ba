@@ -1,12 +1,12 @@
 "use client";
 
+import { DeadEndMark } from "@/components/brand/logo";
 import Link from "next/link";
-import { CircleAlert, Store } from "lucide-react";
+import { LogoLoader } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 
 /** Matches the consent card's layout while the request is checked. */
 export function ConsentSkeleton() {
@@ -50,18 +50,18 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<CircleAlert />}
+        icon={<DeadEndMark />}
         title="This connection link isn't valid"
         description={
           <>
             <span className="block">{message}</span>
             <span className="mt-2 block">
-              Nothing was shared. Go back to the app you came from and try connecting again.
+              Nothing was shared. To try again, start from the app you came from.
             </span>
           </>
         }
         action={
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/my/bookings">Go to my bookings</Link>
           </Button>
         }
@@ -80,11 +80,11 @@ export function NoBusinessToConnect({ message }: { message: string }) {
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<Store />}
+        icon={<DeadEndMark />}
         title="There's no business to connect"
         description={message}
         action={
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/onboarding">Set up your business</Link>
           </Button>
         }
@@ -97,7 +97,7 @@ export function NoBusinessToConnect({ message }: { message: string }) {
 export function ReturningToApp() {
   return (
     <div role="status" className="flex flex-col items-center gap-3 py-16 text-sm text-muted-foreground">
-      <Spinner className="size-5" />
+      <LogoLoader className="h-8" />
       Returning you to the app…
     </div>
   );

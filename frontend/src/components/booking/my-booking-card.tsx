@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BookingStatusBadge } from "@/components/ui/status-badge";
+import { BookingExceptions } from "@/components/ui/status-badge";
 import { toast } from "@/components/ui/toast";
 import { AddToCalendar } from "./add-to-calendar";
 import { CancelBookingDialog } from "./cancel-booking";
@@ -51,16 +51,20 @@ import { ReschedulePanel, useRescheduleState } from "./reschedule";
 export function MyBookingCard({
   booking: b,
   past,
+  featured = false,
   agentAction = null,
   onAgentActionDone,
 }: {
   booking: CustomerBooking;
   past: boolean;
+  /** The next visit: a ticket with its actions out. Other rows keep theirs behind Manage. */
+  featured?: boolean;
   agentAction?: "cancel" | "reschedule" | null;
   onAgentActionDone?: () => void;
 }) {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [managing, setManaging] = useState(false);
   const showCancel = cancelOpen || agentAction === "cancel";
   const showReschedule = rescheduleOpen || agentAction === "reschedule";
   const card = useRef<HTMLElement>(null);
@@ -74,7 +78,13 @@ export function MyBookingCard({
 
   return (
     <BusinessThemeProvider primaryColor={b.business.branding.primaryColor}>
-      <article ref={card} className="flex gap-4 py-4 sm:gap-6">
+      <article
+        ref={card}
+        className={cn(
+          "flex items-start gap-4 sm:gap-6",
+          featured ? "rounded-2xl border border-border bg-surface p-5 shadow-xs" : "py-3.5",
+        )}
+      >
         <CardTime booking={b} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <CardHeading booking={b} inactive={inactive} />
@@ -86,13 +96,7 @@ export function MyBookingCard({
               confirm it.
             </p>
           )}
-          {inactive ? (
-            <div className="mt-1 -ml-2.5">
-              <Button asChild variant="ghost" size="sm">
-                <Link href={`/${b.business.slug}`}>Book again</Link>
-              </Button>
-            </div>
-          ) : (
+          {!inactive && (featured || managing || awaitingPayment) && (
             <CardActions
               booking={b}
               awaitingPayment={awaitingPayment}
@@ -101,6 +105,26 @@ export function MyBookingCard({
             />
           )}
         </div>
+        {/* One clear step, beside the booking it belongs to, on a row of its own only once it's open. */}
+        {inactive ? (
+          <Button asChild variant="secondary" size="sm" className="shrink-0">
+            <Link href={`/${b.business.slug}`}>Book again</Link>
+          </Button>
+        ) : (
+          !featured &&
+          !managing &&
+          !awaitingPayment && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              aria-expanded={false}
+              onClick={() => setManaging(true)}
+            >
+              Manage
+            </Button>
+          )
+        )}
       </article>
       <CancelBookingDialog
         booking={b}
@@ -143,15 +167,19 @@ function CardTime({ booking: b }: { booking: CustomerBooking }) {
 
 /** The service and its status; the payment too, unless the booking is over and it no longer applies. */
 function CardHeading({ booking: b, inactive }: { booking: CustomerBooking; inactive: boolean }) {
-  const payment = showsPaymentStatus(b) && !(inactive && b.paymentStatus === "pay_at_venue");
+  // Paid and confirmed are the normal case: a row only speaks up about something else.
+  const payment =
+    showsPaymentStatus(b) &&
+    !(b.paymentStatus === "paid" && balanceDueCents(b) === null) &&
+    !(inactive && b.paymentStatus === "pay_at_venue");
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
       <h3 className="text-base font-semibold tracking-tight">
         {b.service.name}
         {b.option && <span className="font-normal text-muted-foreground"> · {b.option.name}</span>}
       </h3>
       <span className="flex flex-wrap gap-1.5">
-        <BookingStatusBadge status={b.status} />
+        <BookingExceptions status={b.status} />
         {payment && <CustomerPaymentBadge booking={b} />}
       </span>
     </div>
@@ -227,6 +255,11 @@ function CardActions({
   };
   return (
     <>
+      {accepted && !b.canCancel && !b.canReschedule && (
+        <p className="text-xs text-muted-foreground">
+          This one can&rsquo;t be changed online. Contact {b.business.name} if your plans change.
+        </p>
+      )}
       <div className="mt-1 -ml-2.5 flex flex-wrap items-center gap-1">
         {awaitingPayment && (
           <Button variant="primary" size="sm" loading={pay.isPending} onClick={onPay}>
@@ -245,11 +278,6 @@ function CardActions({
           </Button>
         )}
       </div>
-      {accepted && !b.canCancel && !b.canReschedule && (
-        <p className="text-xs text-muted-foreground">
-          This one can&rsquo;t be changed online. Contact {b.business.name} if your plans change.
-        </p>
-      )}
     </>
   );
 }

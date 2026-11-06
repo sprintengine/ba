@@ -9,17 +9,20 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { Kbd } from "@/components/ui/kbd";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { BusinessSwitcher, type DashboardShellBusiness } from "./business-switcher";
-import { dashboardHref, dashboardNavFor, isNavItemActive, railItemsFor } from "./dashboard-nav";
+import {
+  dashboardHref,
+  dashboardNavFor,
+  isNavItemActive,
+  railClass,
+  railIdle,
+  railItemsFor,
+} from "./dashboard-nav";
+import { RailEntry } from "./rail-item";
 import { UserMenu } from "./user-menu";
 
 /** A row in the navigation sheet: 32px with a mouse, 44px on touch. */
 const rowClass =
   "flex h-8 items-center gap-2.5 rounded-md px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:h-11";
-
-/** A rail item: glyph over its label. */
-const railClass =
-  "relative flex w-16 flex-col items-center gap-1 rounded-lg px-0.5 pt-2 pb-1.5 text-xs leading-4 font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&_svg]:size-4.5 [&_svg]:shrink-0";
-const railIdle = "text-muted-foreground hover:bg-accent hover:text-foreground";
 
 /**
  * The 80px rail, from iPad portrait up: the business, the five sections, then search, notifications and the account.
@@ -53,18 +56,7 @@ export function DashboardRail({
             ? item.covers.some((section) => isNavItemActive(section, business.slug, pathname))
             : false;
           const label = item.vocabulary ? v(item.vocabulary, { title: true }) : item.label;
-          return (
-            <Link
-              key={item.key}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              title={label}
-              className={cn(railClass, active ? "bg-background font-semibold text-foreground" : railIdle)}
-            >
-              <item.icon strokeWidth={active ? 2.25 : 1.75} />
-              <span className="max-w-full truncate">{label}</span>
-            </Link>
-          );
+          return <RailEntry key={item.key} item={item} label={label} active={active} href={href} />;
         })}
       </nav>
 

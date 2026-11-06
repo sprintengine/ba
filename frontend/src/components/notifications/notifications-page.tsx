@@ -12,16 +12,16 @@ import {
 import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckboxItem } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { NotificationList } from "./notification-bell";
 
 /** /my/notifications (§22): everything recent, and which kinds are also emailed. */
-export function NotificationsPage() {
+export function NotificationsPage({ inDashboard = false }: { inDashboard?: boolean }) {
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const unread = list.data?.unreadCount ?? 0;
@@ -34,19 +34,25 @@ export function NotificationsPage() {
       <PageHeader
         title="Notifications"
         back={
-          member ? { href: "/dashboard", label: "Today" } : { href: "/my/bookings", label: "My bookings" }
-        }
-        description={
-          <a href="#email" className="underline-offset-2 hover:text-foreground hover:underline">
-            Choose what&rsquo;s emailed
-          </a>
+          inDashboard
+            ? undefined
+            : member
+              ? { href: "/dashboard", label: "Today" }
+              : { href: "/my/bookings", label: "My bookings" }
         }
         actions={
-          unread > 0 ? (
-            <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
-              <CheckCheck /> Mark all read
-            </Button>
-          ) : undefined
+          <>
+            {(list.data?.items.length ?? 0) > 0 && (
+              <Button asChild variant="ghost">
+                <a href="#email">Email settings</a>
+              </Button>
+            )}
+            {unread > 0 && (
+              <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
+                <CheckCheck /> Mark all read
+              </Button>
+            )}
+          </>
         }
       />
       <div className="flex flex-col gap-6">
@@ -61,6 +67,7 @@ export function NotificationsPage() {
           ) : list.data.items.length === 0 ? (
             <EmptyState
               headingLevel={2}
+              size="sm"
               icon={<Bell />}
               title="Nothing yet"
               description="Anything that needs your attention shows up here."
@@ -93,15 +100,17 @@ function EmailSettings() {
     );
 
   return (
-    <Card id="email" className="scroll-mt-20">
-      <CardHeader>
-        <CardTitle>Email me about</CardTitle>
-        <CardDescription>
+    <section id="email" aria-labelledby="email-title" className="flex scroll-mt-20 flex-col gap-2.5">
+      <div className="flex flex-col gap-0.5">
+        <h2 id="email-title" className="text-sm font-semibold tracking-tight">
+          Email me about
+        </h2>
+        <p className="text-[0.8125rem] leading-5 text-muted-foreground">
           Sent to {me.data?.user.email ?? "your account email"} a minute later, unless you&rsquo;ve opened it
           here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </div>
+      <Card variant="panel" className="rounded-2xl p-4.5">
         {settings.isError ? (
           <ErrorState error={settings.error} onRetry={() => settings.refetch()} />
         ) : !settings.data || me.isPending ? (
@@ -110,17 +119,22 @@ function EmailSettings() {
           <fieldset className="flex flex-col gap-3" disabled={update.isPending}>
             <legend className="sr-only">Notifications to email</legend>
             {kinds.map((k) => (
-              <CheckboxItem
-                key={k.kind}
-                label={k.label}
-                description={k.description}
-                checked={k.email}
-                onCheckedChange={(on) => toggle(k.kind, on === true)}
-              />
+              <label key={k.kind} className="flex items-start justify-between gap-4 text-sm">
+                <span className="flex flex-col gap-0.5">
+                  <span className="leading-5 font-medium">{k.label}</span>
+                  <span className="text-muted-foreground">{k.description}</span>
+                </span>
+                <Switch
+                  aria-label={k.label}
+                  className="mt-0.5"
+                  checked={k.email}
+                  onCheckedChange={(on) => toggle(k.kind, on)}
+                />
+              </label>
             ))}
           </fieldset>
         )}
-      </CardContent>
-    </Card>
+      </Card>
+    </section>
   );
 }

@@ -1,19 +1,22 @@
 /**
- * The plans on the pricing page. Limits mirror architecture §5.3:
- * Free = 100 bookings/month, 3 team members, badge shown.
+ * The plans on the pricing page: you pay for bookings, not people. Each plan is per business, with unlimited staff and
+ * unlimited appointment types, Free included. Built-in AI is a paid add-on sold as monthly credits; connecting the
+ * owner's own assistant is on every plan.
  */
 export type PlanKey = "free" | "pro" | "business";
 
 export type Plan = {
   key: PlanKey;
   name: string;
-  /** Monthly price per location in euro. */
+  /** Monthly price per business in euro. */
   price: number;
   tagline: string;
   /** One-line summary for compact plan cards. */
   summary: string;
   cta: { label: string; href: string };
   highlight?: boolean;
+  /** The label on a highlighted card. */
+  badge?: string;
   intro?: string;
   features: string[];
 };
@@ -23,51 +26,49 @@ export const PLANS: Plan[] = [
     key: "free",
     name: "Free",
     price: 0,
-    tagline: "For one-person businesses and small teams starting out.",
-    summary: "Up to 100 bookings a month",
+    tagline: "For solo starters, and anyone starting a business with AI.",
+    summary: "100 bookings a month",
     cta: { label: "Start for free", href: "/sign-up" },
+    highlight: true,
+    badge: "Start here",
     features: [
-      "Up to 100 bookings a month",
-      "Up to 3 team members",
-      "Your booking page, with a small bookanything badge",
-      "Online payments with 0% platform fee",
-      "Email confirmations and reminders",
-      "AI setup",
+      "100 bookings a month",
+      "Unlimited staff",
+      "Unlimited appointment types",
+      "Connect your own assistant, included (our built-in one runs on paid credits)",
+      "Plug booking into your own site",
+      "0% platform fee on payments",
     ],
   },
   {
     key: "pro",
     name: "Pro",
-    price: 12,
-    tagline: "For when you've outgrown the Free limits or want the badge gone.",
-    summary: "Unlimited bookings and team",
+    price: 10,
+    tagline: "For when the diary is filling up.",
+    summary: "1,000 bookings a month",
     cta: { label: "Start with Pro", href: "/sign-up" },
-    highlight: true,
     intro: "Everything in Free, plus",
-    features: [
-      "Unlimited bookings",
-      "Unlimited team members",
-      "No bookanything badge",
-      "SMS reminders, charged at cost",
-      "More AI usage included",
-    ],
+    features: ["1,000 bookings a month", "No bookanything badge", "SMS reminders, charged at cost"],
   },
   {
     key: "business",
     name: "Business",
-    price: 39,
-    tagline: "For bigger practices that want priority support and help setting up.",
-    summary: "Priority support and setup help",
+    price: 49,
+    tagline: "For busy practices that want help setting up.",
+    summary: "10,000 bookings a month",
     cta: { label: "Start with Business", href: "/sign-up" },
     intro: "Everything in Pro, plus",
     features: [
-      "Our highest AI allowance",
+      "10,000 bookings a month",
       "Priority support",
       "Setup help from our team",
       "Early access to new features",
     ],
   },
 ];
+
+/** Past the biggest plan, a conversation. */
+export const TALK_TO_US = "mailto:hello@bookanything.ie";
 
 export type ComparisonValue = boolean | string;
 export type ComparisonRow = {
@@ -81,10 +82,15 @@ export const PLAN_COMPARISON: ComparisonGroup[] = [
   {
     title: "Bookings",
     rows: [
-      { label: "Bookings per month", values: ["100", "Unlimited", "Unlimited"] },
-      { label: "Team members", values: ["3", "Unlimited", "Unlimited"] },
-      { label: "Services, options and add-ons", values: ["Unlimited", "Unlimited", "Unlimited"] },
-      { label: "People, rooms and equipment", values: ["Unlimited", "Unlimited", "Unlimited"] },
+      {
+        label: "Bookings per month",
+        values: ["100", "1,000", "10,000"],
+        hint: "Above that, talk to us.",
+      },
+      { label: "Staff", values: ["Unlimited", "Unlimited", "Unlimited"] },
+      { label: "Appointment types", values: ["Unlimited", "Unlimited", "Unlimited"] },
+      { label: "Choose which staff do which appointments", values: [true, true, true] },
+      { label: "Rooms and equipment", values: ["Unlimited", "Unlimited", "Unlimited"] },
       { label: "Double-booking protection", values: [true, true, true] },
       { label: "Customer groups and booking questions", values: [true, true, true] },
     ],
@@ -94,6 +100,7 @@ export const PLAN_COMPARISON: ComparisonGroup[] = [
     rows: [
       { label: "Your logo and colours", values: [true, true, true] },
       { label: "Guest booking and self-service changes", values: [true, true, true] },
+      { label: "Plug booking into your own site", values: [true, true, true] },
       { label: "Remove the bookanything badge", values: [false, true, true] },
       { label: "Custom domain", values: [false, "Coming soon", "Coming soon"] },
     ],
@@ -120,9 +127,14 @@ export const PLAN_COMPARISON: ComparisonGroup[] = [
   {
     title: "AI",
     rows: [
-      { label: "AI setup from a description or website", values: [true, true, true] },
-      { label: "AI usage included", values: ["Starter", "More", "Most"] },
-      { label: "Bookable by AI assistants", values: [true, true, true] },
+      { label: "Connect your own AI assistant", values: [true, true, true] },
+      { label: "Clients book through their own AI", values: [true, true, true] },
+      { label: "Setup drafted from a description or website", values: [true, true, true] },
+      {
+        label: "Built-in assistant",
+        values: ["Add-on", "Add-on", "Add-on"],
+        hint: "A paid add-on, sold as monthly credits.",
+      },
     ],
   },
   {
@@ -145,7 +157,7 @@ export const WORKED_EXAMPLE = {
   perSeatEur: 15,
   commissionLowPct: 2,
   commissionHighPct: 5,
-  proPlanEur: 12,
+  proPlanEur: 10,
 };
 
 export function workedExampleCosts(e = WORKED_EXAMPLE) {

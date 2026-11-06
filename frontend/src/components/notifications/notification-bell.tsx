@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, BellOff, CheckCheck } from "lucide-react";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/lib/api/hooks";
 import type { AppNotification } from "@/lib/api/types";
+import { formatDay } from "@/lib/format/datetime";
 import { DEFAULT_LOCALE } from "@/lib/format/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 /** Where a person sees all their notifications and chooses which are emailed. */
 export const NOTIFICATIONS_PATH = "/my/notifications";
 
+/** The same page inside the dashboard, so the team keep the rail; the business comes from the address. */
+export function useNotificationsPath(): string {
+  const slug = /^\/dashboard\/([^/]+)/.exec(usePathname())?.[1];
+  return slug ? `/dashboard/${slug}/notifications` : NOTIFICATIONS_PATH;
+}
+
+/** How many the bell's panel shows: all of them whole, with the rest one click away. */
+const PANEL_ITEMS = 6;
+
+/** Local calendar day, for grouping. */
+const dayKey = (at: Date) => `${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`;
+
+/** "Today", "Yesterday", else "Tue, 3 Nov". */
+function dayLabel(iso: string, now: Date): string {
+  const at = new Date(iso);
+  if (dayKey(at) === dayKey(now)) return "Today";
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (dayKey(at) === dayKey(yesterday)) return "Yesterday";
+  return formatDay(at, Intl.DateTimeFormat().resolvedOptions().timeZone, DEFAULT_LOCALE, now);
+}
+
+/** Newest first as they come, under one heading per day. */
+export function groupByDay(items: AppNotification[], now: Date = new Date()) {
+  const days: { label: string; items: AppNotification[] }[] = [];
+  for (const n of items) {
+    const label = dayLabel(n.createdAt, now);
+    const last = days.at(-1);
+    if (last?.label === label) last.items.push(n);
+    else days.push({ label, items: [n] });
+  }
+  return days;
+}
+
 /** "Just now", "5 min ago", "3 h ago", "2 days ago", else the date. */
 export function timeAgo(iso: string, now: number = Date.now()): string {
   const minutes = Math.round((now - new Date(iso).getTime()) / 60_000);
@@ -24,7 +60,7 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   if (hours < 24) return `${hours} h ago`;
   const days = Math.round(hours / 24);
   if (days < 7) return days === 1 ? "Yesterday" : `${days} days ago`;
-  return new Date(iso).toLocaleDateString(DEFAULT_LOCALE, { day: "numeric", month: "short" });
+  return formatDay(new Date(iso), Intl.DateTimeFormat().resolvedOptions().timeZone, DEFAULT_LOCALE);
 }
 
 const PANEL_TITLE_ID = "notifications-panel-title";
@@ -101,6 +137,7 @@ export function NotificationBell({
 
 /** The bell's list: recent notifications, mark all read, and a link to all of them and their settings. */
 function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
+  const path = useNotificationsPath();
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const items = list.data?.items ?? [];
@@ -129,18 +166,18 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
           You&rsquo;re all caught up.
         </p>
       ) : (
-        <NotificationList items={items.slice(0, 10)} onNavigate={onNavigate} compact />
+        <NotificationList items={items.slice(0, PANEL_ITEMS)} onNavigate={onNavigate} />
       )}
       <div className="flex items-center justify-between gap-3 border-t border-border-subtle px-3 py-2 text-sm">
         <Link
-          href={NOTIFICATIONS_PATH}
+          href={path}
           onClick={onNavigate}
           className="font-medium text-brand underline-offset-2 hover:underline"
         >
-          All notifications
+          {items.length > PANEL_ITEMS ? `All ${items.length} notifications` : "All notifications"}
         </Link>
         <Link
-          href={`${NOTIFICATIONS_PATH}#email`}
+          href={`${path}#email`}
           onClick={onNavigate}
           className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
@@ -151,54 +188,105 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-/** Notifications as links: opening one marks it read. */
+/** Notifications as links under a heading per day: opening one marks it read. */
+/** How many of a run of one kind stay in view before the rest fold behind "N more like this". */
+const RUN_SHOWN = 2;
+
+type Folded = { key: string; more: number };
+
+/** The items, with long runs of one kind folded, unless [opened] holds the run: a run's key is its first item's id. */
+export function foldRuns(
+  items: AppNotification[],
+  opened: ReadonlySet<string>,
+): (AppNotification | Folded)[] {
+  const out: (AppNotification | Folded)[] = [];
+  for (let i = 0; i < items.length;) {
+    const first = items[i];
+    if (!first) break;
+    let end = i + 1;
+    while (items[end]?.kind === first.kind) end += 1;
+    const run = items.slice(i, end);
+    const fold = run.length > RUN_SHOWN + 1 && !opened.has(first.id);
+    out.push(...(fold ? run.slice(0, RUN_SHOWN) : run));
+    if (fold) out.push({ key: first.id, more: run.length - RUN_SHOWN });
+    i = end;
+  }
+  return out;
+}
+
+function Row({ n, detail, onOpen }: { n: AppNotification; detail: string; onOpen: () => void }) {
+  return (
+    <li>
+      <Link
+        href={n.link}
+        onClick={onOpen}
+        className="flex gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+      >
+        <span
+          aria-hidden
+          className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-brand")}
+        />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
+            {n.title}
+            {!n.read && <span className="sr-only"> (unread)</span>}
+          </span>
+          <span className="line-clamp-2 text-xs text-muted-foreground">{detail}</span>
+        </span>
+        {/* The one kind that's waiting for an answer: it opens where Approve and Decline are. */}
+        {n.kind === "booking_request" && !n.read && (
+          <span className="flex h-7 shrink-0 items-center self-center rounded-lg border border-border bg-surface px-2.5 text-xs font-medium text-foreground">
+            Review
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+}
+
 export function NotificationList({
   items,
   onNavigate,
-  compact = false,
 }: {
   items: AppNotification[];
   onNavigate?: () => void;
-  compact?: boolean;
 }) {
   const markRead = useMarkNotificationRead();
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
   // The business only tells them apart when there is more than one.
   const several = new Set(items.map((n) => n.businessName).filter(Boolean)).size > 1;
+  const open = (n: AppNotification) => {
+    if (!n.read) markRead.mutate(n.id);
+    onNavigate?.();
+  };
+  const detail = (n: AppNotification, day: string) =>
+    [n.body, several && n.businessName, day === "Today" && timeAgo(n.createdAt)].filter(Boolean).join(" · ");
   return (
-    <ul
-      className={cn(
-        "flex flex-col divide-y divide-border-subtle",
-        compact &&
-          "max-h-96 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] pb-4",
-      )}
-    >
-      {items.map((n) => (
-        <li key={n.id}>
-          <Link
-            href={n.link}
-            onClick={() => {
-              if (!n.read) markRead.mutate(n.id);
-              onNavigate?.();
-            }}
-            className="flex gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-          >
-            <span
-              aria-hidden
-              className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-brand")}
-            />
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
-                {n.title}
-                {!n.read && <span className="sr-only"> (unread)</span>}
-              </span>
-              {n.body && <span className="line-clamp-2 text-xs text-muted-foreground">{n.body}</span>}
-              <span className="text-xs text-subtle-foreground">
-                {[several && n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
-              </span>
-            </span>
-          </Link>
-        </li>
+    <div className="flex flex-col">
+      {groupByDay(items).map((day) => (
+        <section key={day.label} aria-label={day.label}>
+          <h3 className="bg-popover/95 sticky top-0 z-10 flex items-baseline justify-between px-3 pt-2.5 pb-1 text-xs font-medium text-muted-foreground">
+            {day.label}
+          </h3>
+          <ul className="flex flex-col">
+            {foldRuns(day.items, opened).map((entry) =>
+              "more" in entry ? (
+                <li key={`${entry.key}-more`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpened((was) => new Set(was).add(entry.key))}
+                    className="w-full py-1.5 pr-3 pl-7.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                  >
+                    {entry.more} more like this
+                  </button>
+                </li>
+              ) : (
+                <Row key={entry.id} n={entry} detail={detail(entry, day.label)} onOpen={() => open(entry)} />
+              ),
+            )}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }

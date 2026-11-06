@@ -1,7 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { must } from "@/test/must";
 import { expectNoAxeViolations } from "@/test/axe";
 import { renderDashboard } from "@/components/dashboard/test/render";
 import { ResourcesView } from "../resources-view";
@@ -79,9 +78,7 @@ describe("ResourcesView", () => {
 
     expect(await screen.findByRole("heading", { level: 2, name: "No therapists yet" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
-    const adds = screen.getAllByRole("button", { name: "Add therapist" });
-    expect(adds).toHaveLength(2);
-    await user.click(must(adds[1], "empty-state add button"));
+    await user.click(screen.getByRole("button", { name: "Add therapist" }));
     expect(await screen.findByRole("dialog", { name: "Add a therapist" })).toBeInTheDocument();
   });
 
@@ -91,7 +88,6 @@ describe("ResourcesView", () => {
     expect(
       await screen.findByRole("heading", { name: "You're not linked to a calendar" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Your working hours and time off.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add therapist/i })).not.toBeInTheDocument();
   });
 
@@ -102,8 +98,8 @@ describe("ResourcesView", () => {
     const list = await navList();
     const items = within(list).getAllByRole("button");
     expect(items.map((b) => b.textContent)).toEqual([
-      "Jo ParkNot linked",
-      "Sam RiversLinked to Samantha Rivers",
+      "Jo ParkNo sign-in",
+      "Sam RiversSigns in as Samantha Rivers",
       "Room 1Space · 4 places",
       "Old couchInactive",
     ]);
@@ -111,8 +107,35 @@ describe("ResourcesView", () => {
     expect(items[1]).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { level: 2, name: "Jo Park" })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /^Edit Monday: / })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Business closures" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
+  });
+
+  it("keeps the whole business apart from any one person", async () => {
+    fakeResourcesApi({ resources: [sam, jo], team });
+    const user = userEvent.setup();
+    renderDashboard(<ResourcesView />);
+    await navList();
+    expect(screen.queryByRole("heading", { name: "Business closures" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Who can sign in" })).not.toBeInTheDocument();
+    const business = screen.getByRole("navigation", { name: "Whole business" });
+    await user.click(within(business).getByRole("button", { name: "Closures" }));
+    expect(nav.replace).toHaveBeenCalledWith(expect.stringContaining("r=closures"), { scroll: false });
+  });
+
+  it("opens business closures, sign-in and the hours comparison from the address", async () => {
+    nav.params = new URLSearchParams("r=closures");
+    fakeResourcesApi({ resources: [sam, jo], team });
+    const first = renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Business closures" })).toBeInTheDocument();
+    first.unmount();
+    nav.params = new URLSearchParams("r=sign-in");
+    const second = renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Who can sign in" })).toBeInTheDocument();
+    second.unmount();
+    nav.params = new URLSearchParams("r=compare");
+    renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Compare hours" })).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Hours by person" })).toBeInTheDocument();
   });
 
   it("selects a resource through the URL and switches on click", async () => {
@@ -147,24 +170,19 @@ describe("ResourcesView", () => {
     expect(await screen.findByRole("dialog", { name: "Edit Sam Rivers" })).toBeInTheDocument();
   });
 
-  it("moves between hours and time off with the arrow keys", async () => {
+  it("shows the regular week and what's different on particular dates on one page", async () => {
     fakeResourcesApi({
       resources: [sam],
       team,
       overrides: [override({ id: "o1", date: "2026-10-12", reason: "Course" })],
     });
-    const user = userEvent.setup();
     renderDashboard(<ResourcesView />);
-    const hours = await screen.findByRole("tab", { name: "Weekly hours" });
-    hours.focus();
-    await user.keyboard("{ArrowRight}");
-    const timeOff = screen.getByRole("tab", { name: "Time off and extra hours" });
-    expect(timeOff).toHaveFocus();
-    expect(timeOff).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByRole("heading", { name: "Regular hours" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Time off and extra hours" })).toBeInTheDocument();
     expect(await screen.findByText(/All day · Course/)).toBeInTheDocument();
   });
 
-  it("keeps unsaved weekly hours across a look at time off", async () => {
+  it("keeps unsaved weekly hours while time off is added", async () => {
     fakeResourcesApi({ resources: [sam], team });
     const user = userEvent.setup();
     renderDashboard(<ResourcesView />);
@@ -173,9 +191,8 @@ describe("ResourcesView", () => {
     await user.keyboard("{Escape}");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Time off and extra hours" }));
-    expect(screen.queryByRole("button", { name: /^Edit Tuesday: / })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Weekly hours" }));
+    await user.click(screen.getByRole("button", { name: "Add" }));
+    await user.keyboard("{Escape}");
     expect(screen.getByRole("button", { name: /^Edit Tuesday: 09:00/ })).toBeInTheDocument();
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });

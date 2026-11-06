@@ -20,6 +20,7 @@ import {
 import { flattenFieldErrors } from "@/lib/settings/api-fields";
 import { useVocabulary } from "@/lib/vocabulary";
 import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -30,7 +31,16 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
-import { CURRENCIES, LOCALES, SaveBar, SettingsCard, SettingsHeader } from "./settings-common";
+import {
+  CURRENCIES,
+  LOCALES,
+  SaveBar,
+  SettingFormRow,
+  SettingGroup,
+  SettingRow,
+  SettingsHeader,
+  settingsStack,
+} from "./settings-common";
 
 /**
  * The booking page address's availability, announced politely. Always rendered (even when empty): an Input whose
@@ -62,6 +72,7 @@ export function GeneralSettings() {
     defaultValues: businessToGeneralValues(business),
   });
   const slug = useWatch({ control: form.control, name: "slug" });
+  const published = useWatch({ control: form.control, name: "published" });
   const debouncedSlug = useDebouncedValue(slug.trim(), 350);
   const checkSlug =
     debouncedSlug !== business.slug && SLUG_PATTERN.test(debouncedSlug) && debouncedSlug.length >= 3;
@@ -79,8 +90,11 @@ export function GeneralSettings() {
     try {
       const saved = await update.mutateAsync(input);
       form.reset(businessToGeneralValues(saved));
-      toast.success("Settings saved");
-      if (saved.slug !== business.slug) router.replace(`/dashboard/${saved.slug}/settings/general`);
+      // The save bar says it's saved, unless the page is about to move to the new address.
+      if (saved.slug !== business.slug) {
+        toast.success("Settings saved");
+        router.replace(`/dashboard/${saved.slug}/settings/general`);
+      }
     } catch (err) {
       applyApiErrors(form, flattenFieldErrors(err, ["address"]));
     }
@@ -89,12 +103,12 @@ export function GeneralSettings() {
   return (
     <>
       <SettingsHeader segment="general" />
-      <Form form={form} onSubmit={submit} className="gap-6">
-        <SettingsCard title="Your business" description="How you appear on your booking page and in emails.">
-          <FormField<V, "name"> name="name" label="Business name" required>
+      <Form form={form} onSubmit={submit} className={settingsStack}>
+        <SettingGroup title="Business details">
+          <SettingFormRow<V, "name"> name="name" label="Business name" required>
             {(field) => <Input {...field} />}
-          </FormField>
-          <FormField<V, "slug">
+          </SettingFormRow>
+          <SettingFormRow<V, "slug">
             name="slug"
             label="Booking page address"
             help={
@@ -104,69 +118,84 @@ export function GeneralSettings() {
             }
           >
             {(field) => (
-              <div className="flex">
-                {/* A long host shouldn't squeeze out the part people actually edit, so it gives way on phones. */}
-                <span
-                  title={`${origin}/`}
-                  className="inline-flex max-w-[45%] min-w-0 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground sm:max-w-none sm:shrink-0"
-                >
-                  <span className="truncate">{origin}/</span>
-                </span>
-                <div className="min-w-0 flex-1">
-                  <Input
-                    {...field}
-                    className="rounded-l-none"
-                    onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, "-"))}
-                    trailing={
-                      <SlugStatus
-                        checking={checkSlug && availability.isFetching}
-                        available={checkSlug ? availability.data?.available : undefined}
-                      />
-                    }
-                  />
+              <>
+                <div className="flex">
+                  {/* A long host shouldn't squeeze out the part people actually edit, so it gives way. */}
+                  <span
+                    title={`${origin}/`}
+                    className="inline-flex max-w-[45%] min-w-0 items-center rounded-l-lg border border-r-0 border-border-strong bg-muted px-3 text-sm text-muted-foreground"
+                  >
+                    <span className="truncate">{origin}/</span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <Input
+                      {...field}
+                      className="rounded-l-none"
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase().replace(/\s+/g, "-"))}
+                      trailing={
+                        <SlugStatus
+                          checking={checkSlug && availability.isFetching}
+                          available={checkSlug ? availability.data?.available : undefined}
+                        />
+                      }
+                    />
+                  </div>
                 </div>
+                {checkSlug && availability.data && !availability.data.available && (
+                  <p className="text-xs text-danger-soft-foreground">
+                    Taken.{" "}
+                    {availability.data.suggestion && (
+                      <button
+                        type="button"
+                        className="font-medium underline underline-offset-2"
+                        onClick={() =>
+                          form.setValue("slug", availability.data.suggestion!, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                        }
+                      >
+                        Use {availability.data.suggestion}
+                      </button>
+                    )}
+                  </p>
+                )}
+              </>
+            )}
+          </SettingFormRow>
+          <SettingFormRow<V, "published">
+            name="published"
+            fit
+            label="Booking page"
+            help={
+              published ? "Anyone with the link can book." : "Only your team can see it until you turn it on."
+            }
+          >
+            {(field) => (
+              <div className="flex items-center gap-2.5">
+                <Badge tone={published ? "success" : "neutral"} dot>
+                  {published ? "Live" : "Draft"}
+                </Badge>
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </div>
             )}
-          </FormField>
-          {checkSlug && availability.data && !availability.data.available && (
-            <p className="-mt-3 text-xs text-danger-soft-foreground">
-              Taken.{" "}
-              {availability.data.suggestion && (
-                <button
-                  type="button"
-                  className="font-medium underline underline-offset-2"
-                  onClick={() =>
-                    form.setValue("slug", availability.data.suggestion!, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                >
-                  Use {availability.data.suggestion}
-                </button>
-              )}
-            </p>
-          )}
-          <FormField<V, "description">
+          </SettingFormRow>
+          <SettingFormRow<V, "description">
             name="description"
+            stacked
             label="About"
-            optional
             help="A sentence or two at the top of your booking page."
           >
             {(field) => <Textarea {...field} rows={3} />}
-          </FormField>
-          <FormField<V, "published">
-            name="published"
-            orientation="horizontal"
-            label="Published"
-            help="Your booking page is public. Turned off, only your team can preview it."
-          >
-            {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-          </FormField>
-        </SettingsCard>
+          </SettingFormRow>
+        </SettingGroup>
 
-        <SettingsCard title="Region" description="Times on your calendar and in emails use this timezone.">
-          <FormField<V, "timezone"> name="timezone" label="Timezone">
+        <SettingGroup title="Region">
+          <SettingFormRow<V, "timezone">
+            name="timezone"
+            label="Timezone"
+            help="Used on your calendar and in emails."
+          >
             {(field) => (
               <Combobox
                 options={zones}
@@ -175,77 +204,75 @@ export function GeneralSettings() {
                 searchPlaceholder="Search cities…"
               />
             )}
-          </FormField>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField<V, "currency">
-              name="currency"
-              label="Currency"
-              help="Changing it doesn't convert existing prices."
-            >
-              {(field) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger ref={field.ref}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormField>
-            <FormField<V, "locale"> name="locale" label="Date and number format">
-              {(field) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger ref={field.ref}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LOCALES.map((l) => (
-                      <SelectItem key={l.value} value={l.value}>
-                        {l.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormField>
-          </div>
-        </SettingsCard>
+          </SettingFormRow>
+          <SettingFormRow<V, "currency">
+            name="currency"
+            label="Currency"
+            help="Changing it doesn't convert existing prices."
+          >
+            {(field) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger ref={field.ref}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </SettingFormRow>
+          <SettingFormRow<V, "locale"> name="locale" label="Date and number format">
+            {(field) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger ref={field.ref}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCALES.map((l) => (
+                    <SelectItem key={l.value} value={l.value}>
+                      {l.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </SettingFormRow>
+        </SettingGroup>
 
-        <SettingsCard
+        <SettingGroup
           title="Contact and address"
-          description="Shown on your booking page and in confirmation emails."
+          description="Shown on your booking page and in confirmation emails. All optional."
         >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField<V, "contactEmail"> name="contactEmail" label="Email" optional>
-              {(field) => <Input {...field} type="email" />}
-            </FormField>
-            <FormField<V, "contactPhone"> name="contactPhone" label="Phone" optional>
-              {(field) => <Input {...field} type="tel" />}
-            </FormField>
-          </div>
-          <FormField<V, "websiteUrl"> name="websiteUrl" label="Website" optional>
+          <SettingFormRow<V, "contactEmail"> name="contactEmail" label="Email">
+            {(field) => <Input {...field} type="email" />}
+          </SettingFormRow>
+          <SettingFormRow<V, "contactPhone"> name="contactPhone" label="Phone">
+            {(field) => <Input {...field} type="tel" />}
+          </SettingFormRow>
+          <SettingFormRow<V, "websiteUrl"> name="websiteUrl" label="Website">
             {(field) => <Input {...field} type="url" leading={<Globe />} placeholder="https://" />}
-          </FormField>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <FormField<V, "line1"> name="line1" label="Address line 1" optional>
-              {(field) => <Input {...field} />}
-            </FormField>
-            <FormField<V, "line2"> name="line2" label="Address line 2" optional>
-              {(field) => <Input {...field} />}
-            </FormField>
-            <FormField<V, "city"> name="city" label="Town or city" optional>
-              {(field) => <Input {...field} />}
-            </FormField>
-            <FormField<V, "postcode"> name="postcode" label="Postcode / Eircode" optional>
-              {(field) => <Input {...field} />}
-            </FormField>
-          </div>
-        </SettingsCard>
+          </SettingFormRow>
+          <SettingRow label="Address" labelId="settings-address">
+            <div role="group" aria-labelledby="settings-address" className="grid grid-cols-2 gap-2">
+              <FormField<V, "line1"> name="line1" className="col-span-2">
+                {(field) => <Input {...field} aria-label="Address line 1" placeholder="Address line 1" />}
+              </FormField>
+              <FormField<V, "line2"> name="line2" className="col-span-2">
+                {(field) => <Input {...field} aria-label="Address line 2" placeholder="Address line 2" />}
+              </FormField>
+              <FormField<V, "city"> name="city">
+                {(field) => <Input {...field} aria-label="Town or city" placeholder="Town or city" />}
+              </FormField>
+              <FormField<V, "postcode"> name="postcode">
+                {(field) => <Input {...field} aria-label="Postcode / Eircode" placeholder="Postcode" />}
+              </FormField>
+            </div>
+          </SettingRow>
+        </SettingGroup>
 
         <FormRootError />
         <SaveBar
@@ -255,32 +282,35 @@ export function GeneralSettings() {
       </Form>
 
       {perms.deleteBusiness && (
-        <SettingsCard
-          className="mt-10 border-danger-border"
-          title="Delete business"
-          description={deleteBusinessDescription({ customers: v("customers"), bookings: v("bookings") })}
-        >
-          <ConfirmDialog
-            trigger={
-              <Button variant="danger-soft" className="self-start">
-                Delete {business.name}
-              </Button>
-            }
-            title={`Delete ${business.name}?`}
-            description={`The booking page goes offline immediately, and you can't undo this from your dashboard. Your ${v("customers")} can only see and cancel their ${v("bookings")}.`}
-            confirmLabel="Delete business"
-            destructive
-            onConfirm={async () => {
-              try {
-                await remove.mutateAsync();
-                toast.success("Business deleted");
-                router.replace("/dashboard");
-              } catch (err) {
-                toast.error(errorMessage(err));
+        <SettingGroup title="Danger zone" className="mt-8">
+          <SettingRow
+            danger
+            action
+            label="Delete business"
+            help={deleteBusinessDescription({ customers: v("customers"), bookings: v("bookings") })}
+          >
+            <ConfirmDialog
+              trigger={
+                <Button variant="danger-soft" aria-label={`Delete ${business.name}`}>
+                  Delete
+                </Button>
               }
-            }}
-          />
-        </SettingsCard>
+              title={`Delete ${business.name}?`}
+              description={`The booking page goes offline immediately, and you can't undo this from your dashboard. Your ${v("customers")} can only see and cancel their ${v("bookings")}.`}
+              confirmLabel="Delete business"
+              destructive
+              onConfirm={async () => {
+                try {
+                  await remove.mutateAsync();
+                  toast.success("Business deleted");
+                  router.replace("/dashboard");
+                } catch (err) {
+                  toast.error(errorMessage(err));
+                }
+              }}
+            />
+          </SettingRow>
+        </SettingGroup>
       )}
     </>
   );

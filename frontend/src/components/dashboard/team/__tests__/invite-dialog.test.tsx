@@ -63,7 +63,9 @@ describe("InviteDialog", () => {
       expect.stringMatching(/^Owner/),
     ]);
     const calendar = within(dialog).getByRole("combobox", { name: /^Their calendar/ });
-    expect(calendar).toHaveAccessibleDescription("Staff see appointments on this calendar only.");
+    expect(calendar).toHaveAccessibleDescription(
+      "Pick one, and they see appointments on that calendar only.",
+    );
     await user.click(within(roles).getByRole("radio", { name: /^Admin/ }));
     expect(calendar).toHaveAccessibleDescription("Link them to their own calendar column.");
 

@@ -6,7 +6,7 @@ import { BarChart3, Table2 } from "lucide-react";
 import type { ReportSummary } from "@/lib/api/types";
 import { isEmptyReport } from "@/lib/dashboard/reports";
 import { useVocabulary } from "@/lib/vocabulary";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,13 +16,21 @@ import { DayTable } from "./day-table";
 /** Recharts only loads when a chart is shown (it is most of the reports page's JavaScript). */
 const DayChart = dynamic(() => import("./day-chart").then((m) => m.DayChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-64 rounded-lg" />,
+  loading: () => <Skeleton className="h-52 rounded-lg" />,
 });
 
 /** Bookings or revenue per day, as a chart or a table. */
-export function PerDayCard({ data, loading }: { data: ReportSummary | undefined; loading: boolean }) {
+export function PerDayCard({
+  data,
+  loading,
+  measure,
+}: {
+  data: ReportSummary | undefined;
+  loading: boolean;
+  /** Chosen with the numbers above the card. */
+  measure: Measure;
+}) {
   const { v } = useVocabulary();
-  const [measure, setMeasure] = useState<Measure>("bookings");
   const [asTable, setAsTable] = useState(false);
   return (
     <Card>
@@ -30,18 +38,7 @@ export function PerDayCard({ data, loading }: { data: ReportSummary | undefined;
         <CardTitle>
           {measure === "bookings" ? `${v("bookings", { title: true })} per day` : "Revenue per day"}
         </CardTitle>
-        <CardDescription>By the day the {v("booking")} takes place.</CardDescription>
         <CardAction wrap className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            size="sm"
-            aria-label="Measure"
-            value={measure}
-            onValueChange={setMeasure}
-            options={[
-              { value: "bookings", label: v("bookings", { title: true }) },
-              { value: "revenue", label: "Revenue" },
-            ]}
-          />
           <SegmentedControl
             size="sm"
             aria-label="Display"
@@ -56,7 +53,7 @@ export function PerDayCard({ data, loading }: { data: ReportSummary | undefined;
       </CardHeader>
       <CardContent>
         {loading || !data ? (
-          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-52 rounded-lg" />
         ) : isEmptyReport(data.totals) ? (
           <EmptyState
             size="sm"

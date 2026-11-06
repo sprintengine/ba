@@ -2,17 +2,36 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { BookOpen, Plug } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useConnectedApps } from "@/lib/api/hooks";
+import type { ConnectedApp } from "@/lib/api/types";
 import { AI_HELP_PATH } from "@/lib/oauth/app-url";
 import { viewerTimeZone } from "@/lib/oauth/format";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AgentSettingsCard } from "./agent-settings-card";
 import { ConnectedAppCard } from "./connected-app-card";
+
+/** Sample content for the real card, on a page with no apps yet. */
+const EXAMPLE_APP: ConnectedApp = {
+  id: "example",
+  clientId: "example",
+  name: "Your assistant",
+  clientUri: null,
+  kind: "dynamic",
+  redirectHost: "your assistant's app",
+  audience: "customer",
+  scopes: [
+    { key: "bookings:read", label: "See your bookings", description: "" },
+    { key: "bookings:write", label: "Book and move them, with your OK", description: "" },
+  ],
+  connectedAt: "2026-01-01T09:00:00Z",
+  lastUsedAt: null,
+};
 
 /** /my/connected-apps: apps and AI assistants the person allowed to use their account. */
 export function ConnectedAppsPage() {
@@ -35,10 +54,13 @@ export function ConnectedAppsPage() {
           ))}
         </div>
       ) : apps.data.length === 0 ? (
-        <div>
+        <div className="flex flex-col gap-2">
+          <ExamplePreview>
+            <ConnectedAppCard app={EXAMPLE_APP} timeZone="UTC" />
+          </ExamplePreview>
           <EmptyState
+            size="sm"
             headingLevel={2}
-            icon={<Plug />}
             title="No connected apps"
             description="Connect an AI assistant such as Claude or ChatGPT and it shows up here with what it's allowed to do."
             action={

@@ -3,13 +3,12 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import { formatDuration } from "@/lib/format";
 import type { ServiceFormValues as V } from "@/lib/services/service-form";
-import { Field } from "@/components/ui/field";
-import { FormField } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { NumberInput } from "@/components/ui/number-input";
 import { ServiceReleaseNote } from "../../releases/service-release-note";
 import { useVocabulary } from "@/lib/vocabulary";
+import { SettingFieldRow, SettingFormRow } from "../../settings/setting-rows";
 import { Section } from "./section";
 
 const INTERVALS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
@@ -39,7 +38,7 @@ function Minutes({
   required?: boolean;
 }) {
   return (
-    <FormField<V, typeof name> name={name} label={label} help={help} required={required}>
+    <SettingFormRow<V, typeof name> name={name} label={label} help={help} required={required}>
       {(field) => (
         <NumberInput
           mode="decimal"
@@ -49,7 +48,7 @@ function Minutes({
           unit="min"
         />
       )}
-    </FormField>
+    </SettingFormRow>
   );
 }
 
@@ -62,81 +61,78 @@ export function TimingSection({ serviceId = null }: { serviceId?: string | null 
     <Section
       title="Timing"
       description={`Buffers block time for setup or cleaning without showing it to the ${v("customer")}.`}
+      rows
     >
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Minutes name="durationMinutes" label="Duration" min={5} required />
-        <Minutes name="bufferBeforeMinutes" label="Buffer before" />
-        <Minutes name="bufferAfterMinutes" label="Buffer after" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <FormField<V, "slotIntervalMinutes">
-          name="slotIntervalMinutes"
-          label="Start times every"
-          help="How often a slot can start."
-        >
-          {(field) => (
-            <Select
-              value={field.value === null ? "auto" : String(field.value)}
-              onValueChange={(val) => field.onChange(val === "auto" ? null : Number(val))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Same as duration</SelectItem>
-                {INTERVALS.map((m) => (
-                  <SelectItem key={m} value={String(m)}>
-                    {formatDuration(m)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </FormField>
-        <FormField<V, "minNoticeMinutes">
-          name="minNoticeMinutes"
-          label="Minimum notice"
-          help="How late people can book online."
-        >
-          {(field) => (
-            <Select
-              value={field.value === null ? "default" : String(field.value)}
-              onValueChange={(val) => field.onChange(val === "default" ? null : Number(val))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Business default</SelectItem>
-                {NOTICE.map((n) => (
-                  <SelectItem key={n.value} value={String(n.value)}>
-                    {n.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </FormField>
-        <FormField<V, "maxAdvanceDays">
-          name="maxAdvanceDays"
-          label="Book up to"
-          help="How many days ahead people can book. Leave empty to use the business default."
-        >
-          {(field) => (
-            <NumberInput
-              mode="decimal"
-              value={field.value}
-              onValueChange={field.onChange}
-              min={1}
-              placeholder="Default"
-              unit="days"
-            />
-          )}
-        </FormField>
-      </div>
+      <Minutes name="durationMinutes" label="Duration" min={5} required />
+      <Minutes name="bufferBeforeMinutes" label="Buffer before" />
+      <Minutes name="bufferAfterMinutes" label="Buffer after" />
+      <SettingFormRow<V, "slotIntervalMinutes">
+        name="slotIntervalMinutes"
+        label="Start times every"
+        help="How often a slot can start."
+      >
+        {(field) => (
+          <Select
+            value={field.value === null ? "auto" : String(field.value)}
+            onValueChange={(val) => field.onChange(val === "auto" ? null : Number(val))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Same as duration</SelectItem>
+              {INTERVALS.map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {formatDuration(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </SettingFormRow>
+      <SettingFormRow<V, "minNoticeMinutes">
+        name="minNoticeMinutes"
+        label="Minimum notice"
+        help="How late people can book online."
+      >
+        {(field) => (
+          <Select
+            value={field.value === null ? "default" : String(field.value)}
+            onValueChange={(val) => field.onChange(val === "default" ? null : Number(val))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Business default</SelectItem>
+              {NOTICE.map((n) => (
+                <SelectItem key={n.value} value={String(n.value)}>
+                  {n.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </SettingFormRow>
+      <SettingFormRow<V, "maxAdvanceDays">
+        name="maxAdvanceDays"
+        label="Book up to"
+        help="How many days ahead people can book. Leave empty to use the business default."
+      >
+        {(field) => (
+          <NumberInput
+            mode="decimal"
+            value={field.value}
+            onValueChange={field.onChange}
+            min={1}
+            placeholder="Default"
+            unit="days"
+          />
+        )}
+      </SettingFormRow>
       <ServiceReleaseNote serviceId={serviceId} />
-      <Field
-        orientation="horizontal"
+      <SettingFieldRow
+        fit
         label="Group session"
         help="Several people book the same time (a class, a tour). Each takes one seat."
       >
@@ -144,9 +140,9 @@ export function TimingSection({ serviceId = null }: { serviceId?: string | null 
           checked={capacity > 1}
           onCheckedChange={(c) => form.setValue("capacity", c ? 8 : 1, { shouldDirty: true })}
         />
-      </Field>
+      </SettingFieldRow>
       {capacity > 1 && (
-        <FormField<V, "capacity"> name="capacity" label="Seats per session" className="sm:w-48">
+        <SettingFormRow<V, "capacity"> name="capacity" label="Seats per session">
           {(field) => (
             <NumberInput
               mode="decimal"
@@ -157,7 +153,7 @@ export function TimingSection({ serviceId = null }: { serviceId?: string | null 
               min={2}
             />
           )}
-        </FormField>
+        </SettingFormRow>
       )}
     </Section>
   );

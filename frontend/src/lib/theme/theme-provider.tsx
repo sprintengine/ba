@@ -8,13 +8,23 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
  */
 const THEME_SCRIPT_PROPS = { type: typeof window === "undefined" ? "text/javascript" : "text/plain" };
 
-/** Light/dark via a class on <html>; follows the OS by default. Use `useTheme()` from next-themes to read/set. */
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Light/dark via a class on <html>; follows the OS by default. Use `useTheme()` from next-themes to read/set.
+ * `forcedTheme` wins over the visitor's choice without changing it, so the choice is still there back in the app.
+ */
+export function ThemeProvider({
+  forcedTheme,
+  children,
+}: {
+  forcedTheme?: "light";
+  children: React.ReactNode;
+}) {
   return (
     <NextThemesProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
+      forcedTheme={forcedTheme}
       disableTransitionOnChange
       scriptProps={THEME_SCRIPT_PROPS}
     >

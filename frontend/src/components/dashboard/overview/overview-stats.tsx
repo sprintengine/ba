@@ -23,19 +23,33 @@ export function OverviewStats({
   const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
+  const running = todays.filter(
+    (b) => new Date(b.start) <= now && new Date(b.end) > now && b.status !== "pending_approval",
+  ).length;
   return (
     <div
       className={cn(
         "grid grid-cols-2 gap-3 sm:gap-4",
-        perms.viewRevenue ? "lg:grid-cols-4" : "lg:grid-cols-3",
+        perms.viewRevenue ? "lg:grid-cols-4" : "sm:grid-cols-3",
       )}
     >
       <StatCard
         label="Today"
         value={todays.length}
         loading={loading}
-        // Not "A quiet day" before the bookings are in; a blank line keeps the tile's height.
-        hint={loading ? "\u00a0" : todayHint(todays, now, fmt.time)}
+        // Not "A quiet day" before the bookings are in; a blank line keeps the tile's height. What's waiting for a
+        // decision is counted in one place, the list that holds it, so two numbers never disagree.
+        hint={
+          loading
+            ? "\u00a0"
+            : running > 0
+              ? `${running} in progress`
+              : todayHint(
+                  todays.filter((b) => b.status !== "pending_approval"),
+                  now,
+                  fmt.time,
+                )
+        }
       />
       <StatCard
         label="Next 7 days"
@@ -49,8 +63,8 @@ export function OverviewStats({
         value={overview?.bookings30d ?? 0}
         loading={loading}
         hint="Booked in the last 30 days"
-        // Without revenue there are three tiles: the third takes the phone's whole row rather than leaving a gap.
-        className={cn(!perms.viewRevenue && "max-lg:col-span-2")}
+        // Without revenue there are three tiles: the third takes the whole row rather than leaving a gap.
+        className={cn(!perms.viewRevenue && "max-sm:col-span-2")}
       />
       {perms.viewRevenue && (
         <StatCard

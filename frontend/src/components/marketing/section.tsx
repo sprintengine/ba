@@ -23,7 +23,7 @@ export function Eyebrow({ className, children }: { className?: string; children:
   return (
     <p
       className={cn(
-        "inline-flex items-center gap-2 text-sm font-medium text-brand [&_svg]:size-4 [&_svg]:shrink-0",
+        "inline-flex items-center gap-2 text-sm font-medium text-muted-foreground [&_svg]:size-4 [&_svg]:shrink-0",
         className,
       )}
     >

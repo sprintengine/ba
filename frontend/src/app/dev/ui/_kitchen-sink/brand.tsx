@@ -1,6 +1,6 @@
 "use client";
 
-import { Logo, LogoMark, Wordmark } from "@/components/brand/logo";
+import { Logo, LogoLoader, LogoMark, Wordmark } from "@/components/brand/logo";
 import { Card } from "@/components/ui/card";
 import { Section } from "./section";
 
@@ -15,10 +15,17 @@ export function BrandSection() {
           <LogoMark className="size-12" />
           <LogoMark className="size-8" />
           <LogoMark className="size-5" />
-          <LogoMark className="size-4" />
+          <LogoMark className="size-4" weight="small" />
         </Card>
         <Card className="items-center justify-center bg-gray-950 p-8 text-gray-50 dark:bg-gray-50 dark:text-gray-950">
           <Wordmark className="h-6" />
+        </Card>
+        <Card className="items-center justify-center gap-4 p-8 sm:flex-row">
+          <Wordmark className="h-6" mono />
+          <LogoMark className="size-8" mono />
+        </Card>
+        <Card className="items-center justify-center p-8">
+          <LogoLoader />
         </Card>
       </div>
     </Section>

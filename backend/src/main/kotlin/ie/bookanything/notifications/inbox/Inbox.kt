@@ -163,6 +163,6 @@ class Inbox(private val push: Boolean) {
 
         private fun format(business: BusinessRow, at: Instant): String =
             ZonedDateTime.ofInstant(at, business.zone)
-                .format(DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", Locale.forLanguageTag(business.locale)))
+                .format(DateTimeFormatter.ofPattern("EEE, d MMM, HH:mm", Locale.forLanguageTag(business.locale)))
     }
 }

@@ -98,7 +98,7 @@ export default async function IndustryPage({ params }: Props) {
               ))}
             </dl>
           </div>
-          <div className="relative animate-rise [animation-delay:120ms]">
+          <div id="try" className="relative animate-rise scroll-mt-24 [animation-delay:120ms]">
             <p className="mb-3 text-center text-xs text-subtle-foreground">
               Have a go. This is the booking page your {v.customers.toLowerCase()} would see.
             </p>
@@ -182,7 +182,7 @@ export default async function IndustryPage({ params }: Props) {
               },
               {
                 title: "Make it yours",
-                body: "Add your team's names, adjust prices and hours, set your cancellation policy and connect Stripe.",
+                body: "Add your team's names, adjust prices and hours, set your cancellation policy and connect your payment provider.",
               },
               {
                 title: "Share your link",

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUp, Globe, Sparkles, Wand2 } from "lucide-react";
+import { ArrowUp, Globe, Wand2 } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo";
 import { errorMessage, isApiError } from "@/lib/api/client";
 import { useEditSite, useGenerateSite, useSiteVersions } from "@/lib/api/hooks";
 import type { SiteAiResult } from "@/lib/api/types";
@@ -78,7 +79,7 @@ function UsageNote() {
     <div className="flex flex-col gap-3">
       <div className="rounded-xl border border-border bg-surface-sunken p-4 text-sm">
         <p className="flex items-center gap-2 font-medium">
-          <Sparkles className="size-4 text-brand" aria-hidden /> AI site builder
+          <LogoMark className="h-3.5 w-auto" aria-hidden title="" /> AI site builder
         </p>
         <p className="mt-1 text-muted-foreground">
           The AI picks a theme, sections and wording from your real services, team and hours. It never invents

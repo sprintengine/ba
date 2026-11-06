@@ -1,4 +1,30 @@
+import { PRISM } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
+
+/** A headline's full stop, as the logo's: lit in the prism. Only for the page's few biggest headlines. */
+export function PrismDot() {
+  return (
+    <>
+      <span
+        aria-hidden
+        className="ml-[0.05em] inline-block size-[0.17em] rounded-full"
+        style={{ background: `linear-gradient(90deg, ${PRISM.join(", ")})` }}
+      />
+      <span className="sr-only">.</span>
+    </>
+  );
+}
+
+/** A quiet line of the same prism between sections: the thread the bookings fly along. */
+export function PrismThread({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn("mx-auto h-px w-full max-w-[46rem] opacity-60", className)}
+      style={{ background: `linear-gradient(90deg, transparent, ${PRISM.join(", ")}, transparent)` }}
+    />
+  );
+}
 
 /**
  * A Prism section heading: a quiet label, a display headline that may end in a lit clause (`text-prism`, the rest
@@ -11,6 +37,8 @@ export function PrismHeading({
   lit,
   lead,
   align = "center",
+  dot = false,
+  punch = false,
   className,
 }: {
   id?: string;
@@ -20,6 +48,10 @@ export function PrismHeading({
   lit?: React.ReactNode;
   lead?: React.ReactNode;
   align?: "center" | "left";
+  /** End the headline on the logo's lit dot, not a full stop. */
+  dot?: boolean;
+  /** The second clause is the point of the headline: full strength, not muted. */
+  punch?: boolean;
   className?: string;
 }) {
   return (
@@ -47,9 +79,10 @@ export function PrismHeading({
       >
         {title}
         {lit && (
-          <>
-            <br className="max-sm:hidden" /> <span className="text-prism">{lit}</span>
-          </>
+          <span className="block">
+            <span className={cn(!punch && "text-prism")}>{lit}</span>
+            {dot && <PrismDot />}
+          </span>
         )}
       </h2>
       {lead && (

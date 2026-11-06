@@ -3,11 +3,11 @@
 /*
  * bookanything design tokens
  * ──────────────────────────
- * Brand: Prism (one typeface, Figtree; warm ink on a warm paper page; a deep iris accent; a decorative
+ * Brand: Prism (one typeface, Figtree; true neutral greys, black in dark mode; a deep iris accent; a decorative
  * prism spectrum that only ever appears as light, never as text). Source of truth:
  * the brand kit's tokens (bookanything-brand/prism-kit/tokens).
  *
- * 1. Raw palette (@theme): warm `gray`, the `iris` brand ramp, the decorative
+ * 1. Raw palette (@theme): neutral `gray`, the `iris` brand ramp, the decorative
  *    `prism` spectrum, and black/white. Tailwind's default colour palette is DISABLED on purpose —
  *    use semantic tokens (bg-surface, text-muted-foreground, border-border …),
  *    not `bg-indigo-500`.
@@ -23,6 +23,17 @@
  * Dark mode is the `dark` class on <html> (next-themes). `data-mode` forces a mode on a subtree
  * (the site editor previews light and dark regardless of the dashboard's mode).
  */
+/* As Tailwind's own hover, and on `data-hover`: the home page's tour points its cursor at the app's real controls. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &[data-hover] {
+    @slot;
+  }
+}
 @custom-variant dark (&:where(.dark, .dark *, [data-mode="dark"], [data-mode="dark"] *):not(:where([data-mode="light"], [data-mode="light"] *)));
 
 @theme {
@@ -30,24 +41,24 @@
   --color-white: #fff;
   --color-black: #000;
 
-  /* Warm paper neutrals. */
+  /* True neutrals, no tint: a warm or cool cast reads as a colour on the rail and the page. */
   --color-gray-0: #ffffff;
-  --color-gray-25: #fbfaf6;
-  --color-gray-50: #f4f1ea;
-  --color-gray-100: #efebe2;
-  --color-gray-150: #e9e4d8;
-  --color-gray-200: #e4dfd3;
-  --color-gray-300: #d3cdbf;
-  --color-gray-400: #b5af9f;
-  --color-gray-500: #928c7d;
-  --color-gray-600: #6a665b;
-  --color-gray-700: #4b483f;
-  --color-gray-800: #2f2c25;
-  --color-gray-850: #25231e;
-  --color-gray-900: #1b1a16;
-  --color-gray-925: #141310;
-  --color-gray-950: #16140f;
-  --color-gray-975: #0c0b09;
+  --color-gray-25: #fafafa;
+  --color-gray-50: #f4f4f4;
+  --color-gray-100: #ededed;
+  --color-gray-150: #e6e6e6;
+  --color-gray-200: #e3e3e3;
+  --color-gray-300: #d1d1d1;
+  --color-gray-400: #afafaf;
+  --color-gray-500: #8c8c8c;
+  --color-gray-600: #666666;
+  --color-gray-700: #484848;
+  --color-gray-800: #2b2b2b;
+  --color-gray-850: #212121;
+  --color-gray-900: #171717;
+  --color-gray-925: #131313;
+  --color-gray-950: #111111;
+  --color-gray-975: #0a0a0a;
 
   /* Iris — the bookanything accent: a deep violet drawn from the prism spectrum. 600 is the brand:
      white text on it and it as text on the page both keep 4.5:1. */
@@ -133,6 +144,7 @@
   --default-transition-duration: 150ms;
   --default-transition-timing-function: var(--ease-out);
 
+  --animate-logo-thread: logo-thread 2.4s linear infinite;
   --animate-fade-in: fade-in 160ms var(--ease-out);
   --animate-fade-out: fade-out 120ms var(--ease-in) forwards;
   --animate-pop-in: pop-in 180ms var(--ease-out);
@@ -157,6 +169,14 @@
   @keyframes fade-out {
     to {
       opacity: 0;
+    }
+  }
+  @keyframes logo-thread {
+    from {
+      stroke-dashoffset: 100;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
   @keyframes pop-in {
@@ -259,23 +279,23 @@
 [data-mode="light"] {
   color-scheme: light;
 
-  --background: #fbfaf6;
-  --foreground: #16140f;
+  --background: #fafafa;
+  --foreground: #111111;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-sunken: #f4f1ea;
-  --muted: #efebe2;
-  --muted-foreground: #4b483f;
-  --subtle-foreground: #5f5b50;
-  --accent: #efebe2;
-  --accent-foreground: #16140f;
-  --border: #e4dfd3;
-  --border-subtle: #ece8dd;
-  --border-strong: #d3cdbf;
-  --input: #959082;
-  --overlay: rgba(32, 29, 22, 0.22);
-  --primary: #16140f;
-  --primary-hover: #2f2c25;
+  --surface-sunken: #f4f4f4;
+  --muted: #ededed;
+  --muted-foreground: #484848;
+  --subtle-foreground: #5c5c5c;
+  --accent: #ededed;
+  --accent-foreground: #111111;
+  --border: #e3e3e3;
+  --border-subtle: #ececec;
+  --border-strong: #d1d1d1;
+  --input: #8f8f8f;
+  --overlay: rgba(17, 17, 17, 0.22);
+  --primary: #111111;
+  --primary-hover: #2b2b2b;
   --primary-foreground: #ffffff;
   --brand: #5b4ae0;
   --brand-hover: #4a3ac8;
@@ -311,7 +331,10 @@
   --info-soft-foreground: #175c9e;
   --info-border: #c3dcf4;
   --event-tint: 17%;
+  --event-waiting: #fdf0d9;
   --event-tint-done: 10%;
+  --event-base: var(--surface);
+  --event-edge: 10%;
   --chart-1: #5b4ae0;
   --chart-2: #e0702f;
   --chart-3: #1d9bd1;
@@ -319,23 +342,23 @@
   --chart-5: #b98800;
   --chart-6: #16a17a;
   --chart-7: #2f5fc4;
-  --chart-grid: #ece8dd;
-  --chart-axis: #d3cdbf;
-  --elev-xs: 0 1px 2px 0 rgba(32, 29, 22, 0.05);
-  --elev-sm: 0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 1px 3px 0 rgba(32, 29, 22, 0.07);
+  --chart-grid: #ececec;
+  --chart-axis: #d1d1d1;
+  --elev-xs: 0 1px 2px 0 rgba(17, 17, 17, 0.05);
+  --elev-sm: 0 0 0 0.5px rgba(17, 17, 17, 0.06), 0 1px 3px 0 rgba(17, 17, 17, 0.07);
   --elev-md:
-    0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 8px 16px -8px rgba(58, 48, 28, 0.14),
-    0 2px 4px -2px rgba(32, 29, 22, 0.05);
+    0 0 0 0.5px rgba(17, 17, 17, 0.06), 0 8px 16px -8px rgba(17, 17, 17, 0.14),
+    0 2px 4px -2px rgba(17, 17, 17, 0.05);
   --elev-lg:
-    0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 24px 40px -20px rgba(58, 48, 28, 0.22),
-    0 6px 12px -6px rgba(32, 29, 22, 0.06);
+    0 0 0 0.5px rgba(17, 17, 17, 0.06), 0 24px 40px -20px rgba(17, 17, 17, 0.22),
+    0 6px 12px -6px rgba(17, 17, 17, 0.06);
   --elev-xl:
-    0 0 0 0.5px rgba(32, 29, 22, 0.07), 0 40px 72px -32px rgba(58, 48, 28, 0.32),
-    0 10px 20px -10px rgba(32, 29, 22, 0.08);
+    0 0 0 0.5px rgba(17, 17, 17, 0.07), 0 40px 72px -32px rgba(17, 17, 17, 0.32),
+    0 10px 20px -10px rgba(17, 17, 17, 0.08);
   --elev-button:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 1px 2px 0 rgba(32, 29, 22, 0.2),
-    0 8px 18px -10px rgba(32, 29, 22, 0.5);
-  --elev-inset: inset 0 1px 2px 0 rgba(32, 29, 22, 0.06);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 1px 2px 0 rgba(17, 17, 17, 0.2),
+    0 8px 18px -10px rgba(17, 17, 17, 0.5);
+  --elev-inset: inset 0 1px 2px 0 rgba(17, 17, 17, 0.06);
 
   /* Decorative prism light (see @theme). */
   --prism-gradient: linear-gradient(90deg, #8fd8f2 0%, #bfaeff 50%, #ffbf9c 100%);
@@ -349,7 +372,7 @@
     #ffbf9c,
     rgba(255, 255, 255, 0.95)
   );
-  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fcfbf8 0%, #f4f1ea 55%, #e9e4d8 100%);
+  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #fcfcfc 0%, #f4f4f4 55%, #e6e6e6 100%);
 
   /* ---- glass recipes (light). Use: background: var(--glass-bg); backdrop-filter: var(--glass-backdrop);
      border: 1px solid var(--glass-border); box-shadow: var(--glass-highlight), var(--glass-shadow); */
@@ -359,15 +382,15 @@
   --glass-surface-border: rgba(255, 255, 255, 0.85);
   --glass-surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --glass-surface-shadow:
-    0 0 0 0.5px rgba(32, 29, 22, 0.08), 0 8px 16px -10px rgba(58, 48, 28, 0.14),
-    0 28px 48px -28px rgba(58, 48, 28, 0.32);
+    0 0 0 0.5px rgba(17, 17, 17, 0.08), 0 8px 16px -10px rgba(17, 17, 17, 0.14),
+    0 28px 48px -28px rgba(17, 17, 17, 0.32);
   --glass-surface-backdrop: blur(var(--glass-surface-blur)) saturate(var(--glass-surface-saturate));
-  --glass-chrome-bg: rgba(251, 250, 246, 0.62);
+  --glass-chrome-bg: rgba(250, 250, 250, 0.62);
   --glass-chrome-blur: 20px;
   --glass-chrome-saturate: 1.6;
   --glass-chrome-border: rgba(255, 255, 255, 0.9);
   --glass-chrome-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --glass-chrome-shadow: 0 0 0 0.5px rgba(32, 29, 22, 0.06), 0 10px 30px -18px rgba(32, 29, 22, 0.22);
+  --glass-chrome-shadow: 0 0 0 0.5px rgba(17, 17, 17, 0.06), 0 10px 30px -18px rgba(17, 17, 17, 0.22);
   --glass-chrome-backdrop: blur(var(--glass-chrome-blur)) saturate(var(--glass-chrome-saturate));
   --glass-overlay-bg: rgba(255, 255, 255, 0.8);
   --glass-overlay-blur: 28px;
@@ -375,8 +398,8 @@
   --glass-overlay-border: rgba(255, 255, 255, 0.95);
   --glass-overlay-highlight: inset 0 1px 0 rgba(255, 255, 255, 1);
   --glass-overlay-shadow:
-    0 0 0 0.5px rgba(32, 29, 22, 0.08), 0 8px 20px -12px rgba(32, 29, 22, 0.16),
-    0 32px 72px -28px rgba(32, 29, 22, 0.34);
+    0 0 0 0.5px rgba(17, 17, 17, 0.08), 0 8px 20px -12px rgba(17, 17, 17, 0.16),
+    0 32px 72px -28px rgba(17, 17, 17, 0.34);
   --glass-overlay-backdrop: blur(var(--glass-overlay-blur)) saturate(var(--glass-overlay-saturate));
   /* default glass = surface */
   --glass-bg: var(--glass-surface-bg);
@@ -393,24 +416,24 @@
 [data-mode="dark"] {
   color-scheme: dark;
 
-  --background: #1b1a16;
-  --foreground: #f3f1ea;
-  --surface: #211f1b;
-  --surface-raised: #25231e;
-  --surface-sunken: #121110;
-  --muted: #2a2822;
-  --muted-foreground: #cdc9bd;
-  --subtle-foreground: #b6b1a4;
-  --accent: #2f2d27;
-  --accent-foreground: #f3f1ea;
-  --border: #37342d;
-  --border-subtle: #2d2b25;
-  --border-strong: #4a463d;
-  --input: #6f6a5d;
-  --overlay: rgba(8, 7, 5, 0.46);
-  --primary: #f3f1ea;
-  --primary-hover: #dcd8cc;
-  --primary-foreground: #16140f;
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --surface: #121212;
+  --surface-raised: #181818;
+  --surface-sunken: #000000;
+  --muted: #1c1c1c;
+  --muted-foreground: #c7c7c7;
+  --subtle-foreground: #a6a6a6;
+  --accent: #222222;
+  --accent-foreground: #f5f5f5;
+  --border: #262626;
+  --border-subtle: #1c1c1c;
+  --border-strong: #3a3a3a;
+  --input: #6e6e6e;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --primary: #f5f5f5;
+  --primary-hover: #d9d9d9;
+  --primary-foreground: #111111;
   --brand: #a99bff;
   --brand-hover: #bcb1ff;
   --brand-foreground: #0f1012;
@@ -430,7 +453,7 @@
   --success-border: rgba(60, 198, 138, 0.32);
   --warning: #f0b54f;
   --warning-foreground: #1f1503;
-  --warning-soft: rgba(240, 181, 79, 0.14);
+  --warning-soft: rgba(240, 181, 79, 0.1);
   --warning-soft-foreground: #f6cd85;
   --warning-border: rgba(240, 181, 79, 0.32);
   --danger: #f0625f;
@@ -444,8 +467,12 @@
   --info-soft: rgba(90, 169, 240, 0.14);
   --info-soft-foreground: #a3cef7;
   --info-border: rgba(90, 169, 240, 0.32);
-  --event-tint: 34%;
-  --event-tint-done: 18%;
+  --event-tint: 30%;
+  --event-waiting: #41331f;
+  --event-tint-done: 15%;
+  /* A step above every dark surface, so a booking reads as a shape on the page as well as in the calendar. */
+  --event-base: #2b2b2b;
+  --event-edge: 42%;
   --chart-1: #7a6af0;
   --chart-2: #e06a2a;
   --chart-3: #1f95cc;
@@ -453,8 +480,8 @@
   --chart-5: #b08300;
   --chart-6: #13a079;
   --chart-7: #4677e0;
-  --chart-grid: #2a2822;
-  --chart-axis: #403d35;
+  --chart-grid: #1c1c1c;
+  --chart-axis: #333333;
   --elev-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --elev-sm: 0 0 0 0.5px rgba(255, 255, 255, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.4);
   --elev-md:
@@ -471,9 +498,9 @@
     0 8px 18px -10px rgba(0, 0, 0, 0.6);
   --elev-inset: inset 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 
-  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #211f1b 0%, #141310 55%, #0c0b09 100%);
+  --studio-gradient: radial-gradient(120% 80% at 50% 0%, #121212 0%, #0a0a0a 55%, #000000 100%);
 
-  --glass-surface-bg: rgba(37, 35, 30, 0.55);
+  --glass-surface-bg: rgba(24, 24, 24, 0.55);
   --glass-surface-blur: 18px;
   --glass-surface-saturate: 1.5;
   --glass-surface-border: rgba(255, 255, 255, 0.09);
@@ -481,14 +508,14 @@
   --glass-surface-shadow:
     0 0 0 0.5px rgba(0, 0, 0, 0.5), 0 8px 16px -10px rgba(0, 0, 0, 0.4), 0 28px 48px -28px rgba(0, 0, 0, 0.6);
   --glass-surface-backdrop: blur(var(--glass-surface-blur)) saturate(var(--glass-surface-saturate));
-  --glass-chrome-bg: rgba(27, 26, 22, 0.64);
+  --glass-chrome-bg: rgba(10, 10, 10, 0.64);
   --glass-chrome-blur: 20px;
   --glass-chrome-saturate: 1.4;
   --glass-chrome-border: rgba(255, 255, 255, 0.08);
   --glass-chrome-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --glass-chrome-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 10px 30px -18px rgba(0, 0, 0, 0.6);
   --glass-chrome-backdrop: blur(var(--glass-chrome-blur)) saturate(var(--glass-chrome-saturate));
-  --glass-overlay-bg: rgba(37, 35, 30, 0.82);
+  --glass-overlay-bg: rgba(24, 24, 24, 0.82);
   --glass-overlay-blur: 28px;
   --glass-overlay-saturate: 1.6;
   --glass-overlay-border: rgba(255, 255, 255, 0.1);
@@ -600,20 +627,21 @@
 .dark[data-theme],
 [data-mode="dark"] [data-theme],
 [data-theme][data-mode="dark"] {
-  --background: var(--td-background);
-  --foreground: var(--td-foreground);
-  --surface: var(--td-surface);
-  --surface-raised: var(--td-surface-raised);
-  --surface-sunken: var(--td-surface-sunken);
-  --muted: var(--td-muted);
-  --muted-foreground: var(--td-muted-foreground);
-  --subtle-foreground: var(--td-subtle-foreground);
-  --accent: var(--td-accent);
-  --accent-foreground: var(--td-foreground);
-  --border: var(--td-border);
-  --border-subtle: var(--td-border-subtle);
-  --border-strong: var(--td-border-strong);
-  --input: var(--td-input);
+  /* Dark is black and neutral greys for every business: a theme's own colour is its accent, never a warm or cool cast. */
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --surface: #121212;
+  --surface-raised: #181818;
+  --surface-sunken: #000000;
+  --muted: #1c1c1c;
+  --muted-foreground: #c7c7c7;
+  --subtle-foreground: #a6a6a6;
+  --accent: #222222;
+  --accent-foreground: #f5f5f5;
+  --border: #262626;
+  --border-subtle: #1c1c1c;
+  --border-strong: #3a3a3a;
+  --input: #6e6e6e;
   --brand: var(--td-brand);
   --brand-hover: var(--td-brand-hover);
   --brand-foreground: var(--td-brand-foreground);
@@ -1099,91 +1127,3 @@ svg.lucide[stroke-width="2"] {
     }
   }
 }
-
-/*
- * Prism stage: the marketing landing's lit studio, its glass slab and the UI printed on the slab's face.
- * The WebGL scene reads the studio colours from here too, so light and dark stay one source of truth.
- */
-:root,
-[data-mode="light"] {
-  --prism-studio: #eceef2;
-  --prism-studio-top: #f3f4f7;
-  --prism-studio-bottom: #e1e4ea;
-  --prism-studio-wash:
-    radial-gradient(34% 16% at 60% 47%, rgba(191, 174, 255, 0.42), transparent 72%),
-    radial-gradient(30% 15% at 36% 52%, rgba(143, 216, 242, 0.45), transparent 72%),
-    radial-gradient(26% 14% at 84% 42%, rgba(255, 191, 156, 0.42), transparent 72%),
-    linear-gradient(180deg, #f3f4f7, #e3e6eb);
-  --prism-attenuation: #d9e1ee;
-  --prism-ribbon-strength: 1;
-  --prism-glass-card: linear-gradient(
-    150deg,
-    rgba(255, 255, 255, 0.82),
-    rgba(255, 255, 255, 0.5) 60%,
-    rgba(255, 255, 255, 0.66)
-  );
-  --prism-glass-card-shadow:
-    inset 0 1px 0 #fff, inset 0 -1px 0 rgba(15, 16, 18, 0.05), 0 0 0 0.5px rgba(15, 16, 18, 0.1),
-    0 44px 70px -36px rgba(30, 30, 60, 0.42), 0 12px 24px -14px rgba(30, 30, 60, 0.2);
-  --prism-glass-tile-shadow:
-    inset 0 1px 0 #fff, inset 0 -1px 0 rgba(15, 16, 18, 0.04), 0 0 0 0.5px rgba(15, 16, 18, 0.08),
-    0 30px 50px -28px rgba(30, 30, 60, 0.35), 0 8px 16px -10px rgba(30, 30, 60, 0.15);
-  --prism-chip: rgba(255, 255, 255, 0.52);
-  --prism-chip-border: rgba(255, 255, 255, 0.85);
-  --prism-chip-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 24px -16px rgba(15, 16, 18, 0.28),
-    0 0 0 0.5px rgba(15, 16, 18, 0.05);
-  --prism-block: rgba(255, 255, 255, 0.72);
-  --prism-block-shadow:
-    0 0 0 0.5px rgba(15, 16, 18, 0.09), 0 6px 14px -10px rgba(15, 16, 18, 0.3), inset 0 1px 0 #fff;
-  --prism-well: rgba(255, 255, 255, 0.34);
-  --prism-hairline: rgba(15, 16, 18, 0.07);
-  --prism-ring: 0 0 0 0.5px rgba(15, 16, 18, 0.1);
-  --prism-sheen: rgba(255, 255, 255, 0.55);
-  --prism-tile: linear-gradient(180deg, #fdfdfd, #f7f8fa);
-  --prism-tile-shadow:
-    0 0 0 1px rgba(15, 16, 18, 0.06), inset 0 1px 0 #fff, 0 30px 60px -50px rgba(15, 16, 18, 0.3);
-  --prism-glow-opacity: 0.55;
-}
-.dark,
-[data-mode="dark"] {
-  --prism-studio: #0e0f12;
-  --prism-studio-top: #17191d;
-  --prism-studio-bottom: #0a0b0d;
-  --prism-studio-wash:
-    radial-gradient(34% 16% at 60% 47%, rgba(191, 174, 255, 0.16), transparent 72%),
-    radial-gradient(30% 15% at 36% 52%, rgba(143, 216, 242, 0.14), transparent 72%),
-    radial-gradient(26% 14% at 84% 42%, rgba(255, 191, 156, 0.12), transparent 72%),
-    linear-gradient(180deg, #16181c, #0a0b0d);
-  --prism-attenuation: #3a4252;
-  --prism-ribbon-strength: 0.62;
-  --prism-glass-card: linear-gradient(
-    150deg,
-    rgba(48, 51, 59, 0.72),
-    rgba(26, 28, 33, 0.56) 60%,
-    rgba(38, 40, 47, 0.66)
-  );
-  --prism-glass-card-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 0 0 0.5px rgba(0, 0, 0, 0.6), 0 44px 70px -36px rgba(0, 0, 0, 0.8), 0 12px 24px -14px rgba(0, 0, 0, 0.5);
-  --prism-glass-tile-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.6),
-    0 30px 50px -28px rgba(0, 0, 0, 0.75), 0 8px 16px -10px rgba(0, 0, 0, 0.4);
-  --prism-chip: rgba(255, 255, 255, 0.06);
-  --prism-chip-border: rgba(255, 255, 255, 0.1);
-  --prism-chip-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 24px -16px rgba(0, 0, 0, 0.6);
-  --prism-block: rgba(255, 255, 255, 0.07);
-  --prism-block-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 6px 14px -10px rgba(0, 0, 0, 0.6);
-  --prism-well: rgba(255, 255, 255, 0.03);
-  --prism-hairline: rgba(255, 255, 255, 0.08);
-  --prism-ring: 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-  --prism-sheen: rgba(255, 255, 255, 0.14);
-  --prism-tile: linear-gradient(180deg, #16171b, #121317);
-  --prism-tile-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 30px 60px -50px rgba(0, 0, 0, 0.8);
-  --prism-glow-opacity: 0.32;
-}
-
-/* A phone held sideways: too short to stack the landing's copy over its slab (see isShortLandscape). */
-@custom-variant short-landscape (@media (max-height: 559.98px) and (min-aspect-ratio: 13/10));

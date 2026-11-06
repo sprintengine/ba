@@ -179,10 +179,49 @@ describe("a booking card", () => {
     expect(c.getByText("1 h")).toBeInTheDocument();
     expect(c.getByText("Alex Morgan")).toBeInTheDocument();
     expect(c.getByText("Unit 4, Lantern Quay, Dublin")).toBeInTheDocument();
-    expect(c.getByText("Confirmed")).toBeInTheDocument();
-    expect(c.getByText("Paid")).toBeInTheDocument();
+    // Confirmed and paid is the normal case, so the card says nothing about it.
+    expect(c.queryByText("Confirmed")).not.toBeInTheDocument();
+    expect(c.queryByText("Paid")).not.toBeInTheDocument();
     expect(c.getByRole("link", { name: /Lumen Physiotherapy/ })).toHaveAttribute("href", "/lumen-physio");
     await expectNoAxeViolations(container);
+  });
+
+  it("puts the next visit on its own with its actions out, and keeps later ones behind Manage", async () => {
+    const later = customerBooking({
+      id: "later",
+      start: "2099-10-02T10:00:00Z",
+      end: "2099-10-02T11:00:00Z",
+    });
+    const u = userEvent.setup();
+    renderPage({ upcoming: [customerBooking(), later] });
+    const next = within(await screen.findByRole("region", { name: "Your next booking" }));
+    expect(next.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Cancel" })).toHaveLength(1);
+    await u.click(screen.getByRole("button", { name: "Manage" }));
+    expect(screen.getAllByRole("button", { name: "Cancel" })).toHaveLength(2);
+  });
+
+  it("makes one day of two timezones' Today", async () => {
+    // Both of these are on "today" here, on different calendar dates.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2099-09-20T12:00:00Z"));
+    const at = (id: string, timezone: string, hour: number) =>
+      customerBooking({
+        id,
+        timezone,
+        start: `2099-09-20T${String(hour)}:00:00Z`,
+        end: `2099-09-20T${String(hour + 1)}:00:00Z`,
+      });
+    renderPage({
+      upcoming: [
+        at("a", "Pacific/Honolulu", 13),
+        at("b", "Pacific/Honolulu", 14),
+        at("c", "Pacific/Kiritimati", 15),
+      ],
+    });
+    await screen.findAllByRole("article");
+    expect(screen.getAllByRole("heading", { level: 2, name: "Today" })).toHaveLength(1);
+    vi.useRealTimers();
   });
 
   it("says a paid deposit is a deposit, with the rest due at the appointment", async () => {

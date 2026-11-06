@@ -4,10 +4,16 @@ import type { Booking } from "@/lib/api/types";
 import { eventAppearance } from "@/lib/dashboard/calendar";
 import { cn } from "@/lib/utils";
 import type { PositionedEvent, SessionEntry } from "@/lib/dashboard/calendar-layout";
+import { useOpenBooking } from "../booking/open-booking";
+import { PREPARATION_HATCH } from "./blocked-band";
 import { SessionButton } from "./event-groups";
 import {
   CARD,
+  CARD_LINE,
+  CARD_OPEN,
   CARD_RAISED,
+  CARD_TEXT_TIGHT,
+  isTight,
   lanePosition,
   linesFor,
   serviceTint,
@@ -15,13 +21,11 @@ import {
   CARD_TEXT,
   STUCK_DETAIL,
   STUCK_NAME,
+  waitingFill,
   type Position,
 } from "./event-card";
 
 export type CalendarEvent = PositionedEvent<SessionEntry<Booking>>;
-
-/** The legend's neutral hatch: preparation is time taken, not more of the service's colour. */
-const HATCH = "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 7px)";
 
 /** A booking (or a session of several) on the grid: its buffers (hatched), and the block, clipped to the visible hours. */
 export function EventBlock({
@@ -52,7 +56,7 @@ export function EventBlock({
   const s = Math.max(p.startMin, lo);
   const e = Math.min(p.endMin, hi);
   if (e <= lo || s >= hi) return null;
-  const h = Math.max((e - s) * pxPerMin - 2, 20);
+  const h = Math.max((e - s) * pxPerMin - 1, 14);
   const pos = lanePosition(p.lane, p.lanes);
   const bufferBefore = Math.max(p.blockStartMin, lo);
   const bufferAfter = Math.min(p.blockEndMin, hi);
@@ -116,7 +120,7 @@ function BufferHatch({
     <div
       aria-hidden
       className={cn("absolute", edge === "top" ? "rounded-t-lg" : "rounded-b-lg")}
-      style={{ ...pos, top, height, backgroundImage: HATCH }}
+      style={{ ...pos, top, height, backgroundImage: PREPARATION_HATCH }}
     />
   );
 }
@@ -190,6 +194,7 @@ function EventButton({
   onSelect: (id: string) => void;
 }) {
   const look = eventAppearance(b.status);
+  const open = useOpenBooking() === b.id;
   const lines = linesFor(h);
   const time = `${formatTime(b.start)}–${formatTime(b.end)}`;
   const { waiting, cancelled, noShow, status } = cardState(b.status, look.label);
@@ -198,13 +203,15 @@ function EventButton({
     <button
       type="button"
       data-event=""
+      aria-current={open ? "true" : undefined}
       onClick={() => onSelect(b.id)}
       title={`${time} · ${b.customer.name} · ${b.service.name} · ${look.label}`}
       className={cn(
         CARD,
         "@container",
         !cancelled && CARD_RAISED,
-        waiting && "border-warning-border bg-warning-soft",
+        open && CARD_OPEN,
+        waiting && "border-warning-border",
         cancelled && "border-dashed border-border-strong",
         noShow && "border-border bg-muted",
         b.status === "held" && "border-dashed",
@@ -213,14 +220,16 @@ function EventButton({
         ...pos,
         top,
         height: h,
+        ...(waiting ? waitingFill : {}),
         ...(waiting || cancelled || noShow ? {} : serviceTint(b.service.color, tint)),
       }}
     >
-      <span className={CARD_TEXT}>
+      <span className={isTight(h) ? CARD_TEXT_TIGHT : CARD_TEXT}>
         <span
           className={cn(
             STUCK_NAME,
             "flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
+            isTight(h) && "mt-0 pt-0 text-xs leading-[0.9375rem]",
             (cancelled || noShow) &&
               "font-medium text-muted-foreground line-through decoration-foreground/40",
           )}
@@ -237,7 +246,7 @@ function EventButton({
               key={row.text}
               className={cn(
                 "block truncate text-xs leading-[1.0625rem]",
-                i === 0 && STUCK_DETAIL,
+                i === 0 ? cn(STUCK_DETAIL, "w-fit max-w-full") : CARD_LINE,
                 row.kind === "detail" && "text-muted-foreground",
                 row.kind === "place" && "font-medium text-foreground",
               )}

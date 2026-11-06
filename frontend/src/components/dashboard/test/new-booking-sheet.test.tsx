@@ -211,13 +211,11 @@ describe("NewBookingSheet", () => {
     renderSheet({ date: DAY }, { onCreated });
 
     // 1. Service, grouped by category; private services say so.
-    await user.click(await screen.findByRole("combobox", { name: "Service" }));
-    const listbox = await screen.findByRole("listbox");
-    expect(within(listbox).getByRole("option", { name: /Intro chat.*private/ })).toBeInTheDocument();
-    expect(
-      within(listbox).getByText("Massage", { selector: "[data-slot=select-label], div" }),
-    ).toBeInTheDocument();
-    await user.click(within(listbox).getByRole("option", { name: /^Massage/ }));
+    const choices = within(await screen.findByRole("group", { name: "Choose a service" }));
+    expect(choices.getByRole("button", { name: /Intro chat.*Private/ })).toBeInTheDocument();
+    expect(choices.getByText("Massage", { selector: "p" })).toBeInTheDocument();
+    await user.click(choices.getByRole("button", { name: /^Massage/ }));
+    expect(screen.getByRole("combobox", { name: "Service" })).toHaveTextContent("Massage");
 
     // 2. An option is needed before free times show.
     expect(screen.getByText("Choose an option to see free times.")).toBeInTheDocument();
@@ -290,15 +288,14 @@ describe("NewBookingSheet", () => {
     expect(onCreated).toHaveBeenCalledWith("bk9");
   });
 
-  it("books someone with a calendar picked for an exact time, and preselects “No charge” for a free service", async () => {
+  it("books someone with a calendar picked for an exact time, and preselects “Free” for a free service", async () => {
     const calls = api(undefined, [massage, freebie]);
     const user = userEvent.setup();
     renderSheet({ ...prefill, serviceId: undefined, resourceId: "r1" });
-    await user.click(await screen.findByRole("combobox", { name: "Service" }));
-    await user.click(await screen.findByRole("option", { name: /Intro chat/ }));
+    await user.click(await screen.findByRole("button", { name: /Intro chat/ }));
     expect(screen.getByRole("combobox", { name: "With" })).toHaveTextContent("Sam Rivers");
     await user.click(screen.getByRole("button", { name: /^Payment/ }));
-    expect(screen.getByRole("radio", { name: /No charge/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Nothing to pay/ })).toBeChecked();
     expect(screen.getByRole("radio", { name: /At venue/ })).toBeDisabled();
     await submit();
     await waitFor(() =>

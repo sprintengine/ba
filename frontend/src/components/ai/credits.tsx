@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { AiIcon } from "@/components/brand/logo";
 import type { AiCredits } from "@/lib/api/types";
 import { creditsPercent, creditsTone, formatCredits } from "@/lib/ai/credits";
 import { useCurrentBusiness, usePermissions } from "@/lib/business/business-context";
@@ -76,7 +76,7 @@ export function CreditsNotice({ credits, className }: { credits: AiCredits; clas
         className,
       )}
     >
-      <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <AiIcon className="mt-1 shrink-0" />
       <p className="flex-1">
         {tone === "out" ? (
           <>

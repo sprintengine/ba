@@ -96,6 +96,24 @@ describe("NotificationBell", () => {
     await waitFor(() => expect(calls(fetchMock)).toContain("POST /v1/me/notifications/n1/read"));
   });
 
+  it("offers Review on a request waiting for an answer, and only there", async () => {
+    fakeApi([
+      note({ id: "n3", title: "Request to approve: Jordan", kind: "booking_request" }),
+      note({ id: "n4", title: "Request to approve: Sam", kind: "booking_request", read: true }),
+      note({ id: "n5", title: "New appointment: Alex", kind: "new_booking" }),
+    ]);
+    renderWithProviders(<NotificationBell />);
+    await userEvent.click(await screen.findByRole("button", { name: /^Notifications, 2 unread/ }));
+    const waiting = await screen.findByRole("link", { name: /Request to approve: Jordan/ });
+    expect(within(waiting).getByText("Review")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("link", { name: /Request to approve: Sam/ })).queryByText("Review"),
+    ).toBeNull();
+    expect(
+      within(screen.getByRole("link", { name: /New appointment: Alex/ })).queryByText("Review"),
+    ).toBeNull();
+  });
+
   it("marks everything read and says when there's nothing new", async () => {
     fakeApi([note()]);
     renderWithProviders(<NotificationBell />);
@@ -121,9 +139,9 @@ describe("NotificationsPage", () => {
       "/my/approvals/r1",
     );
     const email = await screen.findByRole("group", { name: "Notifications to email" });
-    expect(within(email).getByRole("checkbox", { name: /your ai agent's changes/i })).toBeChecked();
-    expect(within(email).queryByRole("checkbox", { name: /new bookings/i })).not.toBeInTheDocument();
-    await userEvent.click(within(email).getByRole("checkbox", { name: /your ai agent's changes/i }));
+    expect(within(email).getByRole("switch", { name: /your ai agent's changes/i })).toBeChecked();
+    expect(within(email).queryByRole("switch", { name: /new bookings/i })).not.toBeInTheDocument();
+    await userEvent.click(within(email).getByRole("switch", { name: /your ai agent's changes/i }));
     await waitFor(() => expect(calls(fetchMock)).toContain("PATCH /v1/me/notification-settings"));
     expect(toast.success).toHaveBeenCalledWith("No more emails for these");
   });
@@ -132,6 +150,6 @@ describe("NotificationsPage", () => {
     fakeApi([], [{ businessId: "b1", slug: "lumen-physio", name: "Lumen", role: "owner", branding: {} }]);
     renderWithProviders(<NotificationsPage />);
     expect(await screen.findByText("Nothing yet")).toBeInTheDocument();
-    expect(await screen.findByRole("checkbox", { name: /new bookings/i })).not.toBeChecked();
+    expect(await screen.findByRole("switch", { name: /new bookings/i })).not.toBeChecked();
   });
 });

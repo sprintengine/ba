@@ -99,7 +99,7 @@ export function isPricedService(service: Service | undefined): boolean {
   );
 }
 
-/** The payment choice preselected for a service: "No charge" when it is free, else "At venue". */
+/** The payment choice preselected for a service: "Free" when it is free, else "At venue". */
 export function defaultPaymentMode(service: Service | undefined): NewBookingValues["paymentMode"] {
   return isPricedService(service) ? "at_venue" : "none";
 }

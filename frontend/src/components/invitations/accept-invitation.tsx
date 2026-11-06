@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, CircleAlert } from "lucide-react";
+import { Check } from "lucide-react";
+import { DeadEndMark } from "@/components/brand/logo";
 import { useAcceptInvitation, useMe } from "@/lib/api/hooks";
 import { signInUrl } from "@/lib/auth/components";
 import { useAuth } from "@/lib/auth/context";
@@ -84,7 +85,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
     email: user?.email ?? null,
   });
   return (
-    <Panel icon={<CircleAlert className="size-5" />} tone="warning" title={view.title}>
+    <Panel icon={<DeadEndMark />} tone="warning" title={view.title}>
       <p>{view.body}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         {view.next === "dashboard" ? (
@@ -92,7 +93,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
             <Link href="/dashboard">Go to dashboard</Link>
           </Button>
         ) : (
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/my/bookings">Go to my bookings</Link>
           </Button>
         )}

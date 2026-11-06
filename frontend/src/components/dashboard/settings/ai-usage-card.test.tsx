@@ -65,7 +65,12 @@ describe("AI usage card", () => {
     const rows = within(screen.getByRole("table"))
       .getAllByRole("row")
       .map((r) => r.textContent);
-    expect(rows).toEqual(["DateCredits", "Sat, 3 Oct 2026139", "Fri, 2 Oct 20260", "Thu, 1 Oct 202612"]);
+    expect(rows).toEqual([
+      "DateCredits",
+      expect.stringMatching(/^Sat, 3 Oct( 2026)?139$/),
+      expect.stringMatching(/^Fri, 2 Oct( 2026)?0$/),
+      expect.stringMatching(/^Thu, 1 Oct( 2026)?12$/),
+    ]);
     await expectNoAxeViolations(container);
   });
 

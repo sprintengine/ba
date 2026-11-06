@@ -38,7 +38,9 @@ export function StepHeader({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex h-7 items-center gap-2 text-xs font-medium text-subtle-foreground">
+      <div
+        className={cn("flex items-center gap-2 text-xs font-medium text-subtle-foreground", onBack && "h-7")}
+      >
         {onBack && (
           <>
             <button
@@ -50,7 +52,8 @@ export function StepHeader({
             </button>
           </>
         )}
-        <span className="ml-auto" aria-live="polite">
+        {/* The bar says this to the eye: one signal on screen, the words for a screen reader. */}
+        <span className="sr-only" aria-live="polite">
           Step {index + 1}
           {total !== null && ` of ${total}`}
         </span>
@@ -65,38 +68,6 @@ export function StepHeader({
         </h2>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
-    </div>
-  );
-}
-
-/** Thin segmented progress indicator. */
-export function StepProgress({
-  index,
-  total,
-  className,
-}: {
-  index: number;
-  total: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn("flex gap-1", className)}
-      role="progressbar"
-      aria-label="Booking progress"
-      aria-valuemin={1}
-      aria-valuemax={total}
-      aria-valuenow={index + 1}
-    >
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "h-1 flex-1 rounded-full transition-colors duration-300",
-            i <= index ? "bg-primary" : "bg-border",
-          )}
-        />
-      ))}
     </div>
   );
 }
@@ -228,7 +199,7 @@ function ServiceCard({
             {price.kind === "free" ? "Free" : formatMoney(price.cents, currency, { locale })}
           </span>
         </span>
-        {s.description && <span className="line-clamp-2 text-sm text-muted-foreground">{s.description}</span>}
+        {s.description && <span className="text-sm text-muted-foreground">{s.description}</span>}
         <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
           {meta.map((m, i) => (
             <span key={i} className="inline-flex items-center gap-3">
