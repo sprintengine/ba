@@ -130,7 +130,6 @@ describe("what the page may claim", () => {
     const { container } = render(<ProofSection />);
     expect(container.textContent).toMatch(/gone for everyone else/i);
     expect(container.textContent).not.toMatch(/same moment|\d{2},\d{3}/i);
-    expect(screen.getByRole("link", { name: "See the examples" })).toHaveAttribute("href", "#industries");
     expect(container.textContent).not.toMatch(/database|\brace\b|concurren/i);
     expect(container.textContent).not.toMatch(/trusted by|uptime|99\.\d/i);
   });

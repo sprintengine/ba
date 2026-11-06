@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import type { CalendarEvent } from "./event-block";
 import {
   CARD,
+  CARD_LINE,
   CARD_RAISED,
   CARD_TEXT_TIGHT,
   isTight,
@@ -91,12 +92,17 @@ export function SessionButton({
               </span>
             )}
             {lines >= 3 && waiting && (
-              <span className="block truncate text-xs leading-[1.0625rem]">
+              <span className={cn(CARD_LINE, "block truncate text-xs leading-[1.0625rem]")}>
                 <StatusWord tone="warning">Some need approval</StatusWord>
               </span>
             )}
             {lines >= (waiting ? 4 : 3) && place && (
-              <span className="block truncate text-xs leading-[1.0625rem] font-medium text-foreground">
+              <span
+                className={cn(
+                  CARD_LINE,
+                  "block truncate text-xs leading-[1.0625rem] font-medium text-foreground",
+                )}
+              >
                 {place}
               </span>
             )}

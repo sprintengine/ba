@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { BUSINESS_AI_HELP_PATH } from "@/lib/oauth/app-url";
 import { PrismHeading } from "../heading";
 import { AiScene } from "./ai-scene";
@@ -35,27 +35,49 @@ const CUSTOMER: Point[] = [
   },
 ];
 
+/** One step of a client's own assistant booking. */
+function Moment({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2 text-[0.9375rem]">
+      <p className="text-sm font-semibold text-muted-foreground">{label}</p>
+      {children}
+    </div>
+  );
+}
+
 /** The other half of the promise, always in view: a client's own assistant books and pays, and it lands the same. */
 function ClientsAssistant() {
   return (
     <aside
       aria-label="A client's own assistant booking"
-      className="mx-auto mt-10 grid w-[calc(100%-2.5rem)] max-w-[56rem] items-center gap-3 rounded-2xl border border-border bg-surface p-4 sm:mt-14 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-5"
+      className="mx-auto mt-10 grid w-[calc(100%-2.5rem)] max-w-[70rem] items-start gap-4 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6 md:grid-cols-[minmax(0,1.1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]"
     >
-      <div className="flex flex-col gap-1.5 text-sm">
-        <p className="text-xs font-medium text-muted-foreground">In a client&rsquo;s own assistant</p>
-        <p className="w-fit rounded-2xl rounded-br-md bg-primary px-3 py-2 text-primary-foreground">
+      <Moment label="They ask their own assistant">
+        <p className="w-fit rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-primary-foreground">
           Book me a follow-up with Sam on Friday and pay for it.
         </p>
-      </div>
-      <ArrowRight className="size-5 text-subtle-foreground max-md:rotate-90" aria-hidden />
-      <div className="flex flex-col gap-1.5 text-sm">
-        <p className="text-xs font-medium text-muted-foreground">On your calendar</p>
-        <div className="rounded-xl bg-[color-mix(in_oklab,#0ea5e9_14%,var(--surface))] px-3 py-2">
-          <p className="font-semibold">Rory Kane</p>
-          <p className="tnum text-muted-foreground">Fri 15:30 · Paid €60, through their AI</p>
+      </Moment>
+      <ArrowRight className="mt-9 size-5 text-subtle-foreground max-md:mt-0 max-md:rotate-90" aria-hidden />
+      <Moment label="They pay in the chat">
+        <div className="rounded-xl border border-border px-3.5 py-2.5">
+          <p className="tnum flex justify-between gap-3 font-semibold">
+            Follow-up, Fri 15:30 <span>€60</span>
+          </p>
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Check className="size-3.5 text-success" aria-hidden /> Paid to your account
+          </p>
         </div>
-      </div>
+      </Moment>
+      <ArrowRight className="mt-9 size-5 text-subtle-foreground max-md:mt-0 max-md:rotate-90" aria-hidden />
+      <Moment label="It lands on your calendar">
+        <div className="rounded-xl bg-[color-mix(in_oklab,#0ea5e9_14%,var(--surface))] px-3.5 py-2.5">
+          <p className="font-semibold">Rory Kane</p>
+          <p className="tnum text-sm text-muted-foreground">15:30 · Paid €60, through their AI</p>
+        </div>
+      </Moment>
+      <p className="text-sm text-muted-foreground md:col-span-full">
+        Their assistant sees only what your booking page shows: the same times, the same prices.
+      </p>
     </aside>
   );
 }
@@ -66,7 +88,9 @@ function Points({ points }: { points: Point[] }) {
       {points.map((p) => (
         <li key={p.title}>
           <h3 className="text-lg leading-tight font-semibold tracking-tight">{p.title}</h3>
-          <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground">{p.body}</p>
+          <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground max-sm:hidden">
+            {p.body}
+          </p>
         </li>
       ))}
     </ul>

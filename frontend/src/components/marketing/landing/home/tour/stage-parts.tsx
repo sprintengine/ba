@@ -122,7 +122,7 @@ export function StageBar({
           type="button"
           disabled={trying}
           onClick={onTry}
-          className="focus-ring h-8 rounded-full bg-primary px-3 text-xs font-semibold whitespace-nowrap text-primary-foreground transition-colors hover:bg-primary/85 disabled:bg-white disabled:text-foreground"
+          className="focus-ring h-8 rounded-full bg-white/70 px-3 text-xs font-semibold whitespace-nowrap text-foreground backdrop-blur-md transition-colors hover:bg-white disabled:opacity-100"
         >
           {trying ? "Your turn: pick a time on the phone" : "Try it: pick a time"}
         </button>

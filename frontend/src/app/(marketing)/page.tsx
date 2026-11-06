@@ -83,8 +83,8 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
-      <FirstAfternoonSection />
       <AiSection />
+      <FirstAfternoonSection />
       <IndustriesSection />
       <MoneySection />
       <ProofSection />
@@ -97,7 +97,7 @@ export default function LandingPage() {
               id="faq-title"
               className="text-[clamp(2rem,3.4vw,3rem)] leading-[1.04] font-semibold tracking-[-0.04em] text-balance"
             >
-              Common <span className="text-prism">questions.</span>
+              Common questions.
             </h2>
             <p className="mt-4 text-base leading-[1.6] text-muted-foreground">
               Something else? Email{" "}

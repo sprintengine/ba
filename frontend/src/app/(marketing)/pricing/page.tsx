@@ -169,7 +169,7 @@ export default function PricingPage() {
             eyebrow="Pricing"
             title={
               <>
-                Free until you&apos;re busy.
+                Free until you’re busy.
                 <br />
                 You pay for bookings, not people.
               </>
@@ -226,7 +226,7 @@ export default function PricingPage() {
       </Section>
 
       <Section aria-labelledby="compare-title" className="pt-0 sm:pt-0">
-        <SectionHeader id="compare-title" eyebrow="Compare plans" title="What's in each plan." />
+        <SectionHeader id="compare-title" eyebrow="Compare plans" title="What’s in each plan." />
         <div className="mt-10">
           <PlanComparison />
         </div>
@@ -257,8 +257,8 @@ export default function PricingPage() {
 
       <CtaBand
         variant="primary"
-        title="Free until you're busy."
-        description="Free covers 100 bookings a month, and you don't need a card to sign up."
+        title="Free until you’re busy."
+        description="Free covers 100 bookings a month, and you don’t need a card to sign up."
         secondary={{ href: "/#features", label: "See features" }}
       />
     </>

@@ -100,23 +100,17 @@ const STOPS: { at: string; title: string; body: string; pictures: React.Componen
     pictures: [Times, Landed],
   },
   {
-    at: "Day before",
-    title: "Reminders go out",
-    body: "By email and text, already set the moment it’s booked, so people turn up.",
-    pictures: [Reminder],
-  },
-  {
-    at: "Next week",
-    title: "The quiet hours fill up",
-    body: "Lower prices at quiet times, and regulars with their own times and prices. All on one calendar, with your staff, rooms and equipment.",
-    pictures: [Quiet],
+    at: "After that",
+    title: "It keeps itself full",
+    body: "Reminders go out by email and text, so people turn up. Quiet hours fill at lower prices, and regulars get their own times.",
+    pictures: [Reminder, Quiet],
   },
 ];
 
 /** One point on the hour rail: the time, then what happens at it. */
 function Stop({ at, children }: { at: string; children: React.ReactNode }) {
   return (
-    <li className="grid gap-x-6 gap-y-1 pb-12 last:pb-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:pb-16">
+    <li className="grid gap-x-6 gap-y-1 pb-10 last:pb-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:pb-12">
       <p className="tnum text-sm font-semibold text-muted-foreground sm:pt-0.5 sm:text-right">{at}</p>
       <div className="min-w-0 sm:border-l sm:border-border sm:pl-6">{children}</div>
     </li>

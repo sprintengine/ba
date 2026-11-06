@@ -1,71 +1,87 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { PLANS, TALK_TO_US } from "../plans";
 
 /** The plans, the same on the home page and the pricing page. */
 export function PlanCards({ heading: Heading = "h2" }: { heading?: "h2" | "h3" }) {
+  // Three stacked plans fill a phone: it shows one, and the switch moves between them.
+  const [chosen, setChosen] = useState<string>(PLANS[0]?.key ?? "free");
   return (
-    <ul className="grid gap-4 lg:grid-cols-3">
-      {PLANS.map((plan) => (
-        <li
-          key={plan.key}
-          className={cn(
-            "relative flex flex-col rounded-2xl border bg-surface p-7 sm:p-8",
-            plan.highlight ? "border-foreground shadow-md" : "border-border",
-          )}
-        >
-          <div className="relative flex items-center justify-between gap-3">
-            <Heading className="text-lg font-semibold tracking-tight">{plan.name}</Heading>
-            {plan.highlight && (
-              <span className="rounded-md bg-primary px-2 py-0.5 text-2xs font-semibold text-primary-foreground">
-                {plan.badge}
-              </span>
+    <div className="flex flex-col gap-3">
+      <SegmentedControl
+        aria-label="Plan"
+        className="self-center sm:hidden"
+        value={chosen}
+        onValueChange={setChosen}
+        options={PLANS.map((p) => ({ value: p.key as string, label: p.name }))}
+      />
+      <ul className="grid gap-4 lg:grid-cols-3">
+        {PLANS.map((plan) => (
+          <li
+            key={plan.key}
+            className={cn(
+              "relative flex flex-col rounded-2xl border bg-surface p-7 sm:p-8",
+              plan.highlight ? "border-foreground shadow-md" : "border-border",
+              plan.key !== chosen && "max-sm:hidden",
             )}
-          </div>
-          <p className="relative mt-2 min-h-11 text-sm text-muted-foreground">{plan.tagline}</p>
-          <div className="relative mt-6 flex items-end gap-2">
-            <span className="tnum text-5xl leading-none font-semibold tracking-tight">€{plan.price}</span>
-            <span className="pb-1 text-sm leading-tight text-muted-foreground">
-              {plan.price ? (
-                <>
-                  per business
-                  <br />
-                  per month
-                </>
-              ) : (
-                <>
-                  until
-                  <br />
-                  you’re busy
-                </>
-              )}
-            </span>
-          </div>
-          <Button
-            asChild
-            variant={plan.highlight ? "primary" : "secondary"}
-            size="lg"
-            block
-            className="relative mt-7"
           >
-            <Link href={plan.cta.href}>{plan.cta.label}</Link>
-          </Button>
-          <div className="relative mt-8 border-t border-border-subtle pt-6">
-            {plan.intro && <p className="mb-4 text-sm font-medium">{plan.intro}</p>}
-            <ul className="flex flex-col gap-3 text-sm">
-              {plan.features.map((f) => (
-                <li key={f} className="flex gap-2.5">
-                  <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="text-muted-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </li>
-      ))}
-    </ul>
+            <div className="relative flex items-center justify-between gap-3">
+              <Heading className="text-lg font-semibold tracking-tight">{plan.name}</Heading>
+              {plan.highlight && (
+                <span className="rounded-md bg-primary px-2 py-0.5 text-2xs font-semibold text-primary-foreground">
+                  {plan.badge}
+                </span>
+              )}
+            </div>
+            <p className="relative mt-2 min-h-11 text-sm text-muted-foreground">{plan.tagline}</p>
+            <div className="relative mt-6 flex items-end gap-2">
+              <span className="tnum text-5xl leading-none font-semibold tracking-tight">€{plan.price}</span>
+              <span className="pb-1 text-sm leading-tight text-muted-foreground">
+                {plan.price ? (
+                  <>
+                    per business
+                    <br />
+                    per month
+                  </>
+                ) : (
+                  <>
+                    until
+                    <br />
+                    you’re busy
+                  </>
+                )}
+              </span>
+            </div>
+            <Button
+              asChild
+              variant={plan.highlight ? "primary" : "secondary"}
+              size="lg"
+              block
+              className="relative mt-7"
+            >
+              <Link href={plan.cta.href}>{plan.cta.label}</Link>
+            </Button>
+            <div className="relative mt-8 border-t border-border-subtle pt-6">
+              {plan.intro && <p className="mb-4 text-sm font-medium">{plan.intro}</p>}
+              <ul className="flex flex-col gap-3 text-sm">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex gap-2.5">
+                    <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="text-muted-foreground">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

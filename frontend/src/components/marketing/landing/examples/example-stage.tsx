@@ -300,7 +300,7 @@ function Tour({ card, example }: { card: ExampleCard; example: Example }) {
         />
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold tracking-tight">{card.label}, an example</h3>
-          <p className="truncate text-sm text-muted-foreground">
+          <p className="text-sm text-pretty text-muted-foreground lg:truncate">
             {card.shape}. Made-up bookings on the real calendar.
           </p>
         </div>

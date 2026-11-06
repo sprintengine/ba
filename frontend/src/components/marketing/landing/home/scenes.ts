@@ -4,5 +4,4 @@
  */
 export { TourChat } from "./ai-chat";
 export { AiStage } from "./ai-stage";
-export { SetupPage } from "./setup-page";
 export { MiniStage } from "./tour/mini-stage";

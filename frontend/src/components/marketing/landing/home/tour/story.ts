@@ -208,7 +208,7 @@ export async function tourStory(c: TourCast, entry: Entry = "book") {
   const afterBooking = async () => {
     c.prepareLater();
     preloadChat();
-    await director.sleep(1500);
+    await director.sleep(900);
 
     // The owner opens what just arrived.
     c.chapter("day");
@@ -219,12 +219,12 @@ export async function tourStory(c: TourCast, entry: Entry = "book") {
     c.notify(false);
     card.click();
     c.prepare("overview");
-    await director.sleep(3400);
+    await director.sleep(2300);
     await pointer.click(await q('[data-tour="close"]'));
     await director.sleep(500);
 
     // It's already in the day's list.
-    await open("overview", 1100);
+    await open("overview", 800);
     const row = await find(director, () =>
       [...(scene.querySelector('[data-screen="overview"]')?.querySelectorAll("li button") ?? [])].find((b) =>
         b.textContent.includes(CLIENT.name),
@@ -232,10 +232,10 @@ export async function tourStory(c: TourCast, entry: Entry = "book") {
     );
     await pointer.moveTo(row);
     c.prepare("customers");
-    await director.sleep(2200);
+    await director.sleep(1300);
 
     // And among the customers, with what they've spent coming through in the reports.
-    await open("customers", 900);
+    await open("customers", 500);
     const person = await find(director, () =>
       [...(scene.querySelector('[data-screen="customers"]')?.querySelectorAll("tbody tr") ?? [])].find((r) =>
         r.textContent.includes(CLIENT.name),
@@ -243,13 +243,13 @@ export async function tourStory(c: TourCast, entry: Entry = "book") {
     );
     await pointer.moveTo(person);
     c.prepare("reports");
-    await director.sleep(2000);
-    await open("reports", 900);
+    await director.sleep(1000);
+    await open("reports", 500);
     await pointer.moveTo(await q('[data-screen="reports"] h1'));
-    await director.sleep(2500);
+    await director.sleep(1400);
 
     // Back to the calendar, where the assistant takes over.
-    await open("calendar", 900);
+    await open("calendar", 500);
     await assistantPart();
   };
   /** The assistant moves the booking, then it's all as it was, and round again. */

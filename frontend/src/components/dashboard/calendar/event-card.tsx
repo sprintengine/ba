@@ -42,8 +42,8 @@ export const CARD_TEXT_TIGHT = "block w-full flex-1 bg-inherit px-1.5 py-0";
 export const isTight = (h: number) => h < 25;
 /** A line of a card's text, as wide as its words: it carries the card's colour, so the now line breaks around it. */
 export const CARD_LINE = "relative z-[16] w-fit max-w-full bg-inherit";
-export const STUCK_NAME = "sticky top-(--calendar-top,0px) z-[17] -mt-1 w-fit max-w-full bg-inherit pt-1";
-export const STUCK_DETAIL = "sticky top-[calc(var(--calendar-top,0px)+1.3125rem)] z-[16] bg-inherit";
+export const STUCK_NAME = "sticky top-(--calendar-top,0px) z-[18] -mt-1 w-fit max-w-full bg-inherit pt-1";
+export const STUCK_DETAIL = "sticky top-[calc(var(--calendar-top,0px)+1.3125rem)] z-[17] bg-inherit";
 
 /** How many lines of text a card this tall holds. */
 export const linesFor = (h: number) => Math.max(1, Math.floor((h - 8) / 17));

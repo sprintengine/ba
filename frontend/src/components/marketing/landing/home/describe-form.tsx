@@ -23,7 +23,7 @@ export function DescribeForm({ cta, className }: { cta: string; className?: stri
     >
       <Input
         aria-label="Describe your business"
-        placeholder="Describe yours, or paste your website"
+        placeholder="Describe yours, or paste a link"
         value={own}
         maxLength={2000}
         onChange={(e) => setOwn(e.target.value)}
