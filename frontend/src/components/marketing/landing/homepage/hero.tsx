@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { touchHitArea } from "@/components/ui/touch";
+import { cn } from "@/lib/utils";
 import { PrismContainer, PrismDot } from "../heading";
 import { HeroStage } from "./hero-stage";
 
@@ -41,7 +43,10 @@ export function Hero() {
               </p>
               <Link
                 href="/for/physio#try"
-                className="focus-ring inline-flex items-center gap-1 rounded-md font-medium underline-offset-4 hover:underline"
+                className={cn(
+                  "focus-ring inline-flex items-center gap-1 rounded-md font-medium underline-offset-4 hover:underline",
+                  touchHitArea,
+                )}
               >
                 Try a booking page <ArrowRight className="size-3.5" aria-hidden />
               </Link>

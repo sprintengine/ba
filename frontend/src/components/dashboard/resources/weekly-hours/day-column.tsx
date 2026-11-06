@@ -110,7 +110,7 @@ export function DayColumn({
                 size="xs"
                 variant="ghost"
                 aria-label={`Edit ${label}: ${summary(ranges)}`}
-                className="h-auto min-h-7 max-w-full px-1 py-0.5 text-foreground"
+                className="h-auto min-h-7 w-full px-1 py-0.5 text-foreground"
               >
                 {heading}
                 <span className="sr-only">{summary(ranges)}</span>

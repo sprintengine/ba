@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { touchHitArea } from "@/components/ui/touch";
 import { cn } from "@/lib/utils";
 import { EXAMPLE_CARDS, photoSrc, type ExampleCard } from "./cards";
 
@@ -80,7 +81,10 @@ export function BusinessExamples() {
         Yours isn’t here? If you work by appointment, it fits.{" "}
         <Link
           href="/sign-up"
-          className="focus-ring group inline-flex items-center gap-1 rounded-md font-semibold text-foreground"
+          className={cn(
+            "focus-ring group inline-flex items-center gap-1 rounded-md font-semibold text-foreground",
+            touchHitArea,
+          )}
         >
           Describe your business
           <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />

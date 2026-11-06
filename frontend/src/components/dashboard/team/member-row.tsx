@@ -45,7 +45,7 @@ export function MemberRow({
     <li className="flex flex-col gap-3 px-4 py-3.5 xl:flex-row xl:items-center">
       <MemberIdentity member={m} isMe={isMe} />
       {/* Shared columns, so every person's calendar, role and remove line up down the list. */}
-      <div className="flex min-w-0 items-center gap-2 max-xl:pl-12 xl:grid xl:grid-cols-[11rem_7rem_4.5rem] xl:justify-items-start">
+      <div className="flex min-w-0 items-center gap-2 max-xl:pl-12 max-sm:flex-wrap xl:grid xl:grid-cols-[11rem_7rem_4.5rem] xl:justify-items-start">
         <CalendarControl member={m} people={people} editable={canManage} patch={patch} />
         <RoleControl
           member={m}
@@ -123,7 +123,7 @@ function CalendarControl({
     >
       <SelectTrigger
         size="sm"
-        className="w-auto min-w-0 flex-1 sm:w-44 sm:flex-none"
+        className="w-auto min-w-0 flex-1 max-sm:basis-full sm:w-44 sm:flex-none"
         aria-label={`Linked ${v("resource")} for ${m.name || m.email}`}
       >
         <SelectValue />

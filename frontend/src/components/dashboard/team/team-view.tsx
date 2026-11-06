@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Check, ChevronDown, ShieldCheck, UserPlus } from "lucide-react";
 import { useResources, useTeam } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
+import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { ActionButton } from "@/components/ui/action-button";
 import { SectionHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { touchHitArea } from "@/components/ui/touch";
 import { roleInfo, roleRank } from "@/lib/business/permissions";
 import { InviteDialog } from "./invite-dialog";
 import { MemberRow } from "./member-row";
@@ -87,7 +89,12 @@ export function TeamSection() {
                 ))}
           </ul>
           <details className="group mt-4">
-            <summary className="focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground">
+            <summary
+              className={cn(
+                "focus-ring inline-flex cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground",
+                touchHitArea,
+              )}
+            >
               What each role can do
               <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
             </summary>
