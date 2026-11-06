@@ -253,7 +253,7 @@ export function WeeklyHoursEditor({
       {editable && (
         <p className="text-xs text-muted-foreground">
           <span className="pointer-coarse:hidden">
-            Drag a bar&rsquo;s end, click an empty stretch to add hours, or click the times to type them.
+            Drag a bar&rsquo;s end, click an empty stretch to add hours, or click a bar to type its times.
           </span>
           <span className="hidden pointer-coarse:inline">Tap the times above a day to change them.</span>
         </p>

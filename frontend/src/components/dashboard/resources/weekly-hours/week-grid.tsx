@@ -43,7 +43,7 @@ export function WeekGrid({
         {labels.map((h) => (
           <span
             key={h}
-            className="tnum absolute right-1.5 -translate-y-1/2 text-2xs text-subtle-foreground first:translate-y-0"
+            className="tnum absolute right-1.5 -translate-y-1/2 text-2xs text-subtle-foreground"
             style={{ top: h * HOUR_PX }}
           >
             {minutesToTime(axis.start + h * 60)}

@@ -65,7 +65,10 @@ export function CompareHours({
         <ErrorState error={failed.error} onRetry={() => failed.refetch()} headingLevel={3} />
       ) : (
         <div className="mt-4 flex flex-col">
-          <div aria-hidden className="grid grid-cols-[minmax(0,1fr)] sm:grid-cols-[9rem_minmax(0,1fr)_6rem]">
+          <div
+            aria-hidden
+            className="grid grid-cols-[minmax(0,1fr)] gap-x-3 sm:grid-cols-[9rem_minmax(0,1fr)_6rem]"
+          >
             <span className="max-sm:hidden" />
             <div className="relative h-5">
               {ticks.map((h, i) => (

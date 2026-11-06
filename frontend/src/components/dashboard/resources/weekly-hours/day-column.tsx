@@ -27,7 +27,7 @@ export const HOUR_PX = 17;
 
 /** Hours in a calendar's colour: as fill only, the tint its tile and bookings use. */
 export const hoursFill = (color: string): React.CSSProperties => ({
-  backgroundColor: `color-mix(in oklab, ${color} 38%, var(--event-base))`,
+  backgroundColor: `color-mix(in oklab, ${color} 30%, var(--event-base))`,
 });
 
 const HATCH = "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 5px)";
@@ -35,21 +35,15 @@ const HATCH = "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, tra
 const summary = (ranges: readonly TimeRange[]) =>
   ranges.length === 0 ? "Closed" : ranges.map((r) => `${r.startTime}–${r.endTime}`).join(", ");
 
-/** Each stretch on its own line; a narrow column breaks after the dash, never inside a time. */
-const Times = ({ ranges }: { ranges: readonly TimeRange[] }) =>
-  ranges.length === 0
-    ? "Closed"
-    : ranges.map((r) => (
-        <span key={r.startTime} className="block sm:whitespace-nowrap">
-          {r.startTime}–<wbr />
-          {r.endTime}
-        </span>
-      ));
+/** Tall enough for a time at each end, clear of the grips; otherwise the bar shows its start alone, or nothing. */
+const BOTH_TIMES_PX = 46;
+const ONE_TIME_PX = 22;
 
 /**
- * One weekday as a column of the week, on the calendar's hours. The times in words head it and open the day's editor,
- * which is all you need by keyboard or touch; on the grid a bar opens it too, its ends drag (or step with the arrow
- * keys) by a quarter hour, and clicking a free part of the day adds a stretch.
+ * One weekday as a column of the week, on the calendar's hours. Each bar carries its own times, as a calendar card does,
+ * so there's no row of numbers to read across. The day's name opens its editor, which is all you need by keyboard or
+ * touch; on the grid a bar opens it too, its ends drag (or step with the arrow keys) by a quarter hour, and clicking a
+ * free part of the day adds a stretch.
  */
 export function DayColumn({
   day,
@@ -85,32 +79,30 @@ export function DayColumn({
   const errors = validateDay(ranges);
   const firstError = errors.find(Boolean);
   const closed = ranges.length === 0;
-  const timesClass = cn(
-    "tnum text-2xs leading-[0.9375rem]",
-    closed ? "text-muted-foreground" : "text-foreground",
+  const heading = (
+    <span
+      className={cn(
+        "flex items-center gap-x-1 text-sm font-medium max-sm:flex-col",
+        closed && "text-muted-foreground",
+      )}
+    >
+      <span aria-hidden>{short}</span>
+      {date !== undefined && (
+        <span
+          aria-hidden
+          className={cn(
+            "tnum flex size-5 items-center justify-center rounded-full text-xs",
+            today ? "bg-brand font-semibold text-brand-foreground" : "font-normal text-muted-foreground",
+          )}
+        >
+          {date}
+        </span>
+      )}
+    </span>
   );
   return (
     <div role="group" aria-label={label} className="contents" data-day={day}>
-      <div className="flex min-w-0 flex-col items-center gap-0.5 pb-1.5 text-center">
-        <span
-          className={cn(
-            "flex items-center gap-x-1 text-sm font-medium max-sm:flex-col",
-            closed && "text-muted-foreground",
-          )}
-        >
-          <span aria-hidden>{short}</span>
-          {date !== undefined && (
-            <span
-              aria-hidden
-              className={cn(
-                "tnum flex size-5 items-center justify-center rounded-full text-xs",
-                today ? "bg-brand font-semibold text-brand-foreground" : "font-normal text-muted-foreground",
-              )}
-            >
-              {date}
-            </span>
-          )}
-        </span>
+      <div className="flex min-w-0 flex-col items-center pb-1 text-center">
         {editable ? (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -118,11 +110,10 @@ export function DayColumn({
                 size="xs"
                 variant="ghost"
                 aria-label={`Edit ${label}: ${summary(ranges)}`}
-                className="h-auto min-h-6 max-w-full px-0.5 py-0.5 font-normal whitespace-normal"
+                className="h-auto min-h-7 max-w-full px-1 py-0.5 text-foreground"
               >
-                <span className={timesClass}>
-                  <Times ranges={ranges} />
-                </span>
+                {heading}
+                <span className="sr-only">{summary(ranges)}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -134,9 +125,10 @@ export function DayColumn({
             </PopoverContent>
           </Popover>
         ) : (
-          <span className={cn(timesClass, "py-0.5")}>
-            <Times ranges={ranges} />
-          </span>
+          <>
+            <span className="py-0.5">{heading}</span>
+            <span className="sr-only">{summary(ranges)}</span>
+          </>
         )}
       </div>
       <Track
@@ -220,6 +212,14 @@ function Track({
           style={{ top: `${(i * 60 * 100) / span}%` }}
         />
       ))}
+      {ranges.length === 0 && (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-2 text-center text-2xs font-medium text-muted-foreground"
+        >
+          Closed
+        </span>
+      )}
       {ranges.map((r, i) => {
         const start = timeToMinutes(r.startTime);
         const end = endMinutes(r.endTime);
@@ -230,10 +230,17 @@ function Track({
           top: `${Math.max(0, percent(start))}%`,
           height: `${Math.max(0, percent(Math.max(end, start)) - Math.max(0, percent(start)))}%`,
         };
-        // The times are in words above the day: the bar is the shape, marked only when it's restricted.
-        const body = restricted ? <Users aria-hidden className="size-3 shrink-0" /> : null;
+        const px = ((end - start) / 60) * HOUR_PX;
+        const body = (
+          <>
+            {px >= ONE_TIME_PX && <span>{r.startTime}</span>}
+            {restricted && <Users aria-hidden className="size-3 shrink-0" />}
+            {px >= BOTH_TIMES_PX && <span>{r.endTime}</span>}
+          </>
+        );
         const look = cn(
-          "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border text-2xs font-medium",
+          "flex h-full w-full min-w-0 flex-col items-center gap-1 overflow-hidden rounded-[inherit] border py-2 text-2xs leading-3.5 font-medium",
+          px >= BOTH_TIMES_PX ? "justify-between" : "justify-center py-0",
           invalid
             ? "border-danger-border bg-danger-soft text-danger-soft-foreground"
             : color
@@ -243,7 +250,12 @@ function Track({
         // The same fill as this calendar's tile, so the bar reads as this person's time, not as a disabled control.
         const fill = !invalid && color ? hoursFill(color) : undefined;
         return (
-          <div key={i} data-range="" className="absolute inset-x-0.5 rounded-md bg-surface" style={style}>
+          <div
+            key={i}
+            data-range=""
+            className="group/bar absolute inset-x-0.5 rounded-md bg-surface"
+            style={style}
+          >
             {editable ? (
               <>
                 <button
@@ -357,10 +369,10 @@ function EdgeHandle({
         onMove(minute + delta);
       }}
     >
-      {/* The grip: a bar's ends show they can be moved before anyone hovers. */}
+      {/* The grip: shows on the bar under the pointer or the keyboard, and always on a touch screen. */}
       <span
         aria-hidden
-        className="absolute inset-x-[35%] top-1/2 h-1 -translate-y-1/2 rounded-full bg-surface shadow-[0_0_0_1px_var(--border-strong)] group-hover/edge:bg-brand"
+        className="absolute inset-x-[35%] top-1/2 h-1 -translate-y-1/2 rounded-full bg-surface opacity-0 shadow-[0_0_0_1px_var(--border-strong)] transition-opacity group-focus-within/bar:opacity-100 group-hover/bar:opacity-100 group-hover/edge:bg-brand pointer-coarse:opacity-100"
       />
     </div>
   );
