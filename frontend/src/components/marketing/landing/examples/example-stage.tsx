@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import { CalendarHeaderRow } from "@/components/dashboard/calendar/calendar-headers";
 import { DayColumn, TimeGutter } from "@/components/dashboard/calendar/calendar-grid";
 import { Button } from "@/components/ui/button";
-import { demoDay } from "../home/fixture";
-import { SceneToggle } from "../home/scene-parts";
+import { demoDay } from "../homepage/fixture";
+import { SceneToggle } from "../homepage/scene-parts";
 import { photoSrc, type ExampleCard } from "./cards";
 import {
   durationText,

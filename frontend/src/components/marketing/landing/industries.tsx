@@ -1,6 +1,6 @@
 import { PrismContainer, PrismDot } from "./heading";
 import { BusinessExamples } from "./examples/business-examples";
-import { AnythingStage } from "./home/anything-stage";
+import { AnythingStage } from "./homepage/anything-stage";
 
 const KINDS = [
   "Haircuts",

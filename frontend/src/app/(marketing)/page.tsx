@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
 import { PrismContainer } from "@/components/marketing/landing/heading";
-import { AiSection } from "@/components/marketing/landing/home/ai";
-import { ClosingSection } from "@/components/marketing/landing/home/closing";
-import { FirstAfternoonSection } from "@/components/marketing/landing/home/first-afternoon";
-import { Hero } from "@/components/marketing/landing/home/hero";
-import { MoneySection } from "@/components/marketing/landing/home/money";
-import { ProofSection } from "@/components/marketing/landing/home/proof";
+import { AiSection } from "@/components/marketing/landing/homepage/ai";
+import { ClosingSection } from "@/components/marketing/landing/homepage/closing";
+import { FirstAfternoonSection } from "@/components/marketing/landing/homepage/first-afternoon";
+import { Hero } from "@/components/marketing/landing/homepage/hero";
+import { MoneySection } from "@/components/marketing/landing/homepage/money";
+import { ProofSection } from "@/components/marketing/landing/homepage/proof";
 import { IndustriesSection } from "@/components/marketing/landing/industries";
 import { PricingTeaser } from "@/components/marketing/landing/pricing-teaser";
 
