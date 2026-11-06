@@ -347,7 +347,7 @@ describe("paying and confirming", () => {
     const payment = within(
       must(screen.getByRole("heading", { name: "Payment" }).closest("section"), "payment"),
     );
-    expect(payment.getByText("Nothing to pay now — pay at your appointment.")).toBeInTheDocument();
+    expect(payment.getByText("Nothing to pay now. Pay at your appointment.")).toBeInTheDocument();
     expect(payment.getByText("Free cancellation up to 24 hours before.")).toBeInTheDocument();
     // No preference reads as it is ("Any therapist"), not "With Any therapist".
     expect(within(whatSection()).getByText("Any therapist")).toBeInTheDocument();

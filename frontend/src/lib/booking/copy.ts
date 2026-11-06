@@ -115,7 +115,7 @@ export function paymentModeCopy(
     case "deposit":
       return `${formatMoney(q.dueNowCents, currency, { locale })} deposit online now, ${formatMoney(q.dueLaterCents, currency, { locale })} at your appointment.`;
     case "at_venue":
-      return "Nothing to pay now — pay at your appointment.";
+      return "Nothing to pay now. Pay at your appointment.";
   }
 }
 

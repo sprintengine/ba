@@ -27,7 +27,7 @@ export function PlanLimitNotice() {
         </span>{" "}
         New online {v("bookings")} are paused until next month or an upgrade.
       </p>
-      <Button asChild size="sm" variant="secondary">
+      <Button asChild size="sm" variant="secondary" className="dark:bg-surface-raised dark:text-foreground">
         <Link href={dashboardHref(business.slug, "settings/billing")}>See plans</Link>
       </Button>
     </div>

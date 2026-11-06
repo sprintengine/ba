@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
-import { LogoMark } from "@/components/brand/logo";
+import { DeadEndMark } from "@/components/brand/logo";
 import { useAcceptInvitation, useMe } from "@/lib/api/hooks";
 import { signInUrl } from "@/lib/auth/components";
 import { useAuth } from "@/lib/auth/context";
@@ -85,7 +85,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
     email: user?.email ?? null,
   });
   return (
-    <Panel icon={<LogoMark mono title="" />} tone="warning" title={view.title}>
+    <Panel icon={<DeadEndMark />} tone="warning" title={view.title}>
       <p>{view.body}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         {view.next === "dashboard" ? (

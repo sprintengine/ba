@@ -180,7 +180,7 @@ describe("Offer editor sheet", () => {
     api();
     const { user, form } = await openNew();
     const group = form.getByRole("group", { name: "Applies to" });
-    expect(within(group).getByText("Private — not on your booking page")).toBeInTheDocument();
+    expect(within(group).getByText("Private · not on your booking page")).toBeInTheDocument();
     await user.click(form.getByRole("button", { name: "Clear all" }));
     expect(within(group).getByRole("checkbox", { name: /sports massage/i })).not.toBeChecked();
     await user.click(form.getByRole("button", { name: "Create offer" }));

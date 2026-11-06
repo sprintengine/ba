@@ -151,7 +151,7 @@ describe("payment copy", () => {
       "€15 deposit online now, €65 at your appointment.",
     );
     expect(paymentModeCopy({ ...q, mode: "at_venue" }, "EUR", "en-IE")).toBe(
-      "Nothing to pay now — pay at your appointment.",
+      "Nothing to pay now. Pay at your appointment.",
     );
   });
 

@@ -57,8 +57,8 @@ describe("resource choice", () => {
     const label = (choice: ResourceChoice, shown: typeof all) =>
       resourceChoiceLabel(choice, shown, all, "staff");
     expect(label({ type: "people" }, [avery, blake])).toBe("All people");
-    expect(label({ type: "people" }, [avery, blake, studio])).toBe("All people, Studio");
-    expect(label({ type: "people" }, [avery, room, studio])).toBe("All people, 2 spaces");
+    expect(label({ type: "people" }, [avery, blake, studio])).toBe("All people +Studio");
+    expect(label({ type: "people" }, [avery, room, studio])).toBe("All people +2");
     expect(label({ type: "everything" }, all)).toBe("All people and spaces");
     expect(label({ type: "spaces" }, [room, studio])).toBe("All spaces");
     expect(label({ type: "ids", ids: ["p1"] }, [avery])).toBe("Avery");

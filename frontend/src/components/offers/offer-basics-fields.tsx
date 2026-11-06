@@ -71,7 +71,7 @@ export function ServicesField({ services }: { services: Service[] }) {
         }
       >
         {services.length === 0 ? (
-          <p className="text-sm text-subtle-foreground">Add a service first — deals discount services.</p>
+          <p className="text-sm text-subtle-foreground">Add a service first. Deals discount services.</p>
         ) : (
           <div className="grid gap-2.5 rounded-xl border border-border p-3 sm:grid-cols-2">
             {services.map((s) => (
@@ -79,7 +79,7 @@ export function ServicesField({ services }: { services: Service[] }) {
                 key={s.id}
                 id={`offer-service-${s.id}`}
                 label={s.name}
-                description={!s.isPublic ? "Private — not on your booking page" : undefined}
+                description={!s.isPublic ? "Private · not on your booking page" : undefined}
                 checked={selected.includes(s.id)}
                 onCheckedChange={(c) => toggle(s.id, c === true)}
                 onBlur={field.onBlur}

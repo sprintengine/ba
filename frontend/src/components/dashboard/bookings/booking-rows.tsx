@@ -198,7 +198,7 @@ export function MobileRow({
           </span>
           <span className="flex items-center justify-between gap-2">
             <span className="truncate text-xs text-muted-foreground">
-              {[b.service.name, ...b.resources.map((r) => r.name)].join(" · ")}
+              {[b.service.name, withWhom(b)].filter(Boolean).join(" · ")}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
               <BookingExceptions status={b.status} payment={b.paymentStatus} booking={b} />

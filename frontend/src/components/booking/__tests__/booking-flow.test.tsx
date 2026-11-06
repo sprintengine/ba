@@ -263,7 +263,7 @@ describe("BookingFlow", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/Choose “Pay at the venue” under Payment/);
 
     await user.click(within(howToPay).getByRole("radio", { name: /Pay at the venue/ }));
-    expect(screen.getAllByText("Nothing to pay now — pay at your appointment.").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nothing to pay now. Pay at your appointment.").length).toBeGreaterThan(0);
     await act(async () => {
       await user.click(
         must(screen.getAllByRole("button", { name: /Confirm appointment/ })[0], "Confirm button"),

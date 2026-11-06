@@ -69,7 +69,7 @@ export function BusinessSwitcher({
             <>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span
-                  className="line-clamp-2 text-sm leading-5 font-semibold break-words"
+                  className="truncate text-sm leading-5 font-semibold"
                   title={business.name}
                 >
                   {business.name}

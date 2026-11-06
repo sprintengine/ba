@@ -73,7 +73,7 @@ export function BookingsList() {
 
   return (
     // Under the inspector in a small window the list makes room, so the toolbar stays in reach.
-    <PageContainer size="wide" className="max-xl:sm:pr-(--inspector-width,0px)">
+    <PageContainer size="wide" className="@container/list max-xl:sm:pr-(--inspector-width,0px)">
       <PageHeader
         title={v("bookings", { title: true })}
         actions={
@@ -85,6 +85,7 @@ export function BookingsList() {
               icon={<Plus />}
               collapse={false}
               label={`New ${v("booking")}`}
+              className="@max-[34rem]/list:aspect-square @max-[34rem]/list:px-0 @max-[34rem]/list:[&>span]:sr-only"
             />
           </>
         }

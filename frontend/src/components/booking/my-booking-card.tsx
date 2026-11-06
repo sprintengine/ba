@@ -115,7 +115,7 @@ export function MyBookingCard({
           !managing &&
           !awaitingPayment && (
             <Button
-              variant="ghost"
+              variant="secondary"
               size="sm"
               className="shrink-0"
               aria-expanded={false}
@@ -255,6 +255,11 @@ function CardActions({
   };
   return (
     <>
+      {accepted && !b.canCancel && !b.canReschedule && (
+        <p className="text-xs text-muted-foreground">
+          This one can&rsquo;t be changed online. Contact {b.business.name} if your plans change.
+        </p>
+      )}
       <div className="mt-1 -ml-2.5 flex flex-wrap items-center gap-1">
         {awaitingPayment && (
           <Button variant="primary" size="sm" loading={pay.isPending} onClick={onPay}>
@@ -273,11 +278,6 @@ function CardActions({
           </Button>
         )}
       </div>
-      {accepted && !b.canCancel && !b.canReschedule && (
-        <p className="text-xs text-muted-foreground">
-          This one can&rsquo;t be changed online. Contact {b.business.name} if your plans change.
-        </p>
-      )}
     </>
   );
 }

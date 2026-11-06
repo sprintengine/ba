@@ -46,7 +46,7 @@ export function ShareCard({ paused = false }: { paused?: boolean }) {
           {draft
             ? "Only your team can see it until you publish."
             : paused
-              ? "People can still see it, but new online bookings wait for next month or an upgrade."
+              ? "People can still see it."
               : perms.manageSettings
                 ? "Add the link to your website, Instagram or Google profile."
                 : "The link customers use to book."}

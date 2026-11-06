@@ -25,7 +25,7 @@ export function ExamplePreview({
       >
         Example
       </span>
-      <div className="pointer-events-none [mask-image:linear-gradient(to_bottom,black_55%,transparent)] opacity-55">
+      <div className="pointer-events-none [mask-image:linear-gradient(to_bottom,black_75%,transparent)] opacity-75">
         {children}
       </div>
     </div>

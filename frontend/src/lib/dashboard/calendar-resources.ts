@@ -81,7 +81,9 @@ export function resourceChoiceLabel(
   const hasPeople = all.some((r) => r.kind === "person");
   const hasOthers = all.some((r) => r.kind !== "person");
   if (!hasPeople || !hasOthers) {
-    if (choice.type !== "ids" || shown.length === all.length) return `All ${plural}`;
+    // The default word only fits a mix: a team of people are people.
+    if (choice.type !== "ids" || shown.length === all.length)
+      return hasPeople && plural === "resources" ? "All people" : `All ${plural}`;
   }
   if (choice.type === "everything") return "All people and spaces";
   if (choice.type === "spaces") return "All spaces";
@@ -90,5 +92,5 @@ export function resourceChoiceLabel(
   const extra = shown.filter((r) => r.kind !== "person");
   const first = extra[0];
   if (!first) return "All people";
-  return extra.length === 1 ? `All people, ${first.name}` : `All people, ${extra.length} spaces`;
+  return extra.length === 1 ? `All people +${first.name}` : `All people +${extra.length}`;
 }

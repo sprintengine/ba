@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReportSummary } from "@/lib/api/types";
+import { useState } from "react";
 import { percentOf } from "@/lib/dashboard/reports";
 import { useVocabulary } from "@/lib/vocabulary";
 import { cn } from "@/lib/utils";
@@ -50,12 +51,19 @@ export function ReportTotals({
 }) {
   const { v } = useVocabulary();
   const fmt = useFmt();
+  const [more, setMore] = useState(false);
   const share = (n: number) => {
     const pct = t ? percentOf(n, t.bookings) : null;
     return pct === null ? undefined : `${pct}% of ${v("bookings")}`;
   };
   return (
-    <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-6">
+    <div
+      className={cn(
+        "grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-6",
+        // A phone keeps the two that drive the chart, so the chart is on the first screen.
+        !more && "max-sm:[&>*:nth-child(n+3)]:hidden max-sm:[&>button:last-child]:block",
+      )}
+    >
       <ChartNumber selected={measure === "bookings"} onSelect={() => onMeasure("bookings")}>
         <StatCard
           label={v("bookings", { title: true })}
@@ -91,8 +99,23 @@ export function ReportTotals({
         label={`New ${v("customers")}`}
         value={t?.newCustomers ?? 0}
         loading={loading}
+        hint="First visit in this period"
       />
-      <StatCard className="p-3" label="Refunded" value={fmt.money(t?.refundedCents ?? 0)} loading={loading} />
+      <StatCard
+        className="p-3"
+        label="Refunded"
+        value={fmt.money(t?.refundedCents ?? 0)}
+        loading={loading}
+        hint="Back to customers"
+      />
+      <button
+        type="button"
+        aria-expanded={more}
+        onClick={() => setMore((m) => !m)}
+        className="focus-ring col-span-2 min-h-11 rounded-lg text-left text-sm font-medium text-muted-foreground sm:hidden"
+      >
+        {more ? "Fewer figures" : "More figures"}
+      </button>
     </div>
   );
 }
