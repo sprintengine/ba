@@ -139,19 +139,22 @@ export function SlotPicker({
           ) : !date || !loaded(date) ? (
             <SlotsSkeleton />
           ) : (
-            <DayTimes
-              date={date}
-              timeZone={timeZone}
-              locale={locale}
-              currency={currency}
-              month={month}
-              max={max}
-              availability={availability}
-              selectedTime={selectedTime}
-              onSelectSlot={onSelectSlot}
-              onDateChange={onDateChange}
-              onMonthChange={onMonthChange}
-            />
+            // Beside the calendar the times scroll on their own, so the month stays in view.
+            <div className="min-w-0 scrollbar-thin @xl:max-h-[23rem] @xl:overflow-y-auto @xl:pr-2">
+              <DayTimes
+                date={date}
+                timeZone={timeZone}
+                locale={locale}
+                currency={currency}
+                month={month}
+                max={max}
+                availability={availability}
+                selectedTime={selectedTime}
+                onSelectSlot={onSelectSlot}
+                onDateChange={onDateChange}
+                onMonthChange={onMonthChange}
+              />
+            </div>
           )}
         </div>
       </div>

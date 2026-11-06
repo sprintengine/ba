@@ -58,8 +58,8 @@ export function BookingFlow({
           )}
         >
           {intro}
-          {/* The review step is the summary: a card beside it would say everything again. */}
-          {flow.service && !reviewing && (
+          {/* The receipt stays put to the end, so the total is in view when it's time to confirm. */}
+          {flow.service && (
             <div className="hidden border-t border-border pt-5 @4xl:block">
               <BookingSummaryCard {...summaryProps} />
             </div>

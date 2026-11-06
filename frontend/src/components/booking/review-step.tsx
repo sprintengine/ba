@@ -11,6 +11,7 @@ import type { Quote } from "@/lib/booking/quote";
 import { ANY_RESOURCE, chosenExtras, resourceChoiceName, type Selection } from "@/lib/booking/selection";
 import type { StepId } from "@/lib/booking/steps";
 import { formatDate, formatDuration, formatTimeRange, timeZoneLabel, zonedToIso } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Badge } from "@/components/ui/badge";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
@@ -44,14 +45,18 @@ export function ReviewStep({
     <div className="flex flex-col gap-5">
       {alert && <AlertBanner alert={alert} />}
       <div className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-4 shadow-xs sm:px-5 dark:bg-surface-raised">
+        {/* With room, the receipt beside this step says when, what and how much: only what's new is said here. */}
         <WhenSection business={business} selection={selection} quote={quote} onEdit={() => onEdit("time")} />
-        <Section title="What" onEdit={() => onEdit("service")}>
+        <Section title="What" onEdit={() => onEdit("service")} className="@4xl:hidden">
           <WhatSummary business={business} service={service} selection={selection} />
         </Section>
-        <Section title="Your details" onEdit={() => onEdit("details")}>
+        <Section title="Your details" onEdit={() => onEdit("details")} className="@4xl:border-t-0">
           <DetailsSummary details={details} questions={questions} />
         </Section>
-        <Section title="Payment">
+        <Section
+          title="Payment"
+          className={cn(!payment.offered && !service.requiresApproval && "@4xl:hidden")}
+        >
           {payment.offered && <HowToPay payment={payment} />}
           <PaymentSummary business={business} service={service} quote={quote} />
         </Section>
@@ -102,7 +107,7 @@ function WhenSection({
   const tz = business.timezone;
   const start = zonedToIso(selection.date, selection.time, tz);
   return (
-    <Section title="When" onEdit={onEdit}>
+    <Section title="When" onEdit={onEdit} className="@4xl:hidden">
       <p className="text-base font-semibold tracking-tight">
         {formatDate(selection.date, tz, "long", business.locale)}
       </p>
@@ -224,15 +229,17 @@ function PaymentSummary({
   const howToPay = quote.mode === "deposit" ? null : paymentModeCopy(quote, cur, locale);
   return (
     <>
-      <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="review" />
-      <div className="mt-3 flex flex-col gap-2 border-t border-border-subtle pt-3 text-sm text-muted-foreground">
+      <div className="@4xl:hidden">
+        <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="review" />
+      </div>
+      <div className="mt-3 flex flex-col gap-2 border-t border-border-subtle pt-3 text-sm text-muted-foreground @4xl:mt-0 @4xl:border-t-0 @4xl:pt-0">
         {howToPay && (
-          <p className="flex gap-2">
+          <p className="flex gap-2 @4xl:hidden">
             <CreditCard className="mt-0.5 size-4 shrink-0 text-subtle-foreground" aria-hidden />
             {howToPay}
           </p>
         )}
-        <p className="flex gap-2">
+        <p className="flex gap-2 @4xl:hidden">
           <Shield className="mt-0.5 size-4 shrink-0 text-subtle-foreground" aria-hidden />
           {cancellationSummary(business.policies, quote.mode, business.name)}
         </p>
@@ -250,14 +257,16 @@ function PaymentSummary({
 function Section({
   title,
   onEdit,
+  className,
   children,
 }: {
   title: string;
   onEdit?: () => void;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="py-4 sm:py-5">
+    <section className={cn("py-4 sm:py-5", className)}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <h3 className="text-xs font-medium text-subtle-foreground">{title}</h3>
         {onEdit && (
