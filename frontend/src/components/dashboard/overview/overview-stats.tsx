@@ -23,8 +23,11 @@ export function OverviewStats({
   const perms = usePermissions();
   const { v } = useVocabulary();
   const fmt = useFmt();
+  const running = todays.filter(
+    (b) => new Date(b.start) <= now && new Date(b.end) > now && b.status !== "pending_approval",
+  ).length;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+    <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !perms.viewRevenue && "sm:grid-cols-3")}>
       <StatCard
         label="Today"
         value={todays.length}
@@ -34,11 +37,13 @@ export function OverviewStats({
         hint={
           loading
             ? "\u00a0"
-            : todayHint(
-                todays.filter((b) => b.status !== "pending_approval"),
-                now,
-                fmt.time,
-              )
+            : running > 0
+              ? `${running} in progress`
+              : todayHint(
+                  todays.filter((b) => b.status !== "pending_approval"),
+                  now,
+                  fmt.time,
+                )
         }
       />
       <StatCard
@@ -54,7 +59,7 @@ export function OverviewStats({
         loading={loading}
         hint="Booked in the last 30 days"
         // Without revenue there are three tiles: the third takes the whole row rather than leaving a gap.
-        className={cn(!perms.viewRevenue && "col-span-2")}
+        className={cn(!perms.viewRevenue && "max-sm:col-span-2")}
       />
       {perms.viewRevenue && (
         <StatCard

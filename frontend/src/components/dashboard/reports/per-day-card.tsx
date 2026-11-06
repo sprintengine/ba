@@ -16,7 +16,7 @@ import { DayTable } from "./day-table";
 /** Recharts only loads when a chart is shown (it is most of the reports page's JavaScript). */
 const DayChart = dynamic(() => import("./day-chart").then((m) => m.DayChart), {
   ssr: false,
-  loading: () => <Skeleton className="h-64 rounded-lg" />,
+  loading: () => <Skeleton className="h-52 rounded-lg" />,
 });
 
 /** Bookings or revenue per day, as a chart or a table. */
@@ -54,7 +54,7 @@ export function PerDayCard({
       </CardHeader>
       <CardContent>
         {loading || !data ? (
-          <Skeleton className="h-64 rounded-lg" />
+          <Skeleton className="h-52 rounded-lg" />
         ) : isEmptyReport(data.totals) ? (
           <EmptyState
             size="sm"

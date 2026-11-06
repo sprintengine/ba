@@ -55,7 +55,7 @@ export function ReportTotals({
     return pct === null ? undefined : `${pct}% of ${v("bookings")}`;
   };
   return (
-    <div className="grid grid-cols-2 items-start gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-6">
       <ChartNumber selected={measure === "bookings"} onSelect={() => onMeasure("bookings")}>
         <StatCard
           label={v("bookings", { title: true })}

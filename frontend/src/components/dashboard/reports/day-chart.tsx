@@ -48,7 +48,7 @@ export function DayChart({ data, measure }: { data: ReportSummary; measure: Meas
   );
   return (
     <div
-      className="h-64 w-full"
+      className="h-52 w-full"
       role="img"
       aria-label={`${measure === "bookings" ? v("bookings", { title: true }) : "Revenue"} per day, ${rows.length} days. Switch to the table for exact values.`}
     >

@@ -5,7 +5,10 @@ import { AppLink } from "@/components/ui/app-link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
+import { useBookings } from "@/lib/api/hooks";
 import { groupSessions } from "@/lib/dashboard/calendar-layout";
+import { addDaysToPlainDate } from "@/lib/format";
+import { todayInTz } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Avatar } from "@/components/ui/avatar";
@@ -17,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookingExceptions } from "@/components/ui/status-badge";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
+import { DayRibbon } from "./day-ribbon";
 
 /** Today's bookings in order, what's ahead first: finished ones fold into a line above, with a "now" divider. */
 export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loading: boolean; now: Date }) {
@@ -31,6 +35,13 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
   // A class's attendees are one line: six identical rows would say less than "6 booked".
   const shown = groupSessions(showDone ? bookings : bookings.filter((b) => new Date(b.end) > now));
   const nowIndex = shown.findIndex((b) => new Date(b.start) > now);
+  const today = todayInTz(business.timezone, now);
+  const later = useBookings(
+    business.id,
+    { from: addDaysToPlainDate(today, 1), limit: 1 },
+    { enabled: !loading && bookings.length > 0 && shown.length === 0 },
+  );
+  const after = later.data?.items[0];
 
   return (
     <Card>
@@ -69,73 +80,82 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
             }
           />
         ) : (
-          <ol className="flex flex-col">
-            {done.length > 0 && (
-              <li>
-                <button
-                  type="button"
-                  aria-expanded={showDone}
-                  onClick={() => setShowDone((o) => !o)}
-                  className="flex min-h-9 w-full items-center gap-1.5 rounded-lg px-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:min-h-11"
-                >
-                  <ChevronDown
-                    aria-hidden
-                    className={cn("size-4 transition-transform", showDone && "rotate-180")}
-                  />
-                  {done.length} finished earlier today
-                </button>
-              </li>
-            )}
-            {shown.map(({ id, bookings: [b, ...rest] }, i) => {
-              const past = new Date(b.end) <= now;
-              const group = rest.length > 0;
-              return (
-                <li key={id}>
-                  {i === nowIndex && i > 0 && <NowDivider label={`Now · ${fmt.time(now.toISOString())}`} />}
+          <>
+            <DayRibbon bookings={bookings} now={now} />
+            <ol className="flex flex-col">
+              {done.length > 0 && (
+                <li>
                   <button
                     type="button"
-                    onClick={() => (group ? router.push(calendarAt) : openBooking(b.id))}
-                    className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    aria-expanded={showDone}
+                    onClick={() => setShowDone((o) => !o)}
+                    className="flex min-h-9 w-full items-center gap-1.5 rounded-lg px-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:min-h-11"
                   >
-                    {/* Past ones are marked by a muted time, not a faded row (that drops the text below 4.5:1). */}
-                    <span
-                      className={cn(
-                        "tnum w-12 shrink-0 text-sm font-medium",
-                        past && "text-muted-foreground",
-                      )}
-                    >
-                      {fmt.time(b.start)}
-                    </span>
-                    <span
+                    <ChevronDown
                       aria-hidden
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: b.service.color }}
+                      className={cn("size-4 transition-transform", showDone && "rotate-180")}
                     />
-                    {group ? (
-                      <span className="tnum flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                        {rest.length + 1}
-                      </span>
-                    ) : (
-                      <Avatar name={b.customer.name} size="md" />
-                    )}
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-medium">
-                        {group ? b.service.name : b.customer.name}
-                      </span>
-                      <span className="line-clamp-2 text-xs text-muted-foreground">
-                        {group ? `${rest.length + 1} booked` : b.service.name}
-                        {!group && b.option ? ` · ${b.option.name}` : ""}
-                        {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}
-                      </span>
-                    </span>
-                    <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
-                      <BookingExceptions status={b.status} />
-                    </span>
+                    {done.length} finished earlier today
                   </button>
                 </li>
-              );
-            })}
-          </ol>
+              )}
+              {shown.map(({ id, bookings: [b, ...rest] }, i) => {
+                const past = new Date(b.end) <= now;
+                const group = rest.length > 0;
+                return (
+                  <li key={id}>
+                    {i === nowIndex && i > 0 && <NowDivider label={`Now · ${fmt.time(now.toISOString())}`} />}
+                    <button
+                      type="button"
+                      onClick={() => (group ? router.push(calendarAt) : openBooking(b.id))}
+                      className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                      {/* Past ones are marked by a muted time, not a faded row (that drops the text below 4.5:1). */}
+                      <span
+                        className={cn(
+                          "tnum w-12 shrink-0 text-sm font-medium",
+                          past && "text-muted-foreground",
+                        )}
+                      >
+                        {fmt.time(b.start)}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: b.service.color }}
+                      />
+                      {group ? (
+                        <span className="tnum flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                          {rest.length + 1}
+                        </span>
+                      ) : (
+                        <Avatar name={b.customer.name} size="md" />
+                      )}
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-medium">
+                          {group ? b.service.name : b.customer.name}
+                        </span>
+                        <span className="line-clamp-2 text-xs text-muted-foreground">
+                          {group ? `${rest.length + 1} booked` : b.service.name}
+                          {!group && b.option ? ` · ${b.option.name}` : ""}
+                          {b.resources.length ? ` · ${b.resources.map((r) => r.name).join(", ")}` : ""}
+                        </span>
+                      </span>
+                      <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+                        <BookingExceptions status={b.status} />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </>
+        )}
+        {!loading && bookings.length > 0 && shown.length === 0 && (
+          <p className="px-2 pt-2 text-sm text-muted-foreground">
+            All done today.
+            {after && ` Next: ${fmt.date(after.start, "dayMonth")}, ${fmt.time(after.start)}.`}
+          </p>
         )}
       </CardContent>
     </Card>

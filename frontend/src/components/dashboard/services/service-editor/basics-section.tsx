@@ -48,6 +48,7 @@ export function BasicsSection({ categories }: { categories: string[] }) {
         {(field) => (
           <SwatchGroup
             aria-label="Calendar colour"
+            size="sm"
             value={field.value}
             onValueChange={field.onChange}
             swatches={SERVICE_COLORS}

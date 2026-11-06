@@ -14,20 +14,19 @@ export function ServiceBars({ data }: { data: ReportSummary }) {
   if (rows.length === 0)
     return <p className="text-sm text-subtle-foreground">No {v("bookings")} in this period.</p>;
   return (
-    <ul className="flex flex-col gap-3.5">
+    <ul className="flex flex-col gap-1">
       {rows.map((r) => (
-        <li key={r.serviceId} className="flex flex-col gap-1.5">
-          <div className="flex items-baseline justify-between gap-3 text-sm">
+        <li key={r.serviceId} className="relative isolate overflow-hidden rounded-md">
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 -z-10 rounded-md bg-chart-1/15"
+            style={{ width: `${(r.bookings / max) * 100}%` }}
+          />
+          <div className="flex items-baseline justify-between gap-3 px-2 py-1.5 text-sm">
             <span className="truncate font-medium">{r.name}</span>
             <span className="tnum shrink-0 text-muted-foreground">
               {r.bookings} · {fmt.money(r.revenueCents)}
             </span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-            <div
-              className="h-full rounded-full bg-chart-1"
-              style={{ width: `${(r.bookings / max) * 100}%` }}
-            />
           </div>
         </li>
       ))}
@@ -41,27 +40,27 @@ export function UtilisationBars({ data }: { data: ReportSummary }) {
   const rows = rankResources(data.byResource);
   if (rows.length === 0) return <p className="text-sm text-subtle-foreground">Nothing to show yet.</p>;
   return (
-    <ul className="flex flex-col gap-3.5">
+    <ul className="flex flex-col gap-1">
       {rows.map((r) => {
         const pct = Math.round(r.utilisation * 100);
         return (
-          <li key={r.resourceId} className="flex flex-col gap-1.5">
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate font-medium">{r.name}</span>
-              <span className="tnum shrink-0 text-muted-foreground">
-                <span className="font-medium text-foreground">{pct}%</span> ·{" "}
-                {fmt.duration(Math.round(r.bookedMinutes))} of {fmt.duration(Math.round(r.availableMinutes))}
-              </span>
-            </div>
+          <li key={r.resourceId} className="relative isolate overflow-hidden rounded-md">
             <div
-              className="h-2 overflow-hidden rounded-full bg-muted"
+              className="absolute inset-0 -z-10"
               role="meter"
               aria-valuenow={pct}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-label={`${r.name} utilisation`}
             >
-              <div className="h-full rounded-full bg-chart-1" style={{ width: `${Math.min(100, pct)}%` }} />
+              <div className="h-full rounded-md bg-chart-1/15" style={{ width: `${Math.min(100, pct)}%` }} />
+            </div>
+            <div className="flex items-baseline justify-between gap-3 px-2 py-1.5 text-sm">
+              <span className="truncate font-medium">{r.name}</span>
+              <span className="tnum shrink-0 text-muted-foreground">
+                <span className="font-medium text-foreground">{pct}%</span> ·{" "}
+                {fmt.duration(Math.round(r.bookedMinutes))} of {fmt.duration(Math.round(r.availableMinutes))}
+              </span>
             </div>
           </li>
         );
