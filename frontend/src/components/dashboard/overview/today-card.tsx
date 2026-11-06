@@ -135,6 +135,20 @@ function DayAfter({
   return (
     <div className="flex flex-col gap-1.5 px-2 pt-3">
       {dayIsOver && <p className="text-sm font-medium">That&rsquo;s the day.</p>}
+      {/* Holds the next day's room: arriving later, it would push everything under the card down. */}
+      {later.isPending && (
+        <div className="flex flex-col gap-1.5" aria-busy>
+          <Skeleton className="h-5 w-52" />
+          <div className="mt-1 flex flex-col gap-1.5">
+            {Array.from({ length: NEXT_DAY_ROWS }, (_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-4 w-11" />
+                <Skeleton className="h-15 flex-1 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {first && day && (
         <>
           <p className="tnum text-sm text-muted-foreground">
