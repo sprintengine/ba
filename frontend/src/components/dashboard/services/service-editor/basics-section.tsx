@@ -4,7 +4,7 @@ import { SERVICE_COLORS, type ServiceFormValues as V } from "@/lib/services/serv
 import { Input } from "@/components/ui/input";
 import { SwatchGroup } from "@/components/ui/swatch-group";
 import { Textarea } from "@/components/ui/textarea";
-import { SettingFormRow } from "../../settings/settings-common";
+import { SettingFormRow } from "../../settings/setting-rows";
 import { Section } from "./section";
 
 export function BasicsSection({ categories }: { categories: string[] }) {

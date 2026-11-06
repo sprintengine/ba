@@ -1,4 +1,4 @@
-import { SettingGroup } from "../../settings/settings-common";
+import { SettingGroup } from "../../settings/setting-rows";
 
 /**
  * A titled card of the service editor, the same card as in Settings, with an optional action (e.g. "Add option") on the

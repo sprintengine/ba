@@ -9,7 +9,7 @@ import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { MoneyInput } from "@/components/ui/money-input";
 import { RadioCard, RadioCards } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { SettingFormRow } from "../../settings/settings-common";
+import { SettingFormRow } from "../../settings/setting-rows";
 import { Section } from "./section";
 
 export function PricingSection() {

@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useFieldControlProps, useFieldLabelledBy } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { SettingFieldRow, SettingFormRow } from "../../settings/settings-common";
+import { SettingFieldRow, SettingFormRow } from "../../settings/setting-rows";
 import { Section } from "./section";
 
 export function RulesSection() {

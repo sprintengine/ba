@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { NumberInput } from "@/components/ui/number-input";
 import { ServiceReleaseNote } from "../../releases/service-release-note";
 import { useVocabulary } from "@/lib/vocabulary";
-import { SettingFieldRow, SettingFormRow } from "../../settings/settings-common";
+import { SettingFieldRow, SettingFormRow } from "../../settings/setting-rows";
 import { Section } from "./section";
 
 const INTERVALS = [5, 10, 15, 20, 30, 45, 60, 90, 120];
