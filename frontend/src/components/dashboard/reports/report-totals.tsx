@@ -99,13 +99,13 @@ export function ReportTotals({
 }) {
   const { v } = useVocabulary();
   const fmt = useFmt();
-  const [more, setMore] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   return (
     <div
       className={cn(
         "grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-6",
         // A phone keeps the two that drive the chart, so the chart is on the first screen.
-        !more && "max-sm:[&>*:nth-child(n+3)]:hidden max-sm:[&>button:last-child]:block",
+        !expanded && "max-sm:[&>*:nth-child(n+3)]:hidden max-sm:[&>button:last-child]:block",
       )}
     >
       <ChartNumber selected={measure === "bookings"} onSelect={() => onMeasure("bookings")}>
@@ -127,11 +127,11 @@ export function ReportTotals({
       <QuietFigures totals={t} loading={loading} />
       <button
         type="button"
-        aria-expanded={more}
-        onClick={() => setMore((m) => !m)}
+        aria-expanded={expanded}
+        onClick={() => setExpanded((e) => !e)}
         className="focus-ring col-span-2 min-h-11 rounded-lg text-left text-sm font-medium text-muted-foreground sm:hidden"
       >
-        {more ? "Fewer figures" : "More figures"}
+        {expanded ? "Fewer figures" : "More figures"}
       </button>
     </div>
   );

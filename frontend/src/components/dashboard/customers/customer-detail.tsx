@@ -48,7 +48,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const exportData = useCustomerExport(customer.data);
   const [eraseOpen, setEraseOpen] = useState(false);
   // Opened from a menu that has closed: focus comes back to the menu's button.
-  const [moreButton, setMoreButton] = useState<HTMLButtonElement | null>(null);
+  const [menuButton, setMenuButton] = useState<HTMLButtonElement | null>(null);
   const back = { href: dashboardHref(business.slug, "customers"), label: v("customers", { title: true }) };
 
   // A failed refresh keeps showing the customer already loaded; the error is for when there is none.
@@ -126,7 +126,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             {perms.manageCustomerData && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <IconButton ref={setMoreButton} variant="secondary" size="md" label="More actions">
+                  <IconButton ref={setMenuButton} variant="secondary" size="md" label="More actions">
                     <MoreHorizontal />
                   </IconButton>
                 </DropdownMenuTrigger>
@@ -187,7 +187,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         customer={c}
         open={eraseOpen}
         onOpenChange={setEraseOpen}
-        returnFocusTo={moreButton}
+        returnFocusTo={menuButton}
         onErased={() => router.replace(back.href)}
       />
     </PageContainer>
