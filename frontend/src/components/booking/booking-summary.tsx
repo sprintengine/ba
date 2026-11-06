@@ -23,8 +23,6 @@ export type SummaryProps = {
   takesOnlinePayment?: boolean;
   /** Steps currently in the flow (only these rows are editable). */
   steps: StepId[];
-  /** Only what's chosen: the step beside it holds the sums and the terms. */
-  brief?: boolean;
 };
 
 function useRows({ business, service, selection, steps }: SummaryProps) {
@@ -78,7 +76,7 @@ export function BookingPromises({ business, takesOnlinePayment }: SummaryProps) 
 
 /** Desktop sticky summary. */
 export function BookingSummaryCard(props: SummaryProps) {
-  const { business, service, selection, quote, onEdit, steps, brief } = props;
+  const { business, service, selection, quote, onEdit, steps } = props;
   const { v } = useVocabulary();
   const rows = useRows(props);
   const locale = business.locale;
@@ -125,7 +123,7 @@ export function BookingSummaryCard(props: SummaryProps) {
           </li>
         )}
       </ul>
-      {quote && service && !brief && (
+      {quote && service && (
         <div className="flex flex-col gap-3 border-t border-border-subtle pt-3">
           <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="summary" />
           {paymentModeCopy(quote, cur, locale) && (

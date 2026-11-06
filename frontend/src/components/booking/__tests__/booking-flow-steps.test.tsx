@@ -360,7 +360,7 @@ describe("paying and confirming", () => {
     await u.click(action(/^Review/));
     await screen.findByRole("heading", { name: "Review and confirm" });
 
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/manage/tok123?booked=1"));
     const post = must(
       requests.find((r) => r.method === "POST"),
@@ -426,7 +426,7 @@ describe("when booking fails", () => {
         }),
     });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
 
     expect(await screen.findByRole("heading", { name: "Your details" })).toBeInTheDocument();
     const email = screen.getByRole("textbox", { name: /^Email/ });
@@ -455,7 +455,7 @@ describe("when booking fails", () => {
         }),
     });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Something in your selection needs another look");
     expect(alert).toHaveTextContent("Alex isn't available for this service");
@@ -465,7 +465,7 @@ describe("when booking fails", () => {
     const u = user();
     api({ booking: () => apiError(409, "PLAN_LIMIT_REACHED", "Plan limit reached.") });
     await reachReview(u);
-    await u.click(action("Confirm appointment"));
+    await u.click(action(/^Confirm appointment/));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Lumen Physiotherapy can't take more online appointments right now");
     expect(alert).toHaveTextContent(

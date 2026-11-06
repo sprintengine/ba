@@ -49,8 +49,7 @@ test.describe("dashboard (staff scoping)", () => {
     await expect(page.getByRole("group", { name: /robin ashby/i })).toHaveCount(0);
     await page.keyboard.press("n");
     const sheet = page.getByRole("dialog", { name: /^new /i });
-    await sheet.getByRole("combobox").first().click();
-    await page.getByRole("option", { name: /follow-up/i }).click();
+    await sheet.getByRole("button", { name: /follow-up/i }).click();
     const next = sheet.getByRole("button", { name: /next available/i });
     const slots = sheet.getByRole("radiogroup", { name: /times$/i }).getByRole("radio");
     await expect(slots.first().or(next)).toBeVisible({ timeout: 15_000 });

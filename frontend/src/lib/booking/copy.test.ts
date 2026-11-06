@@ -159,7 +159,7 @@ describe("payment copy", () => {
     expect(
       submitLabel(
         { requiresApproval: false },
-        { mode: "deposit", dueNowCents: 1500 },
+        { mode: "deposit", dueNowCents: 1500, totalCents: 4000 },
         "EUR",
         "en-IE",
         "appointment",
@@ -168,7 +168,7 @@ describe("payment copy", () => {
     expect(
       submitLabel(
         { requiresApproval: true },
-        { mode: "at_venue", dueNowCents: 0 },
+        { mode: "at_venue", dueNowCents: 0, totalCents: 2000 },
         "EUR",
         "en-IE",
         "appointment",
@@ -177,7 +177,16 @@ describe("payment copy", () => {
     expect(
       submitLabel(
         { requiresApproval: false },
-        { mode: "free", dueNowCents: 0 },
+        { mode: "at_venue", dueNowCents: 0, totalCents: 2000 },
+        "EUR",
+        "en-IE",
+        "appointment",
+      ),
+    ).toBe("Confirm appointment · €20 at venue");
+    expect(
+      submitLabel(
+        { requiresApproval: false },
+        { mode: "free", dueNowCents: 0, totalCents: 0 },
         "EUR",
         "en-IE",
         "appointment",

@@ -33,8 +33,7 @@ test.describe("payment links and rescheduling", () => {
       .first()
       .click();
     const sheet = page.getByRole("dialog", { name: /new booking/i });
-    await sheet.getByRole("combobox").first().click();
-    await page.getByRole("option", { name: /exterior wash/i }).click();
+    await sheet.getByRole("button", { name: /exterior wash/i }).click();
     const nextAvailable = sheet.getByRole("button", { name: /next available/i });
     const slots = sheet.getByRole("radiogroup", { name: /times$/i }).getByRole("radio");
     await expect(slots.first().or(nextAvailable)).toBeVisible({ timeout: 15_000 });

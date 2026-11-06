@@ -54,18 +54,20 @@ export function BookingFlow({
         {/* A ticket in the business's colour: who it's with above the tear, what's being booked below it. */}
         <aside aria-label={business.name} className={cn(TICKET_PANEL, !first && "hidden @4xl:flex")}>
           <div className="p-5">{intro}</div>
-          <div className="relative hidden border-t border-dashed border-border-strong p-5 @4xl:block">
-            <span aria-hidden className={TICKET_NOTCHES} />
-            {/* The receipt stays put to the end, so the total is in view when it's time to confirm. */}
-            {flow.service ? (
-              <BookingSummaryCard {...summaryProps} brief={reviewing} />
-            ) : (
-              <div className="flex flex-col gap-1">
-                <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
-                <p className="text-sm text-subtle-foreground">Choose a service to start</p>
-              </div>
-            )}
-          </div>
+          {/* On the last step the card beside it is the receipt, and the button carries the amount: one of each. */}
+          {!reviewing && (
+            <div className="relative hidden border-t border-dashed border-border-strong p-5 @4xl:block">
+              <span aria-hidden className={TICKET_NOTCHES} />
+              {flow.service ? (
+                <BookingSummaryCard {...summaryProps} />
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
+                  <p className="text-sm text-subtle-foreground">Choose a service to start</p>
+                </div>
+              )}
+            </div>
+          )}
         </aside>
         <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @4xl:pb-0">
           {/* While the number of steps depends on what's chosen, a bar would only promise a length it can't keep. */}
