@@ -161,7 +161,7 @@ export function CalendarToolbar({
     // A container, because the inspector takes the room: over the page in a small window, beside it in a big one.
     <div className="@container/tools flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5 max-xl:sm:pr-[max(1.25rem,calc(var(--inspector-width,0px)+0.75rem))]">
       {/* One line from a small window up: the height belongs to the grid. */}
-      <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+      <div className="flex min-w-0 items-center gap-1 sm:gap-2 @max-[46rem]/tools:flex-wrap">
         <div className="shrink-0 max-sm:mr-auto">
           <DatePopover date={date} view={view} today={today} range={range} setParams={setParams} />
         </div>
@@ -188,8 +188,9 @@ export function CalendarToolbar({
             Today
           </Button>
         </Tooltip>
-        {!phone && (
-          <div className="flex w-36 min-w-34 shrink-0 xl:w-52 @max-[62rem]/tools:w-36 @max-[46rem]/tools:hidden">
+        {/* Too narrow for it on this line, it takes a line of its own, as on a phone. */}
+        {!phone && picker && (
+          <div className="flex w-36 min-w-34 shrink-0 xl:w-52 @max-[62rem]/tools:w-36 @max-[46rem]/tools:order-last @max-[46rem]/tools:w-full">
             {picker}
           </div>
         )}
@@ -219,7 +220,7 @@ export function CalendarToolbar({
           label={`New ${v("booking")}`}
           shortcut="N"
           // Beside the inspector in a small window the words give way, so the glyph is never cut.
-          className="@max-[36rem]/tools:aspect-square @max-[36rem]/tools:px-0 @max-[36rem]/tools:[&>span]:sr-only"
+          className="@max-[42rem]/tools:aspect-square @max-[42rem]/tools:px-0 @max-[42rem]/tools:[&>span]:sr-only"
         />
       </div>
       {/* Phones have the list in the tab bar. */}
