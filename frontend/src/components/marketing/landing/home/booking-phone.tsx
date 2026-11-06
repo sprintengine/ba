@@ -187,10 +187,10 @@ function BrowserBar() {
 
 /**
  * Lumen's booking page as a phone shows it, built from the booking flow's own pieces: steps, service list, week strip,
- * time grid, review. It really works: tap through it and the booking lands on the calendar beside it.
+ * time grid, review. The hero's script taps through it, and the booking lands on the calendar beside it.
  */
-export function BookingPhone({ demo, entries }: { demo: BookingDemo; entries: DemoEntry[] }) {
-  const { step } = demo;
+export function BookingPhone({ demo }: { demo: BookingDemo }) {
+  const { step, entries } = demo;
   const stepIndex = STEPS.indexOf(step as (typeof STEPS)[number]);
   const paying = step === "paying";
   const done = step === "done";
@@ -259,17 +259,11 @@ export function BookingPhone({ demo, entries }: { demo: BookingDemo; entries: De
           )}
           {done && <Confirmed demo={demo} />}
         </div>
-        {(step === "review" || done) && (
+        {step === "review" && (
           <div className="shrink-0 border-t border-border bg-background px-4 py-3">
-            {step === "review" ? (
-              <Button data-demo="pay" variant="primary" size="lg" className="w-full" onClick={demo.pay}>
-                <Lock /> Pay €{price}
-              </Button>
-            ) : (
-              <Button data-demo="again" variant="secondary" size="lg" className="w-full" onClick={demo.again}>
-                Book another
-              </Button>
-            )}
+            <Button data-demo="pay" variant="primary" size="lg" className="w-full" onClick={demo.pay}>
+              <Lock /> Pay €{price}
+            </Button>
           </div>
         )}
         <BrowserBar />

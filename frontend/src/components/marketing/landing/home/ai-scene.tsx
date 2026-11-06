@@ -20,7 +20,7 @@ const TABS: { key: AiSide; label: string }[] = [
 function Poster() {
   return (
     <div className={SCENE_GRID}>
-      <IPhone time="15:14" />
+      <IPhone time="15:08" />
       <BrowserWindow className={SCENE_WINDOW}>
         <div className={SCENE_CALENDAR} />
       </BrowserWindow>
@@ -29,7 +29,7 @@ function Poster() {
 }
 
 /** The chats and the calendar run the real pieces, so they come as their own chunk, not with the page. */
-const AiStage = dynamic(() => import("./ai-stage").then((m) => m.AiStage), {
+const AiStage = dynamic(() => import("./scenes").then((m) => m.AiStage), {
   ssr: false,
   loading: Poster,
 });

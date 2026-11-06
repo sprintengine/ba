@@ -20,9 +20,9 @@ const SUGGESTED = [
 ];
 
 /** The booking page the draft makes, as a phone shows it: the real page, in its own chunk. */
-const DraftPage = dynamic(() => import("./setup-page").then((m) => m.SetupPage), {
+const DraftPage = dynamic(() => import("./scenes").then((m) => m.SetupPage), {
   ssr: false,
-  loading: () => <IPhone time="15:14" />,
+  loading: () => <IPhone time="15:08" />,
 });
 
 function Rows({ rows }: { rows: string[][] }) {

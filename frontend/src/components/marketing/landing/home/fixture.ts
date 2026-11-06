@@ -15,7 +15,7 @@ import {
 const TZ = "Europe/Dublin";
 
 /** The demo's moment: mid-afternoon, with the day's bookings around it. The phone and the calendar both show it. */
-export const NOW_MINUTES = 15 * 60 + 14;
+export const NOW_MINUTES = 15 * 60 + 8;
 /** How far ahead a client can book, so the first time on offer today follows from the clock. */
 const MIN_NOTICE = 15;
 
@@ -99,8 +99,9 @@ export const SERVICES = [
 
 const [ASSESSMENT, FOLLOW_UP, MASSAGE] = SERVICES as [PublicService, PublicService, PublicService];
 
-/** What the demo's client books. */
+/** What the demo's client books, and when. */
 export const BOOKED_SERVICE = FOLLOW_UP;
+export const BOOKED_AT = "15:30";
 
 const resource = (id: string, name: string, color: string, sortOrder: number): Resource => ({
   id,

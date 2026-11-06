@@ -12,27 +12,23 @@ export const SCENE_GRID =
 export const SCENE_WINDOW = "w-full max-sm:hidden";
 export const SCENE_CALENDAR = `h-[42rem] lg:h-[calc(878px*var(--iphone-scale)-${WINDOW_BAR})]`;
 
-/** The booking scene's frames: the calendar large at the top, then the words with the client's phone small beside them. */
-export const BOOKED_GRID =
-  "relative flex flex-col gap-8 lg:gap-12 [--iphone-scale:0.3] sm:[--iphone-scale:0.36] lg:[--iphone-scale:0.5]";
-export const BOOKED_CALENDAR =
-  "h-[23rem] sm:h-[34rem] lg:h-[40rem] [@media(min-width:1024px)_and_(max-height:960px)]:h-[36rem]";
-export const BOOKED_BELOW = "grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-16";
-
 /** What the calendar says when something lands on it. */
 export function CalendarNotice({
   title,
   detail,
-  className = "bottom-10 max-sm:bottom-3",
+  className = "right-3 bottom-10 max-sm:bottom-3",
+  style,
 }: {
   title: string;
   detail: string;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
+      style={style}
       className={cn(
-        "absolute right-3 z-50 flex animate-pop-in items-center gap-2.5 rounded-xl bg-surface-raised px-3 py-2.5 text-sm shadow-lg ring-1 ring-border",
+        "absolute z-50 flex animate-pop-in items-center gap-2.5 rounded-xl bg-surface-raised px-3 py-2.5 text-sm shadow-lg ring-1 ring-border",
         className,
       )}
     >
@@ -47,12 +43,21 @@ export function CalendarNotice({
   );
 }
 
-export function SceneToggle({ paused, onToggle }: { paused: boolean; onToggle: () => void }) {
+export function SceneToggle({
+  paused,
+  onToggle,
+  name = "animation",
+}: {
+  paused: boolean;
+  onToggle: () => void;
+  /** What it pauses, when the page has more than one. */
+  name?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={paused ? "Play the animation" : "Pause the animation"}
+      aria-label={`${paused ? "Play" : "Pause"} the ${name}`}
       className="focus-ring flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground ring-1 ring-border transition-colors hover:bg-accent hover:text-foreground pointer-coarse:size-11"
     >
       {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}

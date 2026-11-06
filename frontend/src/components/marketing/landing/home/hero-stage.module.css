@@ -1,0 +1,133 @@
+/*
+ * The hero's stage: one large soft panel on a blurred photograph, the app's window on it, and the phone over the
+ * window's right edge. All of this is CSS, so the first paint already takes the final space and nothing moves when the
+ * animation arrives. The phone's scale steps with the viewport's height; the window takes what's left of the width.
+ */
+.panel {
+  --pad-x: 2.5rem;
+  --pad-top: 2rem;
+  --pad-bottom: 2.5rem;
+  /* How far the phone comes over the window, how far below its top it starts, how far past its foot it ends. */
+  --overlap: 3.5rem;
+  --lift: 5rem;
+  --sink: 1.25rem;
+  --iphone-scale: 0.58;
+  --phone-w: calc(419px * var(--iphone-scale));
+  --phone-h: calc(878px * var(--iphone-scale));
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(100% - 3rem, 92rem);
+  height: calc(var(--phone-h) + var(--lift) - var(--sink) + var(--pad-top) + var(--pad-bottom));
+  margin-inline: auto;
+  border-radius: 2.25rem;
+  background: #7c7ab4 url("/hero/lough-dusk.webp") center / cover;
+}
+
+@media (min-height: 980px) {
+  .panel {
+    --iphone-scale: 0.68;
+    --overlap: 4rem;
+  }
+}
+
+@media (max-height: 860px) {
+  .panel {
+    --iphone-scale: 0.54;
+    --pad-top: 1.75rem;
+    --pad-bottom: 2.25rem;
+    --lift: 4.75rem;
+    --sink: 1rem;
+  }
+}
+
+@media (max-height: 760px) {
+  .panel {
+    --iphone-scale: 0.44;
+    --pad-x: 1.75rem;
+    --pad-top: 1.25rem;
+    --pad-bottom: 2.5rem;
+    --overlap: 2.75rem;
+    --lift: 4rem;
+    --sink: 1rem;
+  }
+}
+
+/* A tablet: the calendar and the phone, no tour. */
+@media (max-width: 1023px) {
+  .panel {
+    --iphone-scale: 0.5;
+    --pad-x: 1.5rem;
+    --pad-top: 1.5rem;
+    --pad-bottom: 2.25rem;
+    --overlap: 2.5rem;
+    --lift: 3rem;
+    --sink: 0.75rem;
+    width: calc(100% - 2rem);
+    border-radius: 1.75rem;
+  }
+}
+
+/* A phone in the hand: a small one beside a slice of the calendar, the booking page a picture rather than a read. */
+@media (max-width: 639px) {
+  .panel {
+    --iphone-scale: 0.34;
+    --pad-x: 0.75rem;
+    --pad-top: 0.75rem;
+    --pad-bottom: 3.5rem;
+    --overlap: 1rem;
+    --lift: 2rem;
+    --sink: -0.25rem;
+    width: calc(100% - 1.25rem);
+    border-radius: 1.5rem;
+  }
+}
+
+.window {
+  position: absolute;
+  top: var(--pad-top);
+  right: calc(var(--pad-x) + var(--phone-w) - var(--overlap));
+  bottom: var(--pad-bottom);
+  left: var(--pad-x);
+  z-index: 10;
+}
+
+.phone {
+  position: absolute;
+  top: calc(var(--pad-top) + var(--lift));
+  right: var(--pad-x);
+  z-index: 30;
+}
+
+.pause {
+  position: absolute;
+  bottom: calc((var(--pad-bottom) - 2rem) / 2);
+  left: var(--pad-x);
+  z-index: 35;
+}
+@media (pointer: coarse) {
+  /* The button is a full 44 points on touch. */
+  .pause {
+    bottom: calc((var(--pad-bottom) - 2.75rem) / 2);
+  }
+}
+
+/* What arrives fades in over the empty window, so the frame itself never changes. */
+.content {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  animation: fade 420ms ease-out both;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Before the animation's chunk: the window's shape and the rail, in the app's colours. */
+.posterRail {
+  width: 4.25rem;
+  background: var(--surface-sunken);
+}

@@ -22,8 +22,8 @@ function WindowBar({ address }: { address: string }) {
       <PanelLeft className="max-md:hidden" />
       <ChevronLeft className="max-md:hidden" />
       <ChevronRight className="text-black/25 max-md:hidden" />
-      <span className="mx-auto flex h-7 w-full max-w-[24rem] min-w-0 items-center justify-center gap-1.5 rounded-lg bg-black/[0.055] px-2.5 text-[0.8125rem] text-black/80">
-        <Lock className="size-3! text-black/45" />
+      <span className="mx-auto flex h-7 w-full max-w-[24rem] min-w-0 items-center justify-center gap-1.5 rounded-lg bg-black/[0.055] px-2.5 text-[0.8125rem] text-black/80 max-sm:text-xs">
+        <Lock className="size-3! text-black/45 max-sm:hidden" />
         <span className="truncate">{address}</span>
         <RotateCw className="ml-auto size-3! text-black/45 max-sm:hidden" />
       </span>

@@ -19,6 +19,7 @@ import { CalendarHeaderRow } from "@/components/dashboard/calendar/calendar-head
 import { DayColumn, TimeGutter } from "@/components/dashboard/calendar/calendar-grid";
 import { BusinessTile } from "@/components/shells/business-tile";
 import { railClass, railIdle, railItemsFor } from "@/components/shells/dashboard-nav";
+import { RailEntry } from "@/components/shells/rail-item";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
@@ -63,26 +64,23 @@ export function fitCalendar(width: number, height: number) {
   };
 }
 
-/** The app's rail, drawn from its own items and classes. */
-function Rail() {
+/** The app's rail on the sample business: its own items and classes. `active` is the item that's lit. */
+export function Rail({ active = "calendar", alerts = 0 }: { active?: string; alerts?: number }) {
   return (
     <div className="flex w-20 shrink-0 flex-col items-center gap-1 bg-surface-sunken px-2 py-3 max-sm:hidden">
       <div className="mb-2 flex w-16 justify-center py-1">
         <BusinessTile name={LUMEN.name} color={LUMEN.branding.primaryColor} size="lg" className="size-9" />
       </div>
       <div className="flex flex-col gap-1">
-        {RAIL.map((item) => {
-          const active = item.key === "calendar";
-          return (
-            <span
-              key={item.key}
-              className={cn(railClass, active ? "bg-background font-semibold text-foreground" : railIdle)}
-            >
-              <item.icon strokeWidth={active ? 2.25 : 1.75} />
-              <span className="max-w-full truncate">{item.vocabulary ? "Customers" : item.label}</span>
-            </span>
-          );
-        })}
+        {RAIL.map((item) => (
+          <RailEntry
+            key={item.key}
+            data-rail={item.key}
+            item={item}
+            label={item.vocabulary ? "Customers" : item.label}
+            active={item.key === active}
+          />
+        ))}
       </div>
       <div className="flex-1" />
       <span className={cn(railClass, railIdle)}>
@@ -92,6 +90,11 @@ function Rail() {
       <span className={cn(railClass, railIdle)}>
         <Bell strokeWidth={1.75} />
         Alerts
+        {alerts > 0 && (
+          <span className="absolute top-0.5 left-[calc(50%+0.25rem)] flex h-4 min-w-4 animate-pop-in items-center justify-center rounded-full bg-surface-raised px-1 text-[0.625rem] leading-none font-semibold text-foreground ring-1 ring-border-strong">
+            {alerts}
+          </span>
+        )}
       </span>
       <Avatar name="Dana Owens" className="mt-1 size-7 text-2xs" />
     </div>
