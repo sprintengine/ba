@@ -204,7 +204,7 @@ describe("BookingFlow", () => {
     await chooseTimeAndDetails();
     fireEvent.press(screen.getByTestId("details-review"));
     fireEvent.press(await screen.findByTestId("pay-at-venue"));
-    expect(screen.getByTestId("booking-submit")).toHaveAccessibleName("Confirm appointment");
+    expect(screen.getByTestId("booking-submit")).toHaveAccessibleName("Confirm appointment · €95 at venue");
     fireEvent.press(screen.getByTestId("booking-submit"));
     await waitFor(() => expect(posted).toHaveLength(1));
     expect(posted[0]!.body).toMatchObject({
