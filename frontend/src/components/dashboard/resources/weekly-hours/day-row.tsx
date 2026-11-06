@@ -26,6 +26,16 @@ export const ROW_GRID =
 const summary = (ranges: readonly TimeRange[]) =>
   ranges.length === 0 ? "Closed" : ranges.map((r) => `${r.startTime}–${r.endTime}`).join(", ");
 
+/** Each stretch on its own line, so a split day never breaks a time in two. */
+const Times = ({ ranges }: { ranges: readonly TimeRange[] }) =>
+  ranges.length === 0
+    ? "Closed"
+    : ranges.map((r) => (
+        <span key={r.startTime} className="block whitespace-nowrap">
+          {r.startTime}–{r.endTime}
+        </span>
+      ));
+
 /**
  * One weekday on the shared time axis: a bar per working stretch, its times in words beside it. The times open the
  * day's editor, which is all you need by keyboard or touch; on the timeline a bar opens it too, its edges drag (or
@@ -82,7 +92,9 @@ export function DayRow({
                 closed && "text-muted-foreground",
               )}
             >
-              {summary(ranges)}
+              <span>
+                <Times ranges={ranges} />
+              </span>
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -100,7 +112,7 @@ export function DayRow({
             closed && "text-muted-foreground",
           )}
         >
-          {summary(ranges)}
+          <Times ranges={ranges} />
         </span>
       )}
       {firstError && (
@@ -147,7 +159,7 @@ function Timeline({
       ref={track}
       data-touch-exempt
       className={cn(
-        "relative h-8 overflow-hidden rounded-md bg-muted ring-1 ring-border ring-inset max-sm:col-span-full max-sm:row-start-2",
+        "relative h-7 overflow-hidden rounded-md bg-muted ring-1 ring-border-subtle ring-inset max-sm:col-span-full max-sm:row-start-2",
         editable && "cursor-copy",
       )}
       onClick={(e) => {
@@ -180,7 +192,7 @@ function Timeline({
           "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border px-2 text-2xs font-medium",
           invalid
             ? "border-danger-border bg-danger-soft text-danger-soft-foreground"
-            : "border-brand/60 bg-brand/30 text-foreground dark:bg-brand/45",
+            : "border-transparent bg-foreground/16 text-foreground dark:bg-foreground/22",
         );
         return (
           <div key={i} data-range="" className="absolute inset-y-0.5 rounded-sm bg-surface" style={style}>
@@ -192,7 +204,7 @@ function Timeline({
                   onClick={onOpen}
                   className={cn(
                     look,
-                    "tnum cursor-pointer transition-colors outline-none hover:border-brand focus-visible:ring-2 focus-visible:ring-ring",
+                    "tnum cursor-pointer transition-colors outline-none hover:border-brand hover:bg-brand/25 focus-visible:ring-2 focus-visible:ring-ring",
                   )}
                 >
                   {body}
@@ -256,7 +268,7 @@ function EdgeHandle({
       aria-valuenow={Math.min(minute, 1439)}
       aria-valuetext={time}
       className={cn(
-        "absolute inset-y-0 w-2 cursor-ew-resize rounded-sm outline-none hover:bg-brand/40 focus-visible:bg-brand/60 focus-visible:ring-2 focus-visible:ring-ring",
+        "group/edge absolute inset-y-0 w-2.5 cursor-ew-resize rounded-sm outline-none hover:bg-brand/40 focus-visible:bg-brand/60 focus-visible:ring-2 focus-visible:ring-ring",
         edge === "start" ? "left-0" : "right-0",
       )}
       onPointerDown={(e) => {
@@ -277,6 +289,12 @@ function EdgeHandle({
         e.preventDefault();
         onMove(minute + delta);
       }}
-    />
+    >
+      {/* The grip: a bar's ends show they can be moved before anyone hovers. */}
+      <span
+        aria-hidden
+        className="absolute inset-y-1.5 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-foreground/35 group-hover/edge:bg-brand"
+      />
+    </div>
   );
 }

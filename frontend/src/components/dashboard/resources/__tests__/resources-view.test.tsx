@@ -111,8 +111,35 @@ describe("ResourcesView", () => {
     expect(items[1]).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { level: 2, name: "Jo Park" })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /^Edit Monday: / })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Business closures" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
+  });
+
+  it("keeps the whole business apart from any one person", async () => {
+    fakeResourcesApi({ resources: [sam, jo], team });
+    const user = userEvent.setup();
+    renderDashboard(<ResourcesView />);
+    await navList();
+    expect(screen.queryByRole("heading", { name: "Business closures" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Who can sign in" })).not.toBeInTheDocument();
+    const business = screen.getByRole("navigation", { name: "Whole business" });
+    await user.click(within(business).getByRole("button", { name: "Closures" }));
+    expect(nav.replace).toHaveBeenCalledWith(expect.stringContaining("r=closures"), { scroll: false });
+  });
+
+  it("opens business closures, sign-in and the hours comparison from the address", async () => {
+    nav.params = new URLSearchParams("r=closures");
+    fakeResourcesApi({ resources: [sam, jo], team });
+    const first = renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Business closures" })).toBeInTheDocument();
+    first.unmount();
+    nav.params = new URLSearchParams("r=sign-in");
+    const second = renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Who can sign in" })).toBeInTheDocument();
+    second.unmount();
+    nav.params = new URLSearchParams("r=compare");
+    renderDashboard(<ResourcesView />);
+    expect(await screen.findByRole("heading", { level: 2, name: "Compare hours" })).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Hours by person" })).toBeInTheDocument();
   });
 
   it("selects a resource through the URL and switches on click", async () => {

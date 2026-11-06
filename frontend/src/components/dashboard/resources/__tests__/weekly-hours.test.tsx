@@ -173,7 +173,7 @@ describe("WeeklyHours", () => {
     const track = must(must(bar.parentElement, "bar").parentElement, "track");
     vi.spyOn(track, "getBoundingClientRect").mockReturnValue({ left: 0, width: 1000 } as DOMRect);
     fireEvent.click(track, { clientX: 950 });
-    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:00, 17:30–21:30");
+    expect(await dayButton("Monday")).toHaveTextContent("09:00–17:0017:30–21:30");
 
     const tuesday = must((await dayButton("Tuesday")).parentElement, "row");
     const free = must(tuesday.querySelector("[data-touch-exempt]"), "Tuesday's track");
@@ -333,7 +333,7 @@ describe("WeeklyHours", () => {
   it("is read-only when not editable", async () => {
     setup();
     render(false);
-    expect(await screen.findByText("09:00–17:00", { selector: "span.text-sm" })).toBeInTheDocument();
+    expect(await screen.findByText("09:00–17:00", { selector: "span.block" })).toBeInTheDocument();
     expect(screen.getAllByText("Closed")).toHaveLength(6);
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Edit Monday/ })).not.toBeInTheDocument();

@@ -41,7 +41,16 @@ import {
 } from "@/lib/availability/time-off";
 
 /** Date exceptions for one resource: days off, partial unavailability, extra hours. */
-export function TimeOff({ resourceId, editable }: { resourceId: string; editable: boolean }) {
+export function TimeOff({
+  resourceId,
+  editable,
+  person = true,
+}: {
+  resourceId: string;
+  editable: boolean;
+  /** A room or a machine has closures, not time off. */
+  person?: boolean;
+}) {
   const business = useCurrentBusiness();
   const availability = useResourceAvailability(business.id, resourceId);
   const create = useCreateResourceOverride(business.id, resourceId);
@@ -73,7 +82,11 @@ export function TimeOff({ resourceId, editable }: { resourceId: string; editable
       <OverrideList
         items={upcoming}
         editable={editable}
-        empty={<p className="text-sm text-muted-foreground">No time off or extra hours.</p>}
+        empty={
+          <p className="text-sm text-muted-foreground">
+            {person ? "No time off or extra hours." : "No closures or extra hours."}
+          </p>
+        }
       />
       <OverrideDialog
         open={adding}
