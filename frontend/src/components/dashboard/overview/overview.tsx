@@ -8,6 +8,7 @@ import { useBusinessContext, usePermissions } from "@/lib/business/business-cont
 import { firstName, todaysBookings } from "@/lib/dashboard/overview";
 import { greetingAt, todayInTz } from "@/lib/format/datetime";
 import { useNow } from "@/lib/hooks/use-now";
+import { cn } from "@/lib/utils";
 import { useVocabulary } from "@/lib/vocabulary";
 import { PlanLimitNotice, usePlanLimitReached } from "./plan-limit-notice";
 import { ErrorState } from "@/components/common/feedback";
@@ -63,8 +64,9 @@ export function OverviewView() {
         <div className="flex flex-col gap-6">
           <OverviewRelease />
           {perms.manageBilling && <PlanLimitNotice />}
-          {/* The numbers lead on a wide screen; on a phone what needs a decision and the day come first. */}
-          <div className="order-last lg:order-none">
+          {/* The numbers lead on a wide screen; on a phone what needs a decision and the day come first, so there
+              they wait for the data: Today grows above them once its bookings arrive. */}
+          <div className={cn("order-last lg:order-none", overview.isPending && "max-lg:hidden")}>
             <OverviewStats overview={overview.data} todays={todays} now={now} loading={overview.isPending} />
           </div>
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
