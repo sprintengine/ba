@@ -81,7 +81,7 @@ describe("the setup draft", () => {
     const draft = screen.getByRole("region", { name: "Your draft" });
     expect(draft).toHaveTextContent(/Check your draft/);
     expect(draft).toHaveTextContent(/Not live yet/);
-    expect(draft).toHaveTextContent(/From what you wrote.*Suggested, for you to change/);
+    expect(draft).toHaveTextContent(/From what you wrote.*Suggested for you/);
     // The sentence gives no names, so the draft doesn’t claim any.
     expect(draft).not.toHaveTextContent(/Aoife|Niamh/);
   });

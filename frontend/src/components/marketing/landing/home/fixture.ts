@@ -135,11 +135,11 @@ const DAY: DemoEntry[] = [
   { who: "sam", at: "16:30", customer: "Jo Hayes", service: ASSESSMENT, room: "Rehab gym" },
   { who: "aoife", at: "13:00", customer: "Toby Marsh", service: ASSESSMENT, room: "Room 2" },
   { who: "aoife", at: "14:15", customer: "Avery Lane", service: FOLLOW_UP, room: "Room 2" },
-  { who: "aoife", at: "15:00", customer: "Casey Rowe", service: MASSAGE, room: "Rehab gym" },
   { who: "aoife", at: "16:30", customer: "Eli Byrne", service: MASSAGE, room: "Room 2" },
   { who: "niamh", at: "13:00", customer: "Mia Doyle", service: MASSAGE, room: "Room 3" },
   { who: "niamh", at: "14:00", customer: "Liam Hayes", service: ASSESSMENT, room: "Room 3" },
   { who: "niamh", at: "15:30", customer: "Noor Ali", service: MASSAGE, room: "Room 3" },
+  { who: "niamh", at: "16:15", customer: "Casey Rowe", service: MASSAGE, room: "Rehab gym" },
 ];
 
 const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));

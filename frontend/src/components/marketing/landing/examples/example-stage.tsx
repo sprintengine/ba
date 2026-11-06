@@ -62,7 +62,7 @@ function Choices({
         <h3 className="mb-1.5 text-xs font-semibold text-muted-foreground max-lg:sr-only">
           {example.types.length} appointment types
         </h3>
-        <ul className="flex flex-col gap-0.5 max-lg:-mx-3 max-lg:scrollbar-none max-lg:flex-row max-lg:gap-1.5 max-lg:overflow-x-auto max-lg:px-3">
+        <ul className="flex flex-col gap-0.5 max-lg:-mx-3 max-lg:scrollbar-none max-lg:flex-row max-lg:gap-1.5 max-lg:overflow-x-auto max-lg:px-3 max-lg:[mask-image:linear-gradient(to_right,black_90%,transparent)]">
           {example.types.map((t) => (
             <li key={t.id} className="max-lg:shrink-0">
               <button
@@ -92,7 +92,7 @@ function Choices({
       </section>
       <section className="min-w-0">
         <h3 className="mb-1.5 text-xs font-semibold text-muted-foreground max-lg:sr-only">Who does it</h3>
-        <ul className="flex flex-col gap-0.5 max-lg:-mx-3 max-lg:scrollbar-none max-lg:flex-row max-lg:gap-1.5 max-lg:overflow-x-auto max-lg:px-3">
+        <ul className="flex flex-col gap-0.5 max-lg:-mx-3 max-lg:scrollbar-none max-lg:flex-row max-lg:gap-1.5 max-lg:overflow-x-auto max-lg:px-3 max-lg:[mask-image:linear-gradient(to_right,black_90%,transparent)]">
           {example.team.map((p) => (
             <li key={p.id} className="max-lg:shrink-0">
               <button

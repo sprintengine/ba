@@ -90,11 +90,30 @@ async function landBooking(
   c.chapter("lands");
   c.setBooked(true, at);
   const card = await find(director, () => findCard(c.scene));
-  const counts = tallies(card, c.scene);
-  for (const n of counts) n.style.opacity = "0";
+  const release = tallies(card, c.scene).flatMap(holdBack);
   await flyToCard(card, c.scene, c.scale(), director);
-  for (const n of counts) n.style.opacity = "";
+  for (const undo of release) undo();
   c.notify("booked");
+}
+
+/**
+ * Shows a figure as it stood before the new card, until the card has landed and it can tick up. Its text nodes are
+ * changed where they stand, so React keeps track of them.
+ */
+function holdBack(figure: HTMLElement) {
+  const texts = document.createTreeWalker(figure, NodeFilter.SHOW_TEXT);
+  const undo: (() => void)[] = [];
+  for (let node = texts.nextNode(); node; node = texts.nextNode()) {
+    const text = node;
+    const was = text.nodeValue ?? "";
+    if (!/\d/.test(was)) continue;
+    text.nodeValue = was.replace(/\d+/, (n) => String(Number(n) - 1));
+    undo.push(() => {
+      text.nodeValue = was;
+    });
+    break;
+  }
+  return undo;
 }
 
 /** The figures a new card changes: its column's count and the day's total. */

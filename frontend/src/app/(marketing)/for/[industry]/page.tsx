@@ -98,7 +98,7 @@ export default async function IndustryPage({ params }: Props) {
               ))}
             </dl>
           </div>
-          <div className="relative animate-rise [animation-delay:120ms]">
+          <div id="try" className="relative animate-rise scroll-mt-24 [animation-delay:120ms]">
             <p className="mb-3 text-center text-xs text-subtle-foreground">
               Have a go. This is the booking page your {v.customers.toLowerCase()} would see.
             </p>

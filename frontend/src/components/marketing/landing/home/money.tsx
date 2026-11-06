@@ -27,11 +27,12 @@ export function MoneySection() {
     <section
       id="payments"
       aria-labelledby="payments-title"
-      className="scroll-mt-24 pt-24 pb-16 sm:pt-32 sm:pb-20"
+      className="scroll-mt-24 pt-16 pb-16 sm:pt-20 sm:pb-20"
     >
       <PrismContainer>
         <PrismHeading
           id="payments-title"
+          align="left"
           label="Payments"
           title="The money goes straight to you."
           lit="We take 0%"

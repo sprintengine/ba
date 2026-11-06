@@ -1,7 +1,7 @@
 import { Bell, Check, Link2, Tag, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PrismContainer, PrismHeading } from "../heading";
-import { SetupDraft } from "./setup-draft";
+import { SetupDraft, SetupSentence } from "./setup-draft";
 
 const TIMES = ["15:30", "15:45", "16:00"];
 
@@ -108,9 +108,14 @@ const STOPS: { at: string; title: string; body: string; pictures: React.Componen
 ];
 
 /** One point on the hour rail: the time, then what happens at it. */
-function Stop({ at, children }: { at: string; children: React.ReactNode }) {
+function Stop({ at, className, children }: { at: string; className?: string; children: React.ReactNode }) {
   return (
-    <li className="grid gap-x-6 gap-y-1 pb-10 last:pb-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:pb-12">
+    <li
+      className={cn(
+        "grid gap-x-6 gap-y-1 pb-10 last:pb-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:pb-12",
+        className,
+      )}
+    >
       <p className="tnum text-sm font-semibold text-muted-foreground sm:pt-0.5 sm:text-right">{at}</p>
       <div className="min-w-0 sm:border-l sm:border-border sm:pl-6">{children}</div>
     </li>
@@ -130,28 +135,34 @@ export function FirstAfternoonSection() {
     >
       <PrismContainer>
         <span id="features" className="block scroll-mt-24" />
-        <PrismHeading
-          id="product-title"
-          align="left"
-          label="How it works"
-          title="Tell us what you do."
-          lit="It’s ready this afternoon."
-          punch
-          lead="Describe your business in a sentence, or paste your website. We set out what you told us, suggest the rest, and nothing goes live until you’ve checked it."
-        />
-        <div className="relative mt-12 sm:mt-16">
+        {/* The promise and its proof side by side, so the draft is in view as soon as the section is. */}
+        <div className="grid items-start gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1fr)_49%]">
+          <PrismHeading
+            id="product-title"
+            align="left"
+            label="How it works"
+            title="Tell us what you do."
+            lit="It’s ready this afternoon."
+            punch
+            lead="Describe your business in a sentence, or paste your website. We set out what you told us, suggest the rest, and nothing goes live until you’ve checked it."
+          />
+          <ol className="lg:col-start-1 lg:row-start-2">
+            <Stop at="14:00" className="last:pb-10 sm:last:pb-12">
+              <h3 className="text-lg font-semibold tracking-tight">Describe your business</h3>
+              <SetupSentence />
+            </Stop>
+          </ol>
+          <SetupDraft className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-9" />
+        </div>
+        <div className="relative mt-10 lg:mt-0">
           {/* The now line: it rides down the rail with the page, as the calendar's does with the day. */}
           <div aria-hidden className="absolute inset-y-0 left-[7rem] hidden w-0 sm:block">
             <span className="sticky top-1/2 -ml-[0.3125rem] block size-2.5 rounded-full bg-danger ring-4 ring-background" />
           </div>
-          <ol>
-            <Stop at="14:00">
-              <h3 className="text-lg font-semibold tracking-tight">Describe your business</h3>
-              <SetupDraft />
-            </Stop>
+          <ol start={2}>
             {STOPS.map(({ at, title, body, pictures }) => (
               <Stop key={title} at={at}>
-                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
+                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_calc((100%+8.5rem)*0.49)] lg:gap-10">
                   <div>
                     <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
                     <p className="mt-1 text-base leading-[1.5] text-pretty text-muted-foreground">{body}</p>

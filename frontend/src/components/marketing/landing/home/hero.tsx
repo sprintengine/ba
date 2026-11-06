@@ -35,9 +35,17 @@ export function Hero() {
                 Start for free <ArrowRight />
               </Link>
             </Button>
-            <p className="text-sm text-muted-foreground lg:max-xl:hidden [@media(max-height:760px)]:hidden">
-              Free for 100 bookings a month. No card needed.
-            </p>
+            <div className="flex flex-col items-start gap-0.5 text-sm">
+              <p className="text-muted-foreground">
+                <span className="lg:max-xl:hidden">Free for 100 bookings a month. </span>No card needed.
+              </p>
+              <Link
+                href="/for/physio#try"
+                className="focus-ring inline-flex items-center gap-1 rounded-md font-medium underline-offset-4 hover:underline"
+              >
+                Try a booking page <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            </div>
           </div>
         </div>
       </PrismContainer>

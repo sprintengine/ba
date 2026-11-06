@@ -88,7 +88,7 @@ function Points({ points }: { points: Point[] }) {
       {points.map((p) => (
         <li key={p.title}>
           <h3 className="text-lg leading-tight font-semibold tracking-tight">{p.title}</h3>
-          <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground max-sm:hidden">
+          <p className="mt-1.5 text-[0.9375rem] leading-[1.5] text-muted-foreground">
             {p.body}
           </p>
         </li>
