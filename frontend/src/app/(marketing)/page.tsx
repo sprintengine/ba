@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
 import { PrismContainer } from "@/components/marketing/landing/heading";
 import { AiSection } from "@/components/marketing/landing/home/ai";
-import { BookedSection } from "@/components/marketing/landing/home/booked";
 import { ClosingSection } from "@/components/marketing/landing/home/closing";
+import { FirstAfternoonSection } from "@/components/marketing/landing/home/first-afternoon";
 import { Hero } from "@/components/marketing/landing/home/hero";
 import { MoneySection } from "@/components/marketing/landing/home/money";
 import { ProofSection } from "@/components/marketing/landing/home/proof";
-import { SetupSection } from "@/components/marketing/landing/home/setup";
 import { IndustriesSection } from "@/components/marketing/landing/industries";
 import { PricingTeaser } from "@/components/marketing/landing/pricing-teaser";
 
@@ -62,34 +60,6 @@ const FAQ: FaqItem[] = [
     ),
   },
   {
-    question: "How does the AI setup work, and what does it see?",
-    answer: (
-      <p>
-        You describe your business, or paste your website, and AI drafts your services, prices, hours, team,
-        rooms and booking questions. You check all of it before anything goes live. Answers you mark as
-        private are never sent to an AI.
-      </p>
-    ),
-  },
-  {
-    question: "My business isn’t in your examples. Will it work?",
-    answer: (
-      <p>
-        Very likely. If you work by appointment, it will fit, with as many appointment types as you need on
-        every plan. Describe your business and we’ll draft a setup for it.
-      </p>
-    ),
-  },
-  {
-    question: "Who owns my customers' data?",
-    answer: (
-      <p>
-        You do. We only use your clients’ details to run your bookings. The{" "}
-        <Link href="/legal/privacy">privacy policy</Link> has the full story.
-      </p>
-    ),
-  },
-  {
     question: "Can my clients really book through their own AI assistant?",
     answer: (
       <p>
@@ -113,11 +83,10 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
-      <BookedSection />
+      <FirstAfternoonSection />
       <AiSection />
-      <SetupSection />
-      <MoneySection />
       <IndustriesSection />
+      <MoneySection />
       <ProofSection />
       <PricingTeaser />
       <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24 pb-20 sm:pb-28">

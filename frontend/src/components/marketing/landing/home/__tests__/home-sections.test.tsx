@@ -126,9 +126,10 @@ describe("the logo marquee", () => {
 });
 
 describe("what the page may claim", () => {
-  it("keeps the proof to the working examples and a labelled simulation", () => {
+  it("keeps the proof to what the owner gets, in plain words, with no invented figures", () => {
     const { container } = render(<ProofSection />);
-    expect(container.textContent).toMatch(/simulated businesses/i);
+    expect(container.textContent).toMatch(/gone for everyone else/i);
+    expect(container.textContent).not.toMatch(/same moment|\d{2},\d{3}/i);
     expect(screen.getByRole("link", { name: "See the examples" })).toHaveAttribute("href", "#industries");
     expect(container.textContent).not.toMatch(/database|\brace\b|concurren/i);
     expect(container.textContent).not.toMatch(/trusted by|uptime|99\.\d/i);

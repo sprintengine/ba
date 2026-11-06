@@ -35,6 +35,31 @@ const CUSTOMER: Point[] = [
   },
 ];
 
+/** The other half of the promise, always in view: a client's own assistant books and pays, and it lands the same. */
+function ClientsAssistant() {
+  return (
+    <aside
+      aria-label="A client's own assistant booking"
+      className="mx-auto mt-10 grid w-[calc(100%-2.5rem)] max-w-[56rem] items-center gap-3 rounded-2xl border border-border bg-surface p-4 sm:mt-14 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-5"
+    >
+      <div className="flex flex-col gap-1.5 text-sm">
+        <p className="text-xs font-medium text-muted-foreground">In a client&rsquo;s own assistant</p>
+        <p className="w-fit rounded-2xl rounded-br-md bg-primary px-3 py-2 text-primary-foreground">
+          Book me a follow-up with Sam on Friday and pay for it.
+        </p>
+      </div>
+      <ArrowRight className="size-5 text-subtle-foreground max-md:rotate-90" aria-hidden />
+      <div className="flex flex-col gap-1.5 text-sm">
+        <p className="text-xs font-medium text-muted-foreground">On your calendar</p>
+        <div className="rounded-xl bg-[color-mix(in_oklab,#0ea5e9_14%,var(--surface))] px-3 py-2">
+          <p className="font-semibold">Rory Kane</p>
+          <p className="tnum text-muted-foreground">Fri 15:30 · Paid €60, through their AI</p>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function Points({ points }: { points: Point[] }) {
   return (
     <ul className="grid gap-x-10 gap-y-5 lg:grid-cols-3">
@@ -75,6 +100,7 @@ export function AiSection() {
       >
         {{ owner: <Points points={OWNER} />, customer: <Points points={CUSTOMER} /> }}
       </AiScene>
+      <ClientsAssistant />
     </section>
   );
 }

@@ -1,20 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PlanCards, PlanNotes } from "../pricing/plan-cards";
-import { WorkedExample } from "../pricing/worked-example";
 import { PrismContainer, PrismHeading } from "./heading";
-
-/** Who the free plan is for: the people the pricing is built around. */
-const STARTERS = [
-  {
-    title: "Working on your own",
-    body: "Every kind of appointment and your own booking page, free until you pass 100 bookings a month.",
-  },
-  {
-    title: "Starting a business with AI",
-    body: "Build your own site with AI and plug our booking in for free. Your assistant can run the rest.",
-  },
-];
 
 /** Pricing in brief: the three plans, flat on the page, with the full comparison a click away. */
 export function PricingTeaser() {
@@ -34,17 +21,6 @@ export function PricingTeaser() {
         </div>
         <div className="mt-6">
           <PlanNotes />
-        </div>
-        <ul className="mt-10 grid gap-4 md:grid-cols-2">
-          {STARTERS.map((s) => (
-            <li key={s.title} className="rounded-2xl bg-surface-sunken p-6 sm:p-7">
-              <h3 className="font-semibold tracking-tight">{s.title}</h3>
-              <p className="mt-1 text-sm leading-normal text-muted-foreground">{s.body}</p>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-10 sm:mt-14">
-          <WorkedExample />
         </div>
         <div className="mt-6 flex justify-center">
           <Link

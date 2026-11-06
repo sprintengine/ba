@@ -26,6 +26,7 @@ const FEATURE_ENTRY_POINTS = {
     "portal-style-picker.tsx",
     "review-step.tsx",
     "slot-grid.tsx",
+    "step-progress.tsx",
     "steps.tsx",
     "week-strip.tsx",
   ],

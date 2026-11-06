@@ -3,10 +3,10 @@ import { PrismContainer, PrismHeading } from "../heading";
 import { LogoMarquee } from "./logo-marquee";
 
 const WAYS = [
-  { icon: CreditCard, title: "Pay in full", body: "Paid when they book, so no-shows don’t cost you." },
-  { icon: HandCoins, title: "Take a deposit", body: "They pay part now to hold the time." },
-  { icon: Banknote, title: "Pay on the day", body: "Nothing to pay until they arrive." },
-  { icon: Repeat, title: "Memberships and packs", body: "Sell a block of sessions or a monthly plan." },
+  { icon: CreditCard, title: "Pay in full" },
+  { icon: HandCoins, title: "Take a deposit" },
+  { icon: Banknote, title: "Pay on the day" },
+  { icon: Repeat, title: "Memberships and packs" },
 ];
 
 function Stop({ label, value, note }: { label: string; value: string; note: string }) {
@@ -62,19 +62,21 @@ export function MoneySection() {
             <Stop
               label="Your account"
               value="€60.00"
-              note="Minus your provider’s usual card fee, paid out on their usual days."
+              note="Before your provider’s usual card fee, paid out on their usual days."
             />
           </div>
         </div>
       </PrismContainer>
       <LogoMarquee className="mt-12 sm:mt-14" />
       <PrismContainer>
-        <ul className="mt-12 grid gap-8 border-t border-border pt-10 sm:mt-14 sm:grid-cols-2 lg:grid-cols-4">
-          {WAYS.map(({ icon: Icon, title, body }) => (
-            <li key={title}>
-              <Icon className="size-5 text-muted-foreground" aria-hidden />
-              <p className="mt-3 font-semibold tracking-tight">{title}</p>
-              <p className="mt-1 text-sm leading-normal text-muted-foreground">{body}</p>
+        <ul className="mt-10 flex flex-wrap items-center justify-center gap-2">
+          {WAYS.map(({ icon: Icon, title }) => (
+            <li
+              key={title}
+              className="flex items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm font-medium"
+            >
+              <Icon className="size-4 text-muted-foreground" aria-hidden />
+              {title}
             </li>
           ))}
         </ul>
