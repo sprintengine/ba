@@ -81,8 +81,8 @@ export function MyBookingCard({
       <article
         ref={card}
         className={cn(
-          "flex gap-4 sm:gap-6",
-          featured ? "rounded-2xl border border-border bg-surface p-5 shadow-xs" : "py-4",
+          "flex items-start gap-4 sm:gap-6",
+          featured ? "rounded-2xl border border-border bg-surface p-5 shadow-xs" : "py-3.5",
         )}
       >
         <CardTime booking={b} />
@@ -96,27 +96,35 @@ export function MyBookingCard({
               confirm it.
             </p>
           )}
-          {inactive ? (
-            <div className="mt-1 -ml-2.5">
-              <Button asChild variant="ghost" size="sm">
-                <Link href={`/${b.business.slug}`}>Book again</Link>
-              </Button>
-            </div>
-          ) : featured || managing || awaitingPayment ? (
+          {!inactive && (featured || managing || awaitingPayment) && (
             <CardActions
               booking={b}
               awaitingPayment={awaitingPayment}
               onReschedule={() => setRescheduleOpen(true)}
               onCancel={() => setCancelOpen(true)}
             />
-          ) : (
-            <div className="mt-1 -ml-2.5">
-              <Button variant="ghost" size="sm" aria-expanded={false} onClick={() => setManaging(true)}>
-                Manage
-              </Button>
-            </div>
           )}
         </div>
+        {/* One clear step, beside the booking it belongs to, on a row of its own only once it's open. */}
+        {inactive ? (
+          <Button asChild variant="secondary" size="sm" className="shrink-0">
+            <Link href={`/${b.business.slug}`}>Book again</Link>
+          </Button>
+        ) : (
+          !featured &&
+          !managing &&
+          !awaitingPayment && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              aria-expanded={false}
+              onClick={() => setManaging(true)}
+            >
+              Manage
+            </Button>
+          )
+        )}
       </article>
       <CancelBookingDialog
         booking={b}
@@ -165,7 +173,7 @@ function CardHeading({ booking: b, inactive }: { booking: CustomerBooking; inact
     !(b.paymentStatus === "paid" && balanceDueCents(b) === null) &&
     !(inactive && b.paymentStatus === "pay_at_venue");
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
       <h3 className="text-base font-semibold tracking-tight">
         {b.service.name}
         {b.option && <span className="font-normal text-muted-foreground"> · {b.option.name}</span>}

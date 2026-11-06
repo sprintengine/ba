@@ -191,9 +191,8 @@ export function NotificationList({
                 {n.title}
                 {!n.read && <span className="sr-only"> (unread)</span>}
               </span>
-              {n.body && <span className="line-clamp-2 text-xs text-muted-foreground">{n.body}</span>}
-              <span className="text-xs text-subtle-foreground">
-                {[several && n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
+              <span className="line-clamp-2 text-xs text-muted-foreground">
+                {[n.body, several && n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
               </span>
             </span>
           </Link>

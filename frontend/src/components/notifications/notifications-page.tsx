@@ -12,12 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckboxItem } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { SettingGroup } from "@/components/dashboard/settings/settings-common";
 import { NotificationList } from "./notification-bell";
 
 /** /my/notifications (§22): everything recent, and which kinds are also emailed. */
@@ -36,17 +36,17 @@ export function NotificationsPage() {
         back={
           member ? { href: "/dashboard", label: "Today" } : { href: "/my/bookings", label: "My bookings" }
         }
-        description={
-          <a href="#email" className="underline-offset-2 hover:text-foreground hover:underline">
-            Choose what&rsquo;s emailed
-          </a>
-        }
         actions={
-          unread > 0 ? (
-            <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
-              <CheckCheck /> Mark all read
+          <>
+            <Button asChild variant="ghost">
+              <a href="#email">Email settings</a>
             </Button>
-          ) : undefined
+            {unread > 0 && (
+              <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
+                <CheckCheck /> Mark all read
+              </Button>
+            )}
+          </>
         }
       />
       <div className="flex flex-col gap-6">
@@ -61,6 +61,7 @@ export function NotificationsPage() {
           ) : list.data.items.length === 0 ? (
             <EmptyState
               headingLevel={2}
+              size="sm"
               icon={<Bell />}
               title="Nothing yet"
               description="Anything that needs your attention shows up here."
@@ -93,15 +94,13 @@ function EmailSettings() {
     );
 
   return (
-    <Card id="email" className="scroll-mt-20">
-      <CardHeader>
-        <CardTitle>Email me about</CardTitle>
-        <CardDescription>
-          Sent to {me.data?.user.email ?? "your account email"} a minute later, unless you&rsquo;ve opened it
-          here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SettingGroup
+      id="email"
+      className="scroll-mt-20"
+      title="Email me about"
+      description={`Sent to ${me.data?.user.email ?? "your account email"} a minute later, unless you’ve opened it here.`}
+    >
+      <div className="p-4.5">
         {settings.isError ? (
           <ErrorState error={settings.error} onRetry={() => settings.refetch()} />
         ) : !settings.data || me.isPending ? (
@@ -120,7 +119,7 @@ function EmailSettings() {
             ))}
           </fieldset>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </SettingGroup>
   );
 }
