@@ -187,7 +187,6 @@ function ServiceRow({
         type="button"
         disabled={!canEdit}
         onClick={onEdit}
-        aria-label={canEdit ? `Edit ${s.name}` : undefined}
         className="focus-ring flex min-w-0 flex-1 items-center gap-4 rounded-md py-3.5 pl-4 text-left disabled:cursor-default"
       >
         <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
@@ -196,6 +195,11 @@ function ServiceRow({
             <span
               className={cn("min-w-0 truncate text-sm font-medium", !s.isActive && "text-muted-foreground")}
             >
+              {canEdit && (
+                <>
+                  <span className="sr-only">Edit</span>{" "}
+                </>
+              )}
               {s.name}
             </span>
             <ServiceStates service={s} />

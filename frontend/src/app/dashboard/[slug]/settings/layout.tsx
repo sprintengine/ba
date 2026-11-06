@@ -35,8 +35,10 @@ function SectionPicker({ sections, pathname }: { sections: Section[]; pathname: 
     <div className="lg:hidden">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="secondary" block className="justify-between" aria-label="Settings sections">
-            {current?.label ?? "Settings"}
+          <Button variant="secondary" block className="justify-between">
+            <span>
+              <span className="sr-only">Settings section:</span> {current?.label ?? "Settings"}
+            </span>
             <ChevronsUpDown aria-hidden className="text-subtle-foreground" />
           </Button>
         </PopoverTrigger>

@@ -174,7 +174,7 @@ describe("ServicesList", () => {
     fakeServicesApi({ services: [assessment] });
     const user = userEvent.setup();
     renderDashboard(<ServicesList />);
-    await user.click(await screen.findByRole("button", { name: "Edit Initial assessment" }));
+    await user.click(await screen.findByRole("button", { name: /^Edit Initial assessment/ }));
     const sheet = await screen.findByRole("dialog", { name: "Edit Initial assessment" });
     await user.click(within(sheet).getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
