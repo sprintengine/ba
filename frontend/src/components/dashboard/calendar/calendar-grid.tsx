@@ -261,11 +261,11 @@ export const DayColumn = memo(function DayColumn({
       {nowMinute !== null && nowMinute >= startHour * 60 && nowMinute <= endHour * 60 && (
         <div
           aria-hidden
-          // Under the bookings (they are opaque), over the grid: the line shows in the gaps and never crosses text.
-          className="pointer-events-none absolute inset-x-0 z-[4]"
+          // Over the bookings, so the time reads straight across a full column.
+          className="pointer-events-none absolute inset-x-0 z-[15]"
           style={{ top: top(nowMinute) }}
         >
-          <div className={cn("relative h-px", nowFaint ? "bg-danger/30" : "bg-danger")}>
+          <div className={cn("relative h-px", nowFaint ? "bg-danger/25" : "bg-danger")}>
             {!nowFaint && <span className="absolute -top-[3.5px] -left-1 size-2 rounded-full bg-danger" />}
           </div>
         </div>

@@ -22,10 +22,19 @@ export const serviceTint = (color: string, tint = "var(--event-tint)"): React.CS
 });
 
 /**
+ * Amber on any surface. Solid, because the pinned text inherits the card's background: a translucent amber would
+ * stack with itself and show a strip behind the words.
+ */
+export const waitingFill: React.CSSProperties = { backgroundColor: "var(--event-waiting)" };
+
+/**
  * The card's text. Its name and first detail stay in view while it is scrolled, so a long booking that began above
  * still says who and when; near the card's end the detail slides under the name, which goes last.
  */
 export const CARD_TEXT = "block w-full flex-1 bg-inherit px-2 py-1";
+/** A card too short for its usual padding: one line, close to the top, so a quarter hour stays readable in Compact. */
+export const CARD_TEXT_TIGHT = "block w-full flex-1 bg-inherit px-1.5 py-0";
+export const isTight = (h: number) => h < 25;
 export const STUCK_NAME = "sticky top-(--calendar-top,0px) z-[2] -mt-1 bg-inherit pt-1";
 export const STUCK_DETAIL = "sticky top-[calc(var(--calendar-top,0px)+1.3125rem)] z-[1] bg-inherit";
 

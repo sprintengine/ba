@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import type { BlockedInterval } from "@/lib/availability/windows";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -15,11 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { useFmt } from "../common";
 import { CalendarReleases } from "../releases/lazy-releases";
-import { CLOSED_FILL, timeOffPattern } from "./blocked-band";
+import { CLOSED_FILL, PREPARATION_HATCH } from "./blocked-band";
 import { DayColumn, TimeGutter } from "./calendar-grid";
 import { CalendarHeaderRow, colMin } from "./calendar-headers";
 import { CalendarToolbar } from "./calendar-toolbar";
 import { hourPx } from "./grid-scale";
+import { useCalendarZoom } from "./use-calendar-zoom";
 
 /** The time gutter's width (`w-14`): the columns scroll under it. */
 const HOUR_GUTTER_PX = 56;
@@ -41,7 +42,20 @@ export function CalendarView() {
   const { date, view, setParams, go } = url;
   const data = useCalendarData(url);
   const { columns, selected, startHour, endHour } = data;
-  const scale = hourPx(view);
+  const [zoom, setZoom] = useCalendarZoom();
+  // The grid's own height, measured below, is what Fit the day fits into.
+  const [gridHeight, setGridHeight] = useState(0);
+  const shortestMinutes = useMemo(
+    () =>
+      Math.min(
+        ...columns.flatMap((c) =>
+          c.bookings.map((b) => (new Date(b.end).getTime() - new Date(b.start).getTime()) / 60_000),
+        ),
+        60,
+      ),
+    [columns],
+  );
+  const scale = hourPx(view, zoom, { available: gridHeight, hours: endHour - startHour, shortestMinutes });
   const nowMinute = timeToMinutes(toTimeOfDay(now, business.timezone));
 
   const newBooking = useCallback(
@@ -107,11 +121,23 @@ export function CalendarView() {
   useEffect(() => {
     const el = scroller.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(syncMoreRight);
+    const measure = () => {
+      syncMoreRight();
+      setGridHeight(el.clientHeight - (pinned.current?.offsetHeight ?? 0));
+    };
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
+    if (pinned.current) observer.observe(pinned.current);
     return () => observer.disconnect();
   }, [syncMoreRight, ready]);
+  // A new scale keeps the same time at the top of the window.
+  const scaleShown = useRef(scale);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && scaleShown.current !== scale) el.scrollTop *= scale / scaleShown.current;
+    scaleShown.current = scale;
+  }, [scale]);
   // Bookings keep their text in view just under the pinned rows, however tall those are today.
   useEffect(() => {
     const el = pinned.current;
@@ -141,6 +167,8 @@ export function CalendarView() {
         position={view === "day" ? position : null}
         waiting={data.waiting}
         showCancelled={url.showCancelled}
+        zoom={zoom}
+        onZoom={setZoom}
         setParams={setParams}
         go={go}
         onNew={newBooking}
@@ -286,12 +314,6 @@ function CalendarFooter({
           <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border" />
           Not working
         </span>
-        {blocked.some((b) => b.kind === "time-off") && (
-          <span className="inline-flex items-center gap-1.5 max-sm:hidden">
-            <span aria-hidden className="size-3 rounded-sm ring-1 ring-border" style={timeOffPattern} />
-            Time off
-          </span>
-        )}
         {blocked.some((b) => b.kind === "closed") && (
           <span className="inline-flex items-center gap-1.5 max-sm:hidden">
             <span aria-hidden className={cn("size-3 rounded-sm ring-1 ring-border", CLOSED_FILL)} />
@@ -302,10 +324,7 @@ function CalendarFooter({
           <span
             aria-hidden
             className="size-3 rounded-sm"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 3px)",
-            }}
+            style={{ backgroundImage: PREPARATION_HATCH }}
           />
           Preparation time
         </span>

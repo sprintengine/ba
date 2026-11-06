@@ -3,6 +3,7 @@
 import { AppLink } from "@/components/ui/app-link";
 import {
   CalendarRange,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -31,6 +32,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { useFmt } from "../common";
 import { CalendarResourcePicker } from "./calendar-resource-picker";
+import { CALENDAR_ZOOMS, type CalendarZoom } from "./grid-scale";
 
 type Setter = (patch: UrlParamsPatch) => void;
 
@@ -50,6 +52,8 @@ export function CalendarToolbar({
   position,
   waiting,
   showCancelled,
+  zoom,
+  onZoom,
   setParams,
   go,
   onNew,
@@ -69,6 +73,8 @@ export function CalendarToolbar({
   /** Bookings on show that are waiting for approval. */
   waiting: number;
   showCancelled: boolean;
+  zoom: CalendarZoom;
+  onZoom: (zoom: CalendarZoom) => void;
   setParams: Setter;
   go: (delta: number) => void;
   onNew: () => void;
@@ -86,13 +92,13 @@ export function CalendarToolbar({
         {
           value: "day",
           label: "Day",
-          icon: <Columns3 aria-hidden className="max-sm:hidden" />,
+          icon: <Columns3 aria-hidden className="max-xl:hidden" />,
           shortcut: "D",
         },
         {
           value: "week",
           label: "Week",
-          icon: <CalendarRange aria-hidden className="max-sm:hidden" />,
+          icon: <CalendarRange aria-hidden className="max-xl:hidden" />,
           shortcut: "W",
         },
       ]}
@@ -107,6 +113,28 @@ export function CalendarToolbar({
       />
       Cancelled
     </label>
+  );
+  const viewOptions = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="secondary" size="sm" aria-label="View options">
+          <SlidersHorizontal aria-hidden />
+          <span className="max-xl:hidden">View</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-64 flex-col gap-1 p-2">
+        <ZoomChoice zoom={zoom} onZoom={onZoom} />
+        <div className="my-1 border-t border-border" />
+        {cancelledToggle}
+        {!phone && (
+          <Button asChild variant="ghost" size="sm" className="justify-start">
+            <AppLink href={dashboardHref(business.slug, "bookings")}>
+              <List aria-hidden /> All {v("bookings")}
+            </AppLink>
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
   const picker = resourcesLoading ? (
     <Skeleton className="h-8 min-w-0 flex-1 sm:w-40 sm:flex-none pointer-coarse:h-11" />
@@ -148,7 +176,7 @@ export function CalendarToolbar({
             Today
           </Button>
         </Tooltip>
-        {!phone && <div className="max-w-36 min-w-0 overflow-hidden xl:max-w-52">{picker}</div>}
+        {!phone && <div className="flex max-w-36 min-w-0 xl:max-w-52">{picker}</div>}
         {position && (
           <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden">
             {position}
@@ -157,31 +185,16 @@ export function CalendarToolbar({
         {waiting > 0 && (
           <AppLink
             href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
-            className="inline-flex h-8 shrink-0 items-center rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
+            aria-label={`${waiting} to approve`}
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
           >
-            {waiting} to approve
+            <span className="tnum">{waiting}</span>
+            <span>to approve</span>
           </AppLink>
         )}
         <div className="flex-1 max-sm:hidden" />
         {!phone && viewControl}
-        {!phone && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="secondary" size="sm" aria-label="View options">
-                <SlidersHorizontal aria-hidden />
-                <span className="max-xl:hidden">View</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="flex w-52 flex-col gap-1 p-2">
-              {cancelledToggle}
-              <Button asChild variant="ghost" size="sm" className="justify-start">
-                <AppLink href={dashboardHref(business.slug, "bookings")}>
-                  <List aria-hidden /> All {v("bookings")}
-                </AppLink>
-              </Button>
-            </PopoverContent>
-          </Popover>
-        )}
+        {!phone && viewOptions}
         <ActionButton
           variant="primary"
           size="sm"
@@ -195,10 +208,34 @@ export function CalendarToolbar({
       {phone && (
         <div className="flex min-w-0 items-center gap-2">
           {picker}
-          {cancelledToggle}
+          {viewOptions}
           {viewControl}
         </div>
       )}
+    </div>
+  );
+}
+
+/** How tall an hour is drawn. Every choice stays to scale. */
+function ZoomChoice({ zoom, onZoom }: { zoom: CalendarZoom; onZoom: (zoom: CalendarZoom) => void }) {
+  return (
+    <div role="radiogroup" aria-label="Calendar zoom" className="flex flex-col">
+      {CALENDAR_ZOOMS.map((z) => (
+        <button
+          key={z.value}
+          type="button"
+          role="radio"
+          aria-checked={zoom === z.value}
+          onClick={() => onZoom(z.value)}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm leading-5 font-medium">{z.label}</span>
+            <span className="block text-xs leading-4 text-muted-foreground">{z.hint}</span>
+          </span>
+          {zoom === z.value && <Check aria-hidden className="size-4 shrink-0" />}
+        </button>
+      ))}
     </div>
   );
 }
