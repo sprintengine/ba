@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Bot, CircleCheck, Plug, Unplug } from "lucide-react";
+import { BookOpen, Bot, CircleCheck, Unplug } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo";
 import { qk } from "@/lib/api/query-keys";
 import {
   useApproveMyAgentRequest,
@@ -123,7 +124,7 @@ export function CustomerRequestsPage() {
         actions={
           <ActionButton
             href={CONNECTED_APPS_PATH}
-            icon={<Plug />}
+            icon={<LogoMark mono title="" />}
             label="Connected apps"
             variant="ghost"
             collapse={false}
@@ -138,7 +139,7 @@ export function CustomerRequestsPage() {
         <div>
           <EmptyState
             headingLevel={2}
-            icon={<Bot />}
+            icon={<LogoMark mono title="" />}
             title="Nothing to approve"
             description="Anything your assistant asks you to confirm appears here."
             action={

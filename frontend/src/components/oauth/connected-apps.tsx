@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { BookOpen, Plug } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { LogoMark } from "@/components/brand/logo";
 import { useConnectedApps } from "@/lib/api/hooks";
 import { AI_HELP_PATH } from "@/lib/oauth/app-url";
 import { viewerTimeZone } from "@/lib/oauth/format";
@@ -38,7 +39,7 @@ export function ConnectedAppsPage() {
         <div>
           <EmptyState
             headingLevel={2}
-            icon={<Plug />}
+            icon={<LogoMark mono title="" />}
             title="No connected apps"
             description="Connect an AI assistant such as Claude or ChatGPT and it shows up here with what it's allowed to do."
             action={

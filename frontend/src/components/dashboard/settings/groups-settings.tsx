@@ -76,7 +76,7 @@ export function GroupsSettings() {
             <EmptyState
               headingLevel={4}
               icon={<UsersRound />}
-              title="No groups"
+              title="Everyone books alike"
               description={`Everyone books the same hours and services. Add a group when some ${v("customers")} need their own.`}
               action={newGroup}
             />

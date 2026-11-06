@@ -17,6 +17,7 @@ import { useEditorDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResourceKindIcon, resourceTile } from "../common";
 import { canEditAvailability } from "@/lib/business/permissions";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
@@ -173,11 +174,26 @@ function StaffNav({
 }) {
   const { v } = useVocabulary();
   return (
-    <div className="flex flex-col gap-2">
-      <nav
-        aria-label={v("resources", { title: true })}
-        className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5"
-      >
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 lg:flex lg:flex-col">
+      {/* On a phone one compact control gets to everything, so the hours start near the top of the screen. */}
+      <Select value={section ?? selectedId ?? ""} onValueChange={onSelect}>
+        <SelectTrigger className="lg:hidden" aria-label={`Choose ${v("resource")} or section`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {list.map((r) => (
+            <SelectItem key={r.id} value={r.id}>
+              {r.name}
+            </SelectItem>
+          ))}
+          {sections.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <nav aria-label={v("resources", { title: true })} className="flex flex-col gap-0.5 max-lg:hidden">
         {list.map((r) => (
           <button
             key={r.id}
@@ -185,7 +201,7 @@ function StaffNav({
             onClick={() => onSelect(r.id)}
             aria-current={selectedId === r.id ? "true" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0",
+              "flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
               selectedId === r.id ? "bg-accent" : "hover:bg-accent/60",
               !r.isActive && "opacity-60",
             )}
@@ -198,7 +214,7 @@ function StaffNav({
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-sm font-medium">{r.name}</span>
-              <span className="truncate text-xs text-muted-foreground max-lg:hidden">
+              <span className="truncate text-xs text-muted-foreground">
                 {resourceNote(r, memberName(r.memberId))}
               </span>
             </span>
@@ -214,12 +230,12 @@ function StaffNav({
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-border-strong">
             <Plus className="size-4" aria-hidden />
           </span>
-          {add.label}
+          <span className="max-lg:sr-only">{add.label}</span>
         </button>
       )}
-      <nav aria-label="Whole business" className="mt-2 flex flex-col gap-1.5 lg:gap-0.5">
+      <nav aria-label="Whole business" className="mt-2 flex flex-col gap-0.5 max-lg:hidden">
         <h2 className="px-3 text-xs font-medium text-muted-foreground">Whole business</h2>
-        <div className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5">
+        <div className="flex flex-col gap-0.5">
           {sections.map((s) => (
             <button
               key={s.id}
@@ -227,7 +243,7 @@ function StaffNav({
               onClick={() => onSelect(s.id)}
               aria-current={section === s.id ? "true" : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:whitespace-nowrap pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
+                "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
                 section === s.id ? "bg-accent font-medium" : "hover:bg-accent/60",
               )}
             >

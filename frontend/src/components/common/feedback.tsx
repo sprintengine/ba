@@ -95,9 +95,12 @@ export function NoAccess({
   backHref = "/dashboard",
   backLabel = "Go to dashboard",
   inShell = false,
+  icon = <Lock />,
 }: {
   title?: string;
   description?: string;
+  /** A lock says "not for you"; something that isn't there takes the logo mark, as every dead end does. */
+  icon?: React.ReactNode;
   backHref?: string;
   backLabel?: string;
   /** Inside the dashboard's shell: fills the page, not the whole screen. */
@@ -113,7 +116,7 @@ export function NoAccess({
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<Lock />}
+        icon={icon}
         title={title}
         description={description}
         action={

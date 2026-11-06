@@ -79,7 +79,7 @@ describe("GroupsSettings", () => {
     );
     renderDashboard(<GroupsSettings />);
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
-    expect(screen.queryByText("No groups")).not.toBeInTheDocument();
+    expect(screen.queryByText("Everyone books alike")).not.toBeInTheDocument();
     release(json([members]));
     expect(await screen.findByText("Members")).toBeInTheDocument();
   });
@@ -87,7 +87,7 @@ describe("GroupsSettings", () => {
   it("explains groups when there are none", async () => {
     fakeGroups([]);
     const { container } = renderDashboard(<GroupsSettings />);
-    expect(await screen.findByText("No groups")).toBeInTheDocument();
+    expect(await screen.findByText("Everyone books alike")).toBeInTheDocument();
     expect(screen.getByText(/Add a group when some patients need their own/)).toBeInTheDocument();
     // The section is named in the business's words.
     expect(screen.getByRole("heading", { name: "Patient groups" })).toBeInTheDocument();

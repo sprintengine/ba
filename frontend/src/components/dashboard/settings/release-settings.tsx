@@ -88,7 +88,7 @@ export function ReleaseSettings() {
               <EmptyState
                 headingLevel={4}
                 icon={<CalendarClock />}
-                title="No release schedules"
+                title="Every day is open"
                 description="Every day can be booked as far ahead as your policies allow."
                 action={newSchedule}
               />

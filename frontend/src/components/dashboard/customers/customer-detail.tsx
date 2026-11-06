@@ -13,7 +13,7 @@ import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +47,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const groups = useCustomerGroups(business.id);
   const exportData = useCustomerExport(customer.data);
   const [eraseOpen, setEraseOpen] = useState(false);
+  // Opened from a menu that has closed: focus comes back to the menu's button.
+  const [moreButton, setMoreButton] = useState<HTMLButtonElement | null>(null);
   const back = { href: dashboardHref(business.slug, "customers"), label: v("customers", { title: true }) };
 
   // A failed refresh keeps showing the customer already loaded; the error is for when there is none.
@@ -122,7 +124,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
             {perms.manageCustomerData && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <IconButton variant="secondary" size="md" label="More actions">
+                  <IconButton ref={setMoreButton} variant="secondary" size="md" label="More actions">
                     <MoreHorizontal />
                   </IconButton>
                 </DropdownMenuTrigger>
@@ -176,27 +178,6 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
 
         <div className="flex flex-col gap-6">
           <DetailsCard customer={c} groupName={group?.name} hasGroups={(groups.data?.length ?? 0) > 0} />
-          {perms.manageCustomerData && (
-            <Card>
-              <CardHeader>
-                <CardTitle headingLevel={2}>Privacy</CardTitle>
-                <CardDescription>Respond to data requests under GDPR.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={exportData.download}
-                  loading={exportData.isPending}
-                  className="justify-start"
-                >
-                  <Download /> Download their data
-                </Button>
-                <Button variant="danger-soft" onClick={() => setEraseOpen(true)} className="justify-start">
-                  <Trash2 /> Erase personal data
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
@@ -204,6 +185,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         customer={c}
         open={eraseOpen}
         onOpenChange={setEraseOpen}
+        returnFocusTo={moreButton}
         onErased={() => router.replace(back.href)}
       />
     </PageContainer>

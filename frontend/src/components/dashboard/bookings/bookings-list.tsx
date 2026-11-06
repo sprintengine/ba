@@ -71,7 +71,8 @@ export function BookingsList() {
   };
 
   return (
-    <PageContainer size="wide">
+    // Under the inspector in a small window the list makes room, so the toolbar stays in reach.
+    <PageContainer size="wide" className="max-xl:sm:pr-(--inspector-width,0px)">
       <PageHeader
         title={v("bookings", { title: true })}
         actions={

@@ -108,7 +108,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   return (
     <PageContainer size="wide">
       <PageHeader title="Settings" className="pb-0" />
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[11rem_minmax(0,45rem)] lg:justify-center lg:gap-x-9">
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[11rem_minmax(0,45rem)] lg:gap-x-9">
         <SectionPicker sections={sections} pathname={pathname} />
         <nav
           aria-label="Settings"

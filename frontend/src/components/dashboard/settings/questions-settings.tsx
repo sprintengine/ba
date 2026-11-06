@@ -129,7 +129,7 @@ export function QuestionsSettings() {
             <EmptyState
               headingLevel={4}
               icon={<MessageSquareText />}
-              title="No questions yet"
+              title="Nothing extra to ask"
               description="People are asked these after they pick a time. Start from one of these, or write your own."
               action={
                 all.length === 0 && (

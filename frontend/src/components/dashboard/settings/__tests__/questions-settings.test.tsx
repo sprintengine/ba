@@ -99,7 +99,7 @@ describe("QuestionsSettings", () => {
   it("explains questions when there are none", async () => {
     fakeQuestions([]);
     const { container } = renderDashboard(<QuestionsSettings />);
-    expect(await screen.findByText("No questions yet")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing extra to ask")).toBeInTheDocument();
     expect(screen.getByText("What to ask patients when they book.")).toBeInTheDocument();
     // No services: no filter.
     expect(screen.queryByRole("combobox", { name: "Filter by service" })).not.toBeInTheDocument();
@@ -231,7 +231,7 @@ describe("QuestionsSettings", () => {
 
     await user.click(filter);
     await user.click(await screen.findByRole("option", { name: "Assessment" }));
-    expect(screen.getByText("No questions yet")).toBeInTheDocument();
+    expect(screen.getByText("Nothing extra to ask")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "New question" }));
     const dialog = await screen.findByRole("dialog", { name: "New question" });

@@ -265,10 +265,10 @@ describe("CustomerDetailView", () => {
       renderDashboard(<CustomerDetailView customerId="c1" />, "staff");
       await screen.findByRole("heading", { level: 1, name: /Alex Morgan/ });
       expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Erase personal data/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "More actions" })).not.toBeInTheDocument();
     });
 
-    it("downloads the customer's data as a JSON file, also from the actions menu", async () => {
+    it("downloads the customer's data as a JSON file from the actions menu", async () => {
       const sent = api();
       const createObjectURL = vi.fn(() => "blob:export");
       vi.stubGlobal("URL", Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }));
@@ -276,7 +276,8 @@ describe("CustomerDetailView", () => {
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
 
-      await user.click(await screen.findByRole("button", { name: /Download their data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
       await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Export downloaded"));
       expect(sent).toEqual([
         { method: "GET", path: "/v1/businesses/b1/customers/c1/export", body: undefined },
@@ -285,17 +286,14 @@ describe("CustomerDetailView", () => {
         "download",
         "alex-morgan-data-export.json",
       );
-
-      await user.click(screen.getByRole("button", { name: "More actions" }));
-      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
-      await waitFor(() => expect(click).toHaveBeenCalledTimes(2));
     });
 
     it("reports a failed export", async () => {
       api({ exportData: () => errorBody(403, "FORBIDDEN", "Only admins can export data.") });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Download their data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Export data/ }));
       await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Only admins can export data."));
     });
 
@@ -303,7 +301,8 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Erase personal data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog", { name: "Erase Alex Morgan?" });
       await expectNoAxeViolations(document.body);
       const erase = within(dialog).getByRole("button", { name: "Erase permanently" });
@@ -324,13 +323,14 @@ describe("CustomerDetailView", () => {
       api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      const open = await screen.findByRole("button", { name: /Erase personal data/ });
-      await user.click(open);
+      const more = await screen.findByRole("button", { name: "More actions" });
+      await user.click(more);
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog");
       await user.type(within(dialog).getByRole("textbox"), "Alex Morgan");
       await user.keyboard("{Escape}");
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      await waitFor(() => expect(open).toHaveFocus());
+      await waitFor(() => expect(more).toHaveFocus());
 
       await user.click(screen.getByRole("button", { name: "More actions" }));
       await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
@@ -344,7 +344,8 @@ describe("CustomerDetailView", () => {
       api({ erase: () => errorBody(409, "CONFLICT", "They have a booking in progress.") });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
-      await user.click(await screen.findByRole("button", { name: /Erase personal data/ }));
+      await user.click(await screen.findByRole("button", { name: "More actions" }));
+      await user.click(await screen.findByRole("menuitem", { name: /Erase patient/ }));
       const dialog = await screen.findByRole("dialog");
       await user.type(within(dialog).getByRole("textbox"), "Alex Morgan");
       await user.click(within(dialog).getByRole("button", { name: "Erase permanently" }));
