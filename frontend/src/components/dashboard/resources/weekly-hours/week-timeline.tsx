@@ -17,12 +17,14 @@ export function WeekTimeline({
   week,
   groups,
   editable,
+  color,
   onChangeDay,
   onCopyDay,
 }: {
   week: WeekHours;
   groups: CustomerGroup[];
   editable: boolean;
+  color?: string;
   onChangeDay: (day: DayOfWeek, ranges: TimeRange[]) => void;
   onCopyDay: (day: DayOfWeek, targets: DayOfWeek[]) => void;
 }) {
@@ -60,6 +62,7 @@ export function WeekTimeline({
           axis={axis}
           groups={groups}
           editable={editable}
+          color={color}
           onChange={(r) => onChangeDay(day, r)}
           onCopy={(targets) => onCopyDay(day, targets)}
         />

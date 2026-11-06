@@ -75,7 +75,7 @@ describe("TimeOff", () => {
   it("says when nothing is planned", async () => {
     fakeResourcesApi({ resources: [resource()] });
     renderTimeOff();
-    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
   });
 
   it("removes an entry, naming it by date", async () => {
@@ -84,7 +84,7 @@ describe("TimeOff", () => {
     await user.click(await screen.findByRole("button", { name: "Remove 12 Oct 2026" }));
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Removed"));
     expect(api.requests.some((r) => r.method === "DELETE" && r.path.endsWith("/overrides/o1"))).toBe(true);
-    expect(await screen.findByText("No time off or extra hours.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing planned.")).toBeInTheDocument();
   });
 
   it("says why a removal failed", async () => {

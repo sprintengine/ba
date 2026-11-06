@@ -29,6 +29,7 @@ import { TimeInput } from "@/components/ui/time-input";
 import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
 import { useFmt } from "../common";
+import { NextWeeks } from "./next-weeks";
 import {
   OVERRIDE_KIND_LABEL,
   overrideKind,
@@ -45,11 +46,13 @@ export function TimeOff({
   resourceId,
   editable,
   person = true,
+  color,
 }: {
   resourceId: string;
   editable: boolean;
   /** A room or a machine has closures, not time off. */
   person?: boolean;
+  color?: string;
 }) {
   const business = useCurrentBusiness();
   const availability = useResourceAvailability(business.id, resourceId);
@@ -68,23 +71,33 @@ export function TimeOff({
     .filter((o) => o.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime ?? "").localeCompare(b.startTime ?? ""));
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-4.5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          One-off days off and extra hours. These override the weekly hours on that date.
-        </p>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold tracking-tight">
+            {person ? "Time off and extra hours" : "Closures and extra hours"}
+          </h3>
+          <p className="text-xs text-muted-foreground">These replace the regular hours on that date.</p>
+        </div>
         {editable && (
           <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
             <Plus /> Add
           </Button>
         )}
       </div>
+      <NextWeeks
+        today={today}
+        rules={availability.data.rules}
+        overrides={upcoming}
+        color={color}
+        person={person}
+      />
       <OverrideList
         items={upcoming}
         editable={editable}
         empty={
           <p className="text-sm text-muted-foreground">
-            {person ? "No time off or extra hours." : "No closures or extra hours."}
+            {person ? "Nothing planned." : "No closures planned."}
           </p>
         }
       />
@@ -98,7 +111,7 @@ export function TimeOff({
           toast.success("Added");
         }}
       />
-    </div>
+    </section>
   );
 }
 
@@ -176,11 +189,11 @@ function OverrideList({
   const remove = useDeleteOverride(business.id);
   if (items.length === 0) return empty;
   return (
-    <ul className="flex flex-col divide-y divide-border-subtle border-y border-border">
+    <ul className="flex flex-col divide-y divide-border-subtle border-t border-border-subtle">
       {items.map((o) => {
         const kind = overrideKind(o);
         return (
-          <li key={o.id} className="flex items-center gap-3 px-4 py-2.5">
+          <li key={o.id} className="flex items-center gap-3 py-2.5">
             <span className="flex size-9 shrink-0 flex-col items-center justify-center rounded-lg bg-muted leading-none">
               <span className="text-2xs font-medium text-muted-foreground uppercase">
                 {fmt.date(o.date, "weekday")}

@@ -1,7 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { must } from "@/test/must";
 import { expectNoAxeViolations } from "@/test/axe";
 import { renderDashboard } from "@/components/dashboard/test/render";
 import { ResourcesView } from "../resources-view";
@@ -79,9 +78,7 @@ describe("ResourcesView", () => {
 
     expect(await screen.findByRole("heading", { level: 2, name: "No therapists yet" })).toBeInTheDocument();
     await expectNoAxeViolations(container);
-    const adds = screen.getAllByRole("button", { name: "Add therapist" });
-    expect(adds).toHaveLength(2);
-    await user.click(must(adds[1], "empty-state add button"));
+    await user.click(screen.getByRole("button", { name: "Add therapist" }));
     expect(await screen.findByRole("dialog", { name: "Add a therapist" })).toBeInTheDocument();
   });
 
@@ -91,7 +88,6 @@ describe("ResourcesView", () => {
     expect(
       await screen.findByRole("heading", { name: "You're not linked to a calendar" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Your working hours and time off.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add therapist/i })).not.toBeInTheDocument();
   });
 
@@ -174,24 +170,19 @@ describe("ResourcesView", () => {
     expect(await screen.findByRole("dialog", { name: "Edit Sam Rivers" })).toBeInTheDocument();
   });
 
-  it("moves between hours and time off with the arrow keys", async () => {
+  it("shows the regular week and what's different on particular dates on one page", async () => {
     fakeResourcesApi({
       resources: [sam],
       team,
       overrides: [override({ id: "o1", date: "2026-10-12", reason: "Course" })],
     });
-    const user = userEvent.setup();
     renderDashboard(<ResourcesView />);
-    const hours = await screen.findByRole("tab", { name: "Weekly hours" });
-    hours.focus();
-    await user.keyboard("{ArrowRight}");
-    const timeOff = screen.getByRole("tab", { name: "Time off and extra hours" });
-    expect(timeOff).toHaveFocus();
-    expect(timeOff).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByRole("heading", { name: "Regular hours" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Time off and extra hours" })).toBeInTheDocument();
     expect(await screen.findByText(/All day · Course/)).toBeInTheDocument();
   });
 
-  it("keeps unsaved weekly hours across a look at time off", async () => {
+  it("keeps unsaved weekly hours while time off is added", async () => {
     fakeResourcesApi({ resources: [sam], team });
     const user = userEvent.setup();
     renderDashboard(<ResourcesView />);
@@ -200,9 +191,8 @@ describe("ResourcesView", () => {
     await user.keyboard("{Escape}");
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "Time off and extra hours" }));
-    expect(screen.queryByRole("button", { name: /^Edit Tuesday: / })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Weekly hours" }));
+    await user.click(screen.getByRole("button", { name: "Add" }));
+    await user.keyboard("{Escape}");
     expect(screen.getByRole("button", { name: /^Edit Tuesday: 09:00/ })).toBeInTheDocument();
     expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
   });

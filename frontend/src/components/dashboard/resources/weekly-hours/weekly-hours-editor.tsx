@@ -34,10 +34,13 @@ import { WeekTimeline } from "./week-timeline";
 /** The weekly-hours editor: regular and seasonal schedules, a timeline of the week, save and discard. */
 export function WeeklyHoursEditor({
   resourceId,
+  color,
   initial,
   editable,
 }: {
   resourceId: string;
+  /** The calendar's colour, which fills its working hours as it fills its tile. */
+  color?: string;
   initial: Schedules;
   editable: boolean;
 }) {
@@ -72,7 +75,7 @@ export function WeeklyHoursEditor({
       : `${s.validFrom ? fmt.date(s.validFrom, "short") : "Until"}${s.validFrom && s.validUntil ? " – " : " "}${s.validUntil ? fmt.date(s.validUntil, "medium") : "onwards"}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:p-4.5">
       <div className="flex flex-wrap items-center gap-2">
         {schedules.length > 1 ? (
           <Select value={active.key} onValueChange={setActiveKey}>
@@ -88,7 +91,7 @@ export function WeeklyHoursEditor({
             </SelectContent>
           </Select>
         ) : (
-          <span className="text-sm font-medium">Regular hours</span>
+          <h3 className="text-sm font-semibold tracking-tight">Regular hours</h3>
         )}
         <span className="tnum text-xs text-muted-foreground">
           {formatDuration(weeklyMinutes(active.days))} a week
@@ -136,22 +139,23 @@ export function WeeklyHoursEditor({
         </div>
       ) : null}
 
-      {editable && (
-        <p className="text-xs text-muted-foreground">
-          <span className="pointer-coarse:hidden">
-            Drag the end of a bar, click an empty part of a day to add hours, or click the times to type them.
-          </span>
-          <span className="hidden pointer-coarse:inline">Tap the times beside a day to change them.</span>
-        </p>
-      )}
-
       <WeekTimeline
         week={active.days}
         groups={activeGroups}
         editable={editable}
+        color={color}
         onChangeDay={setDay}
         onCopyDay={(day, targets) => setDays(copyDay(active.days, day, targets))}
       />
+
+      {editable && (
+        <p className="text-xs text-muted-foreground">
+          <span className="pointer-coarse:hidden">
+            Drag a bar&rsquo;s end, click an empty stretch to add hours, or click the times to type them.
+          </span>
+          <span className="hidden pointer-coarse:inline">Tap the times beside a day to change them.</span>
+        </p>
+      )}
 
       {editable && (dirty || tooMany) && (
         <div className="flex items-center justify-end gap-2">

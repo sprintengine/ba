@@ -19,6 +19,11 @@ import { DayEditor } from "./day-editor";
 
 export type Axis = { start: number; end: number };
 
+/** Hours in a calendar's colour: as fill only, the tint its tile and bookings use. */
+export const hoursFill = (color: string): React.CSSProperties => ({
+  backgroundColor: `color-mix(in oklab, ${color} 26%, var(--surface))`,
+});
+
 /** Day, timeline, times: on phones the times sit beside the day, with the timeline full width below. */
 export const ROW_GRID =
   "grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-x-3 sm:grid-cols-[3rem_minmax(0,1fr)_10rem]";
@@ -49,6 +54,7 @@ export function DayRow({
   axis,
   groups,
   editable,
+  color,
   onChange,
   onCopy,
 }: {
@@ -59,6 +65,7 @@ export function DayRow({
   axis: Axis;
   groups: CustomerGroup[];
   editable: boolean;
+  color?: string;
   onChange: (ranges: TimeRange[]) => void;
   onCopy: (targets: DayOfWeek[]) => void;
 }) {
@@ -77,6 +84,7 @@ export function DayRow({
         errors={errors}
         axis={axis}
         editable={editable}
+        color={color}
         onChange={onChange}
         onOpen={() => setOpen(true)}
       />
@@ -130,6 +138,7 @@ function Timeline({
   errors,
   axis,
   editable,
+  color,
   onChange,
   onOpen,
 }: {
@@ -138,6 +147,7 @@ function Timeline({
   errors: (string | null)[];
   axis: Axis;
   editable: boolean;
+  color?: string;
   onChange: (ranges: TimeRange[]) => void;
   onOpen: () => void;
 }) {
@@ -159,7 +169,7 @@ function Timeline({
       ref={track}
       data-touch-exempt
       className={cn(
-        "relative h-7 overflow-hidden rounded-md bg-muted ring-1 ring-border-subtle ring-inset max-sm:col-span-full max-sm:row-start-2",
+        "relative h-8 overflow-hidden rounded-lg bg-surface-sunken ring-1 ring-border-subtle ring-inset max-sm:col-span-full max-sm:row-start-2",
         editable && "cursor-copy",
       )}
       onClick={(e) => {
@@ -192,8 +202,12 @@ function Timeline({
           "flex h-full w-full min-w-0 items-center justify-center gap-1 overflow-hidden rounded-[inherit] border px-2 text-2xs font-medium",
           invalid
             ? "border-danger-border bg-danger-soft text-danger-soft-foreground"
-            : "border-transparent bg-foreground/16 text-foreground dark:bg-foreground/22",
+            : color
+              ? "border-transparent text-foreground"
+              : "border-transparent bg-foreground/16 text-foreground dark:bg-foreground/22",
         );
+        // The same fill as this calendar's tile, so the bar reads as this person's time, not as a disabled control.
+        const fill = !invalid && color ? hoursFill(color) : undefined;
         return (
           <div key={i} data-range="" className="absolute inset-y-0.5 rounded-sm bg-surface" style={style}>
             {editable ? (
@@ -202,9 +216,10 @@ function Timeline({
                   type="button"
                   aria-label={`Edit ${label} ${time}`}
                   onClick={onOpen}
+                  style={fill}
                   className={cn(
                     look,
-                    "tnum cursor-pointer transition-colors outline-none hover:border-brand hover:bg-brand/25 focus-visible:ring-2 focus-visible:ring-ring",
+                    "tnum cursor-pointer transition-colors outline-none hover:border-brand focus-visible:ring-2 focus-visible:ring-ring",
                   )}
                 >
                   {body}
@@ -229,7 +244,9 @@ function Timeline({
                 />
               </>
             ) : (
-              <span className={cn(look, "tnum")}>{body}</span>
+              <span className={cn(look, "tnum")} style={fill}>
+                {body}
+              </span>
             )}
           </div>
         );
@@ -268,7 +285,7 @@ function EdgeHandle({
       aria-valuenow={Math.min(minute, 1439)}
       aria-valuetext={time}
       className={cn(
-        "group/edge absolute inset-y-0 w-2.5 cursor-ew-resize rounded-sm outline-none hover:bg-brand/40 focus-visible:bg-brand/60 focus-visible:ring-2 focus-visible:ring-ring",
+        "group/edge absolute inset-y-0 w-3 cursor-ew-resize rounded-sm outline-none hover:bg-brand/40 focus-visible:bg-brand/60 focus-visible:ring-2 focus-visible:ring-ring",
         edge === "start" ? "left-0" : "right-0",
       )}
       onPointerDown={(e) => {
@@ -293,7 +310,7 @@ function EdgeHandle({
       {/* The grip: a bar's ends show they can be moved before anyone hovers. */}
       <span
         aria-hidden
-        className="absolute inset-y-1.5 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-foreground/35 group-hover/edge:bg-brand"
+        className="absolute inset-y-1.5 left-1/2 w-1 -translate-x-1/2 rounded-full bg-surface shadow-[0_0_0_1px_var(--border-strong)] group-hover/edge:bg-brand"
       />
     </div>
   );

@@ -42,10 +42,10 @@ export function MemberRow({
   };
 
   return (
-    <li className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center">
+    <li className="flex flex-col gap-3 px-4 py-3.5 xl:flex-row xl:items-center">
       <MemberIdentity member={m} isMe={isMe} />
       {/* Shared columns, so every person's calendar, role and remove line up down the list. */}
-      <div className="flex min-w-0 items-center gap-2 sm:grid sm:grid-cols-[11rem_7rem_4.5rem] sm:justify-items-start">
+      <div className="flex min-w-0 items-center gap-2 max-xl:pl-12 xl:grid xl:grid-cols-[11rem_7rem_4.5rem] xl:justify-items-start">
         <CalendarControl member={m} people={people} editable={canManage} patch={patch} />
         <RoleControl
           member={m}

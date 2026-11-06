@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { SwatchGroup } from "@/components/ui/swatch-group";
 import { Textarea } from "@/components/ui/textarea";
+import { SettingFormRow, SettingGroup } from "../settings/setting-rows";
 import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
 import { FormDialog } from "@/components/ui/form-dialog";
@@ -113,32 +114,35 @@ export function ResourceDialog({
           </RadioCards>
         )}
       </FormField>
-      <FormField<V, "name"> name="name" label="Name" required>
-        {(field) => <Input {...field} autoComplete="off" placeholder={RESOURCE_NAME_PLACEHOLDER[kind]} />}
-      </FormField>
-      <FormField<V, "description">
-        name="description"
-        label="Description"
-        optional
-        help={kind === "person" ? `Shown if ${v("customers")} can choose who they see.` : undefined}
-      >
-        {(field) => <Textarea {...field} rows={2} />}
-      </FormField>
-      <div className="flex flex-col gap-5">
-        <FormField<V, "color"> name="color" label="Colour">
+      <SettingGroup title="Details">
+        <SettingFormRow<V, "name"> name="name" label="Name" required>
+          {(field) => <Input {...field} autoComplete="off" placeholder={RESOURCE_NAME_PLACEHOLDER[kind]} />}
+        </SettingFormRow>
+        <SettingFormRow<V, "description">
+          name="description"
+          label="Description"
+          optional
+          stacked
+          help={kind === "person" ? `Shown if ${v("customers")} can choose who they see.` : undefined}
+        >
+          {(field) => <Textarea {...field} rows={2} />}
+        </SettingFormRow>
+        <SettingFormRow<V, "color"> name="color" label="Colour" stacked>
           {(field) => (
             <SwatchGroup
               aria-label="Colour"
               size="sm"
-              className="gap-1.5 [&>button]:ring-offset-surface-raised"
+              className="gap-1.5 [&>button]:ring-offset-surface"
               value={field.value}
               onValueChange={field.onChange}
               swatches={swatches}
             />
           )}
-        </FormField>
+        </SettingFormRow>
+      </SettingGroup>
+      <SettingGroup title="Bookings">
         {kind === "person" ? (
-          <FormField<V, "memberId">
+          <SettingFormRow<V, "memberId">
             name="memberId"
             label="Team member"
             help="They see this calendar and can manage its hours."
@@ -159,9 +163,9 @@ export function ResourceDialog({
                 </SelectContent>
               </Select>
             )}
-          </FormField>
+          </SettingFormRow>
         ) : (
-          <FormField<V, "capacity">
+          <SettingFormRow<V, "capacity">
             name="capacity"
             label="Capacity"
             help="For your reference, e.g. seats in a room."
@@ -174,19 +178,19 @@ export function ResourceDialog({
                 min={1}
               />
             )}
-          </FormField>
+          </SettingFormRow>
         )}
-      </div>
-      {resource && (
-        <FormField<V, "isActive">
-          name="isActive"
-          orientation="horizontal"
-          label="Active"
-          help="Inactive ones can't be booked and are hidden from the calendar."
-        >
-          {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-        </FormField>
-      )}
+        {resource && (
+          <SettingFormRow<V, "isActive">
+            name="isActive"
+            fit
+            label="Active"
+            help="Inactive ones can't be booked and are hidden from the calendar."
+          >
+            {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
+          </SettingFormRow>
+        )}
+      </SettingGroup>
       <FormRootError />
     </FormDialog>
   );

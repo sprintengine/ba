@@ -13,6 +13,7 @@ import { SectionHeader } from "@/components/ui/page-header";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResourceKindIcon, resourceTile } from "../common";
+import { hoursFill } from "./weekly-hours/day-row";
 
 const summary = (ranges: readonly TimeRange[]) =>
   ranges.length === 0 ? ["Off"] : ranges.map((r) => `${r.startTime}–${r.endTime}`);
@@ -104,7 +105,7 @@ export function CompareHours({
                       {ranges ? summary(ranges).map((s) => <span key={s}>{s}</span>) : null}
                     </span>
                     <span
-                      className="relative h-6 overflow-hidden rounded-md bg-muted ring-1 ring-border-subtle ring-inset max-sm:col-span-full"
+                      className="relative h-7 overflow-hidden rounded-lg bg-surface-sunken ring-1 ring-border-subtle ring-inset max-sm:col-span-full"
                       aria-hidden
                     >
                       {ranges === null ? (
@@ -113,8 +114,9 @@ export function CompareHours({
                         ranges.map((t) => (
                           <span
                             key={t.startTime}
-                            className="absolute inset-y-0.5 rounded-sm bg-foreground/16 dark:bg-foreground/22"
+                            className="absolute inset-y-0.5 rounded-sm"
                             style={{
+                              ...hoursFill(r.color),
                               left: `${percent(timeToMinutes(t.startTime))}%`,
                               width: `${percent(endMinutes(t.endTime)) - percent(timeToMinutes(t.startTime))}%`,
                             }}

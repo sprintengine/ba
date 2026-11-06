@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Boxes, CalendarOff, KeyRound, Link2, Pencil, Plus, Rows3 } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useResources, useTeam } from "@/lib/api/hooks";
@@ -12,13 +12,11 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { PageContainer } from "@/components/ui/page-container";
 import { Badge } from "@/components/ui/badge";
-import { ActionButton } from "@/components/ui/action-button";
 import { Button } from "@/components/ui/button";
 import { useEditorDialog } from "@/components/ui/form-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResourceKindIcon, resourceTile } from "../common";
 import { canEditAvailability } from "@/lib/business/permissions";
 import { useUrlParams } from "@/lib/hooks/use-url-params";
@@ -63,17 +61,7 @@ export function ResourcesView() {
 
   return (
     <PageContainer size="wide">
-      <PageHeader
-        title={v("resources", { title: true })}
-        description={
-          perms.manageResources
-            ? "The people, rooms and equipment that get booked, when each one is available, and who can sign in."
-            : "Your working hours and time off."
-        }
-        actions={
-          <AddResource shown={perms.manageResources} label={addLabel} onAdd={() => editor.open(null)} />
-        }
-      />
+      <PageHeader title={v("resources", { title: true })} />
       {resources.isError ? (
         <ErrorState error={resources.error} onRetry={() => resources.refetch()} headingLevel={2} />
       ) : resources.isPending ? (
@@ -96,8 +84,9 @@ export function ResourcesView() {
             sections={wholeBusiness}
             memberName={memberName}
             onSelect={select}
+            add={perms.manageResources ? { label: addLabel, onAdd: () => editor.open(null) } : null}
           />
-          <div className="min-w-0 lg:border-l lg:border-border lg:pl-6">
+          <div className="min-w-0">
             {section === "compare" && <CompareHours resources={list} onSelect={select} />}
             {section === "sign-in" && <TeamSection />}
             {section === "closures" && <Closures editable />}
@@ -133,11 +122,6 @@ const wholeBusinessSections = (several: boolean, closures: boolean) => [
   { id: "sign-in", label: "Who can sign in", icon: <KeyRound /> },
   ...(closures ? [{ id: "closures", label: "Closures", icon: <CalendarOff /> }] : []),
 ];
-
-function AddResource({ shown, label, onAdd }: { shown: boolean; label: string; onAdd: () => void }) {
-  if (!shown) return null;
-  return <ActionButton variant="primary" onClick={onAdd} icon={<Plus />} label={label} collapse={false} />;
-}
 
 function NoResources({ addLabel, onAdd }: { addLabel: string; onAdd: () => void }) {
   const perms = usePermissions();
@@ -177,6 +161,7 @@ function StaffNav({
   sections,
   memberName,
   onSelect,
+  add,
 }: {
   list: Resource[];
   selectedId: string | undefined;
@@ -184,10 +169,11 @@ function StaffNav({
   sections: { id: string; label: string; icon: React.ReactNode }[];
   memberName: (id: string | null) => string | null;
   onSelect: (id: string) => void;
+  add: { label: string; onAdd: () => void } | null;
 }) {
   const { v } = useVocabulary();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       <nav
         aria-label={v("resources", { title: true })}
         className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5"
@@ -219,7 +205,19 @@ function StaffNav({
           </button>
         ))}
       </nav>
-      <nav aria-label="Whole business" className="flex flex-col gap-1.5 lg:gap-0.5">
+      {add && (
+        <button
+          type="button"
+          onClick={add.onAdd}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-border-strong">
+            <Plus className="size-4" aria-hidden />
+          </span>
+          {add.label}
+        </button>
+      )}
+      <nav aria-label="Whole business" className="mt-2 flex flex-col gap-1.5 lg:gap-0.5">
         <h2 className="px-3 text-xs font-medium text-muted-foreground">Whole business</h2>
         <div className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5">
           {sections.map((s) => (
@@ -260,9 +258,8 @@ function ResourcePanel({
   linkedTo: string | null;
   onEdit: () => void;
 }) {
-  const [tab, setTab] = useState("hours");
   return (
-    <div className="flex min-w-0 flex-col">
+    <div className="flex min-w-0 flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -286,25 +283,18 @@ function ResourcePanel({
         )}
       </div>
       {!editable && (
-        <p className="mt-3 rounded-lg bg-surface-sunken px-3 py-2 text-xs text-muted-foreground">
+        <p className="rounded-lg bg-surface-sunken px-3 py-2 text-xs text-muted-foreground">
           View only — you can edit hours for your own calendar.
         </p>
       )}
-      <Tabs value={tab} onValueChange={setTab} className="mt-4">
-        <TabsList>
-          <TabsTrigger value="hours">Weekly hours</TabsTrigger>
-          <TabsTrigger value="exceptions">
-            {resource.kind === "person" ? "Time off and extra hours" : "Closures and extra hours"}
-          </TabsTrigger>
-        </TabsList>
-        {/* Kept mounted while hidden, so unsaved weekly hours survive a look at time off. */}
-        <TabsContent value="hours" forceMount hidden={tab !== "hours"}>
-          <WeeklyHours resource={resource} editable={editable} />
-        </TabsContent>
-        <TabsContent value="exceptions">
-          <TimeOff resourceId={resource.id} editable={editable} person={resource.kind === "person"} />
-        </TabsContent>
-      </Tabs>
+      {/* One page for one calendar: the regular week, then what's different on particular dates. */}
+      <WeeklyHours resource={resource} editable={editable} />
+      <TimeOff
+        resourceId={resource.id}
+        editable={editable}
+        person={resource.kind === "person"}
+        color={resource.color}
+      />
     </div>
   );
 }
