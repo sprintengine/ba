@@ -148,21 +148,21 @@ describe("CustomerDetailView", () => {
       "mailto:alex@example.test",
     );
     expect(screen.getByRole("link", { name: /\+353871234567/ })).toHaveAttribute("href", "tel:+353871234567");
-    // The group: a badge by the name, and the value of the form's Group select.
-    expect(await screen.findByRole("combobox", { name: "Group" })).toHaveTextContent("Members");
+    // The group: a badge by the name, and a row of the details.
     expect(screen.getByText("Account").parentElement).toHaveTextContent("Members");
-    // Upcoming: only the future booking that isn't cancelled.
-    expect(screen.getByText("Upcoming").nextSibling).toHaveTextContent("1");
+    // One sentence: upcoming counts only the future booking that isn't cancelled.
+    expect(screen.getByText(/3 appointments, 1 upcoming\./)).toHaveTextContent(
+      /Patient since January 2026\./,
+    );
     expect(screen.getByRole("heading", { level: 2, name: "Appointments" })).toBeInTheDocument();
-    const stat = screen.getAllByText("Appointments").find((el) => el.tagName !== "H2");
-    expect(stat?.nextSibling).toHaveTextContent("3");
-    expect(screen.getByText("Patient since").nextSibling).toHaveTextContent("January 2026");
 
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(3);
     expect(must(rows[2], "past row")).toHaveTextContent("Follow-up · Extended");
     expect(must(rows[1], "cancelled row")).toHaveTextContent("Cancelled");
-    expect(screen.getByRole("textbox", { name: /notes/i })).toHaveValue("Prefers mornings");
+    // Read first: the details are values, not an open form.
+    expect(screen.getByText("Prefers mornings")).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /notes/i })).not.toBeInTheDocument();
     await expectNoAxeViolations(container);
   });
 
@@ -205,11 +205,14 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       const notes = await screen.findByRole("textbox", { name: /notes/i });
       await user.clear(notes);
       await user.type(notes, "Prefers afternoons");
       await user.click(screen.getByRole("button", { name: "Save changes" }));
       await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Saved"));
+      // Saved, it goes back to reading.
+      expect(await screen.findByRole("button", { name: "Edit details" })).toBeInTheDocument();
       expect(sent).toEqual([
         {
           method: "PATCH",
@@ -234,6 +237,7 @@ describe("CustomerDetailView", () => {
       });
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       await screen.findByRole("textbox", { name: /notes/i });
       await user.click(screen.getByRole("button", { name: "Save changes" }));
       const phone = await screen.findByRole("textbox", { name: /phone/i, description: /can text/ });
@@ -246,6 +250,7 @@ describe("CustomerDetailView", () => {
       const sent = api();
       const user = userEvent.setup();
       renderDashboard(<CustomerDetailView customerId="c1" />);
+      await user.click(await screen.findByRole("button", { name: "Edit details" }));
       const name = await screen.findByRole("textbox", { name: "Name" });
       await user.clear(name);
       await user.click(screen.getByRole("button", { name: "Save changes" }));

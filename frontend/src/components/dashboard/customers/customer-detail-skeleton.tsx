@@ -29,7 +29,9 @@ export function CustomerDetailSkeleton({ back }: { back: { href: string; label: 
           </span>
         }
         description={<InlineSkeleton className="mt-1 h-4 w-64" />}
-      />
+      >
+        <InlineSkeleton className="h-5 w-96 max-w-full" />
+      </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Skeleton className="h-80 rounded-xl" />
         <Skeleton className="h-96 rounded-xl" />
