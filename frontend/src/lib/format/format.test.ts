@@ -8,6 +8,7 @@ import {
   currencySymbol,
   daysInMonth,
   formatDate,
+  formatDay,
   formatDuration,
   formatMoney,
   formatPrice,
@@ -212,5 +213,18 @@ describe("timezones", () => {
     );
     expect(options.map((o) => o.label)).toEqual(["America/New York", "Europe/Dublin"]);
     expect(options[1]?.hint).toBe("IST");
+  });
+});
+
+describe("formatDay", () => {
+  const now = new Date("2026-11-06T12:00:00Z");
+  it("leaves the year out when it's this year, and puts it in when it isn't", () => {
+    expect(formatDay("2026-11-06", "UTC", "en-IE", now)).toMatch(/^Fri,? 6 Nov$/);
+    expect(formatDay("2025-11-06", "UTC", "en-IE", now)).toBe("Thu, 6 Nov 2025");
+  });
+  it("reads the year in the business's zone", () => {
+    expect(formatDay(new Date("2027-01-01T02:00:00Z"), "America/New_York", "en-IE", now)).toMatch(
+      /^Thu,? 31 Dec$/,
+    );
   });
 });

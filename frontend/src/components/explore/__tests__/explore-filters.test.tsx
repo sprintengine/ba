@@ -138,7 +138,7 @@ describe("Distance", () => {
     await user.click(await screen.findByRole("option", { name: "Within 50 km" }));
     expect(urlPath()).toBe("/explore/galway?radiusKm=50");
     await waitFor(() => expect(lastSearch(api).get("radiusKm")).toBe("50"));
-    expect(await screen.findByText("Businesses in Galway · within 50 km")).toBeInTheDocument();
+    expect(await screen.findByText("Within 50 km of Galway")).toBeInTheDocument();
   });
 });
 

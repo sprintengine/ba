@@ -189,7 +189,9 @@ export function CalendarToolbar({
           </Button>
         </Tooltip>
         {!phone && (
-          <div className="flex w-36 min-w-34 shrink-0 xl:w-52 @max-[46rem]/tools:hidden">{picker}</div>
+          <div className="flex w-36 min-w-34 shrink-0 xl:w-52 @max-[62rem]/tools:w-36 @max-[46rem]/tools:hidden">
+            {picker}
+          </div>
         )}
         {position && (
           <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden @max-[52rem]/tools:hidden">

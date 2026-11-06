@@ -19,7 +19,7 @@ export function PlanCards({ heading: Heading = "h2" }: { heading?: "h2" | "h3" }
         className="self-center sm:hidden"
         value={chosen}
         onValueChange={setChosen}
-        options={PLANS.map((p) => ({ value: p.key as string, label: p.name }))}
+        options={PLANS.map((p) => ({ value: p.key, label: p.name }))}
       />
       <ul className="grid gap-4 lg:grid-cols-3">
         {PLANS.map((plan) => (

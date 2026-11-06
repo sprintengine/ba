@@ -93,7 +93,7 @@ function AcceptError({ token, error }: { token: string; error: Error }) {
             <Link href="/dashboard">Go to dashboard</Link>
           </Button>
         ) : (
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/my/bookings">Go to my bookings</Link>
           </Button>
         )}

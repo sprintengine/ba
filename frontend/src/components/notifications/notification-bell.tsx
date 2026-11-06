@@ -189,6 +189,55 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
 }
 
 /** Notifications as links under a heading per day: opening one marks it read. */
+/** How many of a run of one kind stay in view before the rest fold behind "N more like this". */
+const RUN_SHOWN = 2;
+
+type Folded = { key: string; more: number };
+
+/** The items, with long runs of one kind folded, unless [opened] holds the run: a run's key is its first item's id. */
+export function foldRuns(
+  items: AppNotification[],
+  opened: ReadonlySet<string>,
+): (AppNotification | Folded)[] {
+  const out: (AppNotification | Folded)[] = [];
+  for (let i = 0; i < items.length;) {
+    const first = items[i];
+    if (!first) break;
+    let end = i + 1;
+    while (items[end]?.kind === first.kind) end += 1;
+    const run = items.slice(i, end);
+    const fold = run.length > RUN_SHOWN + 1 && !opened.has(first.id);
+    out.push(...(fold ? run.slice(0, RUN_SHOWN) : run));
+    if (fold) out.push({ key: first.id, more: run.length - RUN_SHOWN });
+    i = end;
+  }
+  return out;
+}
+
+function Row({ n, detail, onOpen }: { n: AppNotification; detail: string; onOpen: () => void }) {
+  return (
+    <li>
+      <Link
+        href={n.link}
+        onClick={onOpen}
+        className="flex gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+      >
+        <span
+          aria-hidden
+          className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-brand")}
+        />
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
+            {n.title}
+            {!n.read && <span className="sr-only"> (unread)</span>}
+          </span>
+          <span className="line-clamp-2 text-xs text-muted-foreground">{detail}</span>
+        </span>
+      </Link>
+    </li>
+  );
+}
+
 export function NotificationList({
   items,
   onNavigate,
@@ -197,48 +246,38 @@ export function NotificationList({
   onNavigate?: () => void;
 }) {
   const markRead = useMarkNotificationRead();
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
   // The business only tells them apart when there is more than one.
   const several = new Set(items.map((n) => n.businessName).filter(Boolean)).size > 1;
+  const open = (n: AppNotification) => {
+    if (!n.read) markRead.mutate(n.id);
+    onNavigate?.();
+  };
+  const detail = (n: AppNotification, day: string) =>
+    [n.body, several && n.businessName, day === "Today" && timeAgo(n.createdAt)].filter(Boolean).join(" · ");
   return (
     <div className="flex flex-col">
       {groupByDay(items).map((day) => (
         <section key={day.label} aria-label={day.label}>
           <h3 className="bg-popover/95 sticky top-0 z-10 flex items-baseline justify-between px-3 pt-2.5 pb-1 text-xs font-medium text-muted-foreground">
             {day.label}
-            <span className="tnum text-subtle-foreground">{day.items.length}</span>
           </h3>
           <ul className="flex flex-col">
-            {day.items.map((n) => (
-              <li key={n.id}>
-                <Link
-                  href={n.link}
-                  onClick={() => {
-                    if (!n.read) markRead.mutate(n.id);
-                    onNavigate?.();
-                  }}
-                  className="flex gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "mt-1.5 size-2 shrink-0 rounded-full",
-                      n.read ? "bg-transparent" : "bg-brand",
-                    )}
-                  />
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
-                      {n.title}
-                      {!n.read && <span className="sr-only"> (unread)</span>}
-                    </span>
-                    <span className="line-clamp-2 text-xs text-muted-foreground">
-                      {[n.body, several && n.businessName, day.label === "Today" && timeAgo(n.createdAt)]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {foldRuns(day.items, opened).map((entry) =>
+              "more" in entry ? (
+                <li key={entry.key}>
+                  <button
+                    type="button"
+                    onClick={() => setOpened((was) => new Set(was).add(entry.key))}
+                    className="w-full py-1.5 pr-3 pl-7.5 text-left text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+                  >
+                    {entry.more} more like this
+                  </button>
+                </li>
+              ) : (
+                <Row key={entry.id} n={entry} detail={detail(entry, day.label)} onOpen={() => open(entry)} />
+              ),
+            )}
           </ul>
         </section>
       ))}

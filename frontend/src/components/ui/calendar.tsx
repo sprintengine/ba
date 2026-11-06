@@ -216,13 +216,10 @@ export function Calendar({
                       )}
                     >
                       {Number(date.slice(8))}
-                      {marker && (
+                      {marker && !isSelected && (
                         <span
                           aria-hidden
-                          className={cn(
-                            "absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full",
-                            isSelected ? "bg-primary-foreground" : "bg-brand",
-                          )}
+                          className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-brand"
                         />
                       )}
                       {locked && (

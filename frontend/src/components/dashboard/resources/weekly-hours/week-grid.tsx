@@ -62,7 +62,7 @@ export function WeekGrid({
             date={date ? Number(date.slice(8)) : undefined}
             today={date === dated?.today}
             ranges={week[day]}
-            exceptions={(date && dated?.exceptions[date]) || []}
+            exceptions={(date && dated.exceptions[date]) || []}
             axis={axis}
             groups={groups}
             editable={editable}

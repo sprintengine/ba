@@ -27,7 +27,7 @@ export const HOUR_PX = 17;
 
 /** Hours in a calendar's colour: as fill only, the tint its tile and bookings use. */
 export const hoursFill = (color: string): React.CSSProperties => ({
-  backgroundColor: `color-mix(in oklab, ${color} 26%, var(--event-base))`,
+  backgroundColor: `color-mix(in oklab, ${color} 38%, var(--event-base))`,
 });
 
 const HATCH = "repeating-linear-gradient(135deg, var(--border-strong) 0 1px, transparent 1px 5px)";

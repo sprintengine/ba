@@ -6,7 +6,7 @@ import { BarChart3, Table2 } from "lucide-react";
 import type { ReportSummary } from "@/lib/api/types";
 import { isEmptyReport } from "@/lib/dashboard/reports";
 import { useVocabulary } from "@/lib/vocabulary";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,6 @@ export function PerDayCard({
         <CardTitle>
           {measure === "bookings" ? `${v("bookings", { title: true })} per day` : "Revenue per day"}
         </CardTitle>
-        <CardDescription>By the day the {v("booking")} takes place.</CardDescription>
         <CardAction wrap className="flex flex-wrap items-center gap-2">
           <SegmentedControl
             size="sm"

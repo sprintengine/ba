@@ -79,9 +79,11 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const upcoming = c.bookings
     .filter((b) => new Date(b.start) > new Date() && b.status !== "cancelled")
     .sort((a, b) => a.start.localeCompare(b.start));
+  const coming = new Set(upcoming.map((b) => b.id));
+  const history = [...upcoming, ...c.bookings.filter((b) => !coming.has(b.id))];
   const story = [
     `${c.bookingCount} ${v("booking", { count: c.bookingCount })}, ${upcoming.length} upcoming.`,
-    upcoming[0] && `Next ${fmt.date(upcoming[0].start, "dayMonth")}, ${fmt.time(upcoming[0].start)}.`,
+    upcoming[0] && `Next ${fmt.dateTime(upcoming[0].start)}.`,
     `${v("customer", { title: true })} since ${fmt.date(c.createdAt, "monthYear")}.`,
   ]
     .filter(Boolean)
@@ -169,9 +171,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
                 />
               </CardContent>
             ) : mobile ? (
-              <HistoryList bookings={c.bookings} onOpen={openBooking} />
+              <HistoryList bookings={history} onOpen={openBooking} />
             ) : (
-              <HistoryTable bookings={c.bookings} onOpen={openBooking} />
+              <HistoryTable bookings={history} onOpen={openBooking} />
             )}
           </Card>
         </div>

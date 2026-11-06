@@ -126,6 +126,16 @@ describe("WeeklyHours", () => {
     expect(await dayButton("Tuesday")).toHaveTextContent("09:00–17:00");
   });
 
+  it("draws a date's time off on the week it falls in, and only that week", async () => {
+    const off = { id: "o", resourceId: "r1", date: "2026-10-12", isAvailable: false };
+    setup([monday], { overrides: [{ ...off, startTime: null, endTime: null, reason: null }] });
+    const { user } = render();
+    await dayButton("Monday");
+    expect(document.querySelector("[data-exception]")).toBeNull();
+    await user.click(screen.getByRole("radio", { name: /12–18 Oct/ }));
+    expect(document.querySelector('[data-exception="off"]')).not.toBeNull();
+  });
+
   it("opens the day's editor from a bar on the timeline", async () => {
     setup();
     const { user } = render();

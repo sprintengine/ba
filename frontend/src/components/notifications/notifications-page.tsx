@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckboxItem } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { NotificationList } from "./notification-bell";
 
@@ -119,13 +119,18 @@ function EmailSettings() {
           <fieldset className="flex flex-col gap-3" disabled={update.isPending}>
             <legend className="sr-only">Notifications to email</legend>
             {kinds.map((k) => (
-              <CheckboxItem
-                key={k.kind}
-                label={k.label}
-                description={k.description}
-                checked={k.email}
-                onCheckedChange={(on) => toggle(k.kind, on === true)}
-              />
+              <label key={k.kind} className="flex items-start justify-between gap-4 text-sm">
+                <span className="flex flex-col gap-0.5">
+                  <span className="leading-5 font-medium">{k.label}</span>
+                  <span className="text-muted-foreground">{k.description}</span>
+                </span>
+                <Switch
+                  aria-label={k.label}
+                  className="mt-0.5"
+                  checked={k.email}
+                  onCheckedChange={(on) => toggle(k.kind, on)}
+                />
+              </label>
             ))}
           </fieldset>
         )}

@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Bot, CircleCheck, Plug, Unplug } from "lucide-react";
-import { ExampleProposal } from "@/components/assistant/example-proposal";
-import { LogoMark } from "@/components/brand/logo";
 import { qk } from "@/lib/api/query-keys";
 import {
   useApproveMyAgentRequest,
@@ -21,7 +19,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProposalView } from "@/components/assistant/proposal-card";
+import { ExampleProposal, ProposalView } from "@/components/assistant/proposal-card";
 
 /** Where the customer sees every request their AI apps made. */
 export const MY_APPROVALS_PATH = "/my/approvals";

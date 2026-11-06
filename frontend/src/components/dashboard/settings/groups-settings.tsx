@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import type { CustomerGroup } from "@/lib/api/types";
 import {
   useCreateCustomerGroup,

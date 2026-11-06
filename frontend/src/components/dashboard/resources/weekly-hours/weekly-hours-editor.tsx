@@ -78,6 +78,30 @@ function weekPhrase(week: WeekHours): string | null {
   return `${open.map((d) => d.short).join(", ")}, ${only}`;
 }
 
+/** The next four weeks: the one on show with what's different on it, and how to name each. */
+function useDatedWeeks(overrides: readonly AvailabilityOverride[], weekIndex: string, regular: boolean) {
+  const business = useCurrentBusiness();
+  const fmt = useFmt();
+  const closures = useClosures(business.id);
+  const today = todayInTz(business.timezone);
+  const exceptions = useMemo(
+    () => exceptionsByDate(overrides, closures.data ?? []),
+    [overrides, closures.data],
+  );
+  const weeks = Array.from({ length: WEEKS_AHEAD }, (_, i) => isoWeekDates(addDaysToPlainDate(today, i * 7)));
+  const weekLabel = (days: string[], i: number) => {
+    if (i === 0) return "This week";
+    const [from, to] = [days[0] ?? today, days[6] ?? today];
+    return from.slice(5, 7) === to.slice(5, 7)
+      ? `${Number(from.slice(8))}–${fmt.date(to, "short")}`
+      : `${fmt.date(from, "short")} – ${fmt.date(to, "short")}`;
+  };
+  const dated: DatedWeek | undefined = regular
+    ? { dates: weeks[Number(weekIndex)] ?? [], today, exceptions }
+    : undefined;
+  return { weeks, exceptions, dated, weekLabel };
+}
+
 /** The weekly-hours editor: regular and seasonal schedules, the week on the calendar's grid, save and discard. */
 export function WeeklyHoursEditor({
   resourceId,
@@ -97,7 +121,6 @@ export function WeeklyHoursEditor({
   const business = useCurrentBusiness();
   const fmt = useFmt();
   const groups = useCustomerGroups(business.id);
-  const closures = useClosures(business.id);
   const [weekIndex, setWeekIndex] = useState("0");
   const save = useReplaceResourceRules(business.id, resourceId);
   const [schedules, setSchedules] = useState<Schedules>(initial);
@@ -117,23 +140,8 @@ export function WeeklyHoursEditor({
   const setDays = (days: WeekHours) => update({ days });
   const setDay = (day: DayOfWeek, ranges: TimeRange[]) => setDays({ ...active.days, [day]: ranges });
 
-  const today = todayInTz(business.timezone);
-  const exceptions = useMemo(
-    () => exceptionsByDate(overrides, closures.data ?? []),
-    [overrides, closures.data],
-  );
-  const weeks = Array.from({ length: WEEKS_AHEAD }, (_, i) => isoWeekDates(addDaysToPlainDate(today, i * 7)));
-  const weekLabel = (days: string[], i: number) => {
-    if (i === 0) return "This week";
-    const [from, to] = [days[0] ?? today, days[6] ?? today];
-    return from.slice(5, 7) === to.slice(5, 7)
-      ? `${Number(from.slice(8))}–${fmt.date(to, "short")}`
-      : `${fmt.date(from, "short")} – ${fmt.date(to, "short")}`;
-  };
   const regular = active.validFrom === null && active.validUntil === null;
-  const dated: DatedWeek | undefined = regular
-    ? { dates: weeks[Number(weekIndex)] ?? [], today, exceptions }
-    : undefined;
+  const { weeks, exceptions, dated, weekLabel } = useDatedWeeks(overrides, weekIndex, regular);
   const phrase = weekPhrase(active.days);
 
   const submit = async () => {

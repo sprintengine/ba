@@ -38,7 +38,11 @@ export function TeamSection() {
     <section id="team" className="scroll-mt-8">
       <SectionHeader
         title="Who can sign in"
-        description={perms.manageTeam ? "Invite people and choose what they can do." : "Who is on the team."}
+        description={
+          perms.manageTeam
+            ? "Invite people and choose what they can do."
+            : "Everyone on the team, and their role."
+        }
         actions={
           perms.manageTeam && (
             <ActionButton

@@ -80,7 +80,7 @@ describe("offers list", () => {
     expect(within(second).getByText("Paused")).toBeInTheDocument();
     expect(second).toHaveTextContent("Sports massage, Physio assessment");
     expect(second).toHaveTextContent("0 used");
-    expect(second).toHaveTextContent("Until 31 Dec 2099");
+    expect(second).toHaveTextContent("Until Thu, 31 Dec 2099");
   });
 
   it("pauses and resumes", async () => {

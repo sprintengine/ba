@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Unplug } from "lucide-react";
-import { AiBadge, LogoMark } from "@/components/brand/logo";
+import { AiBadge } from "@/components/brand/logo";
 import {
   useAgentRequest,
   useAgentRequests,
@@ -22,8 +22,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExampleProposal } from "./example-proposal";
-import { dashboardWhere, ProposalView } from "./proposal-card";
+import { dashboardWhere, ExampleProposal, ProposalView } from "./proposal-card";
 
 /**
  * One of the member's AI apps' proposals (§20.8): what it would change, from which app, with Approve and Decline.

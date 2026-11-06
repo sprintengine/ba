@@ -28,7 +28,7 @@ export function StepProgress({
             key={i}
             className={cn(
               "h-1 flex-1 rounded-full transition-colors duration-300",
-              i <= index ? "bg-primary" : "bg-border",
+              i === index ? "bg-primary" : i < index ? "bg-primary/35" : "bg-border",
             )}
           />
         ))}

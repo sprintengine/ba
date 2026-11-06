@@ -148,7 +148,7 @@ function cityName(filters: ExploreFilters, meta: MarketplaceMeta | undefined, ce
   return meta?.cities.find((c) => c.slug === location.slug)?.name ?? centerLabel ?? "your area";
 }
 
-/** "Physiotherapists in Galway · within 20 km", "Businesses near you · within 25 km", "Businesses across Ireland". */
+/** Under a heading that names the place and trade: "Within 20 km of Galway", "Within 25 km of you", "Businesses across Ireland". */
 function describeScope(
   filters: ExploreFilters,
   meta: MarketplaceMeta | undefined,
@@ -160,9 +160,9 @@ function describeScope(
     case "anywhere":
       return `${subject} across Ireland`;
     case "near":
-      return `${subject} near you · within ${radius} km`;
+      return `Within ${radius} km of you`;
     case "city":
-      return `${subject} in ${cityName(filters, meta, centerLabel)} · within ${radius} km`;
+      return `Within ${radius} km of ${cityName(filters, meta, centerLabel)}`;
   }
 }
 

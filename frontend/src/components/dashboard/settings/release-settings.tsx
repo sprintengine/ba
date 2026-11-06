@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarClock, Clock, LockOpen, Pause, Pencil, Plus, Trash2, Undo2, Zap } from "lucide-react";
+import { Clock, LockOpen, Pause, Pencil, Plus, Trash2, Undo2, Zap } from "lucide-react";
 import type { CustomerGroup, ReleaseSchedule, Service } from "@/lib/api/types";
 import {
   useCustomerGroups,
