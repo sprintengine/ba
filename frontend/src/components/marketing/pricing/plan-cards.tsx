@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import { PLANS, TALK_TO_US } from "../plans";
 
 /** The plans, the same on the home page and the pricing page. */
@@ -14,13 +13,22 @@ export function PlanCards({ heading: Heading = "h2" }: { heading?: "h2" | "h3" }
   const [chosen, setChosen] = useState<string>(PLANS[0]?.key ?? "free");
   return (
     <div className="flex flex-col gap-3">
-      <SegmentedControl
-        aria-label="Plan"
-        className="self-center sm:hidden"
-        value={chosen}
-        onValueChange={setChosen}
-        options={PLANS.map((p) => ({ value: p.key, label: p.name }))}
-      />
+      <div role="group" aria-label="Plan" className="flex self-center rounded-lg bg-muted p-0.5 sm:hidden">
+        {PLANS.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            aria-pressed={p.key === chosen}
+            onClick={() => setChosen(p.key)}
+            className={cn(
+              "focus-ring min-h-11 rounded-md px-4 text-sm font-medium",
+              p.key === chosen ? "bg-surface text-foreground shadow-xs" : "text-muted-foreground",
+            )}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
       <ul className="grid gap-4 lg:grid-cols-3">
         {PLANS.map((plan) => (
           <li
