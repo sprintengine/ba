@@ -29,7 +29,6 @@ import { TimeInput } from "@/components/ui/time-input";
 import { toast } from "@/components/ui/toast";
 import { withToast } from "@/components/common/with-toast";
 import { useFmt } from "../common";
-import { NextWeeks } from "./next-weeks";
 import {
   OVERRIDE_KIND_LABEL,
   overrideKind,
@@ -46,13 +45,11 @@ export function TimeOff({
   resourceId,
   editable,
   person = true,
-  color,
 }: {
   resourceId: string;
   editable: boolean;
   /** A room or a machine has closures, not time off. */
   person?: boolean;
-  color?: string;
 }) {
   const business = useCurrentBusiness();
   const availability = useResourceAvailability(business.id, resourceId);
@@ -77,7 +74,9 @@ export function TimeOff({
           <h3 className="text-sm font-semibold tracking-tight">
             {person ? "Time off and extra hours" : "Closures and extra hours"}
           </h3>
-          <p className="text-xs text-muted-foreground">These replace the regular hours on that date.</p>
+          <p className="text-xs text-muted-foreground">
+            These replace the regular hours on that date, and show on the week above.
+          </p>
         </div>
         {editable && (
           <Button size="sm" variant="secondary" onClick={() => setAdding(true)}>
@@ -85,13 +84,6 @@ export function TimeOff({
           </Button>
         )}
       </div>
-      <NextWeeks
-        today={today}
-        rules={availability.data.rules}
-        overrides={upcoming}
-        color={color}
-        person={person}
-      />
       <OverrideList
         items={upcoming}
         editable={editable}

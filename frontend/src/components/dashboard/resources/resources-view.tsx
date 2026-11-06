@@ -305,12 +305,7 @@ function ResourcePanel({
       )}
       {/* One page for one calendar: the regular week, then what's different on particular dates. */}
       <WeeklyHours resource={resource} editable={editable} />
-      <TimeOff
-        resourceId={resource.id}
-        editable={editable}
-        person={resource.kind === "person"}
-        color={resource.color}
-      />
+      <TimeOff resourceId={resource.id} editable={editable} person={resource.kind === "person"} />
     </div>
   );
 }

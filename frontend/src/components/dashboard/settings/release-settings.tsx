@@ -27,6 +27,7 @@ import { ErrorState } from "@/components/common/feedback";
 import { withToast } from "@/components/common/with-toast";
 import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -80,18 +81,37 @@ export function ReleaseSettings() {
       ) : (
         <div className={settingsStack}>
           <SettingGroup
-            title="Schedules"
+            title={list.length > 0 ? "Your schedules" : "What a schedule looks like"}
             description="For example, the day before at 17:00. Your team can always book any free time."
             note={list.length > 0 && <UncoveredNote schedules={list} services={bookable} />}
           >
             {list.length === 0 ? (
-              <EmptyState
-                headingLevel={4}
-                icon={<CalendarClock />}
-                title="Every day is open"
-                description="Every day can be booked as far ahead as your policies allow."
-                action={newSchedule}
-              />
+              <>
+                <ExamplePreview className="p-1.5">
+                  <SettingList>
+                    <SettingItem
+                      title="Saturdays"
+                      chips={
+                        <Badge tone="success" dot className="h-5">
+                          Active
+                        </Badge>
+                      }
+                      meta={
+                        <p className="text-[0.8125rem] leading-5">
+                          Opens on Friday at 17:00, for all services
+                        </p>
+                      }
+                    />
+                  </SettingList>
+                </ExamplePreview>
+                <EmptyState
+                  size="sm"
+                  headingLevel={4}
+                  title="Every day is open"
+                  description="Every day can be booked as far ahead as your policies allow."
+                  action={newSchedule}
+                />
+              </>
             ) : (
               <SettingList>
                 {list.map((s) => (

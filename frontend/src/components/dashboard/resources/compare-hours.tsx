@@ -13,7 +13,7 @@ import { SectionHeader } from "@/components/ui/page-header";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResourceKindIcon, resourceTile } from "../common";
-import { hoursFill } from "./weekly-hours/day-row";
+import { hoursFill } from "./weekly-hours/day-column";
 
 const summary = (ranges: readonly TimeRange[]) =>
   ranges.length === 0 ? ["Off"] : ranges.map((r) => `${r.startTime}–${r.endTime}`);

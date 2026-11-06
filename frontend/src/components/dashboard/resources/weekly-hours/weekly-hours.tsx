@@ -31,6 +31,7 @@ export function WeeklyHours({ resource, editable }: { resource: Resource; editab
       resourceId={resource.id}
       color={resource.color}
       initial={rulesToSchedules(availability.data.rules)}
+      overrides={availability.data.overrides}
       editable={editable}
     />
   );

@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/ui/page-container";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExampleProposal } from "./example-proposal";
 import { dashboardWhere, ProposalView } from "./proposal-card";
 
 /**
@@ -129,12 +130,13 @@ export function AgentRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <div>
+        <div className="flex flex-col gap-2">
+          <ExampleProposal where={dashboardWhere(business)} />
           <EmptyState
+            size="sm"
             headingLevel={2}
-            icon={<LogoMark mono title="" />}
             title="Nothing to approve"
-            description="When your AI agent (Claude, ChatGPT and others) prepares a change here, it appears for you to approve."
+            description="When your AI agent (Claude, ChatGPT and others) prepares a change here, it looks like this, and nothing happens until you approve it."
             action={
               <Button asChild variant="secondary">
                 <Link href={BUSINESS_AI_HELP_PATH}>Connect your agent</Link>

@@ -21,6 +21,7 @@ import {
 import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { Badge } from "@/components/ui/badge";
+import { ExamplePreview } from "@/components/ui/example-preview";
 import { ActionButton } from "@/components/ui/action-button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -65,7 +66,7 @@ export function GroupsSettings() {
         <Skeleton className="h-40 rounded-2xl" />
       ) : (
         <SettingGroup
-          title="Your groups"
+          title={list.length > 0 ? "Your groups" : "What a group looks like"}
           description={
             list.length > 0
               ? "Members of a restricted group can book only the hours assigned to it. You add people to a group on their profile."
@@ -73,13 +74,32 @@ export function GroupsSettings() {
           }
         >
           {list.length === 0 ? (
-            <EmptyState
-              headingLevel={4}
-              icon={<UsersRound />}
-              title="Everyone books alike"
-              description={`Everyone books the same hours and services. Add a group when some ${v("customers")} need their own.`}
-              action={newGroup}
-            />
+            <>
+              <ExamplePreview className="p-1.5">
+                <SettingList>
+                  <SettingItem
+                    title="Members"
+                    chips={
+                      <Badge tone="warning" className="h-5">
+                        <Lock /> Restricted
+                      </Badge>
+                    }
+                    meta={
+                      <span className="truncate text-[0.8125rem] leading-5 text-muted-foreground">
+                        Their own hours and prices
+                      </span>
+                    }
+                  />
+                </SettingList>
+              </ExamplePreview>
+              <EmptyState
+                size="sm"
+                headingLevel={4}
+                title="Everyone books alike"
+                description={`Everyone books the same hours and services. Add a group when some ${v("customers")} need their own.`}
+                action={newGroup}
+              />
+            </>
           ) : (
             <SettingList>
               {list.map((g) => (

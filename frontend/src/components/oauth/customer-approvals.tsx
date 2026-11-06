@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Bot, CircleCheck, Plug, Unplug } from "lucide-react";
+import { ExampleProposal } from "@/components/assistant/example-proposal";
 import { LogoMark } from "@/components/brand/logo";
 import { qk } from "@/lib/api/query-keys";
 import {
@@ -136,12 +137,13 @@ export function CustomerRequestsPage() {
       ) : requests.isPending ? (
         <Skeleton className="h-56 rounded-xl" />
       ) : items.length === 0 ? (
-        <div>
+        <div className="flex flex-col gap-2">
+          <ExampleProposal where={{ timezone: "UTC", href: (path) => path }} />
           <EmptyState
+            size="sm"
             headingLevel={2}
-            icon={<LogoMark mono title="" />}
             title="Nothing to approve"
-            description="Anything your assistant asks you to confirm appears here."
+            description="Anything your assistant asks you to confirm looks like this, and waits for your yes."
             action={
               <Button asChild variant="secondary">
                 <Link href={AI_HELP_PATH}>
