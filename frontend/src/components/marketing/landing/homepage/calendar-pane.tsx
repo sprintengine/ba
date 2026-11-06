@@ -66,7 +66,13 @@ export function Rail({ active = "calendar", alerts = 0 }: { active?: string; ale
   return (
     <div className="flex w-20 shrink-0 flex-col items-center gap-1 bg-surface-sunken px-2 py-3 max-sm:hidden">
       <div className="mb-2 flex w-16 justify-center py-1">
-        <BusinessTile name={LUMEN.name} color={LUMEN.branding.primaryColor} size="lg" className="size-9" />
+        <BusinessTile
+          name={LUMEN.name}
+          logoUrl={LUMEN.branding.logoUrl}
+          color={LUMEN.branding.primaryColor}
+          size="lg"
+          className="size-9"
+        />
       </div>
       <div className="flex flex-col gap-1">
         {RAIL.map((item) => (

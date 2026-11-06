@@ -45,7 +45,7 @@ export type IndustryContent = {
   color: string;
   /** Singular label used in CTAs: "Start with the {label} template". */
   templateLabel: string;
-  business: { name: string; slug: string; tagline: string; initials: string };
+  business: { name: string; slug: string; tagline: string; logoUrl: string };
   vocabulary: { resource: string; resources: string; customer: string; customers: string; booking: string };
   meta: { title: string; description: string };
   hero: { eyebrow: string; title: string; description: string; points: string[] };

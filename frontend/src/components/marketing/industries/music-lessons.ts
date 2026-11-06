@@ -11,7 +11,7 @@ export const MUSIC_LESSONS: IndustryContent = {
     name: "Cadence Music Studio",
     slug: "cadence-music",
     tagline: "Piano, guitar, voice and more",
-    initials: "CM",
+    logoUrl: "/logos/cadence-music.webp",
   },
   vocabulary: {
     resource: "Teacher",

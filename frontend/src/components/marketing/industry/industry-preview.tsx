@@ -65,7 +65,13 @@ export function IndustryPreview({ slug }: { slug: IndustrySlug }) {
       <BrowserFrame url={`bookanything.ie/${business.slug}`} className="text-left">
         <div className="relative flex flex-col gap-6 p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <BusinessTile name={business.name} color={content.color} size="lg" className="size-10" />
+            <BusinessTile
+              name={business.name}
+              logoUrl={business.logoUrl}
+              color={content.color}
+              size="lg"
+              className="size-10"
+            />
             <div className="min-w-0">
               <p className="truncate text-base font-semibold tracking-tight">{business.name}</p>
               <p className="truncate text-sm text-muted-foreground">{business.tagline}</p>
