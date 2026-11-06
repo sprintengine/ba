@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, BellOff, CheckCheck } from "lucide-react";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/lib/api/hooks";
 import type { AppNotification } from "@/lib/api/types";
@@ -14,6 +15,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 /** Where a person sees all their notifications and chooses which are emailed. */
 export const NOTIFICATIONS_PATH = "/my/notifications";
+
+/** The same page inside the dashboard, so the team keep the rail; the business comes from the address. */
+export function useNotificationsPath(): string {
+  const slug = /^\/dashboard\/([^/]+)/.exec(usePathname())?.[1];
+  return slug ? `/dashboard/${slug}/notifications` : NOTIFICATIONS_PATH;
+}
+
+/** How many the bell's panel shows: all of them whole, with the rest one click away. */
+const PANEL_ITEMS = 6;
+
+/** Local calendar day, for grouping. */
+const dayKey = (at: Date) => `${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`;
+
+/** "Today", "Yesterday", else "Tue 3 Nov". */
+function dayLabel(iso: string, now: Date): string {
+  const at = new Date(iso);
+  if (dayKey(at) === dayKey(now)) return "Today";
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (dayKey(at) === dayKey(yesterday)) return "Yesterday";
+  return at.toLocaleDateString(DEFAULT_LOCALE, { weekday: "short", day: "numeric", month: "short" });
+}
+
+/** Newest first as they come, under one heading per day. */
+export function groupByDay(items: AppNotification[], now: Date = new Date()) {
+  const days: { label: string; items: AppNotification[] }[] = [];
+  for (const n of items) {
+    const label = dayLabel(n.createdAt, now);
+    const last = days.at(-1);
+    if (last?.label === label) last.items.push(n);
+    else days.push({ label, items: [n] });
+  }
+  return days;
+}
 
 /** "Just now", "5 min ago", "3 h ago", "2 days ago", else the date. */
 export function timeAgo(iso: string, now: number = Date.now()): string {
@@ -101,6 +136,7 @@ export function NotificationBell({
 
 /** The bell's list: recent notifications, mark all read, and a link to all of them and their settings. */
 function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
+  const path = useNotificationsPath();
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const items = list.data?.items ?? [];
@@ -129,18 +165,18 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
           You&rsquo;re all caught up.
         </p>
       ) : (
-        <NotificationList items={items.slice(0, 10)} onNavigate={onNavigate} compact />
+        <NotificationList items={items.slice(0, PANEL_ITEMS)} onNavigate={onNavigate} />
       )}
       <div className="flex items-center justify-between gap-3 border-t border-border-subtle px-3 py-2 text-sm">
         <Link
-          href={NOTIFICATIONS_PATH}
+          href={path}
           onClick={onNavigate}
           className="font-medium text-brand underline-offset-2 hover:underline"
         >
-          All notifications
+          {items.length > PANEL_ITEMS ? `All ${items.length} notifications` : "All notifications"}
         </Link>
         <Link
-          href={`${NOTIFICATIONS_PATH}#email`}
+          href={`${path}#email`}
           onClick={onNavigate}
           className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
         >
@@ -151,53 +187,60 @@ function NotificationPanel({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-/** Notifications as links: opening one marks it read. */
+/** Notifications as links under a heading per day: opening one marks it read. */
 export function NotificationList({
   items,
   onNavigate,
-  compact = false,
 }: {
   items: AppNotification[];
   onNavigate?: () => void;
-  compact?: boolean;
 }) {
   const markRead = useMarkNotificationRead();
   // The business only tells them apart when there is more than one.
   const several = new Set(items.map((n) => n.businessName).filter(Boolean)).size > 1;
   return (
-    <ul
-      className={cn(
-        "flex flex-col divide-y divide-border-subtle",
-        compact &&
-          "max-h-96 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] pb-7",
-      )}
-    >
-      {items.map((n) => (
-        <li key={n.id}>
-          <Link
-            href={n.link}
-            onClick={() => {
-              if (!n.read) markRead.mutate(n.id);
-              onNavigate?.();
-            }}
-            className="flex gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-          >
-            <span
-              aria-hidden
-              className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-brand")}
-            />
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
-                {n.title}
-                {!n.read && <span className="sr-only"> (unread)</span>}
-              </span>
-              <span className="line-clamp-2 text-xs text-muted-foreground">
-                {[n.body, several && n.businessName, timeAgo(n.createdAt)].filter(Boolean).join(" · ")}
-              </span>
-            </span>
-          </Link>
-        </li>
+    <div className="flex flex-col">
+      {groupByDay(items).map((day) => (
+        <section key={day.label} aria-label={day.label}>
+          <h3 className="bg-popover/95 sticky top-0 z-10 flex items-baseline justify-between px-3 pt-2.5 pb-1 text-xs font-medium text-muted-foreground">
+            {day.label}
+            <span className="tnum text-subtle-foreground">{day.items.length}</span>
+          </h3>
+          <ul className="flex flex-col">
+            {day.items.map((n) => (
+              <li key={n.id}>
+                <Link
+                  href={n.link}
+                  onClick={() => {
+                    if (!n.read) markRead.mutate(n.id);
+                    onNavigate?.();
+                  }}
+                  className="flex gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-1.5 size-2 shrink-0 rounded-full",
+                      n.read ? "bg-transparent" : "bg-brand",
+                    )}
+                  />
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className={cn("leading-snug", n.read ? "text-muted-foreground" : "font-medium")}>
+                      {n.title}
+                      {!n.read && <span className="sr-only"> (unread)</span>}
+                    </span>
+                    <span className="line-clamp-2 text-xs text-muted-foreground">
+                      {[n.body, several && n.businessName, day.label === "Today" && timeAgo(n.createdAt)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   );
 }

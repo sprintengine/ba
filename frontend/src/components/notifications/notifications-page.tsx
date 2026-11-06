@@ -21,7 +21,7 @@ import { toast } from "@/components/ui/toast";
 import { NotificationList } from "./notification-bell";
 
 /** /my/notifications (§22): everything recent, and which kinds are also emailed. */
-export function NotificationsPage() {
+export function NotificationsPage({ inDashboard = false }: { inDashboard?: boolean }) {
   const list = useNotifications();
   const readAll = useMarkAllNotificationsRead();
   const unread = list.data?.unreadCount ?? 0;
@@ -34,7 +34,11 @@ export function NotificationsPage() {
       <PageHeader
         title="Notifications"
         back={
-          member ? { href: "/dashboard", label: "Today" } : { href: "/my/bookings", label: "My bookings" }
+          inDashboard
+            ? undefined
+            : member
+              ? { href: "/dashboard", label: "Today" }
+              : { href: "/my/bookings", label: "My bookings" }
         }
         actions={
           <>
