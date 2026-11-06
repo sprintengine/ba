@@ -53,7 +53,8 @@ export const SIGNED_IN_PAGES: MainPage[] = [
   },
   dashboard("customers", "/customers", /Customers|Patients|Clients/),
   dashboard("services", "/services", /Services/),
-  dashboard("team", "/team", /Team/),
+  // Who can sign in is part of the staff page now; the old address lands there.
+  dashboard("team", "/team", /Staff|Therapists|Team/),
   dashboard("settings", "/settings/general", /Settings|General/),
   dashboard("release schedules", "/settings/release-schedules", /Settings/),
   {
