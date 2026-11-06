@@ -32,7 +32,7 @@ export const LUMEN = {
   contactPhone: null,
   websiteUrl: null,
   address: { line1: "Unit 4, Lantern Quay", line2: null, city: "Dublin", postcode: "D02 XY01" },
-  branding: { primaryColor: "#5b4ae0", logoUrl: null, coverImageUrl: null },
+  branding: { primaryColor: "#5b4ae0", logoUrl: "/logos/lumen-physio.webp", coverImageUrl: null },
   policies: {
     minNoticeMinutes: MIN_NOTICE,
     maxAdvanceDays: 60,

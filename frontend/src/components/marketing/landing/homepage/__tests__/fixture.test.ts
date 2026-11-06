@@ -1,6 +1,9 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { formatTime } from "@/lib/format";
 import { PHYSIO } from "@/components/marketing/industries/physio";
+import { must } from "@/test/must";
 import {
   BOOKED_SERVICE,
   dayEntries,
@@ -8,6 +11,7 @@ import {
   EARLIEST_TODAY,
   freeSlots,
   isOpenDay,
+  LUMEN,
   SERVICES,
   TEAM,
   toBooking,
@@ -22,6 +26,10 @@ describe("the sample business", () => {
   it("charges what the physio template on the same page lists", () => {
     const listed = PHYSIO.services.map((s) => [s.name, s.durationMinutes, s.priceCents]);
     expect(SERVICES.map((s) => [s.name, s.durationMinutes, s.priceCents])).toEqual(listed);
+  });
+
+  it("shows a logo that ships with the site", () => {
+    expect(existsSync(join(process.cwd(), "public", must(LUMEN.branding.logoUrl)))).toBe(true);
   });
 });
 

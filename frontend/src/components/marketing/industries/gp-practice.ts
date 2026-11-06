@@ -11,7 +11,7 @@ export const GP_PRACTICE: IndustryContent = {
     name: "Meadowbrook Family Practice",
     slug: "meadowbrook-practice",
     tagline: "Family GP practice and nurse clinic",
-    initials: "MF",
+    logoUrl: "/logos/meadowbrook-practice.webp",
   },
   vocabulary: {
     resource: "Clinician",

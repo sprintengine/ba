@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { INDUSTRIES } from "@/components/shells/industries";
 import { priceLabel } from "@/lib/booking/quote";
 import { must } from "@/test/must";
@@ -21,6 +23,7 @@ describe("industry content", () => {
     expect(c.slug).toBe(slug);
     expect(c.templateKey).toBe(industry.template);
     expect(c.color).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(existsSync(join(process.cwd(), "public", c.business.logoUrl))).toBe(true);
     expect(c.services.length).toBeGreaterThan(0);
     expect(c.features.length).toBeGreaterThanOrEqual(4);
     expect(c.hero.points.length).toBeGreaterThan(0);

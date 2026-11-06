@@ -11,7 +11,7 @@ export const PHYSIO: IndustryContent = {
     name: "Lumen Physiotherapy",
     slug: "lumen-physio",
     tagline: "Sports injuries, back pain and rehab",
-    initials: "LP",
+    logoUrl: "/logos/lumen-physio-teal.webp",
   },
   vocabulary: {
     resource: "Therapist",

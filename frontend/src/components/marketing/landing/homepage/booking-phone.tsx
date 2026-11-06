@@ -207,7 +207,13 @@ export function BookingPhone({ demo }: { demo: BookingDemo }) {
     >
       <VocabularyProvider vocabulary={LUMEN.vocabulary}>
         <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border/70 px-5">
-          <BusinessTile name={LUMEN.name} color={LUMEN.branding.primaryColor} size="lg" className="size-9" />
+          <BusinessTile
+            name={LUMEN.name}
+            logoUrl={LUMEN.branding.logoUrl}
+            color={LUMEN.branding.primaryColor}
+            size="lg"
+            className="size-9"
+          />
           <span className="line-clamp-1 text-base leading-tight font-semibold tracking-tight">
             {LUMEN.name}
           </span>

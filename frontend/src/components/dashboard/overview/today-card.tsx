@@ -135,6 +135,20 @@ function DayAfter({
   return (
     <div className="flex flex-col gap-1.5 px-2 pt-3">
       {dayIsOver && <p className="text-sm font-medium">That&rsquo;s the day.</p>}
+      {/* Holds the next day's room: arriving later, it would push everything under the card down. */}
+      {later.isPending && (
+        <div className="flex flex-col gap-1.5" aria-busy>
+          <Skeleton className="h-5 w-52" />
+          <div className="mt-1 flex flex-col gap-1.5">
+            {Array.from({ length: NEXT_DAY_ROWS }, (_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-4 w-11" />
+                <Skeleton className="h-15 flex-1 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {first && day && (
         <>
           <p className="tnum text-sm text-muted-foreground">
@@ -170,6 +184,8 @@ function OrderRow({
   const fmt = useFmt();
   const [b, ...rest] = session.bookings;
   const past = new Date(b.end) <= now;
+  // As on the calendar, only a booking that stands wears its service's colour; a status badge can't be read over it.
+  const standing = !past && !["cancelled", "expired", "no_show"].includes(b.status);
   const group = rest.length > 0;
   return (
     <button
@@ -184,9 +200,9 @@ function OrderRow({
       <span
         className={cn(
           "flex min-w-0 flex-1 items-center gap-3 rounded-xl border px-3 py-2 transition-[filter] group-hover:brightness-[0.97] dark:group-hover:brightness-125",
-          past && "border-border-subtle bg-surface-sunken",
+          !standing && "border-border-subtle bg-surface-sunken",
         )}
-        style={past ? undefined : serviceTint(b.service.color)}
+        style={standing ? serviceTint(b.service.color) : undefined}
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-semibold">{group ? b.service.name : b.customer.name}</span>

@@ -11,7 +11,7 @@ export const CAR_WASH: IndustryContent = {
     name: "Gleam Car Wash",
     slug: "gleam-car-wash",
     tagline: "Hand wash and valeting, two covered bays",
-    initials: "GC",
+    logoUrl: "/logos/gleam-car-wash.webp",
   },
   vocabulary: {
     resource: "Bay",
