@@ -111,7 +111,7 @@ describe("BillingSettings", () => {
     expect(meter).toHaveAttribute("aria-valuemax", "100");
     expect(screen.getByText("40 / 100")).toBeInTheDocument();
     expect(screen.queryByText(/getting close/)).not.toBeInTheDocument();
-    expect(screen.getByText("Free forever for small businesses.")).toBeInTheDocument();
+    expect(screen.getByText("Free until you're busy.")).toBeInTheDocument();
     // The plan you're on is the card above; the list is what you can move to.
     expect(planNames()).toEqual(["Pro", "Business"]);
     expect(screen.getByRole("button", { name: "Upgrade to Pro" })).toBeInTheDocument();

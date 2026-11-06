@@ -19,7 +19,8 @@ export function BlockedBand({ block, top, height }: { block: BlockedInterval; to
       aria-hidden
       className={cn(
         "pointer-events-none absolute inset-x-0 z-[1] overflow-clip",
-        block.kind === "closed" ? CLOSED_FILL : "bg-muted",
+        // In dark, hours nobody works are the darkest thing on the grid; time off must not read as brighter than work.
+        block.kind === "closed" ? CLOSED_FILL : "bg-muted dark:bg-background",
       )}
       style={{ top, height }}
     >

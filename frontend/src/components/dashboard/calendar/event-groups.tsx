@@ -220,6 +220,8 @@ function StackText({
   const n = bookings.length;
   const first = whole ? bookings[0] : undefined;
   const lines = linesFor(height);
+  // Names say who's in the stack: a count alone reads as one booking with a number on it.
+  const names = bookings.map((b) => b.customer.name.split(" ")[0]);
   const services = [...new Set(bookings.map((b) => b.service.name))];
   return (
     <>
@@ -233,8 +235,9 @@ function StackText({
       >
         {first ? (
           <>
-            <span className="min-w-0 truncate">{first.customer.name}</span>
-            <span className="shrink-0 font-medium text-muted-foreground">+{n - 1}</span>
+            <span className="min-w-0 truncate">
+              {n} {v("bookings")}
+            </span>
           </>
         ) : (
           <span className="truncate">
@@ -255,7 +258,8 @@ function StackText({
       )}
       {first && lines >= 3 && (
         <span className="block truncate text-xs font-normal text-muted-foreground">
-          {services.length === 1 ? services[0] : `${services.length} services`}
+          {`${names.slice(0, 2).join(", ")}${n > 2 ? ` +${n - 2}` : ""}`}
+          {services.length === 1 ? ` · ${services[0]}` : ""}
         </span>
       )}
     </>

@@ -98,7 +98,13 @@ export function CalendarView() {
       c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.start, business.timezone))),
     );
     const firstBusy = starts.length > 0 ? Math.min(...starts) : firstOpen;
-    const target = days.includes(today) ? Math.max(firstOpen - 15, nowMinute - 45) : firstBusy - 15;
+    // Once today's last booking is over there's nothing ahead to look at: today opens as any other day does.
+    const lastEnd = Math.max(
+      0,
+      ...columns.flatMap((c) => c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.end, business.timezone)))),
+    );
+    const live = days.includes(today) && nowMinute < lastEnd;
+    const target = live ? Math.max(firstOpen - 15, nowMinute - 45) : firstBusy - 15;
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * scale);
     // Where the week doesn't fit, it opens on today rather than on Monday.
     const column = view === "week" ? scroller.current.querySelector(`[data-day="${today}"]`) : null;
@@ -311,7 +317,7 @@ function CalendarFooter({
       <span className="hidden pointer-coarse:inline">Tap a free time to book</span>
       <span className="flex gap-3">
         <span className="inline-flex items-center gap-1.5 max-sm:hidden">
-          <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border" />
+          <span aria-hidden className="size-3 rounded-sm bg-muted ring-1 ring-border dark:bg-background" />
           Not working
         </span>
         {blocked.some((b) => b.kind === "closed") && (

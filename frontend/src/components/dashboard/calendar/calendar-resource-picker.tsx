@@ -102,7 +102,7 @@ export function CalendarResourcePicker({
           variant="secondary"
           size="sm"
           aria-label={`Filter by ${v("resource")}: ${label}`}
-          className="w-full min-w-0 justify-start max-sm:flex-1"
+          className="w-full min-w-0 justify-start max-sm:flex-1 @max-[62rem]/tools:[&>svg:first-child]:hidden"
         >
           <Users aria-hidden />
           <span className="min-w-0 truncate">{label}</span>

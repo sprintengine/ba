@@ -115,11 +115,7 @@ export function BillingSettings() {
                   )}
                 </span>
               }
-              help={
-                b!.plan === "free"
-                  ? "Free forever for small businesses."
-                  : "Thanks for supporting bookanything."
-              }
+              help={b!.plan === "free" ? "Free until you're busy." : "Thanks for supporting bookanything."}
             >
               {b!.plan !== "free" ? (
                 <Button variant="secondary" loading={portal.isPending} onClick={() => void openPortal()}>
@@ -241,10 +237,7 @@ function UsageMeter({ used, limit, label }: { used: number; limit: number; label
         aria-label={label}
       >
         <div
-          className={cn(
-            "h-full rounded-full transition-[width]",
-            pct >= 90 ? "bg-danger" : pct >= 70 ? "bg-warning" : "bg-brand",
-          )}
+          className={cn("h-full rounded-full transition-[width]", pct >= 70 ? "bg-warning" : "bg-brand")}
           style={{ width: `${pct}%` }}
         />
       </div>

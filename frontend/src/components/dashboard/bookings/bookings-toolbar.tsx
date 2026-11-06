@@ -71,7 +71,7 @@ export function BookingsToolbar({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="flex w-72 flex-col gap-3 p-3">
+        <PopoverContent align="end" className="flex w-84 max-w-[calc(100vw-2rem)] flex-col gap-3 p-3">
           <RangeFilter filters={filters} setParams={setParams} />
           <StatusFilter
             value={filters.statuses}
