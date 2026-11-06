@@ -68,10 +68,7 @@ export function BusinessSwitcher({
           {!collapsed && (
             <>
               <span className="flex min-w-0 flex-1 flex-col">
-                <span
-                  className="truncate text-sm leading-5 font-semibold"
-                  title={business.name}
-                >
+                <span className="truncate text-sm leading-5 font-semibold" title={business.name}>
                   {business.name}
                 </span>
                 <span className="truncate text-xs text-subtle-foreground capitalize">
