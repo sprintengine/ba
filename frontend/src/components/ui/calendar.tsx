@@ -214,7 +214,7 @@ export function Calendar({
                             : "text-foreground hover:bg-accent active:scale-95",
                         isToday &&
                           !isSelected &&
-                          "text-brand after:absolute after:top-1 after:right-1 after:size-1 after:rounded-full after:bg-brand",
+                          "font-semibold text-brand",
                       )}
                     >
                       {Number(date.slice(8))}

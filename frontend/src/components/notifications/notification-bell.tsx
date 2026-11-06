@@ -169,7 +169,7 @@ export function NotificationList({
       className={cn(
         "flex flex-col divide-y divide-border-subtle",
         compact &&
-          "max-h-96 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] pb-4",
+          "max-h-96 overflow-y-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-1.5rem),transparent)] pb-7",
       )}
     >
       {items.map((n) => (

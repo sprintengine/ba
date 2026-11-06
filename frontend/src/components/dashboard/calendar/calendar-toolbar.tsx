@@ -148,7 +148,8 @@ export function CalendarToolbar({
     />
   ) : null;
   return (
-    <div className="flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5">
+    // A container, because the inspector takes the room: over the page in a small window, beside it in a big one.
+    <div className="@container/tools flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5 max-xl:sm:pr-[max(1.25rem,var(--inspector-width,0px))]">
       {/* One line from a small window up: the height belongs to the grid. */}
       <div className="flex min-w-0 items-center gap-1 sm:gap-2">
         <div className="min-w-0 max-sm:mr-auto">
@@ -172,11 +173,14 @@ export function CalendarToolbar({
             size="sm"
             onClick={() => setParams({ date: null })}
             disabled={date === today && view === "day"}
+            className="@max-[40rem]/tools:hidden"
           >
             Today
           </Button>
         </Tooltip>
-        {!phone && <div className="flex max-w-36 min-w-0 xl:max-w-52">{picker}</div>}
+        {!phone && (
+          <div className="flex max-w-36 min-w-0 xl:max-w-52 @max-[46rem]/tools:hidden">{picker}</div>
+        )}
         {position && (
           <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden">
             {position}
@@ -186,7 +190,7 @@ export function CalendarToolbar({
           <AppLink
             href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
             aria-label={`${waiting} to approve`}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden @max-[44rem]/tools:hidden"
           >
             <span className="tnum">{waiting}</span>
             <span>to approve</span>
@@ -194,7 +198,7 @@ export function CalendarToolbar({
         )}
         <div className="flex-1 max-sm:hidden" />
         {!phone && viewControl}
-        {!phone && viewOptions}
+        {!phone && <div className="@max-[34rem]/tools:hidden">{viewOptions}</div>}
         <ActionButton
           variant="primary"
           size="sm"
@@ -268,8 +272,8 @@ function DatePopover({
           className="-ml-1.5 min-w-0 rounded-md px-1.5 py-0.5 text-left text-lg font-semibold tracking-tight whitespace-nowrap transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-[1.375rem] sm:leading-8 pointer-coarse:min-h-11"
         >
           <span className="inline-flex items-center gap-1.5">
-            <span className="hidden xl:inline">{title}</span>
-            <span className="xl:hidden">{shortTitle}</span>
+            <span className="hidden @[62rem]/tools:inline">{title}</span>
+            <span className="@[62rem]/tools:hidden">{shortTitle}</span>
             <ChevronDown aria-hidden className="size-4 text-subtle-foreground" />
           </span>
         </button>
