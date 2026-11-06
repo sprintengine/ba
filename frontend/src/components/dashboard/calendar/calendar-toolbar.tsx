@@ -152,7 +152,7 @@ export function CalendarToolbar({
     <div className="@container/tools flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5 max-xl:sm:pr-[max(1.25rem,calc(var(--inspector-width,0px)+0.75rem))]">
       {/* One line from a small window up: the height belongs to the grid. */}
       <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-        <div className="min-w-0 max-sm:mr-auto">
+        <div className="shrink-0 max-sm:mr-auto">
           <DatePopover date={date} view={view} today={today} range={range} setParams={setParams} />
         </div>
         <div className="flex items-center">
@@ -182,7 +182,7 @@ export function CalendarToolbar({
           <div className="flex max-w-36 min-w-0 xl:max-w-52 @max-[46rem]/tools:hidden">{picker}</div>
         )}
         {position && (
-          <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden">
+          <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden @max-[52rem]/tools:hidden">
             {position}
           </span>
         )}
@@ -190,7 +190,7 @@ export function CalendarToolbar({
           <AppLink
             href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
             aria-label={`${waiting} to approve`}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden @max-[44rem]/tools:hidden"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden @max-[47rem]/tools:hidden"
           >
             <span className="tnum">{waiting}</span>
             <span>to approve</span>
