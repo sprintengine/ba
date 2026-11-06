@@ -163,7 +163,7 @@ function DayHeader({
           data-tally="column"
           className="tnum text-xs leading-4 whitespace-nowrap text-muted-foreground transition-opacity"
         >
-          {count > 0 ? `${count} booked` : "\u00a0"}
+          {count} booked
         </span>
       </span>
     </button>

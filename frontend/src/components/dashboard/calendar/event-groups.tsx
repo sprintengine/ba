@@ -72,7 +72,7 @@ export function SessionButton({
             <span
               className={cn(
                 STUCK_NAME,
-                "flex min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
+                "flex w-full min-w-0 items-baseline gap-1.5 text-[0.8125rem] leading-[1.0625rem] font-semibold text-foreground",
                 isTight(h) && "mt-0 pt-0 text-xs leading-[0.9375rem]",
               )}
             >
@@ -234,7 +234,8 @@ function StackText({
       <span
         className={cn(
           STUCK_NAME,
-          "tnum flex min-w-0 items-baseline gap-1",
+          // As wide as the card: pinned over the time as the card scrolls away, it has to cover all of it.
+          "tnum flex w-full min-w-0 items-baseline gap-1",
           !whole && "@max-[6rem]:hidden",
           isTight(height) && "mt-0 pt-0",
         )}
