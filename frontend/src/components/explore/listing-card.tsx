@@ -5,7 +5,6 @@ import { formatDistance, formatPriceFrom, formatSlotLabel } from "@/lib/explore"
 import { cn } from "@/lib/utils";
 import { BusinessTile } from "@/components/shells/business-tile";
 import { DealPrice } from "@/components/offers/deal-price";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryIcon } from "./category-icon";
 
@@ -89,9 +88,8 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
       </div>
       {hasDeals && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge tone="success">
-            <Tag aria-hidden /> Deals
-          </Badge>
+          <Tag aria-hidden className="size-3.5 text-success-soft-foreground" />
+          <span className="sr-only">Deals</span>
           {listing.deals.slice(0, MAX_DEALS_SHOWN).map((deal) => (
             <span key={deal.id} className="text-xs text-muted-foreground">
               <span className="font-medium text-success-soft-foreground">{deal.label}</span>
@@ -131,10 +129,7 @@ function SlotChip({
     <li
       title={service}
       className={cn(
-        "tnum inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium whitespace-nowrap",
-        offer
-          ? "border-success-border bg-success-soft text-success-soft-foreground"
-          : "border-border bg-surface-sunken text-foreground",
+        "tnum inline-flex h-7 items-center gap-1.5 rounded-full border border-border bg-surface-sunken px-2.5 text-xs font-medium whitespace-nowrap text-foreground",
       )}
     >
       <span>{label}</span>
@@ -148,7 +143,6 @@ function SlotChip({
             originalCents={offer.originalPriceCents}
             priceCents={offer.priceCents}
             currency={currency}
-            inverted
           />
           <span className="sr-only">, {offer.label}</span>
         </>

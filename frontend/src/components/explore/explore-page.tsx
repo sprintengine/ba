@@ -104,21 +104,18 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
         onValueChange={(category) => change({ category })}
       />
 
-      <div className="grid gap-8 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
-        <aside aria-labelledby="explore-filters-title" className="hidden lg:block">
-          <div className="sticky top-24 flex flex-col gap-5">
-            <div className="flex h-8 items-center justify-between">
-              <h2 id="explore-filters-title" className="text-sm font-semibold">
-                Filters
-              </h2>
-              {panelCount > 0 && (
-                <Button variant="link" size="sm" onClick={() => change(PANEL_DEFAULTS)}>
-                  Clear
-                </Button>
-              )}
-            </div>
-            <FiltersPanel filters={filters} onChange={change} />
-          </div>
+      <div className="flex flex-col gap-5">
+        {/* A bar, not a column: the free times are what people came for, so the results get the width. */}
+        <aside aria-labelledby="explore-filters-title" className="hidden items-start gap-6 lg:flex">
+          <h2 id="explore-filters-title" className="sr-only">
+            Filters
+          </h2>
+          <FiltersPanel filters={filters} onChange={change} bar />
+          {panelCount > 0 && (
+            <Button variant="link" size="sm" onClick={() => change(PANEL_DEFAULTS)} className="ml-auto">
+              Clear
+            </Button>
+          )}
         </aside>
 
         <section aria-labelledby="explore-results-title" className="@container flex min-w-0 flex-col gap-4">
