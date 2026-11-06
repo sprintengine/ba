@@ -36,7 +36,7 @@ function Poster() {
           <p className="ml-10 self-end rounded-2xl rounded-br-md bg-primary px-3.5 py-2 text-primary-foreground">
             Sam’s off on Friday afternoon. Can you sort out their bookings?
           </p>
-          <p>Aoife is free for all three. Here’s what I’d change.</p>
+          <p>Aoife is free for both. Here’s what I’d change.</p>
         </div>
       </div>
       <BrowserWindow className={SCENE_WINDOW}>

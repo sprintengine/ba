@@ -64,7 +64,7 @@ export function AiStage({ side, paused }: { side: AiSide; paused: boolean }) {
           />
           {done &&
             (owner ? (
-              <CalendarNotice title="Three bookings moved" detail="Each client has been told" />
+              <CalendarNotice title="Two bookings moved" detail="Each client has been told" />
             ) : (
               <CalendarNotice title="New booking, paid €60" detail="Rory Kane, through their AI" />
             ))}

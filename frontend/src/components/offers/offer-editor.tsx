@@ -27,6 +27,7 @@ import { LimitsFields, ScheduleFields } from "./offer-schedule-fields";
  */
 export function OfferEditor({
   offer,
+  starter,
   services,
   open,
   onOpenChange,
@@ -34,6 +35,8 @@ export function OfferEditor({
   previewDelay,
 }: {
   offer: Offer | null;
+  /** A new offer's starting point, from the empty page's suggestions. */
+  starter?: Partial<OfferFormValues>;
   /** Services the deal can apply to (the business's active services). */
   services: Service[];
   open: boolean;
@@ -49,7 +52,9 @@ export function OfferEditor({
   const update = useUpdateOffer(business.id);
   const form = useForm<OfferFormValues>({
     resolver: zodResolver(offerFormSchema),
-    defaultValues: offer ? offerToForm(offer) : defaultOfferForm(services.map((s) => s.id)),
+    defaultValues: offer
+      ? offerToForm(offer)
+      : { ...defaultOfferForm(services.map((s) => s.id)), ...starter },
   });
 
   const submit = async (values: OfferFormValues) => {

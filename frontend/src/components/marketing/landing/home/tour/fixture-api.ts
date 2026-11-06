@@ -223,9 +223,15 @@ const availability = (id: string): ResourceAvailability => ({
 });
 
 /** Answers a query from the sample, as the API would. `undefined`: nothing on these screens should have asked. */
-export function sampleAnswer(key: QueryKey, date: PlainDate, booked: boolean, moved = false): unknown {
+export function sampleAnswer(
+  key: QueryKey,
+  date: PlainDate,
+  booked: boolean,
+  moved = false,
+  at = BOOKED_ENTRY.at,
+): unknown {
   if (key[0] !== "business") return undefined;
-  const entries = dayEntries(booked ? [moved ? MOVED_ENTRY : BOOKED_ENTRY] : []);
+  const entries = dayEntries(booked ? [{ ...(moved ? MOVED_ENTRY : BOOKED_ENTRY), at }] : []);
   const bookings = entries.map((e) => toBooking(e, date));
   const [section, kind, detail] = key.slice(2);
   switch (section) {
@@ -276,7 +282,8 @@ const unanswered = () => new Promise<never>(() => undefined);
 export function sampleClient(date: PlainDate, startBooked: boolean) {
   let booked = startBooked;
   let moved = false;
-  const answer = (key: QueryKey) => sampleAnswer(key, date, booked, moved);
+  let at = BOOKED_ENTRY.at;
+  const answer = (key: QueryKey) => sampleAnswer(key, date, booked, moved, at);
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: Infinity } },
   });
@@ -303,9 +310,10 @@ export function sampleClient(date: PlainDate, startBooked: boolean) {
     client,
     /** The queries the sample has no answer for. */
     missing,
-    setBooked: (on: boolean) => {
+    setBooked: (on: boolean, time = BOOKED_ENTRY.at) => {
       booked = on;
       moved = false;
+      at = time;
       void client.invalidateQueries();
     },
     /** The assistant moves the booking to Aoife. */

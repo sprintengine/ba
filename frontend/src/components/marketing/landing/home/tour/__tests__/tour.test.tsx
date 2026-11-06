@@ -165,3 +165,16 @@ describe("the hero's clock", () => {
     await expect(waiting).rejects.toBeInstanceOf(Stopped);
   });
 });
+
+describe("a booking at the visitor's time", () => {
+  it("lands where they chose", () => {
+    const startAt = (at?: string) => {
+      const key = qk.business(SAMPLE_BUSINESS.id).overview(date);
+      const day = sampleAnswer(key, date, true, false, at) as {
+        today: { customer: { name: string }; start: string }[];
+      };
+      return day.today.find((b) => b.customer.name === CLIENT.name)?.start;
+    };
+    expect(startAt("16:00")).not.toBe(startAt());
+  });
+});

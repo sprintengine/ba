@@ -191,8 +191,7 @@ export function whoIsFree(entries: DemoEntry[], chosen: PublicService, time: str
 
 /** Friday afternoon, before and after the owner's assistant moves Sam's bookings to Aoife. */
 export const FRIDAY: DemoEntry[] = [
-  { who: "sam", at: "14:00", customer: "Remy Stroud", service: FOLLOW_UP, room: "Room 1" },
-  { who: "sam", at: "15:00", customer: "Dara Quinn", service: MASSAGE, room: "Room 1" },
+  { who: "sam", at: "15:30", customer: CLIENT.name, service: FOLLOW_UP, room: "Room 1" },
   { who: "sam", at: "16:15", customer: "Jo Hayes", service: ASSESSMENT, room: "Rehab gym" },
   { who: "aoife", at: "13:00", customer: "Toby Marsh", service: ASSESSMENT, room: "Room 2" },
   { who: "niamh", at: "13:00", customer: "Mia Doyle", service: MASSAGE, room: "Room 3" },

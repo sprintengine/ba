@@ -10,8 +10,8 @@ import { CalendarNotice } from "../scene-parts";
 import { useBookingDemo } from "../use-booking-demo";
 import { Cursor, pointer } from "./cursor";
 import { sampleClient, sampleNow } from "./fixture-api";
-import { StagePause, StagePhone } from "./stage-parts";
-import { tourStory, type Notice, type TourCast } from "./story";
+import { StageBar, StagePhone } from "./stage-parts";
+import { tourStory, type Chapter, type Entry, type Notice, type TourCast } from "./story";
 import { PATHS, preloadLaterScreens, TourApp, type Screen } from "./tour-app";
 import { useStageClock } from "./use-stage-clock";
 
@@ -36,6 +36,9 @@ export function TourStage({ frameClass }: { frameClass: string }) {
   const [notice, setNotice] = useState<Notice | false>(still ? "booked" : false);
   const [chat, setChat] = useState<number | null>(null);
   const [alerts, setAlerts] = useState(still ? 1 : 0);
+  const [chapter, setChapter] = useState<Chapter>("book");
+  const [trying, setTrying] = useState(false);
+  const entry = useRef<Entry>("book");
 
   const scene = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
@@ -80,6 +83,8 @@ export function TourStage({ frameClass }: { frameClass: string }) {
       demo: () => demoRef.current,
       setBooked: sample.setBooked,
       setMoved: sample.setMoved,
+      chapter: setChapter,
+      handOver: setTrying,
       notify: (next) => {
         setNotice(next);
         if (next) setAlerts(1);
@@ -94,8 +99,23 @@ export function TourStage({ frameClass }: { frameClass: string }) {
       prepare: (next) => setMounted((m) => new Set(m).add(next)),
       prepareLater: preloadLaterScreens,
     };
-    return tourStory(cast);
+    return tourStory(cast, entry.current);
   });
+
+  /** Starts from a part of the story, with the stage set back to the empty calendar. */
+  const jump = (to: Entry) => {
+    entry.current = to;
+    setOpened(null);
+    setNotice(false);
+    setChat(null);
+    setScreen("calendar");
+    setAlerts(0);
+    setTrying(false);
+    setChapter("book");
+    sample.setBooked(false);
+    demoRef.current.reset();
+    clock.restart();
+  };
 
   // Reduced motion rests on the finished booking: the picture of the whole story.
   useLayoutEffect(() => {
@@ -129,7 +149,9 @@ export function TourStage({ frameClass }: { frameClass: string }) {
                       : `New booking, paid €${String(BOOKED_SERVICE.priceCents / 100)}`
                   }
                   detail={
-                    notice === "moved" ? `${CLIENT.name} has been told` : `${CLIENT.name}, ${BOOKED_AT}`
+                    notice === "moved"
+                      ? `${CLIENT.name} has been told`
+                      : `${CLIENT.name}, ${demo.time ?? BOOKED_AT}`
                   }
                   className="bottom-12"
                   style={{ right: "calc(var(--tour-covered, 0px) + 0.75rem)" }}
@@ -139,9 +161,18 @@ export function TourStage({ frameClass }: { frameClass: string }) {
           </div>
         </div>
       </BrowserWindow>
-      <StagePhone demo={demo} chat={chat} screen={phone} finger={finger} />
+      <StagePhone demo={demo} chat={chat} screen={phone} finger={finger} live={trying} />
       {!still && <Cursor ref={arrow} />}
-      {!still && <StagePause paused={clock.paused} onToggle={clock.toggle} />}
+      {!still && (
+        <StageBar
+          paused={clock.paused}
+          onToggle={clock.toggle}
+          chapter={chapter}
+          onJump={jump}
+          trying={trying}
+          onTry={() => jump("visitor")}
+        />
+      )}
     </div>
   );
 }

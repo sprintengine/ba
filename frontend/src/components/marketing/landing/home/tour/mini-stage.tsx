@@ -11,9 +11,16 @@ import { CalendarNotice } from "../scene-parts";
 import { useBookingDemo } from "../use-booking-demo";
 import { useSize } from "../use-size";
 import { BOOKED_ENTRY, MOVED_ENTRY } from "./fixture-api";
-import { StagePause, StagePhone } from "./stage-parts";
-import { assistantAct, bookingAct, resetAct, type Cast, type Notice } from "./story";
+import { StageBar, StagePhone } from "./stage-parts";
+import { assistantAct, bookingAct, resetAct, type Cast, type Chapter, type Notice } from "./story";
 import { useStageClock } from "./use-stage-clock";
+
+/** Without the tour's screens, there's no "your day" to name. */
+const MINI_CHAPTERS = [
+  { key: "book", label: "Book", entry: "book" },
+  { key: "lands", label: "Lands", entry: "book" },
+  { key: "ai", label: "Your AI", entry: "ai" },
+] satisfies React.ComponentProps<typeof StageBar>["chapters"];
 
 /** How long the finished booking stays before the assistant's turn. */
 const REST_MS = 3500;
@@ -32,6 +39,7 @@ export function MiniStage({ frameClass }: { frameClass: string }) {
   const [notice, setNotice] = useState<Notice | false>(still ? "booked" : false);
   const [chat, setChat] = useState<number | null>(null);
   const [lead, setLead] = useState("sam");
+  const [chapter, setChapter] = useState<Chapter>("book");
   const scene = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const phone = useRef<HTMLDivElement>(null);
@@ -57,6 +65,8 @@ export function MiniStage({ frameClass }: { frameClass: string }) {
       notify: setNotice,
       chat: setChat,
       scale: () => 1,
+      chapter: setChapter,
+      handOver: () => undefined,
     };
     for (;;) {
       await bookingAct(cast);
@@ -91,7 +101,9 @@ export function MiniStage({ frameClass }: { frameClass: string }) {
         </div>
       </BrowserWindow>
       <StagePhone demo={demo} chat={chat} screen={phone} finger={finger} />
-      {!still && <StagePause paused={clock.paused} onToggle={clock.toggle} />}
+      {!still && (
+        <StageBar paused={clock.paused} onToggle={clock.toggle} chapter={chapter} chapters={MINI_CHAPTERS} />
+      )}
     </div>
   );
 }

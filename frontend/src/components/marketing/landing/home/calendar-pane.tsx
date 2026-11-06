@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
-  List,
   Plus,
   Search,
   Users,
@@ -24,7 +23,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { Switch } from "@/components/ui/switch";
 import {
   FIRST_HOUR,
   LAST_HOUR,
@@ -124,6 +122,9 @@ function Toolbar({ date, count, narrow }: { date: PlainDate; count: number; narr
             <Button variant="secondary" size="sm" disabled>
               Today
             </Button>
+            <Button variant="secondary" size="sm" className="max-xl:hidden">
+              <Users aria-hidden /> All people <ChevronDown />
+            </Button>
           </>
         )}
         <span className="flex-1" />
@@ -141,19 +142,6 @@ function Toolbar({ date, count, narrow }: { date: PlainDate; count: number; narr
         )}
         <Button variant="primary" size="sm" className="max-sm:hidden">
           <Plus /> New booking
-        </Button>
-      </div>
-      <div className="flex min-w-0 items-center gap-2 max-sm:hidden">
-        <Button variant="secondary" size="sm">
-          <Users aria-hidden /> All people <ChevronDown />
-        </Button>
-        <span className="flex-1" />
-        <span className="flex h-8 items-center gap-2 px-2 text-sm text-muted-foreground">
-          <Switch size="sm" checked={false} aria-label="Cancelled" />
-          Cancelled
-        </span>
-        <Button variant="secondary" size="sm">
-          <List aria-hidden /> All bookings
         </Button>
       </div>
       <span className="sr-only">{count} bookings</span>

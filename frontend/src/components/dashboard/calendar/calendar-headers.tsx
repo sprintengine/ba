@@ -111,7 +111,10 @@ function ResourceHeader({
       </span>
       <span className="min-w-0 truncate text-sm font-semibold">{resource.name}</span>
       {position && <span className="tnum shrink-0 text-xs text-muted-foreground sm:hidden">{position}</span>}
-      <span className="tnum ml-auto shrink-0 text-xs text-muted-foreground">
+      <span
+        data-tally="column"
+        className="tnum ml-auto shrink-0 text-xs text-muted-foreground transition-opacity"
+      >
         {columnNote(resource, count, off)}
       </span>
     </div>
@@ -156,7 +159,10 @@ function DayHeader({
         >
           {fmt.date(date, "weekday")}
         </span>
-        <span className="tnum text-xs leading-4 whitespace-nowrap text-muted-foreground">
+        <span
+          data-tally="column"
+          className="tnum text-xs leading-4 whitespace-nowrap text-muted-foreground transition-opacity"
+        >
           {count > 0 ? `${count} booked` : "\u00a0"}
         </span>
       </span>

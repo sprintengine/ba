@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PrismContainer, PrismHeading } from "../heading";
 
@@ -22,6 +23,56 @@ function Figure({ value, label }: { value: string; label: string }) {
       </p>
       <p className="mt-2 text-sm text-muted-foreground">{label}</p>
     </div>
+  );
+}
+
+const TIMES = ["14:45", "15:00", "15:15"];
+
+function Screen({
+  picked,
+  gone,
+  caption,
+  done,
+}: {
+  picked: string;
+  gone?: string;
+  caption: string;
+  done?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-xs">
+      <div className="grid grid-cols-3 gap-2">
+        {TIMES.map((t) => (
+          <span
+            key={t}
+            className={cn(
+              "tnum rounded-lg border border-border py-1.5 text-center text-sm font-medium",
+              t === picked && "border-primary bg-primary text-primary-foreground",
+              t === gone && "border-border-subtle text-subtle-foreground line-through",
+            )}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+      <p className="flex items-center gap-2 text-sm">
+        {done && <Check aria-hidden className="size-4 shrink-0 text-success" />}
+        {caption}
+      </p>
+    </div>
+  );
+}
+
+/** What "no double bookings" looks like: two people, one time, and what each of them sees. */
+function SameMoment() {
+  return (
+    <figure className="mt-12">
+      <figcaption className="text-sm font-medium">Two people tap 15:00 at the same moment:</figcaption>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <Screen picked="15:00" caption="One gets it. Booked for 15:00." done />
+        <Screen picked="15:15" gone="15:00" caption="The other is told straight away, and offered 15:15." />
+      </div>
+    </figure>
   );
 }
 
@@ -49,6 +100,7 @@ export function ProofSection() {
             <Figure value="0" label="double bookings" />
           </div>
         </div>
+        <SameMoment />
         <ul className="mt-12 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
           {KEPT.map(([title, body]) => (
             <li key={title}>

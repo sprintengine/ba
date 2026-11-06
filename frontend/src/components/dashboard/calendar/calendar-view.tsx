@@ -304,7 +304,7 @@ function CalendarFooter({
         business.assistantAvailable && "max-sm:pr-20",
       )}
     >
-      <span className="tnum">
+      <span data-tally="day" className="tnum transition-opacity">
         {updating ? "Updating…" : `${count} ${v("booking", { count })}`} ·{" "}
         {business.timezone.split("/").at(-1)?.replace(/_/g, " ")}
       </span>

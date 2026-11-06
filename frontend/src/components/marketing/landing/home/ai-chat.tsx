@@ -35,23 +35,22 @@ const MOVE: AssistantAction = {
   createdAt: "2026-11-05T15:14:00Z",
   decidedAt: null,
   proposal: {
-    title: "Move three bookings to Aoife",
+    title: "Move two bookings to Aoife",
     summary: "Friday afternoon, same times",
     changes: [{ label: "With", before: "Sam Rivers", after: "Aoife Byrne" }],
     items: [
-      { title: "14:00 · Remy Stroud", detail: "Follow-up treatment" },
-      { title: "15:00 · Dara Quinn", detail: "Sports massage" },
+      { title: "15:30 · Rory Kane", detail: "Follow-up treatment" },
       { title: "16:15 · Jo Hayes", detail: "Initial assessment" },
     ],
     warnings: [],
-    confirmLabel: "Move all three",
+    confirmLabel: "Move both",
     destructive: false,
   },
 };
 const MOVED: AssistantAction = {
   ...MOVE,
   status: "confirmed",
-  result: { message: "All three moved, and each client has been told.", links: [] },
+  result: { message: "Both moved, and each client has been told.", links: [] },
 };
 
 /** The move on the first screen: the client who has just booked, to the colleague who's free at the same time. */
@@ -118,13 +117,11 @@ export function OwnerChat({ step }: { step: number }) {
   return (
     <Chrome title="Your assistant">
       <div className="flex min-h-0 flex-1 flex-col justify-end gap-3.5 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_1.75rem)] px-4 pt-4 text-[0.9375rem] leading-6">
-        <Mine>Who hasn’t paid this week?</Mine>
-        <p>Everyone but Jo Hayes. €70 is due for Thursday.</p>
         <Mine>Sam’s off on Friday afternoon. Can you sort out their bookings?</Mine>
         <ToolActivityList tools={tools} />
         {/* Always laid out, so the conversation above it never jumps when the answer arrives. */}
         <div className={cn("flex flex-col gap-3 transition-opacity duration-300", step < 1 && "opacity-0")}>
-          <p>Aoife is free for all three. Here’s what I’d change.</p>
+          <p>Aoife is free for both. Here’s what I’d change.</p>
           <ProposalView
             action={step >= 3 ? MOVED : MOVE}
             confirm={{ mutate: noop, isPending: step === 2 }}

@@ -29,7 +29,7 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
   return (
     <article
       className={cn(
-        "group relative flex flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-xs sm:p-5",
+        "group relative flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-xs",
         "transition-[box-shadow,border-color,transform] duration-200 hover:-translate-y-px hover:border-border-strong hover:shadow-md",
         "has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring",
       )}
@@ -39,9 +39,9 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
           name={business.name}
           logoUrl={business.branding.logoUrl}
           color={business.branding.primaryColor}
-          size="xl"
+          size="lg"
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-start justify-between gap-3">
             <h3 className="min-w-0 text-base leading-6 font-semibold tracking-tight">
               <Link
@@ -68,10 +68,25 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
         </div>
       </div>
 
-      {business.description && (
-        <p className="line-clamp-2 text-sm text-muted-foreground">{business.description}</p>
-      )}
-
+      {/* What someone came for, ahead of the blurb. */}
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium text-subtle-foreground">
+          {listing.nextSlots.length > 0 ? "Next free times" : "No free times in the next few days"}
+        </p>
+        {listing.nextSlots.length > 0 && (
+          <ul className="flex flex-wrap gap-1.5">
+            {listing.nextSlots.map((slot) => (
+              <SlotChip
+                key={`${slot.start}-${slot.serviceId}-${slot.optionId ?? ""}`}
+                slot={slot}
+                timeZone={business.timezone}
+                currency={currency}
+                now={now}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
       {hasDeals && (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge tone="success">
@@ -91,24 +106,9 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
         </div>
       )}
 
-      <div className="mt-auto flex flex-col gap-2">
-        <p className="text-xs font-medium text-subtle-foreground">
-          {listing.nextSlots.length > 0 ? "Next free times" : "No free times in the next few days"}
-        </p>
-        {listing.nextSlots.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
-            {listing.nextSlots.map((slot) => (
-              <SlotChip
-                key={`${slot.start}-${slot.serviceId}-${slot.optionId ?? ""}`}
-                slot={slot}
-                timeZone={business.timezone}
-                currency={currency}
-                now={now}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
+      {business.description && (
+        <p className="line-clamp-1 text-sm text-muted-foreground">{business.description}</p>
+      )}
     </article>
   );
 }

@@ -20,6 +20,9 @@ export function useStageClock(
     latest.current = script;
   });
 
+  // Bumped to start the script again from the top, with a fresh clock.
+  const [run_, setRun] = useState(0);
+
   useEffect(() => {
     const el = scene.current;
     if (still || !el) return;
@@ -39,13 +42,18 @@ export function useStageClock(
       clock.current = null;
       director.stop();
     };
-  }, [scene, still]);
+  }, [scene, still, run_]);
 
   return {
     paused,
     toggle: () => {
       clock.current?.hold("paused", !paused);
       setPaused(!paused);
+    },
+    /** Stops the script where it stands and runs it again, playing. */
+    restart: () => {
+      setPaused(false);
+      setRun((n) => n + 1);
     },
   };
 }
