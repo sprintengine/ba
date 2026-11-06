@@ -42,9 +42,11 @@ export function NotificationsPage({ inDashboard = false }: { inDashboard?: boole
         }
         actions={
           <>
-            <Button asChild variant="ghost">
-              <a href="#email">Email settings</a>
-            </Button>
+            {(list.data?.items.length ?? 0) > 0 && (
+              <Button asChild variant="ghost">
+                <a href="#email">Email settings</a>
+              </Button>
+            )}
             {unread > 0 && (
               <Button variant="secondary" loading={readAll.isPending} onClick={() => readAll.mutate()}>
                 <CheckCheck /> Mark all read

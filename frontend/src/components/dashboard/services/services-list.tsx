@@ -202,7 +202,9 @@ function ServiceRow({
           </span>
           <span className="tnum truncate text-xs text-muted-foreground">
             {/* The figures have their own columns from a small window up. */}
-            <span className="sm:hidden">{[durText, priceText].join(" · ")}</span>
+            <span className="sm:hidden">
+              {[durText, priceText, payment !== priceText && payment].filter(Boolean).join(" · ")}
+            </span>
             {extras.length > 0 && <span className="max-sm:before:content-['_·_']">{extras.join(" · ")}</span>}
           </span>
         </span>

@@ -112,7 +112,7 @@ function OffersView({ previewDelay }: { previewDelay?: number }) {
     <PageContainer size="wide">
       <PageHeader
         title="Offers"
-        description="Deals that fill quiet times. They're applied automatically when people book online — never more than one per booking."
+        description="Deals that fill quiet times. They're applied automatically when people book online, never more than one per booking."
         actions={
           list.length > 0 && (
             <ActionButton

@@ -115,7 +115,7 @@ export function MyBookingCard({
           !managing &&
           !awaitingPayment && (
             <Button
-              variant="secondary"
+              variant="ghost"
               size="sm"
               className="shrink-0"
               aria-expanded={false}
