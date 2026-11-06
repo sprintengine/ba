@@ -15,13 +15,14 @@ const bend = (a: Point, c: Point, b: Point, t: number): Point => ({
 });
 
 /** The way from the phone to the calendar: out of the booking's own edge on the side it's going, down a curve. */
-function route(from: DOMRect, s: DOMRect, to: Box) {
+function route(from: DOMRect, s: DOMRect, to: Box, fromCentre: boolean) {
   const b = { x: to.left + to.width / 2, y: to.top + to.height / 2 };
   const middle = { x: from.left - s.left + from.width / 2, y: from.top - s.top + from.height / 2 };
   const across = Math.abs(b.x - middle.x) > Math.abs(b.y - middle.y);
-  const a = across
+  const edge = across
     ? { x: (b.x > middle.x ? from.right : from.left) - s.left, y: middle.y }
     : { x: middle.x, y: (b.y > middle.y ? from.bottom : from.top) - s.top };
+  const a = fromCentre ? middle : edge;
   const c = across
     ? { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - 0.16 * Math.abs(b.x - a.x) }
     : { x: Math.max(a.x, b.x) + 70, y: (a.y + b.y) / 2 };
@@ -63,15 +64,22 @@ function thread({ a, b, c }: ReturnType<typeof route>) {
 /**
  * The moment the page is about: the real booking already sits on the real calendar, hidden, and a copy of it flies
  * there from the phone along a lit thread. Copying it means this always looks like the app's card, whatever that
- * becomes. `scale` is how much the calendar is drawn down.
+ * becomes. `scale` is how much the calendar is drawn down. `moved` is where the card stood when it's the assistant
+ * moving a booking along the calendar, not a client's arriving from the phone.
  */
-export async function flyToCard(card: HTMLElement, scene: HTMLElement, scale: number, director: Director) {
-  const from = scene.querySelector("[data-flight-from]")?.getBoundingClientRect();
+export async function flyToCard(
+  card: HTMLElement,
+  scene: HTMLElement,
+  scale: number,
+  director: Director,
+  moved?: DOMRect,
+) {
+  const from = moved ?? scene.querySelector("[data-flight-from]")?.getBoundingClientRect();
   if (!from) return;
   const s = scene.getBoundingClientRect();
   const r = card.getBoundingClientRect();
   const to = { left: r.left - s.left, top: r.top - s.top, width: r.width, height: r.height };
-  const path = route(from, s, to);
+  const path = route(from, s, to, Boolean(moved));
 
   const ticket = document.createElement("div");
   ticket.className = "pointer-events-none absolute z-[45]";
@@ -101,7 +109,7 @@ export async function flyToCard(card: HTMLElement, scene: HTMLElement, scale: nu
   });
 
   card.style.visibility = "hidden";
-  const startScale = Math.min(1, Math.max(0.55, (from.width * 0.72) / to.width));
+  const startScale = moved ? 1 : Math.min(1, Math.max(0.55, (from.width * 0.72) / to.width));
   const options = { duration: DURATION, easing: EASE, fill: "both" as const };
   await Promise.all([
     director.play(ticket.animate(curve(path, startScale), options)),

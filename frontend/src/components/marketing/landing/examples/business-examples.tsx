@@ -2,123 +2,90 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { ArrowRight, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { EXAMPLE_CARDS, photoSrc, photoSrcSet, type ExampleCard, type ExampleSlug } from "./cards";
+import { EXAMPLE_CARDS, photoSrc, type ExampleCard } from "./cards";
 
-const load = () => import("./example-dialog").then((m) => m.ExampleDialog);
-/** The calendar, its fixtures and the dialog come with the first card opened, not with the page. */
-const ExampleDialog = dynamic(load, { ssr: false });
+const FIRST = EXAMPLE_CARDS[0]!;
 
-/** How many a phone shows before "See more". */
-const ON_A_PHONE = 2;
+/** The calendar and its fixtures come as the section gets near, not with the page. */
+const ExampleStage = dynamic(() => import("./example-stage").then((m) => m.ExampleStage), {
+  ssr: false,
+  loading: () => <div className="size-full" />,
+});
 
-function Card({
-  card,
-  onOpen,
-  buttonRef,
-  className,
-}: {
-  card: ExampleCard;
-  onOpen: () => void;
-  buttonRef: (el: HTMLButtonElement | null) => void;
-  className?: string;
-}) {
+function Tab({ card, active, onPick }: { card: ExampleCard; active: boolean; onPick: () => void }) {
   return (
-    <li className={className}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={onOpen}
-        onPointerEnter={() => void load()}
-        onFocus={() => void load()}
-        className="group focus-ring flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-xs transition-[box-shadow,border-color,translate] duration-200 hover:border-border-strong hover:shadow-lg motion-safe:hover:-translate-y-0.5"
-      >
-        <span className="relative block aspect-[3/2] w-full overflow-hidden bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element -- static WebP in two sizes; next/image is not used */}
-          <img
-            src={photoSrc(card.photo, 960)}
-            srcSet={photoSrcSet(card.photo)}
-            sizes="(min-width: 1024px) 24rem, (min-width: 640px) 50vw, 100vw"
-            alt={card.alt}
-            width={960}
-            height={640}
-            loading="lazy"
-            decoding="async"
-            className="size-full object-cover transition-[scale] duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
-          />
-          <span className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[0.8125rem] font-medium text-white backdrop-blur-sm">
-            <Play className="size-3 fill-current" aria-hidden /> See it working
-          </span>
-        </span>
-        <span className="flex flex-1 flex-col gap-0.5 p-5">
-          <span className="font-semibold tracking-tight">{card.label}</span>
-          <span className="text-sm text-muted-foreground">{card.shape}</span>
-          <span className="text-sm text-muted-foreground">{card.types}</span>
-        </span>
-      </button>
-    </li>
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onPick}
+      className={cn(
+        "focus-ring flex shrink-0 items-center gap-2.5 rounded-xl border p-1.5 pr-3.5 text-left text-sm font-medium transition-colors pointer-coarse:min-h-11",
+        active
+          ? "border-border-strong bg-surface text-foreground shadow-xs"
+          : "border-transparent bg-surface-sunken text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- a small static WebP; next/image is not used */}
+      <img
+        src={photoSrc(card.photo, 480)}
+        alt={card.alt}
+        width={48}
+        height={32}
+        loading="lazy"
+        decoding="async"
+        className="h-8 w-12 rounded-md object-cover"
+      />
+      {card.label}
+    </button>
   );
 }
 
-/** The cards, and the working example each one opens. The five kinds of business are types, never named customers. */
+/**
+ * The kinds of business, and one of them always working on the page: the visitor picks theirs and the same real
+ * calendar changes under the tabs. The five are types, never named customers.
+ */
 export function BusinessExamples() {
-  const [card, setCard] = useState<ExampleCard | null>(null);
-  const [open, setOpen] = useState(false);
-  const [more, setMore] = useState(false);
-  const fold = more ? undefined : "max-sm:hidden";
-  const buttons = useRef<Partial<Record<ExampleSlug, HTMLButtonElement | null>>>({});
+  const [card, setCard] = useState(FIRST);
+  const [near, setNear] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => entry?.isIntersecting && setNear(true), {
+      rootMargin: "400px 0px",
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {EXAMPLE_CARDS.map((c, i) => (
-          <Card
-            key={c.slug}
-            card={c}
-            className={i < ON_A_PHONE ? undefined : fold}
-            buttonRef={(el) => {
-              buttons.current[c.slug] = el;
-            }}
-            onOpen={() => {
-              setCard(c);
-              setOpen(true);
-            }}
-          />
+    <div ref={root}>
+      <div
+        role="group"
+        aria-label="Kinds of business"
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+      >
+        {EXAMPLE_CARDS.map((c) => (
+          <Tab key={c.slug} card={c} active={c.slug === card.slug} onPick={() => setCard(c)} />
         ))}
-        <li
-          className={cn("flex flex-col justify-between gap-6 rounded-2xl bg-surface-sunken p-6 sm:p-7", fold)}
+      </div>
+      <div className="mt-4 flex h-[46rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm max-sm:h-[42rem]">
+        {near && <ExampleStage card={card} />}
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Yours isn’t here? If you work by appointment, it fits.{" "}
+        <Link
+          href="/sign-up"
+          className="focus-ring group inline-flex items-center gap-1 rounded-md font-semibold text-foreground"
         >
-          <div>
-            <h3 className="text-[1.375rem] leading-tight font-semibold tracking-tight">Yours next.</h3>
-            <p className="mt-2 text-sm leading-normal text-muted-foreground">
-              If you work by appointment, it fits. Describe your business and we’ll draft your appointment
-              types, staff and hours for you to check.
-            </p>
-          </div>
-          <Link
-            href="/sign-up"
-            className="focus-ring group inline-flex min-h-11 w-fit items-center gap-1.5 rounded-md text-sm font-semibold"
-          >
-            Describe your business
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </li>
-      </ul>
-      {!more && (
-        <Button variant="secondary" size="lg" block className="mt-4 sm:hidden" onClick={() => setMore(true)}>
-          See more examples
-        </Button>
-      )}
-      {card && (
-        <ExampleDialog
-          card={card}
-          open={open}
-          onOpenChange={setOpen}
-          returnFocus={() => buttons.current[card.slug]?.focus()}
-        />
-      )}
-    </>
+          Describe your business
+          <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </p>
+    </div>
   );
 }

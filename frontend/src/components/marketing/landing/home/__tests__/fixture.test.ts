@@ -45,10 +45,11 @@ describe("the demo's day", () => {
     expect(formatTime(first.start, "Europe/Dublin", "en-IE")).toBe("15:30");
   });
 
-  it("agrees with the page: the next free time after 15:30 goes is 16:00", () => {
+  it("keeps 15:30 open once Sam has it, because Aoife is free then: the move the assistant makes", () => {
     const taken = [{ who: "sam", at: "15:30", customer: "x", service: BOOKED_SERVICE, room: "Room 1" }];
     const left = freeSlots(dayEntries(taken), BOOKED_SERVICE, DAY, EARLIEST_TODAY);
-    expect(formatTime(left[0]!.start, "Europe/Dublin", "en-IE")).toBe("16:00");
+    expect(formatTime(left[0]!.start, "Europe/Dublin", "en-IE")).toBe("15:30");
+    expect(whoIsFree(dayEntries(taken), BOOKED_SERVICE, "15:30")).toBe("aoife");
   });
 
   it("stops offering a time once everyone is taken", () => {

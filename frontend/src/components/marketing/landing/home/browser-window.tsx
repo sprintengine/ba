@@ -7,7 +7,7 @@ export const WINDOW_BAR = "2.75rem";
 const LIGHTS = ["#ff5f57", "#febc2e", "#28c840"];
 
 /** A desktop browser's bar, at its true sizes: the window's three lights, its buttons, and the address in the middle. */
-function WindowBar({ address }: { address: string }) {
+function WindowBar({ address, note }: { address: string; note?: string }) {
   return (
     <div className="relative flex h-(--window-bar) shrink-0 items-center gap-2.5 border-b border-black/10 bg-[#f6f6f6] px-3 text-black/55 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.75]">
       <span className="flex gap-2 pr-1">
@@ -27,6 +27,11 @@ function WindowBar({ address }: { address: string }) {
         <span className="truncate">{address}</span>
         <RotateCw className="ml-auto size-3! text-black/45 max-sm:hidden" />
       </span>
+      {note && (
+        <span className="shrink-0 rounded-md bg-black/[0.055] px-2 py-0.5 text-xs font-medium whitespace-nowrap text-black/70 max-lg:hidden">
+          {note}
+        </span>
+      )}
       <Share className="max-md:hidden" />
       <Plus className="max-md:hidden" />
       <SquareStack className="max-md:hidden" />
@@ -37,10 +42,13 @@ function WindowBar({ address }: { address: string }) {
 /** The app as it's really seen: in a browser window, with the window's own edge and shadow. */
 export function BrowserWindow({
   address = "bookanything.ie",
+  note,
   className,
   children,
 }: {
   address?: string;
+  /** What the window is showing, when that needs saying: "Sample business". */
+  note?: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -54,7 +62,7 @@ export function BrowserWindow({
         className,
       )}
     >
-      <WindowBar address={address} />
+      <WindowBar address={address} note={note} />
       {children}
     </div>
   );

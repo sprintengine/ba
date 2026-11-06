@@ -2,9 +2,12 @@ import { BOOKED_AT, BOOKED_SERVICE, CLIENT } from "../fixture";
 import { flyToCard } from "../flight";
 import type { BookingDemo } from "../use-booking-demo";
 import { tap } from "./cursor";
+import { preloadChat } from "./stage-parts";
 import type { Pointer } from "./cursor";
 import type { Director } from "./director";
 import type { Screen } from "./tour-app";
+
+export type Notice = "booked" | "moved";
 
 /** Everything the script touches. It works the real controls, so it keeps working when they change. */
 export type Cast = {
@@ -17,8 +20,12 @@ export type Cast = {
   demo: () => BookingDemo;
   /** Puts the booking on the calendar, or takes it off. */
   setBooked: (booked: boolean) => void;
-  /** Shows the "new booking" notice, or clears it. */
-  notify: (on: boolean) => void;
+  /** Moves the booking, as the owner's assistant does. */
+  setMoved: () => void;
+  /** Shows a notice over the calendar, or clears it. */
+  notify: (notice: Notice | false) => void;
+  /** The step of the owner's assistant on the phone, or the client's booking page. */
+  chat: (step: number | null) => void;
   /** How much the calendar is drawn down. */
   scale: () => number;
 };
@@ -41,6 +48,9 @@ export const findCard = (scene: HTMLElement) =>
 /** Long enough to read each step of the phone, and then to see where the booking went. */
 const BEAT = { read: 1500, pick: 1250, paying: 1000, settled: 420 };
 
+/** The assistant's steps: long enough to read the question, then what it wants to change, then the result. */
+const AI_BEAT = { asked: 1900, proposal: 3000, approving: 750, done: 3600 };
+
 /** The page's core story: the client's tap on the phone puts the card on the business's calendar. */
 export async function bookingAct(c: Cast) {
   const { director, phone, finger } = c;
@@ -59,12 +69,43 @@ export async function bookingAct(c: Cast) {
   c.setBooked(true);
   const card = await find(director, () => findCard(c.scene));
   await flyToCard(card, c.scene, c.scale(), director);
-  c.notify(true);
+  c.notify("booked");
+}
+
+/** The payoff: the owner asks, the assistant says what it would change, and with one tap the booking moves. */
+export async function assistantAct(c: Cast, onMoved?: (card: HTMLElement) => Promise<void>) {
+  const { director, phone, finger, scene } = c;
+  c.notify(false);
+  c.chat(0);
+  await director.sleep(AI_BEAT.asked);
+  c.chat(1);
+  await director.sleep(AI_BEAT.proposal);
+  await tap(finger, phone, await find(director, () => button(phone, "Move booking")), director);
+  c.chat(2);
+  await director.sleep(AI_BEAT.approving);
+  const before = await find(director, () => findCard(scene));
+  const was = before.getBoundingClientRect();
+  c.setMoved();
+  // Answered at once, so the old card goes and the new one comes within a frame or two.
+  const card = await new Promise<HTMLElement>((found) => {
+    const look = () => {
+      const now = findCard(scene);
+      if (now && now !== before) found(now);
+      else requestAnimationFrame(look);
+    };
+    look();
+  });
+  c.chat(3);
+  await flyToCard(card, scene, c.scale(), director, was);
+  c.notify("moved");
+  await onMoved?.(card);
+  await director.sleep(AI_BEAT.done);
 }
 
 /** Puts everything back for the next time round. */
 export function resetAct(c: Cast) {
   c.notify(false);
+  c.chat(null);
   c.setBooked(false);
   c.demo().reset();
 }
@@ -79,8 +120,8 @@ export type TourCast = Cast & {
 };
 
 /**
- * What a business owner sees in half a minute: a booking arrives, they open it, and it's already in today's list, the
- * customers and the reports. It ends where it began, on the calendar.
+ * What a business owner sees in under a minute: a booking arrives, they open it, and it's already in today's list, the
+ * customers and the reports. Back on the calendar they ask their assistant to change it, and it does.
  */
 export async function tourStory(c: TourCast) {
   const { director, scene, pointer } = c;
@@ -101,6 +142,7 @@ export async function tourStory(c: TourCast) {
   for (;;) {
     await bookingAct(c);
     c.prepareLater();
+    preloadChat();
     await director.sleep(1500);
 
     // The owner opens what just arrived.
@@ -136,9 +178,15 @@ export async function tourStory(c: TourCast) {
     await pointer.moveTo(person);
     c.prepare("reports");
     await director.sleep(2000);
-    await open("reports", 3400);
+    await open("reports", 900);
+    await pointer.moveTo(await q('[data-screen="reports"] h1'));
+    await director.sleep(2500);
 
-    // Back to the calendar, as it was, and round again.
-    await open("calendar", 700, () => resetAct(c));
+    // Back to the calendar, where the assistant takes over; then as it was, and round again.
+    await open("calendar", 900);
+    await pointer.moveTo(await find(director, () => findCard(scene)));
+    await assistantAct(c, (moved) => pointer.moveTo(moved));
+    resetAct(c);
+    await director.sleep(700);
   }
 }

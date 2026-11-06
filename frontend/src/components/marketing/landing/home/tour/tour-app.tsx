@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { VocabularyProvider } from "@/lib/vocabulary";
 import { BookingActionsContext } from "@/components/dashboard/booking/booking-actions-provider";
 import { CalendarView } from "@/components/dashboard/calendar/calendar-view";
+import { ShareOriginContext } from "@/components/dashboard/overview/share-card";
 import { NoPrefetchProvider } from "@/components/ui/app-link";
 import { Rail } from "../calendar-pane";
 import { SAMPLE_BUSINESS, SAMPLE_OWNER } from "./fixture-api";
@@ -107,16 +108,18 @@ export function TourApp({
           <BusinessContextProvider value={context}>
             <VocabularyProvider vocabulary={SAMPLE_BUSINESS.vocabulary}>
               <BookingActionsContext.Provider value={actions}>
-                <div className="flex h-full min-h-0 bg-background">
-                  <Rail active={screen} alerts={alerts} />
-                  <div className="relative min-w-0 flex-1">
-                    {[...mounted].map((s) => (
-                      <Page key={s} screen={s} shown={s === screen} />
-                    ))}
-                    {booking && <BookingPanel id={booking} onClose={onCloseBooking} />}
-                    {children}
+                <ShareOriginContext.Provider value="https://bookanything.ie">
+                  <div className="flex h-full min-h-0 bg-background">
+                    <Rail active={screen} alerts={alerts} />
+                    <div className="relative min-w-0 flex-1">
+                      {[...mounted].map((s) => (
+                        <Page key={s} screen={s} shown={s === screen} />
+                      ))}
+                      {booking && <BookingPanel id={booking} onClose={onCloseBooking} />}
+                      {children}
+                    </div>
                   </div>
-                </div>
+                </ShareOriginContext.Provider>
               </BookingActionsContext.Provider>
             </VocabularyProvider>
           </BusinessContextProvider>

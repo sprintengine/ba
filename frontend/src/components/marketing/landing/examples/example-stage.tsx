@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { CalendarHeaderRow } from "@/components/dashboard/calendar/calendar-headers";
 import { DayColumn, TimeGutter } from "@/components/dashboard/calendar/calendar-grid";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { demoDay } from "../home/fixture";
 import { SceneToggle } from "../home/scene-parts";
 import { photoSrc, type ExampleCard } from "./cards";
@@ -287,7 +286,7 @@ function Tour({ card, example }: { card: ExampleCard; example: Example }) {
   const { view, paused, reduce, cursor, toggle, choose } = useTour(example, root);
   return (
     <div ref={root} className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border-subtle p-3 pr-14 sm:p-4 sm:pr-14">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border-subtle p-3 sm:p-4">
         {/* eslint-disable-next-line @next/next/no-img-element -- a small static photo the card has already drawn */}
         <img
           src={photoSrc(card.photo, 480)}
@@ -297,12 +296,10 @@ function Tour({ card, example }: { card: ExampleCard; example: Example }) {
           className="h-10 w-15 shrink-0 rounded-md object-cover"
         />
         <div className="min-w-0">
-          <DialogTitle className="truncate text-base font-semibold tracking-tight">
-            {card.label}, an example
-          </DialogTitle>
-          <DialogDescription className="truncate text-sm text-muted-foreground">
+          <h3 className="truncate text-base font-semibold tracking-tight">{card.label}, an example</h3>
+          <p className="truncate text-sm text-muted-foreground">
             {card.shape}. Made-up bookings on the real calendar.
-          </DialogDescription>
+          </p>
         </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
@@ -338,31 +335,7 @@ function Tour({ card, example }: { card: ExampleCard; example: Example }) {
   );
 }
 
-/** A card's business, open: its appointment types, its people and its calendar, with a cursor working through them. */
-export function ExampleDialog({
-  card,
-  open,
-  onOpenChange,
-  returnFocus,
-}: {
-  card: ExampleCard;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  /** Safari doesn't focus a clicked button, so the card that opened this is named here. */
-  returnFocus: () => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        size="xl"
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          returnFocus();
-        }}
-        className="h-[min(46rem,calc(100dvh-3rem))] max-w-6xl overflow-hidden max-sm:h-[calc(100dvh-1rem)] sm:w-[calc(100vw-3rem)]"
-      >
-        <Tour key={card.slug} card={card} example={EXAMPLES[card.slug]} />
-      </DialogContent>
-    </Dialog>
-  );
+/** A kind of business, working on the page: its appointment types, its people and its calendar, with a cursor. */
+export function ExampleStage({ card }: { card: ExampleCard }) {
+  return <Tour key={card.slug} card={card} example={EXAMPLES[card.slug]} />;
 }

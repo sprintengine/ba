@@ -53,6 +53,9 @@ export const BOOKED_ENTRY: DemoEntry = {
   room: roomFor("sam"),
 };
 
+/** The same booking once the owner's assistant has moved it: Aoife is free at the same time. */
+export const MOVED_ENTRY: DemoEntry = { ...BOOKED_ENTRY, who: "aoife", room: roomFor("aoife") };
+
 const pad = (n: number) => String(n).padStart(2, "0");
 const clock = (minutes: number) => `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
 const nowIso = (date: PlainDate) => zonedToIso(date, clock(NOW_MINUTES), LUMEN.timezone);
@@ -220,9 +223,9 @@ const availability = (id: string): ResourceAvailability => ({
 });
 
 /** Answers a query from the sample, as the API would. `undefined`: nothing on these screens should have asked. */
-export function sampleAnswer(key: QueryKey, date: PlainDate, booked: boolean): unknown {
+export function sampleAnswer(key: QueryKey, date: PlainDate, booked: boolean, moved = false): unknown {
   if (key[0] !== "business") return undefined;
-  const entries = dayEntries(booked ? [BOOKED_ENTRY] : []);
+  const entries = dayEntries(booked ? [moved ? MOVED_ENTRY : BOOKED_ENTRY] : []);
   const bookings = entries.map((e) => toBooking(e, date));
   const [section, kind, detail] = key.slice(2);
   switch (section) {
@@ -272,7 +275,8 @@ const unanswered = () => new Promise<never>(() => undefined);
  */
 export function sampleClient(date: PlainDate, startBooked: boolean) {
   let booked = startBooked;
-  const answer = (key: QueryKey) => sampleAnswer(key, date, booked);
+  let moved = false;
+  const answer = (key: QueryKey) => sampleAnswer(key, date, booked, moved);
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity, gcTime: Infinity } },
   });
@@ -301,6 +305,12 @@ export function sampleClient(date: PlainDate, startBooked: boolean) {
     missing,
     setBooked: (on: boolean) => {
       booked = on;
+      moved = false;
+      void client.invalidateQueries();
+    },
+    /** The assistant moves the booking to Aoife. */
+    setMoved: () => {
+      moved = true;
       void client.invalidateQueries();
     },
   };

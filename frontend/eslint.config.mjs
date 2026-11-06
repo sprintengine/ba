@@ -41,6 +41,7 @@ const FEATURE_ENTRY_POINTS = {
     "common.tsx",
     "customers/customers-list.tsx",
     "overview/overview.tsx",
+    "overview/share-card.tsx",
     "reports/reports-view.tsx",
   ],
   marketing: ["section.tsx", "legal/legal-toc.tsx"],

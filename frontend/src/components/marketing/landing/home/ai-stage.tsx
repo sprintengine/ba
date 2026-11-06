@@ -23,13 +23,13 @@ function nextWeekday(weekday: number): PlainDate {
 }
 
 /**
- * One side of the AI story: the assistant on a phone, and the same bookings on the real calendar beside it, so what's
+ * One side of the AI story: the assistant's chat, and the same bookings on the real calendar beside it, so what's
  * agreed in the chat is seen to happen. Comes as its own chunk with the booking scene's calendar.
  */
 export function AiStage({ side, paused }: { side: AiSide; paused: boolean }) {
-  const phoneRef = useRef<HTMLDivElement>(null);
+  const chat = useRef<HTMLDivElement>(null);
   const calendar = useRef<HTMLDivElement>(null);
-  const step = useScene(phoneRef, STEPS, paused);
+  const step = useScene(chat, STEPS, paused);
   const { width, height } = useSize(calendar);
   const fit = fitCalendar(width, height);
   const owner = side === "owner";
@@ -48,8 +48,8 @@ export function AiStage({ side, paused }: { side: AiSide; paused: boolean }) {
   }, [owner, done]);
   const Chat = owner ? OwnerChat : ClientChat;
   return (
-    <div className={cn(SCENE_GRID, !owner && "lg:grid-cols-[minmax(0,1fr)_auto]")}>
-      <div ref={phoneRef} aria-hidden inert className={cn(!owner && "lg:order-2")}>
+    <div className={SCENE_GRID}>
+      <div ref={chat} aria-hidden inert>
         <Chat step={step} />
       </div>
       <BrowserWindow className={SCENE_WINDOW}>

@@ -42,7 +42,7 @@ export function ProofSection() {
             title="No double bookings."
             lit="Client details kept safe."
             punch
-            lead="Once a time is booked, it’s gone for everyone else. Don’t take our word for it: open an example above and try it."
+            lead="Once a time is booked, it’s gone for everyone else. Don’t take our word for it: try the examples above."
           />
           <div className="grid grid-cols-2 gap-6">
             <Figure value={SIMULATED} label="test bookings across simulated businesses" />

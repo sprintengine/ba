@@ -110,6 +110,7 @@ function MarkPaidInPerson({ booking, amount }: { booking: BookingDetail; amount:
 function providerLabel(provider: string) {
   if (provider === "dev") return "test payment";
   if (provider === "in_person") return "in person";
+  if (provider === "stripe") return "Stripe";
   return provider;
 }
 

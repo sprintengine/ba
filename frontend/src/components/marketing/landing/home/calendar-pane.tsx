@@ -224,13 +224,13 @@ export function CalendarPane({
         .map((resource) => ({
           key: resource.id,
           date,
-          resource,
+          resource: phone ? { ...resource, name: resource.name.split(" ")[0] ?? resource.name } : resource,
           bookings: entries.filter((e) => e.who === resource.id).map((e) => toBooking(e, date)),
           open: openHours(resource.id),
           blocked: [],
           off: null,
         })),
-    [date, entries, shown, lead],
+    [date, entries, shown, lead, phone],
   );
   return (
     <div className="flex min-h-0 min-w-0 flex-1">

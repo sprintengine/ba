@@ -11,7 +11,7 @@ import { useBookingDemo } from "../use-booking-demo";
 import { Cursor, pointer } from "./cursor";
 import { sampleClient, sampleNow } from "./fixture-api";
 import { StagePause, StagePhone } from "./stage-parts";
-import { tourStory, type TourCast } from "./story";
+import { tourStory, type Notice, type TourCast } from "./story";
 import { PATHS, preloadLaterScreens, TourApp, type Screen } from "./tour-app";
 import { useStageClock } from "./use-stage-clock";
 
@@ -33,7 +33,8 @@ export function TourStage({ frameClass }: { frameClass: string }) {
   const [screen, setScreen] = useState<Screen>("calendar");
   const [mounted, setMounted] = useState<ReadonlySet<Screen>>(() => new Set(["calendar"]));
   const [opened, setOpened] = useState<string | null>(null);
-  const [notice, setNotice] = useState(still);
+  const [notice, setNotice] = useState<Notice | false>(still ? "booked" : false);
+  const [chat, setChat] = useState<number | null>(null);
   const [alerts, setAlerts] = useState(still ? 1 : 0);
 
   const scene = useRef<HTMLDivElement>(null);
@@ -78,10 +79,12 @@ export function TourStage({ frameClass }: { frameClass: string }) {
       finger: finger.current!,
       demo: () => demoRef.current,
       setBooked: sample.setBooked,
-      notify: (on) => {
-        setNotice(on);
-        if (on) setAlerts(1);
+      setMoved: sample.setMoved,
+      notify: (next) => {
+        setNotice(next);
+        if (next) setAlerts(1);
       },
+      chat: setChat,
       scale: () => scale.current,
       pointer: pointer(arrow.current!, scene.current!, director),
       go: (next) => {
@@ -101,7 +104,11 @@ export function TourStage({ frameClass }: { frameClass: string }) {
 
   return (
     <div ref={scene} className="absolute inset-0">
-      <BrowserWindow address={PATHS[screen]} className={cn(s.window, frameClass)}>
+      <BrowserWindow
+        address={PATHS[screen]}
+        note="Sample business, made-up clients"
+        className={cn(s.window, frameClass)}
+      >
         <div ref={viewport} className={cn(s.content, "overflow-hidden")}>
           <div ref={app} className="absolute top-0 left-0 origin-top-left">
             <TourApp
@@ -116,8 +123,14 @@ export function TourStage({ frameClass }: { frameClass: string }) {
             >
               {notice && (
                 <CalendarNotice
-                  title={`New booking, paid €${String(BOOKED_SERVICE.priceCents / 100)}`}
-                  detail={`${CLIENT.name}, ${BOOKED_AT}`}
+                  title={
+                    notice === "moved"
+                      ? "Moved to Aoife"
+                      : `New booking, paid €${String(BOOKED_SERVICE.priceCents / 100)}`
+                  }
+                  detail={
+                    notice === "moved" ? `${CLIENT.name} has been told` : `${CLIENT.name}, ${BOOKED_AT}`
+                  }
                   className="bottom-12"
                   style={{ right: "calc(var(--tour-covered, 0px) + 0.75rem)" }}
                 />
@@ -126,7 +139,7 @@ export function TourStage({ frameClass }: { frameClass: string }) {
           </div>
         </div>
       </BrowserWindow>
-      <StagePhone demo={demo} screen={phone} finger={finger} />
+      <StagePhone demo={demo} chat={chat} screen={phone} finger={finger} />
       {!still && <Cursor ref={arrow} />}
       {!still && <StagePause paused={clock.paused} onToggle={clock.toggle} />}
     </div>
