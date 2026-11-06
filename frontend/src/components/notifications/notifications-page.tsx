@@ -12,12 +12,12 @@ import {
 import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/common/feedback";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { CheckboxItem } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { SettingGroup } from "@/components/dashboard/settings/settings-common";
 import { NotificationList } from "./notification-bell";
 
 /** /my/notifications (§22): everything recent, and which kinds are also emailed. */
@@ -94,13 +94,17 @@ function EmailSettings() {
     );
 
   return (
-    <SettingGroup
-      id="email"
-      className="scroll-mt-20"
-      title="Email me about"
-      description={`Sent to ${me.data?.user.email ?? "your account email"} a minute later, unless you’ve opened it here.`}
-    >
-      <div className="p-4.5">
+    <section id="email" aria-labelledby="email-title" className="flex scroll-mt-20 flex-col gap-2.5">
+      <div className="flex flex-col gap-0.5">
+        <h2 id="email-title" className="text-sm font-semibold tracking-tight">
+          Email me about
+        </h2>
+        <p className="text-[0.8125rem] leading-5 text-muted-foreground">
+          Sent to {me.data?.user.email ?? "your account email"} a minute later, unless you&rsquo;ve opened it
+          here.
+        </p>
+      </div>
+      <Card variant="panel" className="rounded-2xl p-4.5">
         {settings.isError ? (
           <ErrorState error={settings.error} onRetry={() => settings.refetch()} />
         ) : !settings.data || me.isPending ? (
@@ -119,7 +123,7 @@ function EmailSettings() {
             ))}
           </fieldset>
         )}
-      </div>
-    </SettingGroup>
+      </Card>
+    </section>
   );
 }

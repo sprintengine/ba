@@ -120,9 +120,7 @@ describe("BookingsList", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     const [, day, first, second] = within(table).getAllByRole("row");
     expect(day).toHaveTextContent(/2 appointments/);
-    expect(first).toHaveTextContent(
-      /Alex Morgan.*Follow-up · Long.*Sam Rivers.*€45.*BA-TEST01/,
-    );
+    expect(first).toHaveTextContent(/Alex Morgan.*Follow-up · Long.*Sam Rivers.*€45.*BA-TEST01/);
     expect(first).not.toHaveTextContent(/Confirmed|Paid/);
     expect(second).toHaveTextContent(/Riley Quinn.*—.*Needs approval/);
     expect(screen.getByRole("columnheader", { name: "Patient" })).toBeInTheDocument();

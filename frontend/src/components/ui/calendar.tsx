@@ -212,9 +212,7 @@ export function Calendar({
                           : isDisabled
                             ? "cursor-not-allowed text-subtle-foreground"
                             : "text-foreground hover:bg-accent active:scale-95",
-                        isToday &&
-                          !isSelected &&
-                          "font-semibold text-brand",
+                        isToday && !isSelected && "font-semibold text-brand",
                       )}
                     >
                       {Number(date.slice(8))}

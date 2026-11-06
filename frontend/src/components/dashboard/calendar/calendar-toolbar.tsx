@@ -92,13 +92,13 @@ export function CalendarToolbar({
         {
           value: "day",
           label: "Day",
-          icon: <Columns3 aria-hidden className="max-xl:hidden" />,
+          icon: <Columns3 aria-hidden className="max-xl:hidden @max-[60rem]/tools:hidden" />,
           shortcut: "D",
         },
         {
           value: "week",
           label: "Week",
-          icon: <CalendarRange aria-hidden className="max-xl:hidden" />,
+          icon: <CalendarRange aria-hidden className="max-xl:hidden @max-[60rem]/tools:hidden" />,
           shortcut: "W",
         },
       ]}
@@ -119,7 +119,7 @@ export function CalendarToolbar({
       <PopoverTrigger asChild>
         <Button variant="secondary" size="sm" aria-label="View options">
           <SlidersHorizontal aria-hidden />
-          <span className="max-xl:hidden">View</span>
+          <span className="max-xl:hidden @max-[60rem]/tools:hidden">View</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="flex w-64 flex-col gap-1 p-2">
@@ -149,7 +149,7 @@ export function CalendarToolbar({
   ) : null;
   return (
     // A container, because the inspector takes the room: over the page in a small window, beside it in a big one.
-    <div className="@container/tools flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5 max-xl:sm:pr-[max(1.25rem,var(--inspector-width,0px))]">
+    <div className="@container/tools flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5 max-xl:sm:pr-[max(1.25rem,calc(var(--inspector-width,0px)+0.75rem))]">
       {/* One line from a small window up: the height belongs to the grid. */}
       <div className="flex min-w-0 items-center gap-1 sm:gap-2">
         <div className="min-w-0 max-sm:mr-auto">

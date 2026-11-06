@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Mail, MoreHorizontal, Pencil, Phone, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import type { CustomerDetail } from "@/lib/api/types";
 import { useCustomer, useCustomerGroups, useUpdateCustomer } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -44,10 +45,8 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const { openBooking, openNewBooking } = useBookingActions();
   const customer = useCustomer(business.id, customerId);
   const groups = useCustomerGroups(business.id);
-  const update = useUpdateCustomer(business.id);
   const exportData = useCustomerExport(customer.data);
   const [eraseOpen, setEraseOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
   const back = { href: dashboardHref(business.slug, "customers"), label: v("customers", { title: true }) };
 
   // A failed refresh keeps showing the customer already loaded; the error is for when there is none.
@@ -78,11 +77,9 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
   const upcoming = c.bookings
     .filter((b) => new Date(b.start) > new Date() && b.status !== "cancelled")
     .sort((a, b) => a.start.localeCompare(b.start));
-  const next = upcoming[0];
-  const count = c.bookingCount;
   const story = [
-    `${count} ${v("booking", { count })}, ${upcoming.length} upcoming.`,
-    next && `Next ${fmt.date(next.start, "dayMonth")}, ${fmt.time(next.start)}.`,
+    `${c.bookingCount} ${v("booking", { count: c.bookingCount })}, ${upcoming.length} upcoming.`,
+    upcoming[0] && `Next ${fmt.date(upcoming[0].start, "dayMonth")}, ${fmt.time(upcoming[0].start)}.`,
     `${v("customer", { title: true })} since ${fmt.date(c.createdAt, "monthYear")}.`,
   ]
     .filter(Boolean)
@@ -178,50 +175,7 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle headingLevel={2}>Details</CardTitle>
-              {!editing && (
-                <CardAction>
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-                    <Pencil /> Edit details
-                  </Button>
-                </CardAction>
-              )}
-            </CardHeader>
-            <CardContent>
-              {editing ? (
-                <CustomerForm
-                  key={c.id + c.name + (c.email ?? "")}
-                  initial={c}
-                  submitLabel="Save changes"
-                  footer={
-                    <Button variant="ghost" onClick={() => setEditing(false)}>
-                      Cancel
-                    </Button>
-                  }
-                  onSubmit={async (input) => {
-                    await update.mutateAsync({ id: c.id, input });
-                    toast.success("Saved");
-                    setEditing(false);
-                  }}
-                />
-              ) : (
-                <PropertyList>
-                  <PropertyRow label="Email">{c.email ?? <NotSet />}</PropertyRow>
-                  <PropertyRow label="Phone">
-                    {c.phone ? <span className="tnum">{c.phone}</span> : <NotSet />}
-                  </PropertyRow>
-                  {(group || (groups.data?.length ?? 0) > 0) && (
-                    <PropertyRow label="Group">{group?.name ?? <NotSet>No group</NotSet>}</PropertyRow>
-                  )}
-                  <PropertyRow label="Notes">
-                    {c.notes ? <span className="whitespace-pre-wrap">{c.notes}</span> : <NotSet />}
-                  </PropertyRow>
-                </PropertyList>
-              )}
-            </CardContent>
-          </Card>
+          <DetailsCard customer={c} groupName={group?.name} hasGroups={(groups.data?.length ?? 0) > 0} />
           {perms.manageCustomerData && (
             <Card>
               <CardHeader>
@@ -253,5 +207,66 @@ export function CustomerDetailView({ customerId }: { customerId: string }) {
         onErased={() => router.replace(back.href)}
       />
     </PageContainer>
+  );
+}
+
+/** Their details as values to read; Edit details opens the form, and saving goes back to reading. */
+function DetailsCard({
+  customer: c,
+  groupName,
+  hasGroups,
+}: {
+  customer: CustomerDetail;
+  groupName?: string;
+  hasGroups: boolean;
+}) {
+  const { business } = useBusinessContext();
+  const update = useUpdateCustomer(business.id);
+  const [editing, setEditing] = useState(false);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle headingLevel={2}>Details</CardTitle>
+        {!editing && (
+          <CardAction>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+              <Pencil /> Edit details
+            </Button>
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardContent>
+        {editing ? (
+          <CustomerForm
+            key={c.id + c.name + (c.email ?? "")}
+            initial={c}
+            submitLabel="Save changes"
+            footer={
+              <Button variant="ghost" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+            }
+            onSubmit={async (input) => {
+              await update.mutateAsync({ id: c.id, input });
+              toast.success("Saved");
+              setEditing(false);
+            }}
+          />
+        ) : (
+          <PropertyList>
+            <PropertyRow label="Email">{c.email ?? <NotSet />}</PropertyRow>
+            <PropertyRow label="Phone">
+              {c.phone ? <span className="tnum">{c.phone}</span> : <NotSet />}
+            </PropertyRow>
+            {(groupName || hasGroups) && (
+              <PropertyRow label="Group">{groupName ?? <NotSet>No group</NotSet>}</PropertyRow>
+            )}
+            <PropertyRow label="Notes">
+              {c.notes ? <span className="whitespace-pre-wrap">{c.notes}</span> : <NotSet />}
+            </PropertyRow>
+          </PropertyList>
+        )}
+      </CardContent>
+    </Card>
   );
 }

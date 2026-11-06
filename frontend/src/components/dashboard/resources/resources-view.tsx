@@ -49,11 +49,7 @@ export function ResourcesView() {
   );
   const wanted = params.get("r");
   // The page shows one thing at a time: someone's calendar, or something that's true of the whole business.
-  const wholeBusiness: { id: string; label: string; icon: React.ReactNode }[] = [
-    ...(list.length > 1 ? [{ id: "compare", label: "Compare hours", icon: <Rows3 /> }] : []),
-    { id: "sign-in", label: "Who can sign in", icon: <KeyRound /> },
-    ...(perms.manageClosures ? [{ id: "closures", label: "Closures", icon: <CalendarOff /> }] : []),
-  ];
+  const wholeBusiness = wholeBusinessSections(list.length > 1, perms.manageClosures);
   const section = wholeBusiness.find((s) => s.id === wanted)?.id ?? null;
   const selected = section ? undefined : (list.find((r) => r.id === wanted) ?? list[0]);
   const myMemberId = team.data?.find((m) => m.userId === me.user.id)?.id ?? null;
@@ -75,15 +71,7 @@ export function ResourcesView() {
             : "Your working hours and time off."
         }
         actions={
-          perms.manageResources && (
-            <ActionButton
-              variant="primary"
-              onClick={() => editor.open(null)}
-              icon={<Plus />}
-              label={addLabel}
-              collapse={false}
-            />
-          )
+          <AddResource shown={perms.manageResources} label={addLabel} onAdd={() => editor.open(null)} />
         }
       />
       {resources.isError ? (
@@ -98,89 +86,17 @@ export function ResourcesView() {
           <Skeleton className="h-[28rem] rounded-xl" />
         </div>
       ) : list.length === 0 ? (
-        <div>
-          <EmptyState
-            headingLevel={2}
-            icon={<Boxes />}
-            title={perms.manageResources ? `No ${v("resources")} yet` : "You're not linked to a calendar"}
-            description={
-              perms.manageResources
-                ? `Add who or what gets booked. Each ${v("resource")} has its own hours and calendar column.`
-                : "Ask an admin to link you to your calendar on this page."
-            }
-            action={
-              perms.manageResources && (
-                <Button variant="primary" onClick={() => editor.open(null)}>
-                  <Plus /> {addLabel}
-                </Button>
-              )
-            }
-          />
-        </div>
+        <NoResources addLabel={addLabel} onAdd={() => editor.open(null)} />
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-          <div className="flex flex-col gap-4">
-            <nav
-              aria-label={v("resources", { title: true })}
-              className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5"
-            >
-              {list.map((r) => {
-                const active = selected?.id === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => select(r.id)}
-                    aria-current={active ? "true" : undefined}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0",
-                      active ? "bg-accent" : "hover:bg-accent/60",
-                      !r.isActive && "opacity-60",
-                    )}
-                  >
-                    <span
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                      style={resourceTile(r.color)}
-                    >
-                      <ResourceKindIcon kind={r.kind} className="size-4" />
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-medium">{r.name}</span>
-                      <span className="truncate text-xs text-muted-foreground max-lg:hidden">
-                        {!r.isActive
-                          ? "Inactive"
-                          : r.kind === "person"
-                            ? memberName(r.memberId)
-                              ? `Signs in as ${memberName(r.memberId)}`
-                              : "No sign-in"
-                            : `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-            <nav aria-label="Whole business" className="flex flex-col gap-1.5 lg:gap-0.5">
-              <h2 className="px-3 text-xs font-medium text-muted-foreground">Whole business</h2>
-              <div className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5">
-                {wholeBusiness.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => select(s.id)}
-                    aria-current={section === s.id ? "true" : undefined}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:whitespace-nowrap pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
-                      section === s.id ? "bg-accent font-medium" : "hover:bg-accent/60",
-                    )}
-                  >
-                    {s.icon}
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </nav>
-          </div>
+          <StaffNav
+            list={list}
+            selectedId={selected?.id}
+            section={section}
+            sections={wholeBusiness}
+            memberName={memberName}
+            onSelect={select}
+          />
           <div className="min-w-0 lg:border-l lg:border-border lg:pl-6">
             {section === "compare" && <CompareHours resources={list} onSelect={select} />}
             {section === "sign-in" && <TeamSection />}
@@ -209,6 +125,121 @@ export function ResourcesView() {
         />
       )}
     </PageContainer>
+  );
+}
+
+const wholeBusinessSections = (several: boolean, closures: boolean) => [
+  ...(several ? [{ id: "compare", label: "Compare hours", icon: <Rows3 /> }] : []),
+  { id: "sign-in", label: "Who can sign in", icon: <KeyRound /> },
+  ...(closures ? [{ id: "closures", label: "Closures", icon: <CalendarOff /> }] : []),
+];
+
+function AddResource({ shown, label, onAdd }: { shown: boolean; label: string; onAdd: () => void }) {
+  if (!shown) return null;
+  return <ActionButton variant="primary" onClick={onAdd} icon={<Plus />} label={label} collapse={false} />;
+}
+
+function NoResources({ addLabel, onAdd }: { addLabel: string; onAdd: () => void }) {
+  const perms = usePermissions();
+  const { v } = useVocabulary();
+  return (
+    <EmptyState
+      headingLevel={2}
+      icon={<Boxes />}
+      title={perms.manageResources ? `No ${v("resources")} yet` : "You're not linked to a calendar"}
+      description={
+        perms.manageResources
+          ? `Add who or what gets booked. Each ${v("resource")} has its own hours and calendar column.`
+          : "Ask an admin to link you to your calendar on this page."
+      }
+      action={
+        perms.manageResources && (
+          <Button variant="primary" onClick={onAdd}>
+            <Plus /> {addLabel}
+          </Button>
+        )
+      }
+    />
+  );
+}
+
+const resourceNote = (r: Resource, signsInAs: string | null) => {
+  if (!r.isActive) return "Inactive";
+  if (r.kind === "person") return signsInAs ? `Signs in as ${signsInAs}` : "No sign-in";
+  return `${RESOURCE_KIND_LABEL[r.kind]}${r.capacity > 1 ? ` · ${r.capacity} places` : ""}`;
+};
+
+/** The page's list: who gets booked, then what's true of the whole business. One of them shows at a time. */
+function StaffNav({
+  list,
+  selectedId,
+  section,
+  sections,
+  memberName,
+  onSelect,
+}: {
+  list: Resource[];
+  selectedId: string | undefined;
+  section: string | null;
+  sections: { id: string; label: string; icon: React.ReactNode }[];
+  memberName: (id: string | null) => string | null;
+  onSelect: (id: string) => void;
+}) {
+  const { v } = useVocabulary();
+  return (
+    <div className="flex flex-col gap-4">
+      <nav
+        aria-label={v("resources", { title: true })}
+        className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5"
+      >
+        {list.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => onSelect(r.id)}
+            aria-current={selectedId === r.id ? "true" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:basis-[calc(50%-0.375rem)] sm:max-lg:basis-0",
+              selectedId === r.id ? "bg-accent" : "hover:bg-accent/60",
+              !r.isActive && "opacity-60",
+            )}
+          >
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg"
+              style={resourceTile(r.color)}
+            >
+              <ResourceKindIcon kind={r.kind} className="size-4" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-medium">{r.name}</span>
+              <span className="truncate text-xs text-muted-foreground max-lg:hidden">
+                {resourceNote(r, memberName(r.memberId))}
+              </span>
+            </span>
+          </button>
+        ))}
+      </nav>
+      <nav aria-label="Whole business" className="flex flex-col gap-1.5 lg:gap-0.5">
+        <h2 className="px-3 text-xs font-medium text-muted-foreground">Whole business</h2>
+        <div className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5">
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => onSelect(s.id)}
+              aria-current={section === s.id ? "true" : undefined}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring max-lg:flex-1 max-lg:whitespace-nowrap pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
+                section === s.id ? "bg-accent font-medium" : "hover:bg-accent/60",
+              )}
+            >
+              {s.icon}
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
   );
 }
 
