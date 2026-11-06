@@ -41,22 +41,6 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
   // A class's attendees are one line: six identical rows would say less than "6 booked".
   const shown = groupSessions(showDone ? bookings : bookings.filter((b) => new Date(b.end) > now));
   const nowIndex = shown.findIndex((b) => new Date(b.start) > now);
-  const today = todayInTz(business.timezone, now);
-  const later = useBookings(
-    business.id,
-    { from: addDaysToPlainDate(today, 1), limit: 12 },
-    { enabled: !loading && shown.length === 0 },
-  );
-  const nextDay = later.data?.items[0] && toPlainDate(later.data.items[0].start, business.timezone);
-  const upNext = groupSessions(
-    (later.data?.items ?? []).filter((b) => toPlainDate(b.start, business.timezone) === nextDay),
-  ).slice(0, NEXT_DAY_ROWS);
-  const nextCount = (later.data?.items ?? []).filter(
-    (b) => toPlainDate(b.start, business.timezone) === nextDay,
-  ).length;
-  const nextLabel =
-    nextDay === addDaysToPlainDate(today, 1) ? "Tomorrow" : nextDay ? fmt.date(nextDay, "dayMonth") : "";
-
   return (
     <Card>
       <CardHeader>
@@ -119,28 +103,54 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
             ))}
           </ol>
         )}
-        {!loading && shown.length === 0 && (bookings.length > 0 || upNext.length > 0) && (
-          <div className="flex flex-col gap-1.5 px-2 pt-3">
-            {bookings.length > 0 && <p className="text-sm font-medium">That&rsquo;s the day.</p>}
-            {upNext.length > 0 && (
-              <>
-                <p className="tnum text-sm text-muted-foreground">
-                  {nextLabel}: {nextCount} {v("booking", { count: nextCount })}, first at{" "}
-                  {fmt.time(upNext[0]?.bookings[0].start ?? "")}
-                </p>
-                <ol className="mt-1 flex flex-col gap-1.5">
-                  {upNext.map((session) => (
-                    <li key={session.id}>
-                      <OrderRow session={session} now={now} onOpen={open} />
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-          </div>
+        {!loading && shown.length === 0 && (
+          <DayAfter dayIsOver={bookings.length > 0} now={now} onOpen={open} />
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** With nothing left today: the day is over, and the next day with bookings, its first few in order. */
+function DayAfter({
+  dayIsOver,
+  now,
+  onOpen,
+}: {
+  dayIsOver: boolean;
+  now: Date;
+  onOpen: (session: Session) => void;
+}) {
+  const { v } = useVocabulary();
+  const fmt = useFmt();
+  const business = useCurrentBusiness();
+  const tomorrow = addDaysToPlainDate(todayInTz(business.timezone, now), 1);
+  const later = useBookings(business.id, { from: tomorrow, limit: 12 });
+  const items = later.data?.items ?? [];
+  const day = items[0] && toPlainDate(items[0].start, business.timezone);
+  const onDay = items.filter((b) => toPlainDate(b.start, business.timezone) === day);
+  const sessions = groupSessions(onDay).slice(0, NEXT_DAY_ROWS);
+  const first = sessions[0]?.bookings[0];
+  if (!dayIsOver && !first) return null;
+  return (
+    <div className="flex flex-col gap-1.5 px-2 pt-3">
+      {dayIsOver && <p className="text-sm font-medium">That&rsquo;s the day.</p>}
+      {first && day && (
+        <>
+          <p className="tnum text-sm text-muted-foreground">
+            {day === tomorrow ? "Tomorrow" : fmt.date(day, "dayMonth")}: {onDay.length}{" "}
+            {v("booking", { count: onDay.length })}, first at {fmt.time(first.start)}
+          </p>
+          <ol className="mt-1 flex flex-col gap-1.5">
+            {sessions.map((session) => (
+              <li key={session.id}>
+                <OrderRow session={session} now={now} onOpen={onOpen} />
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </div>
   );
 }
 
