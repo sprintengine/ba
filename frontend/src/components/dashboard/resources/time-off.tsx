@@ -202,7 +202,7 @@ function OverrideList({
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="flex items-center gap-2 text-sm font-medium">
-                {fmt.date(o.date, "medium")}
+                {fmt.day(o.date)}
                 <Badge
                   tone={kind === "extra" ? "success" : kind === "off" ? "neutral" : "warning"}
                   className="h-5"
@@ -219,7 +219,7 @@ function OverrideList({
               <Button
                 size="sm"
                 variant="ghost"
-                aria-label={`Remove ${fmt.date(o.date, "medium")}`}
+                aria-label={`Remove ${fmt.day(o.date)}`}
                 loading={remove.isPending && remove.variables === o.id}
                 onClick={async () => {
                   await withToast(() => remove.mutateAsync(o.id), "Removed");

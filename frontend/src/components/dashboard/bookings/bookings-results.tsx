@@ -10,6 +10,7 @@ import { InfiniteFooter, type InfinitePaging } from "@/components/ui/infinite-fo
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { useBookingActions } from "../booking/booking-actions-provider";
+import { useOpenBooking } from "../booking/open-booking";
 import { useFmt } from "../common";
 import {
   BookingRow,
@@ -42,7 +43,11 @@ export function BookingsResults({
 }) {
   const { v } = useVocabulary();
   const { openBooking, openNewBooking } = useBookingActions();
-  const wide = useMediaQuery("(min-width: 1024px)");
+  const inspecting = useOpenBooking();
+  const roomy = useMediaQuery("(min-width: 1024px)");
+  const beside = useMediaQuery("(min-width: 1280px)");
+  // In a small window the inspector takes the room the table needs, so the list folds into its two-line rows.
+  const wide = roomy && (beside || inspecting === null);
   const fmt = useFmt();
   const days = useMemo(() => groupBookings(items, (b) => fmt.date(b.start)), [items, fmt]);
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
@@ -102,7 +107,7 @@ export function BookingsResults({
               <TableHead>{v("customer", { title: true })}</TableHead>
               <TableHead>Service</TableHead>
               <TableHead className="hidden xl:table-cell">With</TableHead>
-              <TableHead>Needs attention</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead align="right">Price</TableHead>
               <TableHead className="hidden 2xl:table-cell">Reference</TableHead>
             </TableRow>

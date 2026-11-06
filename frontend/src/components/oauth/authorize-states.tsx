@@ -56,12 +56,12 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
           <>
             <span className="block">{message}</span>
             <span className="mt-2 block">
-              Nothing was shared. Go back to the app you came from and try connecting again.
+              Nothing was shared. To try again, start from the app you came from.
             </span>
           </>
         }
         action={
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/my/bookings">Go to my bookings</Link>
           </Button>
         }
@@ -84,7 +84,7 @@ export function NoBusinessToConnect({ message }: { message: string }) {
         title="There's no business to connect"
         description={message}
         action={
-          <Button asChild variant="secondary">
+          <Button asChild variant="primary">
             <Link href="/onboarding">Set up your business</Link>
           </Button>
         }

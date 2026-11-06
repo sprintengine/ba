@@ -19,7 +19,7 @@ export function HistoryTable({ bookings, onOpen }: HistoryProps) {
           <TableRow>
             <TableHead>When</TableHead>
             <TableHead>Service</TableHead>
-            <TableHead>Needs attention</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead align="right">Price</TableHead>
           </TableRow>
         </TableHeader>
@@ -28,7 +28,7 @@ export function HistoryTable({ bookings, onOpen }: HistoryProps) {
             <TableRow key={b.id} onActivate={() => onOpen(b.id)}>
               <TableCell className="whitespace-nowrap">
                 <span className="flex flex-col">
-                  <span className="font-medium">{fmt.date(b.start, "dayMonthYear")}</span>
+                  <span className="font-medium">{fmt.day(b.start)}</span>
                   <span className="tnum text-xs text-muted-foreground">{fmt.range(b.start, b.end)}</span>
                 </span>
               </TableCell>
@@ -67,8 +67,7 @@ export function HistoryList({ bookings, onOpen }: HistoryProps) {
           >
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="tnum text-sm font-medium">
-                {fmt.date(b.start, "dayMonthYear")} ·{" "}
-                <span className="whitespace-nowrap">{fmt.range(b.start, b.end)}</span>
+                {fmt.day(b.start)} · <span className="whitespace-nowrap">{fmt.range(b.start, b.end)}</span>
               </span>
               <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
                 <ColorDot color={b.service.color} />

@@ -24,7 +24,7 @@ export const BOOKING_STATUS: Record<BookingStatus, StatusMeta> = {
 };
 
 export const PAYMENT_STATUS: Record<PaymentStatus, StatusMeta> = {
-  not_required: { label: "No charge", tone: "neutral", description: "Nothing to pay." },
+  not_required: { label: "Free", tone: "neutral", description: "Nothing to pay." },
   pending: { label: "Payment pending", tone: "warning", description: "Waiting for the customer to pay." },
   paid: { label: "Paid", tone: "success", description: "Paid in full." },
   partially_refunded: {

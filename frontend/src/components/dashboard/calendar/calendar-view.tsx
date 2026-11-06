@@ -1,10 +1,18 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus } from "lucide-react";
 import type { BlockedInterval } from "@/lib/availability/windows";
 import { useCurrentBusiness } from "@/lib/business/business-context";
-import { minutesToTime, timeToMinutes, toTimeOfDay, todayInTz, type PlainDate } from "@/lib/format/datetime";
+import {
+  minutesToTime,
+  timeToMinutes,
+  toPlainDate,
+  toTimeOfDay,
+  todayInTz,
+  type PlainDate,
+} from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { useNow } from "@/lib/hooks/use-now";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -25,6 +33,7 @@ import { useCalendarZoom } from "./use-calendar-zoom";
 /** The time gutter's width (`w-14`): the columns scroll under it. */
 const HOUR_GUTTER_PX = 56;
 import { useCalendarData } from "./use-calendar-data";
+import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { useCalendarKeyboard } from "./use-calendar-keyboard";
 import { useCalendarUrl } from "./use-calendar-url";
 
@@ -62,7 +71,12 @@ export function CalendarView() {
     () => openNewBooking({ date, resourceId: selected?.id }),
     [openNewBooking, date, selected],
   );
-  useCalendarKeyboard({ go, setParams, onNew: newBooking });
+  const router = useRouter();
+  const showList = useCallback(
+    () => router.push(dashboardHref(business.slug, "bookings")),
+    [router, business.slug],
+  );
+  useCalendarKeyboard({ go, setParams, onNew: newBooking, onList: showList });
   // Stable across renders so the memoised columns only re-render when their own bookings or hours change.
   const createAt = useCallback(
     (d: PlainDate, minute: number, resourceId: string | undefined) =>
@@ -104,7 +118,18 @@ export function CalendarView() {
       ...columns.flatMap((c) => c.bookings.map((b) => timeToMinutes(toTimeOfDay(b.end, business.timezone)))),
     );
     const live = days.includes(today) && nowMinute < lastEnd;
-    const target = live ? Math.max(firstOpen - 15, nowMinute - 45) : firstBusy - 15;
+    // Hours before today's first booking are empty, so today opens where the work is.
+    const startsToday = columns.flatMap((c) =>
+      c.bookings
+        .filter((b) => toPlainDate(b.start, business.timezone) === today)
+        .map((b) => timeToMinutes(toTimeOfDay(b.start, business.timezone))),
+    );
+    const firstToday = Math.min(...startsToday);
+    const target = !live
+      ? firstBusy - 15
+      : nowMinute < firstToday
+        ? firstToday - 15
+        : Math.max(firstOpen - 15, nowMinute - 45);
     scroller.current.scrollTop = Math.max(0, ((target - startHour * 60) / 60) * scale);
     // Where the week doesn't fit, it opens on today rather than on Monday.
     const column = view === "week" ? scroller.current.querySelector(`[data-day="${today}"]`) : null;

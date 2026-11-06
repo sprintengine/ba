@@ -114,7 +114,7 @@ export function AssistantHome({ onNavigate }: { onNavigate: () => void }) {
       {nudges.length > 0 && (
         <section aria-labelledby="bo-nudges" className="flex flex-col gap-2.5">
           <h3 id="bo-nudges" className="text-sm font-medium text-muted-foreground">
-            Needs attention
+            Needs you
           </h3>
           <ul className="flex flex-col gap-2.5">
             {nudges.map((n) => (

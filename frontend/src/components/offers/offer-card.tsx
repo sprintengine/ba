@@ -53,7 +53,7 @@ export function OfferCard({
     }
   };
 
-  const dates = validDates(offer, (d) => fmt.date(d, "medium"));
+  const dates = validDates(offer, (d) => fmt.day(d));
   return (
     <li
       className={cn(

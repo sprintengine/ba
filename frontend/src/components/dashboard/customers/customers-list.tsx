@@ -166,13 +166,18 @@ export function CustomersList() {
                             <span className="flex min-w-0 items-center gap-x-2 font-medium">
                               <span className="truncate">{c.name}</span>
                               {c.hasAccount && (
-                                <Badge tone="brand" className="h-5 shrink-0">
+                                <Badge tone="brand" className="h-5 shrink-0 max-md:hidden">
                                   Account
                                 </Badge>
                               )}
                             </span>
-                            <span className="truncate text-xs text-muted-foreground md:hidden">
-                              {c.email ?? c.phone ?? ""}
+                            <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground md:hidden">
+                              <span className="truncate">{c.email ?? c.phone ?? ""}</span>
+                              {c.hasAccount && (
+                                <Badge tone="brand" className="h-4.5 shrink-0">
+                                  Account
+                                </Badge>
+                              )}
                             </span>
                           </span>
                         </AppLink>
@@ -196,7 +201,7 @@ export function CustomersList() {
                       )}
                       <TableCell align="right">{c.bookingCount}</TableCell>
                       <TableCell className="hidden text-muted-foreground sm:table-cell">
-                        {c.lastBookingAt ? fmt.date(c.lastBookingAt, "medium") : "—"}
+                        {c.lastBookingAt ? fmt.day(c.lastBookingAt) : "—"}
                       </TableCell>
                     </TableRow>
                   ))}

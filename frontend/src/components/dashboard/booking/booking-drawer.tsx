@@ -1,6 +1,7 @@
 "use client";
 
 import { CircleSlash } from "lucide-react";
+import type { BookingStatus } from "@/lib/api/types";
 import { useBooking } from "@/lib/api/hooks";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { useVocabulary } from "@/lib/vocabulary";
@@ -11,6 +12,11 @@ import { ErrorState } from "@/components/common/feedback";
 import { BookingActionsBar } from "./booking-actions-bar";
 import { BookingDetailBody } from "./booking-detail-body";
 import { BookingPanelBadges, BookingPanelName, BookingPanelWhen } from "./booking-panel-head";
+import { serviceTint } from "../calendar/event-card";
+
+/** Cancelled and no-show cards drop their colour on the calendar, so their panel does too. */
+const isBlockingOrDone = (b: { status: BookingStatus }) =>
+  !["cancelled", "expired", "no_show"].includes(b.status);
 
 /** Booking detail: an inspector beside the page on desktop, a bottom drawer on mobile. */
 export function BookingDrawer({
@@ -45,6 +51,7 @@ export function BookingDrawer({
       }
       description={b ? <BookingPanelWhen booking={b} /> : null}
       header={b ? <BookingPanelBadges booking={b} /> : null}
+      headStyle={b && isBlockingOrDone(b) ? serviceTint(b.service.color) : undefined}
       // Keyed by booking: the drawer can swap to another (cached) booking while open (⌘K), and the actions' dialogs
       // and the notes draft belong to the one they were started on.
       footer={b ? <BookingActionsBar key={b.id} booking={b} onDone={() => undefined} /> : undefined}

@@ -18,6 +18,7 @@ import { useDebouncedSearch } from "@/components/ui/search-input";
 import { useBookingActions } from "../booking/booking-actions-provider";
 import { BookingsResults } from "./bookings-results";
 import { BookingsToolbar } from "./bookings-toolbar";
+import { CalendarViewSwitch } from "./calendar-view-switch";
 import { BookingViews } from "./booking-views";
 
 const NO_BOOKINGS: Booking[] = [];
@@ -76,13 +77,16 @@ export function BookingsList() {
       <PageHeader
         title={v("bookings", { title: true })}
         actions={
-          <ActionButton
-            variant="primary"
-            onClick={() => openNewBooking()}
-            icon={<Plus />}
-            collapse={false}
-            label={`New ${v("booking")}`}
-          />
+          <>
+            <CalendarViewSwitch />
+            <ActionButton
+              variant="primary"
+              onClick={() => openNewBooking()}
+              icon={<Plus />}
+              collapse={false}
+              label={`New ${v("booking")}`}
+            />
+          </>
         }
       />
       <div className="flex flex-col gap-2 pb-3 sm:flex-row sm:flex-wrap sm:items-center">

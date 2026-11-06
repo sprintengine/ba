@@ -3,6 +3,7 @@
 import { HandCoins } from "lucide-react";
 import type { BookingDetail } from "@/lib/api/types";
 import { useMarkPaidInPerson } from "@/lib/api/hooks";
+import { balanceDueCents } from "@/lib/booking/booking";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import { canMarkPaidInPerson } from "@/lib/dashboard/booking-capabilities";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,11 @@ export function PaymentSection({ booking: b }: { booking: BookingDetail }) {
         )}
         {hasDue && (
           <MoneyRow
-            label={b.paymentStatus === "pay_at_venue" ? "Due at venue" : "Outstanding"}
+            label={
+              b.paymentStatus === "pay_at_venue" || balanceDueCents(b) !== null
+                ? "Due at venue"
+                : "Outstanding"
+            }
             value={money(due)}
             strong
           />
@@ -135,7 +140,7 @@ function PaymentList({ payments }: { payments: BookingDetail["payments"] }) {
           </span>
           <span className="tnum">
             {p.kind === "refund" ? "−" : ""}
-            {fmt.money(p.amountCents, { currency: p.currency })} · {fmt.date(p.createdAt, "short")}
+            {fmt.money(p.amountCents, { currency: p.currency })} · {fmt.day(p.createdAt)}
           </span>
         </li>
       ))}

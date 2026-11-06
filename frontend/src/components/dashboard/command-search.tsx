@@ -84,9 +84,7 @@ export function DashboardCommandSearch({ search, close }: { search: string; clos
                       {b.customer.name} · {b.service.name}
                     </span>
                     <span className="flex shrink-0 items-center gap-2 text-xs text-subtle-foreground">
-                      <span className="tnum">
-                        {fmt.date(b.start, "short")}, {fmt.time(b.start)}
-                      </span>
+                      <span className="tnum">{fmt.dateTime(b.start)}</span>
                       <BookingExceptions status={b.status} />
                     </span>
                   </span>

@@ -102,7 +102,7 @@ function DayTooltip({ row, measure }: { row: Row; measure: Measure }) {
   const { v } = useVocabulary();
   return (
     <div className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs shadow-lg">
-      <div className="text-muted-foreground">{fmt.date(row.date, "dayMonthYear")}</div>
+      <div className="text-muted-foreground">{fmt.day(row.date)}</div>
       <div className="tnum mt-0.5 flex items-center gap-1.5 font-semibold text-foreground">
         <span className="size-2 rounded-sm bg-chart-1" />
         {measure === "bookings" ? `${row.value} ${v("booking", { count: row.value })}` : fmt.money(row.value)}

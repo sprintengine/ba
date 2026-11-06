@@ -16,7 +16,7 @@ import { toast } from "@/components/ui/toast";
 export const ShareOriginContext = createContext<string | null>(null);
 
 /** The public booking page's link (copy, open) and whether it is live. */
-export function ShareCard() {
+export function ShareCard({ paused = false }: { paused?: boolean }) {
   const { business } = useBusinessContext();
   const perms = usePermissions();
   const sampleOrigin = useContext(ShareOriginContext);
@@ -34,6 +34,8 @@ export function ShareCard() {
           Booking page
           {draft ? (
             <Badge tone="warning">Draft</Badge>
+          ) : paused ? (
+            <Badge tone="warning">Paused</Badge>
           ) : (
             <Badge tone="success" dot>
               Live
@@ -43,9 +45,11 @@ export function ShareCard() {
         <CardDescription>
           {draft
             ? "Only your team can see it until you publish."
-            : perms.manageSettings
-              ? "Add the link to your website, Instagram or Google profile."
-              : "The link customers use to book."}
+            : paused
+              ? "People can still see it, but new online bookings wait for next month or an upgrade."
+              : perms.manageSettings
+                ? "Add the link to your website, Instagram or Google profile."
+                : "The link customers use to book."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

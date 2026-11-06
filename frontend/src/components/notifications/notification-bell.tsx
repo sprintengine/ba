@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bell, BellOff, CheckCheck } from "lucide-react";
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from "@/lib/api/hooks";
 import type { AppNotification } from "@/lib/api/types";
+import { formatDay } from "@/lib/format/datetime";
 import { DEFAULT_LOCALE } from "@/lib/format/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,14 +29,14 @@ const PANEL_ITEMS = 6;
 /** Local calendar day, for grouping. */
 const dayKey = (at: Date) => `${at.getFullYear()}-${at.getMonth()}-${at.getDate()}`;
 
-/** "Today", "Yesterday", else "Tue 3 Nov". */
+/** "Today", "Yesterday", else "Tue, 3 Nov". */
 function dayLabel(iso: string, now: Date): string {
   const at = new Date(iso);
   if (dayKey(at) === dayKey(now)) return "Today";
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   if (dayKey(at) === dayKey(yesterday)) return "Yesterday";
-  return at.toLocaleDateString(DEFAULT_LOCALE, { weekday: "short", day: "numeric", month: "short" });
+  return formatDay(at, Intl.DateTimeFormat().resolvedOptions().timeZone, DEFAULT_LOCALE, now);
 }
 
 /** Newest first as they come, under one heading per day. */
@@ -59,7 +60,7 @@ export function timeAgo(iso: string, now: number = Date.now()): string {
   if (hours < 24) return `${hours} h ago`;
   const days = Math.round(hours / 24);
   if (days < 7) return days === 1 ? "Yesterday" : `${days} days ago`;
-  return new Date(iso).toLocaleDateString(DEFAULT_LOCALE, { day: "numeric", month: "short" });
+  return formatDay(new Date(iso), Intl.DateTimeFormat().resolvedOptions().timeZone, DEFAULT_LOCALE);
 }
 
 const PANEL_TITLE_ID = "notifications-panel-title";

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { NewBookingPrefill } from "@/lib/dashboard/new-booking";
+import { OpenBookingContext } from "./open-booking";
 
 /**
  * The drawer and the sheet are large and only open on demand, so they load on first open (`next/dynamic`) instead of
@@ -49,7 +50,9 @@ export function BookingActionsProvider({ children }: { children: React.ReactNode
 
   return (
     <BookingActionsContext.Provider value={value}>
-      {children}
+      <OpenBookingContext.Provider value={drawerOpen ? bookingId : null}>
+        {children}
+      </OpenBookingContext.Provider>
       {bookingId !== null && (
         <BookingDrawer bookingId={bookingId} open={drawerOpen} onOpenChange={setDrawerOpen} />
       )}

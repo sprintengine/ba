@@ -83,7 +83,7 @@ export function BusinessSwitcher({
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="start">
+      <DropdownMenuContent className="w-64 max-sm:w-[calc(100vw-1rem)]" align="start">
         <DropdownMenuLabel>Businesses</DropdownMenuLabel>
         {memberships.map((m) => (
           <DropdownMenuItem key={m.businessId} asChild>

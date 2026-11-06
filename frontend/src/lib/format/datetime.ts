@@ -207,6 +207,20 @@ export function formatDateTime(instant: string | Date, timeZone: string, locale 
   return `${formatDate(instant, timeZone, "dayMonth", locale)}, ${formatTime(instant, timeZone, locale)}`;
 }
 
+/**
+ * The app's way of writing a day in a line: "Thu, 1 Oct", with the year only when it isn't this year: "Thu, 1 Oct 2025".
+ */
+export function formatDay(
+  value: PlainDate | Date,
+  timeZone: string,
+  locale = DEFAULT_LOCALE,
+  now: Date = new Date(),
+): string {
+  const date = typeof value === "string" && isPlainDate(value) ? value : toPlainDate(value, timeZone);
+  const thisYear = date.slice(0, 4) === todayInTz(timeZone, now).slice(0, 4);
+  return formatDate(value, timeZone, thisYear ? "dayMonth" : "dayMonthYear", locale);
+}
+
 /** "Today" / "Tomorrow" / "Yesterday" / "Thu, 1 Oct" relative to now in the zone. */
 export function formatRelativeDay(
   value: PlainDate,

@@ -333,6 +333,8 @@
   --event-tint: 17%;
   --event-waiting: #fdf0d9;
   --event-tint-done: 10%;
+  --event-base: var(--surface);
+  --event-edge: 10%;
   --chart-1: #5b4ae0;
   --chart-2: #e0702f;
   --chart-3: #1d9bd1;
@@ -465,9 +467,12 @@
   --info-soft: rgba(90, 169, 240, 0.14);
   --info-soft-foreground: #a3cef7;
   --info-border: rgba(90, 169, 240, 0.32);
-  --event-tint: 34%;
+  --event-tint: 30%;
   --event-waiting: #41331f;
-  --event-tint-done: 18%;
+  --event-tint-done: 15%;
+  /* A step above every dark surface, so a booking reads as a shape on the page as well as in the calendar. */
+  --event-base: #2b2b2b;
+  --event-edge: 42%;
   --chart-1: #7a6af0;
   --chart-2: #e06a2a;
   --chart-3: #1f95cc;

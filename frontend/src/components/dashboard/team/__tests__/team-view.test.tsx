@@ -97,7 +97,7 @@ describe("TeamSection", () => {
       expect.stringMatching(/Avery MorganYou/),
       expect.stringMatching(/Blake Shaw.*Admin(Remove)?$/),
       expect.stringMatching(/Casey Lane.*Sam Rivers.*Staff(Remove)?$/),
-      expect.stringMatching(/^new@example\.testInvitedInvited 28 Sept?/),
+      expect.stringMatching(/^new@example\.testInvitedInvited Mon, 28 Sept?/),
     ]);
     expect(screen.getByRole("heading", { level: 2, name: "Who can sign in" })).toBeInTheDocument();
     expect(screen.getByText("What each role can do")).toBeInTheDocument();

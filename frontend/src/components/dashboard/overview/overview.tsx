@@ -9,7 +9,7 @@ import { firstName, todaysBookings } from "@/lib/dashboard/overview";
 import { greetingAt, todayInTz } from "@/lib/format/datetime";
 import { useNow } from "@/lib/hooks/use-now";
 import { useVocabulary } from "@/lib/vocabulary";
-import { PlanLimitNotice } from "./plan-limit-notice";
+import { PlanLimitNotice, usePlanLimitReached } from "./plan-limit-notice";
 import { ErrorState } from "@/components/common/feedback";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function OverviewView() {
   const { openNewBooking } = useBookingActions();
   const today = todayInTz(business.timezone, now);
   const overview = useOverview(business.id, today);
+  const limitReached = usePlanLimitReached(business.id, perms.manageBilling);
   const name = firstName(me.user.name);
   const todays = useMemo(() => todaysBookings(overview.data?.today ?? []), [overview.data]);
 
@@ -74,7 +75,7 @@ export function OverviewView() {
             <div className="flex min-w-0 flex-col gap-6">
               {/* Waits for the data: on a phone this sits under Today, which grows once its bookings arrive. */}
               {overview.data && perms.manageSettings && <SetupChecklist items={overview.data.checklist} />}
-              {overview.data && <ShareCard />}
+              {overview.data && <ShareCard paused={limitReached !== null} />}
             </div>
           </div>
         </div>

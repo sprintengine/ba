@@ -25,6 +25,7 @@ export function ResponsivePanel({
   description,
   header,
   footer,
+  headStyle,
   size = "lg",
   className,
   inspector = false,
@@ -37,6 +38,8 @@ export function ResponsivePanel({
   /** Extra header content under the title. */
   header?: React.ReactNode;
   footer?: React.ReactNode;
+  /** The head's own colour: a booking's panel wears its card's. */
+  headStyle?: React.CSSProperties;
   size?: "md" | "lg" | "xl";
   className?: string;
   inspector?: boolean;
@@ -57,7 +60,7 @@ export function ResponsivePanel({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className={className}>
           {/* Swipe down closes it too, but not everyone knows that: a close button like the side sheet's. */}
-          <DrawerHeader className="relative border-b border-border-subtle pr-14">
+          <DrawerHeader className="relative border-b border-border-subtle pr-14" style={headStyle}>
             <IconButton
               label="Close"
               tooltip={false}
@@ -90,7 +93,7 @@ export function ResponsivePanel({
         // The page beside it stays in use: clicking there never closes the panel.
         onInteractOutside={inspector ? (e) => e.preventDefault() : undefined}
       >
-        <SheetHeader>
+        <SheetHeader style={headStyle}>
           <SheetTitle>{title}</SheetTitle>
           {description ? (
             <SheetDescription asChild>

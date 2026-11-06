@@ -85,7 +85,7 @@ function MemberIdentity({ member: m, isMe }: { member: TeamMember; isMe: boolean
         </span>
         <span className="truncate text-xs text-muted-foreground">
           {m.name ? m.email : ""}
-          {invited ? `${m.name ? " · " : ""}Invited ${fmt.date(m.createdAt, "short")}` : ""}
+          {invited ? `${m.name ? " · " : ""}Invited ${fmt.day(m.createdAt)}` : ""}
         </span>
       </div>
     </div>

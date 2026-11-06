@@ -290,7 +290,7 @@ describe("NewBookingSheet", () => {
     expect(onCreated).toHaveBeenCalledWith("bk9");
   });
 
-  it("books someone with a calendar picked for an exact time, and preselects “No charge” for a free service", async () => {
+  it("books someone with a calendar picked for an exact time, and preselects “Free” for a free service", async () => {
     const calls = api(undefined, [massage, freebie]);
     const user = userEvent.setup();
     renderSheet({ ...prefill, serviceId: undefined, resourceId: "r1" });
@@ -298,7 +298,7 @@ describe("NewBookingSheet", () => {
     await user.click(await screen.findByRole("option", { name: /Intro chat/ }));
     expect(screen.getByRole("combobox", { name: "With" })).toHaveTextContent("Sam Rivers");
     await user.click(screen.getByRole("button", { name: /^Payment/ }));
-    expect(screen.getByRole("radio", { name: /No charge/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Nothing to pay/ })).toBeChecked();
     expect(screen.getByRole("radio", { name: /At venue/ })).toBeDisabled();
     await submit();
     await waitFor(() =>

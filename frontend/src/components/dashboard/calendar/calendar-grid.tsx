@@ -183,7 +183,7 @@ export const DayColumn = memo(function DayColumn({
       ref={ref}
       role="group"
       aria-label={label}
-      className="relative min-w-0 flex-1 border-l border-border bg-muted/70 dark:bg-surface-sunken"
+      className="relative isolate min-w-0 flex-1 border-l border-border bg-muted/70 dark:bg-surface-sunken"
       style={{ height }}
       onMouseMove={(e) => {
         if (!onCreate || !onEmptyGrid(e)) return setHover(null);

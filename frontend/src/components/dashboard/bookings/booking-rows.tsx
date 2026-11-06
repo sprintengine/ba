@@ -102,7 +102,7 @@ export function BookingRow({
       </TableCell>
       <TableCell>
         <span className="flex flex-wrap items-center gap-1.5">
-          <BookingExceptions status={b.status} payment={b.paymentStatus} />
+          <BookingExceptions status={b.status} payment={b.paymentStatus} booking={b} />
         </span>
       </TableCell>
       <TableCell align="right" className="tnum whitespace-nowrap">
@@ -201,7 +201,7 @@ export function MobileRow({
               {[b.service.name, ...b.resources.map((r) => r.name)].join(" · ")}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
-              <BookingExceptions status={b.status} payment={b.paymentStatus} />
+              <BookingExceptions status={b.status} payment={b.paymentStatus} booking={b} />
             </span>
           </span>
         </span>

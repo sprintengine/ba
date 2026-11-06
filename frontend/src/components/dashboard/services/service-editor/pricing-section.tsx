@@ -48,7 +48,7 @@ export function PricingSection() {
               value="free"
               icon={<Gift />}
               title={PAYMENT_MODE_LABEL.free}
-              description="No charge at all."
+              description="Nothing to pay."
               className="p-3"
             />
           </RadioCards>

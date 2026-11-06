@@ -127,7 +127,7 @@ function DailyTable({ usage }: { usage: AiUsage }) {
         <TableBody>
           {[...usage.daily].reverse().map((d) => (
             <TableRow key={d.date}>
-              <TableCell className="h-9">{fmt.date(d.date, "dayMonthYear")}</TableCell>
+              <TableCell className="h-9">{fmt.day(d.date)}</TableCell>
               <TableCell align="right" className="h-9">
                 {formatCredits(d.credits, business.locale)}
               </TableCell>

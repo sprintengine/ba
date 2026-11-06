@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { AppLink } from "@/components/ui/app-link";
 import {
   CalendarRange,
@@ -37,8 +38,8 @@ import { CALENDAR_ZOOMS, type CalendarZoom } from "./grid-scale";
 type Setter = (patch: UrlParamsPatch) => void;
 
 /**
- * Above the grid: the date (a month picker), previous / next / today, view and "New"; then what's showing, anything
- * waiting on the business, cancelled bookings and the full list. Phones show glyphs, so the grid keeps the screen.
+ * Above the grid: the date (a month picker), previous / next / today, Day, Week or List, and "New"; then what's showing,
+ * anything waiting on the business and cancelled bookings. Phones show glyphs, so the grid keeps the screen.
  */
 export function CalendarToolbar({
   date,
@@ -82,12 +83,17 @@ export function CalendarToolbar({
   const { v } = useVocabulary();
   const business = useCurrentBusiness();
   const phone = useMediaQuery("(max-width: 639px)");
+  const router = useRouter();
   const viewControl = (
     <SegmentedControl
       size="sm"
       aria-label="Calendar view"
       value={view}
-      onValueChange={(val) => setParams({ view: val === "day" ? null : val })}
+      onValueChange={(val) =>
+        val === "list"
+          ? router.push(dashboardHref(business.slug, "bookings"))
+          : setParams({ view: val === "day" ? null : val })
+      }
       options={[
         {
           value: "day",
@@ -101,6 +107,17 @@ export function CalendarToolbar({
           icon: <CalendarRange aria-hidden className="max-xl:hidden @max-[60rem]/tools:hidden" />,
           shortcut: "W",
         },
+        // Phones have the list in the tab bar.
+        ...(phone
+          ? []
+          : [
+              {
+                value: "list",
+                label: "List",
+                icon: <List aria-hidden className="max-xl:hidden @max-[60rem]/tools:hidden" />,
+                shortcut: "L",
+              },
+            ]),
       ]}
     />
   );
@@ -126,13 +143,6 @@ export function CalendarToolbar({
         <ZoomChoice zoom={zoom} onZoom={onZoom} />
         <div className="my-1 border-t border-border" />
         {cancelledToggle}
-        {!phone && (
-          <Button asChild variant="ghost" size="sm" className="justify-start">
-            <AppLink href={dashboardHref(business.slug, "bookings")}>
-              <List aria-hidden /> All {v("bookings")}
-            </AppLink>
-          </Button>
-        )}
       </PopoverContent>
     </Popover>
   );
@@ -189,11 +199,11 @@ export function CalendarToolbar({
         {waiting > 0 && (
           <AppLink
             href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
-            aria-label={`${waiting} to approve`}
+            aria-label={`${waiting} ${waiting === 1 ? "needs" : "need"} you`}
             className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden @max-[47rem]/tools:hidden"
           >
             <span className="tnum">{waiting}</span>
-            <span>to approve</span>
+            <span>{waiting === 1 ? "needs" : "need"} you</span>
           </AppLink>
         )}
         <div className="flex-1 max-sm:hidden" />

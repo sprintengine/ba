@@ -4,15 +4,17 @@ import { useEffect } from "react";
 import type { UrlParamsPatch } from "@/lib/hooks/use-url-params";
 import { isTypingTarget } from "../lib/hooks";
 
-/** Calendar shortcuts: ←/→ move, t today, d/w view, n new booking. Off while typing or in a dialog. */
+/** Calendar shortcuts: ←/→ move, t today, d/w/l view, n new booking. Off while typing or in a dialog. */
 export function useCalendarKeyboard({
   go,
   setParams,
   onNew,
+  onList,
 }: {
   go: (delta: number) => void;
   setParams: (patch: UrlParamsPatch) => void;
   onNew: () => void;
+  onList: () => void;
 }) {
   useEffect(() => {
     const actions = new Map<string, () => void>([
@@ -21,6 +23,7 @@ export function useCalendarKeyboard({
       ["t", () => setParams({ date: null })],
       ["d", () => setParams({ view: null })],
       ["w", () => setParams({ view: "week" })],
+      ["l", onList],
       ["n", onNew],
     ]);
     const onKey = (e: KeyboardEvent) => {
@@ -34,5 +37,5 @@ export function useCalendarKeyboard({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, setParams, onNew]);
+  }, [go, setParams, onNew, onList]);
 }

@@ -149,7 +149,7 @@ describe("CustomersList", () => {
       "alex@example.test+353871234567",
       "Members",
       "3",
-      "12 Sept 2026",
+      "Sat, 12 Sept",
     ]);
     expect(
       within(must(second, "second row"))

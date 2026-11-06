@@ -14,7 +14,7 @@ import { QuestionFields } from "./new-booking-questions";
 const PAYMENT_WORDS: Record<Values["paymentMode"], string> = {
   collect_online: "Online",
   at_venue: "At venue",
-  none: "No charge",
+  none: "Free",
 };
 
 /** A line that says what is set, and opens to change it. It opens by itself when something in it needs attention. */

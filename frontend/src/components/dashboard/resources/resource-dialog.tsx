@@ -145,7 +145,7 @@ export function ResourceDialog({
           <SettingFormRow<V, "memberId">
             name="memberId"
             label="Team member"
-            help="They see this calendar and can manage its hours."
+            help="Link someone on the team, and they see this calendar and can manage its hours."
           >
             {(field) => (
               <Select value={field.value} onValueChange={field.onChange}>

@@ -48,7 +48,7 @@ export function ReportsView() {
     <PageContainer size="wide">
       <PageHeader
         title="Reports"
-        description={`${fmt.date(range.from, "medium")} – ${fmt.date(range.to, "medium")} · ${days} days`}
+        description={`${fmt.date(range.from, range.from.slice(0, 4) === range.to.slice(0, 4) ? "short" : "medium")} – ${fmt.date(range.to, "medium")} · ${days} days`}
         actions={<ReportRangePicker preset={preset} range={range} setParams={setParams} />}
       />
       {report.isError ? (

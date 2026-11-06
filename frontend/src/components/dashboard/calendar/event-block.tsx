@@ -4,10 +4,13 @@ import type { Booking } from "@/lib/api/types";
 import { eventAppearance } from "@/lib/dashboard/calendar";
 import { cn } from "@/lib/utils";
 import type { PositionedEvent, SessionEntry } from "@/lib/dashboard/calendar-layout";
+import { useOpenBooking } from "../booking/open-booking";
 import { PREPARATION_HATCH } from "./blocked-band";
 import { SessionButton } from "./event-groups";
 import {
   CARD,
+  CARD_LINE,
+  CARD_OPEN,
   CARD_RAISED,
   CARD_TEXT_TIGHT,
   isTight,
@@ -191,6 +194,7 @@ function EventButton({
   onSelect: (id: string) => void;
 }) {
   const look = eventAppearance(b.status);
+  const open = useOpenBooking() === b.id;
   const lines = linesFor(h);
   const time = `${formatTime(b.start)}–${formatTime(b.end)}`;
   const { waiting, cancelled, noShow, status } = cardState(b.status, look.label);
@@ -199,12 +203,14 @@ function EventButton({
     <button
       type="button"
       data-event=""
+      aria-current={open ? "true" : undefined}
       onClick={() => onSelect(b.id)}
       title={`${time} · ${b.customer.name} · ${b.service.name} · ${look.label}`}
       className={cn(
         CARD,
         "@container",
         !cancelled && CARD_RAISED,
+        open && CARD_OPEN,
         waiting && "border-warning-border",
         cancelled && "border-dashed border-border-strong",
         noShow && "border-border bg-muted",
@@ -240,7 +246,7 @@ function EventButton({
               key={row.text}
               className={cn(
                 "block truncate text-xs leading-[1.0625rem]",
-                i === 0 && STUCK_DETAIL,
+                i === 0 ? cn(STUCK_DETAIL, "w-fit max-w-full") : CARD_LINE,
                 row.kind === "detail" && "text-muted-foreground",
                 row.kind === "place" && "font-medium text-foreground",
               )}
