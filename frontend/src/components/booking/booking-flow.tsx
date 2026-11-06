@@ -7,8 +7,9 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { BookingPromises, BookingSummaryCard, MobileSummaryBar } from "./booking-summary";
+import { TICKET_NOTCHES, TICKET_PANEL } from "./ticket";
 import { FlowStep, flowStepAction } from "./flow-step";
-import { StepProgress } from "./steps";
+import { StepProgress } from "./step-progress";
 import { useBookingAgentTools } from "./use-booking-agent-tools";
 import { useBookingFlow } from "./use-booking-flow";
 
@@ -49,25 +50,32 @@ export function BookingFlow({
   // above the first step and the summary and the action in a bottom bar.
   return (
     <div className="@container">
-      <div className="grid gap-6 @4xl:grid-cols-[19rem_minmax(0,1fr)] @4xl:gap-12">
-        <aside
-          aria-label={business.name}
-          className={cn(
-            "flex min-w-0 flex-col gap-6 @4xl:sticky @4xl:top-24 @4xl:self-start",
-            !first && "hidden @4xl:flex",
-          )}
-        >
-          {intro}
-          {/* The receipt stays put to the end, so the total is in view when it's time to confirm. */}
-          {flow.service && (
-            <div className="hidden border-t border-border pt-5 @4xl:block">
-              <BookingSummaryCard {...summaryProps} />
-            </div>
-          )}
+      <div className="grid gap-6 @4xl:grid-cols-[21rem_minmax(0,1fr)] @4xl:gap-10">
+        {/* A ticket in the business's colour: who it's with above the tear, what's being booked below it. */}
+        <aside aria-label={business.name} className={cn(TICKET_PANEL, !first && "hidden @4xl:flex")}>
+          <div className="p-5">{intro}</div>
+          <div className="relative hidden border-t border-dashed border-border-strong p-5 @4xl:block">
+            <span aria-hidden className={TICKET_NOTCHES} />
+            {/* The receipt stays put to the end, so the total is in view when it's time to confirm. */}
+            {flow.service ? (
+              <BookingSummaryCard {...summaryProps} brief={reviewing} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="text-base font-semibold tracking-tight">Your {v("booking")}</p>
+                <p className="text-sm text-subtle-foreground">Choose a service to start</p>
+              </div>
+            )}
+          </div>
         </aside>
         <div ref={topRef} className="flex min-w-0 scroll-mt-24 flex-col gap-6 pb-32 @4xl:pb-0">
           {/* While the number of steps depends on what's chosen, a bar would only promise a length it can't keep. */}
-          {flow.stepTotal.known && <StepProgress index={flow.stepIndex} total={flow.stepTotal.total} />}
+          {flow.stepTotal.known && (
+            <StepProgress
+              index={flow.stepIndex}
+              total={flow.stepTotal.total}
+              labels={flow.steps.map((s) => STEP_LABEL[s])}
+            />
+          )}
           <FlowStep flow={flow} />
           {!flow.service && <BookingPromises {...summaryProps} />}
           {action && (
@@ -82,6 +90,17 @@ export function BookingFlow({
     </div>
   );
 }
+
+/** The names on the progress bar: a word each, so they fit under a segment on a phone. */
+const STEP_LABEL: Record<StepId, string> = {
+  group: "You",
+  service: "Service",
+  extras: "Extras",
+  resource: "Who",
+  time: "Time",
+  details: "Details",
+  review: "Confirm",
+};
 
 /** Scrolls the returned element's top into view when `key` changes (not on mount), if it is above the fold. */
 function useScrollToTopOnChange(key: string) {

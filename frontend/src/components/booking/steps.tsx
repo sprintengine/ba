@@ -72,38 +72,6 @@ export function StepHeader({
   );
 }
 
-/** Thin segmented progress indicator. */
-export function StepProgress({
-  index,
-  total,
-  className,
-}: {
-  index: number;
-  total: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn("flex gap-1", className)}
-      role="progressbar"
-      aria-label="Booking progress"
-      aria-valuemin={1}
-      aria-valuemax={total}
-      aria-valuenow={index + 1}
-    >
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={cn(
-            "h-1 flex-1 rounded-full transition-colors duration-300",
-            i <= index ? "bg-primary" : "bg-border",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Customer group
 // ---------------------------------------------------------------------------

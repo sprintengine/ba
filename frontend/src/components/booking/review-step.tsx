@@ -45,18 +45,15 @@ export function ReviewStep({
     <div className="flex flex-col gap-5">
       {alert && <AlertBanner alert={alert} />}
       <div className="flex flex-col divide-y divide-border-subtle rounded-xl border border-border bg-surface px-4 shadow-xs sm:px-5 dark:bg-surface-raised">
-        {/* With room, the receipt beside this step says when, what and how much: only what's new is said here. */}
+        {/* The whole booking in one place, in the same order on every screen, with the final action under it. */}
         <WhenSection business={business} selection={selection} quote={quote} onEdit={() => onEdit("time")} />
-        <Section title="What" onEdit={() => onEdit("service")} className="@4xl:hidden">
+        <Section title="What" onEdit={() => onEdit("service")}>
           <WhatSummary business={business} service={service} selection={selection} />
         </Section>
-        <Section title="Your details" onEdit={() => onEdit("details")} className="@4xl:border-t-0">
+        <Section title="Your details" onEdit={() => onEdit("details")}>
           <DetailsSummary details={details} questions={questions} />
         </Section>
-        <Section
-          title="Payment"
-          className={cn(!payment.offered && !service.requiresApproval && "@4xl:hidden")}
-        >
+        <Section title="Payment">
           {payment.offered && <HowToPay payment={payment} />}
           <PaymentSummary business={business} service={service} quote={quote} />
         </Section>
@@ -107,7 +104,7 @@ function WhenSection({
   const tz = business.timezone;
   const start = zonedToIso(selection.date, selection.time, tz);
   return (
-    <Section title="When" onEdit={onEdit} className="@4xl:hidden">
+    <Section title="When" onEdit={onEdit}>
       <p className="text-base font-semibold tracking-tight">
         {formatDate(selection.date, tz, "long", business.locale)}
       </p>
@@ -229,17 +226,15 @@ function PaymentSummary({
   const howToPay = quote.mode === "deposit" ? null : paymentModeCopy(quote, cur, locale);
   return (
     <>
-      <div className="@4xl:hidden">
-        <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="review" />
-      </div>
-      <div className="mt-3 flex flex-col gap-2 border-t border-border-subtle pt-3 text-sm text-muted-foreground @4xl:mt-0 @4xl:border-t-0 @4xl:pt-0">
+      <QuoteBreakdown quote={quote} currency={cur} locale={locale} variant="review" />
+      <div className="mt-3 flex flex-col gap-2 border-t border-border-subtle pt-3 text-sm text-muted-foreground">
         {howToPay && (
-          <p className="flex gap-2 @4xl:hidden">
+          <p className="flex gap-2">
             <CreditCard className="mt-0.5 size-4 shrink-0 text-subtle-foreground" aria-hidden />
             {howToPay}
           </p>
         )}
-        <p className="flex gap-2 @4xl:hidden">
+        <p className="flex gap-2">
           <Shield className="mt-0.5 size-4 shrink-0 text-subtle-foreground" aria-hidden />
           {cancellationSummary(business.policies, quote.mode, business.name)}
         </p>

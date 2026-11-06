@@ -97,10 +97,14 @@ export function PublicBookingPage({
 function BusinessIntro({ business: b, children }: { business: PublicBusiness; children?: React.ReactNode }) {
   const place = shortAddress(b.address);
   return (
-    <div className="mb-6 flex flex-col gap-2">
-      {/* The header above says the name; the page still needs its top-level heading. */}
-      <h1 className="sr-only">{b.name}</h1>
-      {b.description && <p className="max-w-2xl text-pretty text-muted-foreground">{b.description}</p>}
+    <div className="flex min-w-0 flex-col gap-2">
+      {/* On a phone the header above says the name; the page still needs its top-level heading. */}
+      <h1 className="sr-only text-xl font-semibold tracking-tight wrap-anywhere @4xl:not-sr-only">
+        {b.name}
+      </h1>
+      {b.description && (
+        <p className="max-w-2xl text-sm text-pretty text-muted-foreground">{b.description}</p>
+      )}
       {place && (
         <p className="flex items-center gap-1.5 text-sm text-subtle-foreground">
           <MapPin className="size-3.5" aria-hidden /> {place}
