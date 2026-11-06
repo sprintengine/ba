@@ -23,9 +23,12 @@ const PILL =
   "glass-chrome flex h-14 [--glass-chrome-bg:rgb(250_250_250)] w-full max-w-[70rem] items-center gap-3 rounded-[18px] pr-2 pl-[1.125rem] max-[760px]:h-[3.25rem] max-[760px]:rounded-2xl max-[760px]:pr-1.5 max-[760px]:pl-3.5";
 
 function HomeLink({ onClick }: { onClick?: () => void }) {
+  const home = usePathname() === "/";
   return (
     <Link
       href="/"
+      // Not the page it's already on.
+      prefetch={home ? false : undefined}
       aria-label="bookanything home"
       onClick={onClick}
       className="focus-ring inline-flex min-h-11 shrink-0 items-center rounded-md"
@@ -96,7 +99,10 @@ export function MarketingNav() {
                 <Link href="/sign-in">Sign in</Link>
               </Button>
               <Button asChild variant="primary" className="h-10 rounded-xl px-4 font-semibold">
-                <Link href="/sign-up">Start for free</Link>
+                {/* In view on every visit: the ones further down each page prefetch it for those still reading. */}
+                <Link href="/sign-up" prefetch={false}>
+                  Start for free
+                </Link>
               </Button>
             </>
           )}

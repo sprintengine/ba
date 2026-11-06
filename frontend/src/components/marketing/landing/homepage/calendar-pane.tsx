@@ -22,7 +22,6 @@ import { RailEntry } from "@/components/shells/rail-item";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/icon-button";
-import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   FIRST_HOUR,
   LAST_HOUR,
@@ -128,24 +127,31 @@ function Toolbar({ date, count, narrow }: { date: PlainDate; count: number; narr
           </>
         )}
         <span className="flex-1" />
-        {!narrow && (
-          <SegmentedControl
-            size="sm"
-            aria-label="Calendar view"
-            value="day"
-            onValueChange={noop}
-            options={[
-              { value: "day", label: "Day", icon: <Columns3 aria-hidden /> },
-              { value: "week", label: "Week", icon: <CalendarRange aria-hidden /> },
-            ]}
-          />
-        )}
+        {!narrow && <ViewPill />}
         <Button variant="primary" size="sm" className="max-sm:hidden">
           <Plus /> New booking
         </Button>
       </div>
       <span className="sr-only">{count} bookings</span>
     </div>
+  );
+}
+
+/**
+ * The calendar's Day and Week as a picture. The sample never changes view, so this draws the same pill without the
+ * real control, whose sliding thumb would bring the animation library to every visitor of the home page.
+ */
+function ViewPill() {
+  const item = "inline-flex h-full items-center gap-1.5 rounded-md px-2.5 [&_svg]:size-4";
+  return (
+    <span className="inline-flex h-8 items-center gap-0.5 rounded-lg bg-muted p-0.5 text-xs font-medium pointer-coarse:h-11">
+      <span className={cn(item, "bg-surface text-foreground shadow-sm dark:bg-border-strong")}>
+        <Columns3 aria-hidden /> Day
+      </span>
+      <span className={cn(item, "text-muted-foreground")}>
+        <CalendarRange aria-hidden /> Week
+      </span>
+    </span>
   );
 }
 

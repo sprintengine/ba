@@ -33,7 +33,7 @@ export function Hero() {
               size="xl"
               className="rounded-[14px] font-semibold [@media(max-height:760px)]:h-11 [@media(max-height:760px)]:px-5"
             >
-              <Link href="/sign-up">
+              <Link href="/sign-up" prefetch={false}>
                 Start for free <ArrowRight />
               </Link>
             </Button>
@@ -43,6 +43,8 @@ export function Hero() {
               </p>
               <Link
                 href="/for/physio#try"
+                // In view on every visit, and the sample booking page behind it is far heavier than this page.
+                prefetch={false}
                 className={cn(
                   "focus-ring inline-flex items-center gap-1 rounded-md font-medium underline-offset-4 hover:underline",
                   touchHitArea,
