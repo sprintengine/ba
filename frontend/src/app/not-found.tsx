@@ -1,6 +1,6 @@
+import { DeadEndMark } from "@/components/brand/logo";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Compass } from "lucide-react";
 import { MinimalShell } from "@/components/shells/minimal-shell";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,7 +13,7 @@ export default function NotFound() {
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<Compass />}
+        icon={<DeadEndMark />}
         title="Page not found"
         description="This address doesn't lead anywhere. If you were looking for a business, it may have moved."
         action={

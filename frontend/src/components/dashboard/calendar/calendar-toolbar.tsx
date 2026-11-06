@@ -1,7 +1,16 @@
 "use client";
 
 import { AppLink } from "@/components/ui/app-link";
-import { CalendarRange, ChevronDown, ChevronLeft, ChevronRight, Columns3, List, Plus } from "lucide-react";
+import {
+  CalendarRange,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  List,
+  Plus,
+  SlidersHorizontal,
+} from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
 import type { CalendarMode } from "@/lib/dashboard/calendar";
@@ -89,8 +98,30 @@ export function CalendarToolbar({
       ]}
     />
   );
+  const cancelledToggle = (
+    <label className="flex h-8 shrink-0 items-center gap-1.5 rounded-md text-sm text-muted-foreground sm:gap-2 sm:px-2 pointer-coarse:h-11">
+      <Switch
+        size="sm"
+        checked={showCancelled}
+        onCheckedChange={(c) => setParams({ cancelled: c ? "1" : null })}
+      />
+      Cancelled
+    </label>
+  );
+  const picker = resourcesLoading ? (
+    <Skeleton className="h-8 min-w-0 flex-1 sm:w-40 sm:flex-none pointer-coarse:h-11" />
+  ) : resources.length > 1 ? (
+    <CalendarResourcePicker
+      businessId={business.id}
+      resources={resources}
+      choice={choice}
+      shown={shown}
+      onChoose={(param) => setParams({ resource: param })}
+    />
+  ) : null;
   return (
     <div className="flex flex-col gap-2 px-4 pt-3 pb-2.5 sm:px-5">
+      {/* One line from a small window up: the height belongs to the grid. */}
       <div className="flex min-w-0 items-center gap-1 sm:gap-2">
         <div className="min-w-0 max-sm:mr-auto">
           <DatePopover date={date} view={view} today={today} range={range} setParams={setParams} />
@@ -117,8 +148,40 @@ export function CalendarToolbar({
             Today
           </Button>
         </Tooltip>
+        {!phone && <div className="max-w-36 min-w-0 overflow-hidden xl:max-w-52">{picker}</div>}
+        {position && (
+          <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-lg:hidden">
+            {position}
+          </span>
+        )}
+        {waiting > 0 && (
+          <AppLink
+            href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
+            className="inline-flex h-8 shrink-0 items-center rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
+          >
+            {waiting} to approve
+          </AppLink>
+        )}
         <div className="flex-1 max-sm:hidden" />
         {!phone && viewControl}
+        {!phone && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="secondary" size="sm" aria-label="View options">
+                <SlidersHorizontal aria-hidden />
+                <span className="max-xl:hidden">View</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="flex w-52 flex-col gap-1 p-2">
+              {cancelledToggle}
+              <Button asChild variant="ghost" size="sm" className="justify-start">
+                <AppLink href={dashboardHref(business.slug, "bookings")}>
+                  <List aria-hidden /> All {v("bookings")}
+                </AppLink>
+              </Button>
+            </PopoverContent>
+          </Popover>
+        )}
         <ActionButton
           variant="primary"
           size="sm"
@@ -128,49 +191,14 @@ export function CalendarToolbar({
           shortcut="N"
         />
       </div>
-      <div className="flex min-w-0 items-center gap-2">
-        {resourcesLoading && (
-          <Skeleton className="h-8 min-w-0 flex-1 sm:w-40 sm:flex-none pointer-coarse:h-11" />
-        )}
-        {resources.length > 1 && (
-          <CalendarResourcePicker
-            businessId={business.id}
-            resources={resources}
-            choice={choice}
-            shown={shown}
-            onChoose={(param) => setParams({ resource: param })}
-          />
-        )}
-        {position && (
-          <span className="tnum text-sm whitespace-nowrap text-muted-foreground max-sm:hidden">
-            {position}
-          </span>
-        )}
-        {waiting > 0 && (
-          <AppLink
-            href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
-            className="inline-flex h-8 shrink-0 items-center rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
-          >
-            {waiting} waiting for approval
-          </AppLink>
-        )}
-        <div className="flex-1 max-sm:hidden" />
-        <label className="flex h-8 shrink-0 items-center gap-1.5 rounded-md text-sm text-muted-foreground sm:gap-2 sm:px-2 pointer-coarse:h-11">
-          <Switch
-            size="sm"
-            checked={showCancelled}
-            onCheckedChange={(c) => setParams({ cancelled: c ? "1" : null })}
-          />
-          Cancelled
-        </label>
-        {phone && viewControl}
-        {/* Phones have the list in the tab bar. */}
-        <Button asChild variant="secondary" size="sm" className="max-sm:hidden">
-          <AppLink href={dashboardHref(business.slug, "bookings")}>
-            <List aria-hidden /> All {v("bookings")}
-          </AppLink>
-        </Button>
-      </div>
+      {/* Phones have the list in the tab bar. */}
+      {phone && (
+        <div className="flex min-w-0 items-center gap-2">
+          {picker}
+          {cancelledToggle}
+          {viewControl}
+        </div>
+      )}
     </div>
   );
 }
@@ -203,8 +231,8 @@ function DatePopover({
           className="-ml-1.5 min-w-0 rounded-md px-1.5 py-0.5 text-left text-lg font-semibold tracking-tight whitespace-nowrap transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-[1.375rem] sm:leading-8 pointer-coarse:min-h-11"
         >
           <span className="inline-flex items-center gap-1.5">
-            <span className="hidden sm:inline">{title}</span>
-            <span className="sm:hidden">{shortTitle}</span>
+            <span className="hidden xl:inline">{title}</span>
+            <span className="xl:hidden">{shortTitle}</span>
             <ChevronDown aria-hidden className="size-4 text-subtle-foreground" />
           </span>
         </button>

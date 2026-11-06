@@ -12,6 +12,7 @@ import { useVocabulary } from "@/lib/vocabulary";
 import { ErrorState } from "@/components/common/feedback";
 import { Badge } from "@/components/ui/badge";
 import { ActionButton } from "@/components/ui/action-button";
+import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useEditorDialog } from "@/components/ui/form-dialog";
@@ -31,6 +32,9 @@ import { SensitiveMark } from "../common";
 import { QuestionDialog } from "./question-dialog";
 import { SettingGroup, SettingItem, SettingList, SettingsHeader } from "./settings-common";
 
+/** Common first questions: choosing one opens the dialog with it written in, to accept or change. */
+const STARTERS = ["Reason for your visit", "Vehicle registration", "Anything we should know?"];
+
 export function QuestionsSettings() {
   const business = useCurrentBusiness();
   const { v } = useVocabulary();
@@ -40,6 +44,7 @@ export function QuestionsSettings() {
   const remove = useDeleteQuestion(business.id);
   const [filter, setFilter] = useState("all");
   const editor = useEditorDialog<FormQuestion>();
+  const [starter, setStarter] = useState("");
   const serviceName = (id: string | null) =>
     id ? (services.data?.find((s) => s.id === id)?.name ?? "A service") : "All services";
   const all = [...(questions.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -67,11 +72,16 @@ export function QuestionsSettings() {
     }
   };
 
+  const addStarter = (label: string) => {
+    setStarter(label);
+    editor.open(null);
+  };
+
   const newQuestion = (
     <ActionButton
       size="sm"
       variant="primary"
-      onClick={() => editor.open(null)}
+      onClick={() => addStarter("")}
       icon={<Plus />}
       label="New question"
       collapse={false}
@@ -88,7 +98,12 @@ export function QuestionsSettings() {
       ) : (
         <SettingGroup
           title="Your questions"
-          description="Asked after people pick a time. Name and email are always asked for."
+          // With none yet the empty state says it all, with something to click.
+          description={
+            list.length > 0
+              ? "Asked after people pick a time. Name and email are always asked for."
+              : undefined
+          }
           action={
             (services.data?.length ?? 0) > 0 &&
             (list.length > 0 || filter !== "all") && (
@@ -114,9 +129,20 @@ export function QuestionsSettings() {
             <EmptyState
               headingLevel={4}
               icon={<MessageSquareText />}
-              title="No questions"
-              description="Ask for what you need to prepare: a vehicle registration, an instrument, the reason for a visit."
-              action={all.length === 0 && newQuestion}
+              title="No questions yet"
+              description="People are asked these after they pick a time. Start from one of these, or write your own."
+              action={
+                all.length === 0 && (
+                  <>
+                    {STARTERS.map((label) => (
+                      <Button key={label} size="sm" variant="secondary" onClick={() => addStarter(label)}>
+                        <Plus /> {label}
+                      </Button>
+                    ))}
+                    {newQuestion}
+                  </>
+                )
+              }
             />
           ) : (
             <SettingList>
@@ -195,6 +221,7 @@ export function QuestionsSettings() {
           question={editor.current.item}
           nextSort={nextSortOrder(all)}
           defaultService={filter !== "all" && filter !== "global" ? filter : ALL_SERVICES}
+          starter={editor.current.item ? undefined : starter}
           {...editor.dialogProps}
         />
       )}

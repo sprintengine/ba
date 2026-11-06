@@ -1,8 +1,9 @@
 "use client";
 
+import { DeadEndMark } from "@/components/brand/logo";
 import { useEffect } from "react";
 import Link from "next/link";
-import { CalendarCheck2, CalendarSearch, CircleUserRound } from "lucide-react";
+import { CalendarCheck2, CircleUserRound } from "lucide-react";
 import type { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/context";
 import { ErrorState } from "@/components/common/feedback";
@@ -67,7 +68,7 @@ export function BusinessNotFound({ slug }: { slug: string }) {
     <EmptyState
       size="lg"
       headingLevel={1}
-      icon={<CalendarSearch />}
+      icon={<DeadEndMark />}
       title="This booking page doesn't exist"
       description={`There's no business at bookanything.ie/${slug}. Check the link you were given.`}
       action={

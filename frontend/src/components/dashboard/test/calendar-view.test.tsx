@@ -149,8 +149,10 @@ describe("CalendarView", () => {
     expect(screen.getByRole("button", { name: "Today" })).toBeDisabled();
     await user.click(screen.getByRole("radio", { name: "Week" }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&view=week`);
-    await user.click(screen.getByRole("switch", { name: "Cancelled" }));
+    await user.click(screen.getByRole("button", { name: "View options" }));
+    await user.click(await screen.findByRole("switch", { name: "Cancelled" }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&cancelled=1`);
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: /^Filter by therapist/ }));
     await user.click(await screen.findByRole("checkbox", { name: /Jo Park/ }));
     expect(lastUrl()).toBe(`${PATH}?date=2099-10-01&resource=r1`);

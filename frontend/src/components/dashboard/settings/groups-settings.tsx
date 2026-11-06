@@ -66,7 +66,11 @@ export function GroupsSettings() {
       ) : (
         <SettingGroup
           title="Your groups"
-          description="Members of a restricted group can book only the hours assigned to it. You add people to a group on their profile."
+          description={
+            list.length > 0
+              ? "Members of a restricted group can book only the hours assigned to it. You add people to a group on their profile."
+              : undefined
+          }
         >
           {list.length === 0 ? (
             <EmptyState

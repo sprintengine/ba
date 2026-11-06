@@ -5,10 +5,10 @@ import { ListingCardSkeleton } from "./listing-card";
 /** Server-rendered page heading for the `/explore` routes (the H1 is in the initial HTML). */
 export function ExploreHero({ title, description }: { title: string; description?: string }) {
   return (
-    <section className="relative overflow-hidden border-b border-border-subtle">
-      <Container className="relative flex flex-col gap-2 pt-6 pb-4 lg:pt-8 lg:pb-5">
+    <section className="relative overflow-hidden">
+      <Container className="relative flex flex-col gap-1 pt-4 lg:pt-6">
         <h1 className="max-w-3xl text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h1>
-        {description && <p className="max-w-2xl text-base text-muted-foreground">{description}</p>}
+        {description && <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </Container>
     </section>
   );
@@ -28,7 +28,7 @@ export function ExploreLayout({
   return (
     <>
       <ExploreHero title={title} description={description} />
-      <Container className="py-6 sm:py-8">{children}</Container>
+      <Container className="pt-4 pb-6 sm:pb-8">{children}</Container>
     </>
   );
 }

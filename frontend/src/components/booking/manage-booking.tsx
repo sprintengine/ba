@@ -1,9 +1,10 @@
 "use client";
 
+import { DeadEndMark } from "@/components/brand/logo";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, LinkIcon } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { errorMessage } from "@/lib/api/client";
 import {
   useCancelManagedBooking,
@@ -69,7 +70,7 @@ export function ManageBookingPage({ token }: { token: string }) {
           <EmptyState
             size="lg"
             headingLevel={1}
-            icon={<LinkIcon />}
+            icon={<DeadEndMark />}
             title="This booking link isn't valid"
             description="Manage links stop working after the appointment, or the link may be incomplete. Check the latest email from the business, or contact them directly."
             action={

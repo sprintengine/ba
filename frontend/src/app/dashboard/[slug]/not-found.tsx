@@ -1,7 +1,7 @@
 "use client";
 
+import { DeadEndMark } from "@/components/brand/logo";
 import Link from "next/link";
-import { Compass } from "lucide-react";
 import { dashboardHref } from "@/components/shells/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,7 +13,7 @@ export default function DashboardNotFound() {
     <EmptyState
       size="md"
       headingLevel={1}
-      icon={<Compass />}
+      icon={<DeadEndMark />}
       title="Page not found"
       description="This page doesn't exist or has moved."
       action={

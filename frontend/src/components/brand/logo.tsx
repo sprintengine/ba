@@ -177,3 +177,11 @@ export function LogoLoader({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * The mark where a page has nothing else to show: a dead end's icon, larger than the line icon it stands in for. The
+ * empty state's icon slot sizes what it holds, so this asks for its own size firmly.
+ */
+export function DeadEndMark() {
+  return <LogoMark aria-hidden title="" className="h-8! w-auto!" />;
+}

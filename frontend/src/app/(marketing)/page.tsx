@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Faq, type FaqItem } from "@/components/marketing/faq";
-import { PrismContainer, PrismThread } from "@/components/marketing/landing/heading";
+import { PrismContainer } from "@/components/marketing/landing/heading";
 import { AiSection } from "@/components/marketing/landing/home/ai";
 import { BookedSection } from "@/components/marketing/landing/home/booked";
 import { ClosingSection } from "@/components/marketing/landing/home/closing";
@@ -116,7 +116,6 @@ export default function LandingPage() {
       <BookedSection />
       <AiSection />
       <SetupSection />
-      <PrismThread />
       <MoneySection />
       <IndustriesSection />
       <ProofSection />

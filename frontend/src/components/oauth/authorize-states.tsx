@@ -1,7 +1,7 @@
 "use client";
 
+import { DeadEndMark } from "@/components/brand/logo";
 import Link from "next/link";
-import { CircleAlert, Store } from "lucide-react";
 import { LogoLoader } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ export function InvalidAuthorizeRequest({ message }: { message: string }) {
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<CircleAlert />}
+        icon={<DeadEndMark />}
         title="This connection link isn't valid"
         description={
           <>
@@ -80,7 +80,7 @@ export function NoBusinessToConnect({ message }: { message: string }) {
       <EmptyState
         size="lg"
         headingLevel={1}
-        icon={<Store />}
+        icon={<DeadEndMark />}
         title="There's no business to connect"
         description={message}
         action={
