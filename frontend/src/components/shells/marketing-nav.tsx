@@ -40,6 +40,8 @@ export function MarketingNav() {
   const pathname = usePathname();
   // A hint, not the auth provider: marketing pages don't load Clerk (lib/auth/signed-in-hint.ts).
   const signedIn = useSignedInHint();
+  // Explore is for people looking for an appointment: no sales pitch, and the way to their bookings.
+  const browsing = pathname.startsWith("/explore");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -51,7 +53,7 @@ export function MarketingNav() {
       <div className={cn(PILL, "pointer-events-auto")}>
         <HomeLink />
         <nav aria-label="Main" className="mx-auto hidden items-center gap-1 lg:flex">
-          {LINKS.map((l) => (
+          {(browsing ? [] : LINKS).map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -63,7 +65,22 @@ export function MarketingNav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
-          {signedIn ? (
+          {browsing ? (
+            <>
+              <Button
+                asChild
+                variant="ghost"
+                className="hidden h-10 rounded-xl px-3.5 text-muted-foreground sm:inline-flex"
+              >
+                <Link href="/">For businesses</Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-10 rounded-xl px-4 font-semibold">
+                <Link href={signedIn ? "/my/bookings" : "/sign-in"}>
+                  {signedIn ? "My bookings" : "Sign in"}
+                </Link>
+              </Button>
+            </>
+          ) : signedIn ? (
             <Button asChild variant="primary" className="h-10 rounded-xl px-4 font-semibold">
               <Link href="/dashboard">
                 Dashboard <ArrowRight />

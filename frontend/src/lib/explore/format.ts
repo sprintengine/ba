@@ -39,6 +39,20 @@ export function formatSlotLabel(
   return `${formatDate(start, timeZone, style, locale)} ${time}`;
 }
 
+/** "Today" or "Tomorrow" when every one of these times falls on it, so a card can say the day once. */
+export function sharedSlotDay(
+  starts: readonly string[],
+  timeZone: string,
+  now: Date = new Date(),
+  locale = DEFAULT_LOCALE,
+): string | null {
+  const dates = new Set(starts.map((s) => toPlainDate(s, timeZone)));
+  const [date] = dates;
+  if (dates.size !== 1 || !date) return null;
+  const days = diffPlainDates(date, todayInTz(timeZone, now));
+  return days === 0 || days === 1 ? formatRelativeDay(date, timeZone, locale, now) : null;
+}
+
 /** "from €45", "Free", or null when the business has no priced services. */
 export function formatPriceFrom(cents: number | null, currency: string): string | null {
   if (cents === null) return null;

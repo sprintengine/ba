@@ -105,8 +105,8 @@ export function ExplorePage({ preset = {} }: { preset?: ExplorePreset }) {
       />
 
       <div className="flex flex-col gap-5">
-        {/* A bar, not a column: the free times are what people came for, so the results get the width. */}
-        <aside aria-labelledby="explore-filters-title" className="hidden items-start gap-6 lg:flex">
+        {/* A bar with room for it, one Filters button without: the free times are what people came for. */}
+        <aside aria-labelledby="explore-filters-title" className="hidden items-start gap-6 xl:flex">
           <h2 id="explore-filters-title" className="sr-only">
             Filters
           </h2>

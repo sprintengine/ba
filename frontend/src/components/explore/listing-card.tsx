@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MapPin, Tag } from "lucide-react";
 import type { Listing, NextSlot } from "@/lib/api/types";
-import { formatDistance, formatPriceFrom, formatSlotLabel } from "@/lib/explore";
+import { formatDistance, formatPriceFrom, formatSlotLabel, sharedSlotDay } from "@/lib/explore";
+import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BusinessTile } from "@/components/shells/business-tile";
 import { DealPrice } from "@/components/offers/deal-price";
@@ -25,6 +26,11 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
     .filter(Boolean)
     .join(" · ");
 
+  const day = sharedSlotDay(
+    listing.nextSlots.map((s) => s.start),
+    business.timezone,
+    now,
+  );
   return (
     <article
       className={cn(
@@ -70,7 +76,11 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
       {/* What someone came for, ahead of the blurb. */}
       <div className="flex flex-col gap-1.5">
         <p className="text-xs font-medium text-subtle-foreground">
-          {listing.nextSlots.length > 0 ? "Next free times" : "No free times in the next few days"}
+          {listing.nextSlots.length === 0
+            ? "No free times in the next few days"
+            : day
+              ? `Next free times · ${day}`
+              : "Next free times"}
         </p>
         {listing.nextSlots.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
@@ -81,6 +91,7 @@ export function ListingCard({ listing, now }: { listing: Listing; now?: Date }) 
                 timeZone={business.timezone}
                 currency={currency}
                 now={now}
+                timeOnly={day !== null}
               />
             ))}
           </ul>
@@ -116,14 +127,17 @@ function SlotChip({
   timeZone,
   currency,
   now,
+  timeOnly,
 }: {
   slot: NextSlot;
   timeZone: string;
   currency: string;
   now?: Date;
+  /** The heading above already names the day. */
+  timeOnly: boolean;
 }) {
   const service = slot.optionName ? `${slot.serviceName}, ${slot.optionName}` : slot.serviceName;
-  const label = formatSlotLabel(slot.start, timeZone, now);
+  const label = timeOnly ? formatTime(slot.start, timeZone) : formatSlotLabel(slot.start, timeZone, now);
   const offer = slot.offer;
   return (
     <li
