@@ -10,10 +10,10 @@ import type { ServiceFormValues as V } from "@/lib/services/service-form";
 import { useVocabulary } from "@/lib/vocabulary";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, useFieldControlProps, useFieldLabelledBy } from "@/components/ui/field";
-import { FormField } from "@/components/ui/form";
+import { useFieldControlProps, useFieldLabelledBy } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { SettingFieldRow, SettingFormRow } from "../../settings/settings-common";
 import { Section } from "./section";
 
 export function RulesSection() {
@@ -28,32 +28,32 @@ export function RulesSection() {
     (g) => g.isActive || allowed.includes(g.id) || saved.includes(g.id),
   );
   return (
-    <Section title="Booking rules">
-      <FormField<V, "requiresApproval">
+    <Section title="Booking rules" rows>
+      <SettingFormRow<V, "requiresApproval">
         name="requiresApproval"
-        orientation="horizontal"
+        fit
         label="Approve each request"
         help={`${v("bookings", { title: true })} stay pending until you accept them.`}
       >
         {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-      </FormField>
-      <FormField<V, "isPublic">
+      </SettingFormRow>
+      <SettingFormRow<V, "isPublic">
         name="isPublic"
-        orientation="horizontal"
+        fit
         label="Show on your booking page"
         help="Private services can still be booked by your team."
       >
         {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-      </FormField>
-      <FormField<V, "isActive">
+      </SettingFormRow>
+      <SettingFormRow<V, "isActive">
         name="isActive"
-        orientation="horizontal"
+        fit
         label="Active"
         help="Inactive services can't be booked by anyone."
       >
         {(field) => <Switch checked={field.value} onCheckedChange={field.onChange} />}
-      </FormField>
-      <FormField<V, "locationType"> name="locationType" label="Where it happens" className="sm:w-72">
+      </SettingFormRow>
+      <SettingFormRow<V, "locationType"> name="locationType" label="Where it happens">
         {(field) => (
           <Select value={field.value} onValueChange={field.onChange}>
             <SelectTrigger>
@@ -66,9 +66,10 @@ export function RulesSection() {
             </SelectContent>
           </Select>
         )}
-      </FormField>
+      </SettingFormRow>
       {shown.length > 0 && (
-        <Field
+        <SettingFieldRow
+          stacked
           label="Who can book"
           help={
             allowed.length === 0
@@ -81,7 +82,7 @@ export function RulesSection() {
             value={allowed}
             onChange={(ids) => form.setValue("allowedGroupIds", ids, { shouldDirty: true })}
           />
-        </Field>
+        </SettingFieldRow>
       )}
     </Section>
   );

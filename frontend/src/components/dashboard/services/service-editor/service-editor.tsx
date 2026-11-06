@@ -83,7 +83,6 @@ export function ServiceEditor({
       size="xl"
       className="sm:max-w-5xl"
       title={service ? `Edit ${service.name}` : "New service"}
-      description="What people book, how long it takes, what it costs and who does it."
       submitLabel={service ? "Save changes" : "Create service"}
       footerStart={
         service ? (
