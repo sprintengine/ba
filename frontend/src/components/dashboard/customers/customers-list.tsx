@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { useRouter } from "next/navigation";
 import { Search, UserPlus, Users } from "lucide-react";
 import type { Customer } from "@/lib/api/types";
@@ -156,7 +156,7 @@ export function CustomersList() {
                       {/* Phones: the name column takes what's left and a long email wraps, so it is never cut
                           short and can't push the count off the edge. */}
                       <TableCell className="max-md:w-full max-md:max-w-0">
-                        <Link
+                        <AppLink
                           href={href(c)}
                           className="flex min-w-0 items-center gap-2.5 focus-visible:outline-none pointer-coarse:min-h-11"
                           onClick={(e) => e.stopPropagation()}
@@ -175,7 +175,7 @@ export function CustomersList() {
                               {c.email ?? c.phone ?? ""}
                             </span>
                           </span>
-                        </Link>
+                        </AppLink>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="flex flex-col text-sm">

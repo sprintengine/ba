@@ -13,6 +13,10 @@ export const Sheet = SheetPrimitive.Root;
 export const SheetTrigger = SheetPrimitive.Trigger;
 export const SheetClose = SheetPrimitive.Close;
 
+/** The panel's own surface, and its title's type, for a sample of it drawn without a dialog. */
+export const SHEET_SURFACE = "flex flex-col bg-surface-raised shadow-xl";
+export const SHEET_TITLE = "text-base font-semibold tracking-tight";
+
 const widths = { sm: "sm:max-w-sm", md: "sm:max-w-md", lg: "sm:max-w-xl", xl: "sm:max-w-3xl" } as const;
 
 export function SheetContent({
@@ -32,7 +36,8 @@ export function SheetContent({
       <DialogOverlay />
       <SheetPrimitive.Content
         className={cn(
-          "fixed inset-y-0 z-50 flex w-full flex-col bg-surface-raised shadow-xl outline-none",
+          "fixed inset-y-0 z-50 w-full outline-none",
+          SHEET_SURFACE,
           side === "right"
             ? "right-0 animate-sheet-in-right border-l border-border data-[state=closed]:animate-sheet-out-right"
             : "left-0 animate-sheet-in-left border-r border-border data-[state=closed]:animate-sheet-out-left",
@@ -82,9 +87,7 @@ export function SheetFooter({ className, ...props }: React.ComponentProps<"div">
   );
 }
 export function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
-  return (
-    <SheetPrimitive.Title className={cn("text-base font-semibold tracking-tight", className)} {...props} />
-  );
+  return <SheetPrimitive.Title className={cn(SHEET_TITLE, className)} {...props} />;
 }
 export function SheetDescription({
   className,

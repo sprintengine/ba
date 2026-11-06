@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronDown, Plus } from "lucide-react";
 import type { Booking } from "@/lib/api/types";
@@ -38,7 +38,7 @@ export function TodayCard({ bookings, loading, now }: { bookings: Booking[]; loa
         <CardTitle headingLevel={2}>Today&apos;s {v("bookings")}</CardTitle>
         <CardAction>
           <Button asChild variant="link" size="xs" className="text-xs">
-            <Link href={`/dashboard/${business.slug}/bookings`}>All {v("bookings")}</Link>
+            <AppLink href={`/dashboard/${business.slug}/bookings`}>All {v("bookings")}</AppLink>
           </Button>
         </CardAction>
       </CardHeader>

@@ -20,7 +20,7 @@ type BookingActions = {
   openNewBooking: (prefill?: NewBookingPrefill) => void;
 };
 
-const BookingActionsContext = createContext<BookingActions | null>(null);
+export const BookingActionsContext = createContext<BookingActions | null>(null);
 
 /**
  * Mounted once by the dashboard layout: owns the shared booking detail drawer

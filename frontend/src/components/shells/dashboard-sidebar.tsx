@@ -17,6 +17,7 @@ import {
   railIdle,
   railItemsFor,
 } from "./dashboard-nav";
+import { RailEntry } from "./rail-item";
 import { UserMenu } from "./user-menu";
 
 /** A row in the navigation sheet: 32px with a mouse, 44px on touch. */
@@ -55,18 +56,7 @@ export function DashboardRail({
             ? item.covers.some((section) => isNavItemActive(section, business.slug, pathname))
             : false;
           const label = item.vocabulary ? v(item.vocabulary, { title: true }) : item.label;
-          return (
-            <Link
-              key={item.key}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              title={label}
-              className={cn(railClass, active ? "bg-background font-semibold text-foreground" : railIdle)}
-            >
-              <item.icon strokeWidth={active ? 2.25 : 1.75} />
-              <span className="max-w-full truncate">{label}</span>
-            </Link>
-          );
+          return <RailEntry key={item.key} item={item} label={label} active={active} href={href} />;
         })}
       </nav>
 

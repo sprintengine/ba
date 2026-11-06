@@ -23,6 +23,17 @@
  * Dark mode is the `dark` class on <html> (next-themes). `data-mode` forces a mode on a subtree
  * (the site editor previews light and dark regardless of the dashboard's mode).
  */
+/* As Tailwind's own hover, and on `data-hover`: the home page's tour points its cursor at the app's real controls. */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &[data-hover] {
+    @slot;
+  }
+}
 @custom-variant dark (&:where(.dark, .dark *, [data-mode="dark"], [data-mode="dark"] *):not(:where([data-mode="light"], [data-mode="light"] *)));
 
 @theme {

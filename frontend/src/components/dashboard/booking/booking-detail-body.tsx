@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { CalendarClock, Eye, EyeOff, Mail, Phone, Timer, X } from "lucide-react";
 import type { BookingDetail } from "@/lib/api/types";
 import { useCustomerGroups } from "@/lib/api/hooks";
@@ -160,7 +160,7 @@ function Summary({ booking: b }: { booking: BookingDetail }) {
             <span className="text-muted-foreground">No contact details</span>
           )}
           <Button asChild variant="link" size="xs" className="w-fit px-0 text-xs">
-            <Link href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</Link>
+            <AppLink href={`/dashboard/${business.slug}/customers/${b.customer.id}`}>View profile</AppLink>
           </Button>
         </SummaryRow>
       </dl>

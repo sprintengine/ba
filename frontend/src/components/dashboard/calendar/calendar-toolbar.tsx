@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { CalendarRange, ChevronDown, ChevronLeft, ChevronRight, Columns3, List, Plus } from "lucide-react";
 import type { Resource } from "@/lib/api/types";
 import { useCurrentBusiness } from "@/lib/business/business-context";
@@ -147,12 +147,12 @@ export function CalendarToolbar({
           </span>
         )}
         {waiting > 0 && (
-          <Link
+          <AppLink
             href={`${dashboardHref(business.slug, "bookings")}?status=pending_approval`}
             className="inline-flex h-8 shrink-0 items-center rounded-md bg-warning-soft px-2.5 text-sm font-medium whitespace-nowrap text-warning-soft-foreground transition-colors hover:bg-warning-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none max-sm:hidden"
           >
             {waiting} waiting for approval
-          </Link>
+          </AppLink>
         )}
         <div className="flex-1 max-sm:hidden" />
         <label className="flex h-8 shrink-0 items-center gap-1.5 rounded-md text-sm text-muted-foreground sm:gap-2 sm:px-2 pointer-coarse:h-11">
@@ -166,9 +166,9 @@ export function CalendarToolbar({
         {phone && viewControl}
         {/* Phones have the list in the tab bar. */}
         <Button asChild variant="secondary" size="sm" className="max-sm:hidden">
-          <Link href={dashboardHref(business.slug, "bookings")}>
+          <AppLink href={dashboardHref(business.slug, "bookings")}>
             <List aria-hidden /> All {v("bookings")}
-          </Link>
+          </AppLink>
         </Button>
       </div>
     </div>

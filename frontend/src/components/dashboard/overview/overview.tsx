@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
 import { CalendarDays, Plus } from "lucide-react";
 import { useOverview } from "@/lib/api/hooks";
 import { useBusinessContext, usePermissions } from "@/lib/business/business-context";
@@ -44,9 +44,9 @@ export function OverviewView() {
         actions={
           <>
             <Button asChild variant="secondary">
-              <Link href={dashboardHref(business.slug, "calendar")}>
+              <AppLink href={dashboardHref(business.slug, "calendar")}>
                 <CalendarDays /> Calendar
-              </Link>
+              </AppLink>
             </Button>
             <Button variant="primary" onClick={() => openNewBooking()}>
               <Plus /> New {v("booking")}
